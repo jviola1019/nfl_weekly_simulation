@@ -914,6 +914,33 @@ DEFAULT_TD_ODDS <- list(
 #' @note Industry standard is -110 both sides
 DEFAULT_YARD_ODDS <- -110
 
+# -----------------------------------------------------------------------------
+# RAW ODDS FORWARD CAPTURE (scripts/capture_odds_raw.R, R/capture_raw.R)
+# -----------------------------------------------------------------------------
+# Keyless sources only (ESPN core API, Kalshi public market data). Prop markets
+# vanish at kickoff, so captures must run before each kickoff window.
+
+#' @description Directory for gzipped raw responses + manifest.ndjson (gitignored)
+CAPTURE_ROOT <- "data/raw_capture"
+
+#' @description Truthful user agent sent with every capture request
+CAPTURE_USER_AGENT <- "nfl-weekly-simulation/2.9 (research; https://github.com/jviola1019/nfl_weekly_simulation)"
+
+#' @description Per-request timeout in seconds
+CAPTURE_TIMEOUT_SEC <- 20
+
+#' @description Attempts per request (retries only on 429/5xx)
+CAPTURE_MAX_TRIES <- 3
+
+#' @description Minimum seconds between requests (politeness throttle)
+CAPTURE_MIN_INTERVAL_SEC <- 0.5
+
+#' @description Capture games kicking off within this many hours
+CAPTURE_HORIZON_HOURS <- 36
+
+#' @description ESPN propBets provider ids to capture (100 = DraftKings)
+CAPTURE_ESPN_PROP_PROVIDERS <- c(100L)
+
 # =============================================================================
 # R COMPATIBILITY
 # =============================================================================
