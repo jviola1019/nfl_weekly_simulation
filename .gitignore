@@ -29,7 +29,7 @@ renv/staging/
 # Generated outputs (can be regenerated)
 *.html
 run_logs/
-reports/
+# reports/ holds committed, dated evidence (see reports/README.md) — do not ignore
 
 # OS files
 .DS_Store
