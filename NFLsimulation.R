@@ -5314,6 +5314,13 @@ simulate_game_nb <- function(mu_home, sd_home, mu_away, sd_away,
   # 1) Sobol QMC + antithetic
   n_half <- ceiling(n_trials/2)
   U <- randtoolbox::sobol(n = n_half, dim = 2, scrambling = 0, seed = seed, normal = FALSE)
+  # Randomized QMC (Cranley-Patterson rotation, audit M12): with scrambling = 0 the
+  # `seed` is ignored, so every game reused one uniform stream. A uniform shift drawn
+  # from the caller-seeded RNG gives each game a distinct, reproducible stream while
+  # keeping Sobol low discrepancy.
+  shift <- stats::runif(2)
+  U <- (U + matrix(shift, nrow = nrow(U), ncol = 2, byrow = TRUE)) %% 1
+  U <- pmin(pmax(U, 1e-12), 1 - 1e-12)
   U <- rbind(U, 1 - U)   # antithetic pairs
   Z1 <- qnorm(U[,1]); Z2 <- qnorm(U[,2])
   Z2c <- rho * Z1 + sqrt(pmax(1 - rho^2, 0)) * Z2
