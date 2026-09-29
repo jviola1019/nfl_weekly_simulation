@@ -290,11 +290,21 @@ tryCatch({
     }
   }
 
-  # Correlation coefficient range validation (empirical bounds 2019-2024)
-  if (exists("PROP_GAME_CORR_PASSING") && PROP_GAME_CORR_PASSING >= 0.70 && PROP_GAME_CORR_PASSING <= 0.80) {
-    pass("invariant", "PROP_GAME_CORR_PASSING in valid range [0.70, 0.80]")
-  } else if (exists("PROP_GAME_CORR_PASSING")) {
-    fail("invariant", "PROP_GAME_CORR_PASSING out of empirical range")
+  # Correlation values must be documented in the evidence ledger (audit T1)
+  ledger_path <- "docs/EVIDENCE_LEDGER.md"
+  ledger_txt <- if (file.exists(ledger_path)) readLines(ledger_path, warn = FALSE, encoding = "UTF-8") else character()
+  for (param in c("PROP_GAME_CORR_PASSING", "PROP_GAME_CORR_RUSHING",
+                  "PROP_GAME_CORR_RECEIVING", "PROP_GAME_CORR_TD")) {
+    val <- if (exists(param)) get(param) else NA_real_
+    row <- grep(sprintf("^\\|\\s*%s\\s*\\|", param), ledger_txt, value = TRUE)
+    documented <- if (length(row) == 1) {
+      suppressWarnings(as.numeric(trimws(strsplit(row, "|", fixed = TRUE)[[1]][3])))
+    } else NA_real_
+    if (is.finite(val) && val > -1 && val < 1 && isTRUE(all.equal(val, documented))) {
+      pass("invariant", sprintf("%s = %s documented in evidence ledger", param, format(val)))
+    } else {
+      fail("invariant", sprintf("%s missing, out of (-1,1), or not matching docs/EVIDENCE_LEDGER.md", param))
+    }
   }
 
   if (exists("MODEL_VIG_PCT") && MODEL_VIG_PCT >= 0.05 && MODEL_VIG_PCT <= 0.15) {

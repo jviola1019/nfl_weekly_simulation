@@ -1,5 +1,7 @@
 # NFL Game Prediction Model
 
+> **Status (2026-09-29): unvalidated research model.** Earlier accuracy and calibration figures were withdrawn after an audit found no reproducible evidence for them. See `docs/EVIDENCE_LEDGER.md` and `reports/2026-09-28/AUDIT.md`. Validated numbers will appear here only after the pre-registered backtest passes its gates.
+
 ![CI](https://github.com/jviola1019/nfl/actions/workflows/ci.yml/badge.svg)
 
 A production-ready statistical model for predicting NFL game outcomes using Monte Carlo simulation and data-driven analysis.
@@ -44,14 +46,14 @@ A production-ready statistical model for predicting NFL game outcomes using Mont
                                 │
 ┌───────────────────────────────▼─────────────────────────────────┐
 │                   VALIDATION & METRICS                          │
-│  NFLbrier_logloss.R: Brier = 0.211 (95% CI: 0.205-0.217)       │
+│  NFLbrier_logloss.R: scoring only — see docs/EVIDENCE_LEDGER.md │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 **Key Statistical Methods:**
 - **Score Distribution**: Negative binomial (captures overdispersion)
 - **Correlation**: Gaussian copula (rho ≈ -0.15)
-- **Calibration**: GAM spline (-6.9% Brier improvement)
+- **Calibration**: GAM spline (calibrator currently invalid, audit M4; disabled in Phase 1)
 - **Shrinkage**: 60% market weight, 40% model weight
 - **Staking**: 1/8 Kelly with 10% max edge cap
 - **Player Props**: Correlated with game simulation via Gaussian copula (v2.9.0)
@@ -108,19 +110,9 @@ The script generates a unified HTML report with:
 
 ## Model Accuracy
 
-**Performance** (2022-2024, 2,282 games):
-- **Brier Score**: 0.211 (Vegas: 0.208) - Near-market accuracy
-- **Accuracy**: 67.1% (2 out of 3 games correct)
-- **RMSE**: 10.82 points (within target)
+**Status**: Unvalidated. The accuracy and calibration figures previously shown here were withdrawn 2026-09-28 after an audit found no reproducible evidence for them (`docs/EVIDENCE_LEDGER.md`). Validated numbers will appear here only after a pre-registered backtest passes its promotion gates.
 
-**Comparison** (same dataset):
-- **Vegas Market**: 0.208 Brier (benchmark)
-- **This Model**: 0.211 Brier (+0.003 from market)
-- Confidence interval includes 0 (not statistically distinguishable from market)
-
-*Note: External model comparisons (FiveThirtyEight, ESPN) are approximate since they use different datasets and time periods. See `tests/testthat/` for unit tests validating EV/Kelly/de-vig calculations.*
-
-**See [DOCUMENTATION.md](DOCUMENTATION.md) for complete validation results and statistical methodology.**
+**See [DOCUMENTATION.md](DOCUMENTATION.md)** for methodology; treat any figures there as unvalidated until `docs/EVIDENCE_LEDGER.md` says otherwise.
 
 ---
 
@@ -209,7 +201,7 @@ All model parameters (injuries, weather, rest, etc.) are statistically validated
 ## Statistical Validation
 
 All model parameters tested using:
-- 10-fold cross-validation (2,282 games, 2022-2024)
+- 10-fold cross-validation (sample and results withdrawn 2026-09-28; see docs/EVIDENCE_LEDGER.md)
 - Permutation testing (p < 0.05 required)
 - Effect size analysis
 
@@ -328,7 +320,7 @@ Rscript scripts/run_matrix.R  # Should show 9/9 passed
 | `DOCUMENTATION.md` | Complete technical methodology |
 | `CLAUDE.md` | **AUTHORITATIVE** - Agent context and API reference |
 | `CHANGELOG.md` | Version history and fixes |
-| `AUDIT.md` | File classification and inventory |
+| `reports/history/AUDIT.md` | Superseded file classification/inventory audit (current: `reports/2026-09-28/AUDIT.md`) |
 
 ### Configuration & Environment
 | File | Purpose |

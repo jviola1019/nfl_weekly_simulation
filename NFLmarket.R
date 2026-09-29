@@ -41,6 +41,9 @@ suppressPackageStartupMessages({
         message(sprintf("Note: Could not source R/utils.R: %s", conditionMessage(e)))
       })
     }
+    banner_path <- if (file.exists("R/report_banner.R")) "R/report_banner.R" else file.path(getwd(), "R/report_banner.R")
+    if (!file.exists(banner_path)) stop("NFLmarket.R: R/report_banner.R not found (run from repo root)")
+    source(banner_path)
   })
   source("NFLbrier_logloss.R")
   # Source props policy helpers if available
@@ -2993,13 +2996,7 @@ export_moneyline_comparison_html <- function(comparison_tbl,
     "<p class=\"report-subtitle\">Probabilistic model comparison with professional risk management</p>",
 
     "<div class=\"intro-section warning-box\">",
-    "<h3>Risk Management Applied</h3>",
-    "<p>This report uses conservative settings appropriate for efficient markets:</p>",
-    "<ul>",
-    "<li><strong>60% Shrinkage</strong> — Model probability pulled 60% toward market consensus (e.g., Model: 65% → Shrunk: 59% if market is 55%)</li>",
-    "<li><strong>1/8 Kelly</strong> — Fractional staking (accounts for estimation error)</li>",
-    "<li><strong>2% Max Stake</strong> — Position size cap per game</li>",
-    "</ul>",
+    render_model_status_banner(SHRINKAGE, KELLY_FRACTION, MAX_STAKE, STAKING_MODE),
     "<p class=\"edge-warning\">Edge Guide: 0-5% = realistic | 5-10% = optimistic | 10%+ = likely model error</p>",
     "</div>",
 
@@ -3558,7 +3555,7 @@ export_moneyline_comparison_html <- function(comparison_tbl,
     gt_tbl <- gt::tab_header(
       gt_tbl,
       title = title,
-      subtitle = "⚠️ PROFESSIONAL CALIBRATION • 60% Shrinkage • 1/8 Kelly • Edge Skepticism • Market-Adjusted Probabilities"
+      subtitle = sprintf("Unvalidated model • %.0f%% market weight • %s stakes", SHRINKAGE * 100, STAKING_MODE)
     )
 
     # Add column spanners for better organization
@@ -3863,65 +3860,7 @@ export_moneyline_comparison_html <- function(comparison_tbl,
         "@media (max-width: 768px) { body {padding-top: 90px;} .gt_table {font-size: 0.88rem;} .gt_table thead tr.gt_col_spanners th {font-size: 0.65rem;} .gt_table thead tr.gt_col_headings th {font-size: 0.7rem;} .report-intro {padding: 1.5rem; margin: 0 0.5rem 2rem;} #table-search {font-size: 0.9rem; padding: 0.85rem 1.25rem;} .filter-btn {font-size: 0.7rem; padding: 0.3rem 0.7rem;} .report-tabs {flex-direction: column;} .tab-btn {width: 100%;} .table-bleed {padding: 0 1rem;} .charts-row {grid-template-columns: 1fr;} }\n"
       )
 
-      # ColorBends Three.js animated gradient background script
-      colorbends_script <- paste0(
-        # Three.js CDN and ColorBends shader implementation
-        "<!-- ColorBends Three.js Animated Gradient Background -->",
-        "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js\"></script>",
-        "<script>",
-        "(function(){",
-        "  if(!window.THREE){console.warn('Three.js not loaded');return;}",
-        "  const container=document.getElementById('colorbends-canvas');",
-        "  if(!container)return;",
-        "  const scene=new THREE.Scene();",
-        "  const camera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);",
-        "  const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});",
-        "  renderer.setSize(window.innerWidth,window.innerHeight);",
-        "  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));",
-        "  container.appendChild(renderer.domElement);",
-        "  const colors=['#D97757','#E89A7A','#8B5A3C'];", # Claude coral palette
-        "  const uniforms={",
-        "    time:{value:0},",
-        "    resolution:{value:new THREE.Vector2(window.innerWidth,window.innerHeight)},",
-        "    color1:{value:new THREE.Color(colors[0])},",
-        "    color2:{value:new THREE.Color(colors[1])},",
-        "    color3:{value:new THREE.Color(colors[2])},",
-        "    mouse:{value:new THREE.Vector2(0.5,0.5)}",
-        "  };",
-        "  const vertexShader=`varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position,1.0);}`;",
-        "  const fragmentShader=`",
-        "    uniform float time;uniform vec2 resolution;uniform vec3 color1;uniform vec3 color2;uniform vec3 color3;uniform vec2 mouse;varying vec2 vUv;",
-        "    float noise(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}",
-        "    float smoothNoise(vec2 p){vec2 i=floor(p);vec2 f=fract(p);f=f*f*(3.0-2.0*f);float a=noise(i);float b=noise(i+vec2(1.0,0.0));float c=noise(i+vec2(0.0,1.0));float d=noise(i+vec2(1.0,1.0));return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);}",
-        "    float fbm(vec2 p){float v=0.0;float a=0.5;for(int i=0;i<4;i++){v+=a*smoothNoise(p);p*=2.0;a*=0.5;}return v;}",
-        "    void main(){",
-        "      vec2 uv=vUv;vec2 q=uv;",
-        "      q.x+=0.1*sin(time*0.3+uv.y*3.0);q.y+=0.1*cos(time*0.2+uv.x*4.0);",
-        "      float n1=fbm(q*2.0+time*0.1);float n2=fbm(q*3.0-time*0.15);float n3=fbm(q*1.5+time*0.08);",
-        "      vec3 c1=mix(color1,color2,n1);vec3 c2=mix(c1,color3,n2*0.6);",
-        "      float dist=length(uv-mouse)*1.5;float glow=exp(-dist*3.0)*0.15;",
-        "      vec3 finalColor=c2*(0.3+n3*0.2)+vec3(glow)*color1;",
-        "      finalColor*=0.4;", # Reduce intensity for subtlety
-        "      gl_FragColor=vec4(finalColor,0.6);",
-        "    }`;",
-        "  const geometry=new THREE.PlaneGeometry(2,2);",
-        "  const material=new THREE.ShaderMaterial({uniforms:uniforms,vertexShader:vertexShader,fragmentShader:fragmentShader,transparent:true});",
-        "  const mesh=new THREE.Mesh(geometry,material);",
-        "  scene.add(mesh);",
-        "  let mouseX=0.5,mouseY=0.5;",
-        "  document.addEventListener('mousemove',function(e){mouseX=e.clientX/window.innerWidth;mouseY=1.0-e.clientY/window.innerHeight;});",
-        "  window.addEventListener('resize',function(){renderer.setSize(window.innerWidth,window.innerHeight);uniforms.resolution.value.set(window.innerWidth,window.innerHeight);});",
-        "  function animate(){",
-        "    requestAnimationFrame(animate);",
-        "    uniforms.time.value+=0.01;",
-        "    uniforms.mouse.value.x+=(mouseX-uniforms.mouse.value.x)*0.05;",
-        "    uniforms.mouse.value.y+=(mouseY-uniforms.mouse.value.y)*0.05;",
-        "    renderer.render(scene,camera);",
-        "  }",
-        "  animate();",
-        "})();",
-        "</script>"
-      )
+      colorbends_script <- ""  # decorative three.js background removed (audit U5/SEC3)
 
       search_box <- htmltools::tags$div(
         class = "search-container",
@@ -4544,36 +4483,7 @@ export_moneyline_comparison_html <- function(comparison_tbl,
       "@media (max-width: 768px) { table {font-size: 0.88rem;} thead th {font-size: 0.7rem;} .report-intro {padding: 1.5rem; margin: 0 0.5rem 2rem;} }\n"
     )
 
-    # ColorBends Three.js script for fallback HTML
-    colorbends_script_fallback <- paste0(
-      "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js\"></script>",
-      "<script>",
-      "(function(){",
-      "  if(!window.THREE){console.warn('Three.js not loaded');return;}",
-      "  var container=document.getElementById('colorbends-canvas');",
-      "  if(!container)return;",
-      "  var scene=new THREE.Scene();",
-      "  var camera=new THREE.OrthographicCamera(-1,1,1,-1,0,1);",
-      "  var renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});",
-      "  renderer.setSize(window.innerWidth,window.innerHeight);",
-      "  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));",
-      "  container.appendChild(renderer.domElement);",
-      "  var colors=['#D97757','#E89A7A','#8B5A3C'];",
-      "  var uniforms={time:{value:0},resolution:{value:new THREE.Vector2(window.innerWidth,window.innerHeight)},color1:{value:new THREE.Color(colors[0])},color2:{value:new THREE.Color(colors[1])},color3:{value:new THREE.Color(colors[2])},mouse:{value:new THREE.Vector2(0.5,0.5)}};",
-      "  var vertexShader='varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position,1.0);}';",
-      "  var fragmentShader='uniform float time;uniform vec2 resolution;uniform vec3 color1;uniform vec3 color2;uniform vec3 color3;uniform vec2 mouse;varying vec2 vUv;float noise(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}float smoothNoise(vec2 p){vec2 i=floor(p);vec2 f=fract(p);f=f*f*(3.0-2.0*f);float a=noise(i);float b=noise(i+vec2(1.0,0.0));float c=noise(i+vec2(0.0,1.0));float d=noise(i+vec2(1.0,1.0));return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);}float fbm(vec2 p){float v=0.0;float a=0.5;for(int i=0;i<4;i++){v+=a*smoothNoise(p);p*=2.0;a*=0.5;}return v;}void main(){vec2 uv=vUv;vec2 q=uv;q.x+=0.1*sin(time*0.3+uv.y*3.0);q.y+=0.1*cos(time*0.2+uv.x*4.0);float n1=fbm(q*2.0+time*0.1);float n2=fbm(q*3.0-time*0.15);float n3=fbm(q*1.5+time*0.08);vec3 c1=mix(color1,color2,n1);vec3 c2=mix(c1,color3,n2*0.6);float dist=length(uv-mouse)*1.5;float glow=exp(-dist*3.0)*0.15;vec3 finalColor=c2*(0.3+n3*0.2)+vec3(glow)*color1;finalColor*=0.4;gl_FragColor=vec4(finalColor,0.6);}';",
-      "  var geometry=new THREE.PlaneGeometry(2,2);",
-      "  var material=new THREE.ShaderMaterial({uniforms:uniforms,vertexShader:vertexShader,fragmentShader:fragmentShader,transparent:true});",
-      "  var mesh=new THREE.Mesh(geometry,material);",
-      "  scene.add(mesh);",
-      "  var mouseX=0.5,mouseY=0.5;",
-      "  document.addEventListener('mousemove',function(e){mouseX=e.clientX/window.innerWidth;mouseY=1.0-e.clientY/window.innerHeight;});",
-      "  window.addEventListener('resize',function(){renderer.setSize(window.innerWidth,window.innerHeight);uniforms.resolution.value.set(window.innerWidth,window.innerHeight);});",
-      "  function animate(){requestAnimationFrame(animate);uniforms.time.value+=0.01;uniforms.mouse.value.x+=(mouseX-uniforms.mouse.value.x)*0.05;uniforms.mouse.value.y+=(mouseY-uniforms.mouse.value.y)*0.05;renderer.render(scene,camera);}",
-      "  animate();",
-      "})();",
-      "</script>"
-    )
+    colorbends_script_fallback <- ""  # decorative three.js background removed (audit U5/SEC3)
 
     # Format columns that exist in display_tbl (fallback for when gt unavailable)
     formatted_tbl <- display_tbl
@@ -4776,7 +4686,7 @@ export_moneyline_comparison_html <- function(comparison_tbl,
               cell_classes <- c(cell_classes, "text-left")
             }
             cell_value <- ifelse(is.na(value), "", value)
-            display_value <- cell_value
+            display_value <- html_escape_cell(cell_value)
             if (identical(col_name, "Winner") && nzchar(cell_value) && cell_value != "TBD") {
               cell_classes <- c(cell_classes, "winner-cell")
             }

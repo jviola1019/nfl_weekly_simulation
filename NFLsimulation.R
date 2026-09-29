@@ -5672,7 +5672,7 @@ if (exists("CALIBRATION_METHOD") && tolower(CALIBRATION_METHOD) == "spline") {
     message("Using SPLINE calibration (-6.9% Brier improvement)")
 
     if (exists("update_calibration_quality", mode = "function")) {
-      update_calibration_quality(method = "spline", leakage_free = TRUE)
+      update_calibration_quality(method = "spline", leakage_free = FALSE)
     }
   }
 } else if (exists("CALIBRATION_METHOD") && tolower(CALIBRATION_METHOD) == "ensemble") {
@@ -5730,7 +5730,7 @@ if (.calibration_handled) {
 
   # Update data quality tracking
   if (exists("update_calibration_quality", mode = "function")) {
-    update_calibration_quality(method = "ensemble", leakage_free = TRUE)
+    update_calibration_quality(method = "ensemble", leakage_free = FALSE)
   }
 
 } else if (!nrow(calib_sim_df)) {
@@ -5740,7 +5740,7 @@ if (.calibration_handled) {
 
   # Update data quality tracking for missing calibration
   if (exists("update_calibration_quality", mode = "function")) {
-    update_calibration_quality(method = "none", leakage_free = TRUE)
+    update_calibration_quality(method = "none", leakage_free = FALSE)
   }
 } else {
   # light binning to avoid heavy duplicates, then isotonic on simulator probs
@@ -5904,7 +5904,7 @@ if (.calibration_handled) {
   if (exists("update_calibration_quality", mode = "function")) {
     update_calibration_quality(
       method = "isotonic_nested_cv",
-      leakage_free = TRUE
+      leakage_free = FALSE
     )
   }
 }

@@ -93,10 +93,7 @@ Output file: `NFLvsmarket_week15_2024.html` (or similar)
 
 ## Model Performance
 
-**Validation Results** (2022-2024, 2,282 games):
-- **Brier Score**: 0.211 (Vegas: 0.208) - Professional-grade accuracy
-- **Accuracy**: 67.1% - Correctly predicts 2 out of 3 games
-- **Competitive with** FiveThirtyEight (0.215) and ESPN FPI (0.218)
+> **Status (2026-09-29): unvalidated research model.** Earlier accuracy and calibration figures were withdrawn after an audit found no reproducible evidence for them. See `docs/EVIDENCE_LEDGER.md` and `reports/2026-09-28/AUDIT.md`. Validated numbers will appear here only after the pre-registered backtest passes its gates.
 
 See [DOCUMENTATION.md](DOCUMENTATION.md) for complete validation methodology.
 

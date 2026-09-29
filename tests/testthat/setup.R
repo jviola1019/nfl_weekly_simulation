@@ -75,6 +75,7 @@ message("Loading R modules from: ", PROJECT_ROOT)
 # Core utilities first (no dependencies)
 source_module("logging")
 source_module("utils")
+source_module("report_banner")
 source_module("capture_raw")
 
 # Modules that depend on utils
