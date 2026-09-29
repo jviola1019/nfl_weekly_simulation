@@ -219,8 +219,38 @@ test_that("simulate_correlated_prop produces valid TD distribution", {
 # RUN_GAME_PROPS INTEGRATION TESTS
 # =============================================================================
 
+# The engine tests below load real 2024 player data. load_game_players()
+# sources sports/nfl/props/data_sources.R relative to the working directory
+# (R/correlated_props.R:163), so they run from the repo root. Player stats come
+# from nflverse on GitHub. Live prop odds are switched off so lines are
+# model-derived and the tests don't depend on a sportsbook site.
+local_props_engine <- function(env = parent.frame()) {
+  skip_live("github.com")
+  old <- get0("USE_REAL_PROP_ODDS", envir = globalenv(), inherits = FALSE)
+  assign("USE_REAL_PROP_ODDS", FALSE, envir = globalenv())
+  withr::defer(assign("USE_REAL_PROP_ODDS", old, envir = globalenv()), envir = env)
+  withr::local_dir(.test_project_root, .local_envir = env)
+}
+
+PROP_ROW_COLS <- c("player", "position", "team", "matchup", "prop_type", "line",
+                   "projection", "p_over", "p_under", "line_source", "recommendation",
+                   "correlation_with_game")
+
+expect_passing_props_for_game <- function(result) {
+  expect_s3_class(result, "data.frame")
+  expect_gt(nrow(result), 0)
+  expect_true(all(PROP_ROW_COLS %in% names(result)),
+              info = paste("missing:", paste(setdiff(PROP_ROW_COLS, names(result)), collapse = ", ")))
+  expect_setequal(unique(result$team), c("KC", "SF"))
+  expect_true(all(result$prop_type == "passing_yards"))
+  expect_true(all(result$matchup == "SF @ KC"))
+  expect_true(all(result$p_over >= 0 & result$p_over <= 1))
+  expect_true(all(result$projection > 0))
+}
+
 test_that("run_game_props returns valid tibble structure", {
   skip_if_not(exists("run_game_props"), "run_game_props not loaded")
+  local_props_engine()
 
   # Create mock game simulation
   n <- 1000
@@ -230,36 +260,34 @@ test_that("run_game_props returns valid tibble structure", {
     total = rpois(n, 45)
   )
 
-  # Run props (may return empty if no player data available)
-  result <- tryCatch({
-    run_game_props(
-      game_sim = game_sim,
-      home_team = "KC",
-      away_team = "SF",
-      season = 2024,
-      prop_types = c("passing")
-    )
-  }, error = function(e) tibble::tibble())
+  result <- run_game_props(
+    game_sim = game_sim,
+    home_team = "KC",
+    away_team = "SF",
+    season = 2024,
+    prop_types = c("passing")
+  )
+  if (nrow(result) == 0) skip_live("github.com")  # host went away mid-load
 
-  # Should return a tibble (possibly empty)
-  expect_true(tibble::is_tibble(result) || is.data.frame(result))
+  expect_passing_props_for_game(result)
+  expect_true(all(result$correlation_with_game == PROP_GAME_CORR_PASSING))
 })
 
 test_that("run_game_props handles NULL game simulation", {
   skip_if_not(exists("run_game_props"), "run_game_props not loaded")
+  local_props_engine()
 
   # Should work without game simulation (independent props)
-  result <- tryCatch({
-    run_game_props(
-      game_sim = NULL,
-      home_team = "KC",
-      away_team = "SF",
-      season = 2024,
-      prop_types = c("passing")
-    )
-  }, error = function(e) tibble::tibble())
+  result <- run_game_props(
+    game_sim = NULL,
+    home_team = "KC",
+    away_team = "SF",
+    season = 2024,
+    prop_types = c("passing")
+  )
+  if (nrow(result) == 0) skip_live("github.com")
 
-  expect_true(tibble::is_tibble(result) || is.data.frame(result))
+  expect_passing_props_for_game(result)
 })
 
 # =============================================================================
@@ -280,6 +308,7 @@ test_that("run_correlated_props handles empty inputs gracefully", {
 
 test_that("run_correlated_props processes valid simulation results", {
   skip_if_not(exists("run_correlated_props"), "run_correlated_props not loaded")
+  local_props_engine()
 
   # Create mock simulation results
   n <- 100
@@ -298,19 +327,30 @@ test_that("run_correlated_props processes valid simulation results", {
     )
   )
 
-  result <- tryCatch({
-    run_correlated_props(
-      game_sim_results = mock_results,
-      schedule_data = NULL,
-      prop_types = c("passing"),
-      season = 2024
-    )
-  }, error = function(e) {
-    # Expected to potentially fail without real player data
-    tibble::tibble()
-  })
+  result <- run_correlated_props(
+    game_sim_results = mock_results,
+    schedule_data = NULL,
+    prop_types = c("passing"),
+    season = 2024
+  )
+  if (nrow(result) == 0) skip_live("github.com")
 
-  expect_true(tibble::is_tibble(result) || is.data.frame(result))
+  expect_passing_props_for_game(result)
+  expect_true(all(result$game_id == "2024_22_SF_KC"))
+  expect_true(all(c("Final Stake (%)", "Pass Reason", "edge_quality") %in% names(result)))
+})
+
+test_that("load_defense_rankings returns per-team multipliers", {
+  skip("KNOWN-DEFECT P13: load_defense_rankings() always errors (dplyr::if_else with a scalar condition and 32-row branches), so defense adjustments are always neutral")
+  skip_if_not(exists("load_defense_rankings"), "load_defense_rankings not loaded")
+  skip_live("github.com")
+
+  ranks <- load_defense_rankings(2024)
+  expect_s3_class(ranks, "data.frame")
+  expect_equal(nrow(ranks), 32)
+  expect_true(all(c("team", "pass_def_multiplier", "rush_def_multiplier",
+                    "recv_def_multiplier") %in% names(ranks)))
+  expect_true(all(ranks$pass_def_multiplier >= 0.80 & ranks$pass_def_multiplier <= 1.20))
 })
 
 # =============================================================================

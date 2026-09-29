@@ -40,9 +40,16 @@ test_that("skip_live() and with_live() skip only for an unreachable host", {
   expect_error(with_live("github.com", stop("real failure")), "real failure")
 })
 
+test_that("no test passes vacuously or swallows errors into an empty result", {
+  files <- test_sources()
+  expect_equal(find_hits(files, "expect_true(TRUE)"), character())
+  expect_equal(find_hits(files, "error = function(e) tibble::tibble()"), character())
+})
+
 test_that("the hygiene scan sees the suite and would catch a planted violation", {
   expect_gt(length(test_sources()), 20)
   planted <- tempfile(fileext = ".R")
-  writeLines(paste0("skip(", "\"LIVE: example.com unreachable\")"), planted)
+  writeLines(c(paste0("skip(", "\"LIVE: example.com unreachable\")"), paste0("expect_true(", "TRUE)")), planted)
   expect_length(find_hits(planted, "skip\\s*\\(.*LIVE:", fixed = FALSE), 1)
+  expect_length(find_hits(planted, "expect_true(TRUE)"), 1)
 })

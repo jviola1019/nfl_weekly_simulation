@@ -50,20 +50,15 @@ test_that("logging functions are callable", {
 test_that("log levels are properly ordered", {
   skip_if_logging_unavailable()
 
-  # If log levels are defined, they should follow standard ordering
-  if (exists("LOG_LEVELS")) {
-    levels <- LOG_LEVELS
+  # R/logging.R defines LOG_LEVELS; it must follow standard ordering
+  expect_true(exists("LOG_LEVELS"))
+  levels <- LOG_LEVELS
+  expect_true(all(c("DEBUG", "INFO", "WARN", "ERROR") %in% names(levels)))
 
-    # Standard ordering: DEBUG < INFO < WARN < ERROR
-    if (all(c("DEBUG", "INFO", "WARN", "ERROR") %in% names(levels))) {
-      expect_true(levels[["DEBUG"]] < levels[["INFO"]])
-      expect_true(levels[["INFO"]] < levels[["WARN"]])
-      expect_true(levels[["WARN"]] < levels[["ERROR"]])
-    }
-  } else {
-    # Just verify logging works
-    expect_true(TRUE)
-  }
+  # Standard ordering: DEBUG < INFO < WARN < ERROR
+  expect_true(levels[["DEBUG"]] < levels[["INFO"]])
+  expect_true(levels[["INFO"]] < levels[["WARN"]])
+  expect_true(levels[["WARN"]] < levels[["ERROR"]])
 })
 
 # =============================================================================
