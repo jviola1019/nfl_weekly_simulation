@@ -3434,15 +3434,17 @@ calc_injury_impacts <- function(df, group_vars = c("team"), season = NULL) {
       pen = base_pen * pos_wt
     ) %>%
     # Snap weighting: DISABLED (no validated Brier/log-loss improvement)
-    # Position-level weights (skill, trench, secondary, front7) remain active and
-    # are validated (p < 0.001). See config.R USE_SNAP_WEIGHTED_INJURIES for details.
+    # Position-level weights (skill, trench, secondary, front7) remain active; they are
+    # unvalidated (docs/EVIDENCE_LEDGER.md C-POSW). See config.R USE_SNAP_WEIGHTED_INJURIES.
     # To re-enable: set USE_SNAP_WEIGHTED_INJURIES <- TRUE in config.R
     {
       dplyr::mutate(., snap_weight = 1.0)
     } %>%
     dplyr::group_by(dplyr::across(dplyr::all_of(group_vars))) %>%
     dplyr::summarise(
-      inj_off_pts_raw = sum(dplyr::if_else(position == "QB", 0, pen), na.rm = TRUE),
+      # offensive non-QB positions only; defensive injuries raise the opponent's points
+      # via inj_def_pts (audit M16)
+      inj_off_pts_raw = sum(dplyr::if_else(pos_group %in% c("trenches", "skill"), pen, 0), na.rm = TRUE),
       inj_def_pts_raw = sum(dplyr::if_else(position %in% c("CB","S","SS","FS","DB","LB","ILB","OLB","EDGE","DL","DT","DE","NT","IDL"),
                                            -pen, 0), na.rm = TRUE),
       n_listed = dplyr::n(),
@@ -3454,8 +3456,9 @@ calc_injury_impacts <- function(df, group_vars = c("team"), season = NULL) {
     ) %>%
     dplyr::mutate(
       w = n_listed / (n_listed + 8),
-      inj_off_pts = pmax(pmin(inj_off_pts_raw * w,  -1.5), -4.0),
-      inj_def_pts = pmax(pmin(inj_def_pts_raw * w,  +1.5),  0.0),
+      # offense in [floor, 0], defense in [0, cap] (audit M16: offense was confined to [-4, -1.5])
+      inj_off_pts = pmin(pmax(inj_off_pts_raw * w, if (exists("INJURY_OFF_PTS_FLOOR")) INJURY_OFF_PTS_FLOOR else -4.0), 0.0),
+      inj_def_pts = pmax(pmin(inj_def_pts_raw * w, if (exists("INJURY_DEF_PTS_CAP")) INJURY_DEF_PTS_CAP else 1.5), 0.0),
       skill_avail_pen = pmin(skill_avail_pen, 6),
       trench_avail_pen = pmin(trench_avail_pen, 6),
       secondary_avail_pen = pmin(secondary_avail_pen, 6),

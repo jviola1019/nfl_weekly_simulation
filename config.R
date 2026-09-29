@@ -407,6 +407,13 @@ INJURY_POS_MULT_FRONT7 <- 0.85
 #' @default 0.6
 INJURY_POS_MULT_OTHER <- 0.6
 
+#' @description Bounds on a team's weighted injury adjustments, in points (audit M16).
+#'   Offense (own points lost) is clamped to [INJURY_OFF_PTS_FLOOR, 0]; defense
+#'   (opponent points gained) to [0, INJURY_DEF_PTS_CAP]. Existing values, unvalidated.
+#' @default -4.0 and 1.5
+INJURY_OFF_PTS_FLOOR <- -4.0
+INJURY_DEF_PTS_CAP <- 1.5
+
 # =============================================================================
 # INJURY SCALPING - DETAILED POSITION WEIGHTS
 # =============================================================================
@@ -1071,6 +1078,8 @@ list2env(
     INJURY_POS_MULT_SECONDARY = INJURY_POS_MULT_SECONDARY,
     INJURY_POS_MULT_FRONT7 = INJURY_POS_MULT_FRONT7,
     INJURY_POS_MULT_OTHER = INJURY_POS_MULT_OTHER,
+    INJURY_OFF_PTS_FLOOR = INJURY_OFF_PTS_FLOOR,
+    INJURY_DEF_PTS_CAP = INJURY_DEF_PTS_CAP,
     INJURY_MODE = INJURY_MODE,
     INJURY_MANUAL_FILE = INJURY_MANUAL_FILE,
     ALLOW_INJURY_SCRAPE = ALLOW_INJURY_SCRAPE,
