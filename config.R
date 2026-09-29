@@ -658,14 +658,6 @@ PHASE <- .playoff_context$phase
 #' @note Automatically detected from WEEK_TO_SIM
 PLAYOFF_ROUND <- .playoff_context$round
 
-#' @description Market shrinkage for playoff games (trust market more)
-#' @default 0.70 (vs 0.60 regular season)
-PLAYOFF_SHRINKAGE <- 0.70
-
-#' @description Market shrinkage for Super Bowl (maximum market trust)
-#' @default 0.75
-SUPER_BOWL_SHRINKAGE <- 0.75
-
 #' @description Home field advantage multiplier for playoffs
 #' @default 1.20 (20% boost over regular season HFA)
 PLAYOFF_HFA_MULTIPLIER <- 1.20
@@ -725,42 +717,6 @@ SHRINKAGE <- 0.70
 #' @description NFL final-margin SD used to convert spread_line to win probability
 #' @default 13.86
 SPREAD_MARGIN_SD <- 13.86
-
-#' @description Enable dynamic shrinkage based on game context
-#' @default TRUE
-#' @note When TRUE, shrinkage varies by week, spread size, and game type
-USE_DYNAMIC_SHRINKAGE <- TRUE
-
-#' @description Base shrinkage when dynamic mode is enabled
-#' @default 0.55
-#' @range 0.40 to 0.70
-SHRINKAGE_BASE <- 0.55
-
-#' @description Additional shrinkage for early season (weeks 1-4)
-#' @default 0.10
-#' @range 0.0 to 0.20
-#' @note Early season has less data; trust market more
-SHRINKAGE_EARLY_SEASON_ADJ <- 0.10
-
-#' @description Shrinkage adjustment for high spreads (10+ points)
-#' @default 0.10
-#' @range 0.0 to 0.15
-#' @note Market is more confident on big mismatches
-SHRINKAGE_HIGH_SPREAD_ADJ <- 0.10
-
-#' @description Shrinkage adjustment for close games (< 3 points)
-#' @default -0.05
-#' @range -0.10 to 0.0
-#' @note Model may have edge in toss-up games
-SHRINKAGE_CLOSE_GAME_ADJ <- -0.05
-
-#' @description Spread threshold for "high spread" adjustment
-#' @default 10
-SHRINKAGE_HIGH_SPREAD_THRESHOLD <- 10
-
-#' @description Spread threshold for "close game" adjustment
-#' @default 3
-SHRINKAGE_CLOSE_GAME_THRESHOLD <- 3
 
 #' @title Kelly Criterion Fraction
 #' @description Fraction of Kelly criterion for conservative stake sizing.
@@ -1036,8 +992,6 @@ if (interactive() || getOption("nfl_sim.show_config", default = FALSE)) {
       PLAYOFF_ROUND
     )
     cat(sprintf("  Playoff Round:    %s\n", .round_display))
-    cat(sprintf("  Shrinkage:        %.0f%% (playoff adjustment)\n",
-        if (PLAYOFF_ROUND == "super_bowl") SUPER_BOWL_SHRINKAGE * 100 else PLAYOFF_SHRINKAGE * 100))
   }
   cat(sprintf("  Trials:           %s\n", format(N_TRIALS, big.mark = ",")))
   cat(sprintf("  Seed:             %d\n", SEED))
@@ -1151,8 +1105,6 @@ list2env(
     # Playoff configuration
     PHASE = PHASE,
     PLAYOFF_ROUND = PLAYOFF_ROUND,
-    PLAYOFF_SHRINKAGE = PLAYOFF_SHRINKAGE,
-    SUPER_BOWL_SHRINKAGE = SUPER_BOWL_SHRINKAGE,
     PLAYOFF_HFA_MULTIPLIER = PLAYOFF_HFA_MULTIPLIER,
     PLAYOFF_BYE_BONUS = PLAYOFF_BYE_BONUS,
     PLAYOFF_INJURY_VARIANCE = PLAYOFF_INJURY_VARIANCE,
@@ -1165,13 +1117,6 @@ list2env(
     # Betting/market parameters
     SHRINKAGE = SHRINKAGE,
     SPREAD_MARGIN_SD = SPREAD_MARGIN_SD,
-    USE_DYNAMIC_SHRINKAGE = USE_DYNAMIC_SHRINKAGE,
-    SHRINKAGE_BASE = SHRINKAGE_BASE,
-    SHRINKAGE_EARLY_SEASON_ADJ = SHRINKAGE_EARLY_SEASON_ADJ,
-    SHRINKAGE_HIGH_SPREAD_ADJ = SHRINKAGE_HIGH_SPREAD_ADJ,
-    SHRINKAGE_CLOSE_GAME_ADJ = SHRINKAGE_CLOSE_GAME_ADJ,
-    SHRINKAGE_HIGH_SPREAD_THRESHOLD = SHRINKAGE_HIGH_SPREAD_THRESHOLD,
-    SHRINKAGE_CLOSE_GAME_THRESHOLD = SHRINKAGE_CLOSE_GAME_THRESHOLD,
     KELLY_FRACTION = KELLY_FRACTION,
     MAX_EDGE = MAX_EDGE,
     VIG = VIG,

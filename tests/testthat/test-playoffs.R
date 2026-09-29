@@ -123,13 +123,6 @@ test_that("PLAYOFF_FEATURES has correct HFA multipliers", {
   expect_equal(PLAYOFF_FEATURES$hfa_multiplier$super_bowl, 1.00)  # Neutral
 })
 
-test_that("get_playoff_shrinkage returns correct values", {
-  expect_equal(get_playoff_shrinkage("wild_card"), 0.65)
-  expect_equal(get_playoff_shrinkage("super_bowl"), 0.75)
-  expect_equal(get_playoff_shrinkage(NA), 0.60)  # Default
-  expect_equal(get_playoff_shrinkage("invalid"), 0.60)  # Default
-})
-
 test_that("get_playoff_hfa_multiplier returns correct values", {
   expect_equal(get_playoff_hfa_multiplier("wild_card"), 1.15)
   expect_equal(get_playoff_hfa_multiplier("super_bowl"), 1.00)

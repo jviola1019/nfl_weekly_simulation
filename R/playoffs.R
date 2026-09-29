@@ -310,16 +310,6 @@ calculate_playoff_adjustments <- function(round, home_team, away_team,
   adjustments
 }
 
-#' Get playoff shrinkage for a round
-#' @param round Playoff round name
-#' @return Shrinkage factor (0-1)
-get_playoff_shrinkage <- function(round) {
-  if (is.na(round) || !round %in% names(PLAYOFF_FEATURES$shrinkage)) {
-    return(0.60)  # Default
-  }
-  PLAYOFF_FEATURES$shrinkage[[round]]
-}
-
 #' Get HFA multiplier for a round
 #' @param round Playoff round name
 #' @return HFA multiplier

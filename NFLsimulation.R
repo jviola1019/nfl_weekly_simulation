@@ -27,14 +27,14 @@
 #
 # VALIDATION:
 #   - Test file: tests/testthat/test-simulation.R
-#   - Brier Score: 0.214 (0.211 w/ spline; 95% CI: 0.205-0.217)
-#   - Methodology: K-fold cross-validation, chronological splits
+#   - Accuracy claims withdrawn 2026-09-28 (docs/EVIDENCE_LEDGER.md); validation is the
+#     pre-registered walk-forward backtest (backtest/, reports/2026-09-29/backtest-games-v1)
 #
 # STATISTICAL METHODOLOGY:
 #   - Score Distribution: Negative binomial (captures overdispersion)
 #   - Score Correlation: Gaussian copula with rho from spread/total
-#   - Calibration: GAM spline with smoothing penalty (-6.9% Brier improvement)
-#   - Shrinkage: 60% market weight, 40% model weight
+#   - Calibration: GAM spline (calibrator invalid, audit M4; unvalidated)
+#   - Shrinkage: one market-weight stage, SHRINKAGE (config.R) toward the no-vig market
 #   - Staking: 1/8 Kelly with edge skepticism caps
 # =============================================================================
 
@@ -5600,13 +5600,13 @@ if (file.exists(.calib_path)) {
 # CALIBRATION: Spline / Ensemble / Isotonic (Nested Cross-Validation)
 # ═══════════════════════════════════════════════════════════════════════════════════
 
-# Check for spline or ensemble calibration first (spline: -6.9% Brier, best performer)
+# Check for spline or ensemble calibration first (unvalidated; see docs/EVIDENCE_LEDGER.md)
 .use_ensemble_calibration <- FALSE
 .ensemble_model <- NULL
 .calibration_handled <- FALSE
 
 if (exists("CALIBRATION_METHOD") && tolower(CALIBRATION_METHOD) == "spline") {
-  # Spline calibration: use GAM spline (best performer: -6.9% Brier)
+  # Spline calibration: use GAM spline (unvalidated; calibrator fit on leaked data, audit M4)
   .use_spline <- FALSE
 
   # mgcv is required for predict.gam dispatch on the spline model object
@@ -5647,9 +5647,7 @@ if (exists("CALIBRATION_METHOD") && tolower(CALIBRATION_METHOD) == "spline") {
           .spline_predict <- .ens$models$spline$predict
           .use_spline <- TRUE
           message(sprintf("Loaded SPLINE calibration from ensemble file '%s'", ensemble_file))
-          if (!is.null(.ens$test_brier)) {
-            message(sprintf("  Ensemble test Brier: %.4f (spline component is best)", .ens$test_brier))
-          }
+          message("  Ensemble calibrator loaded (invalid: fit on outcome-leaked data, audit M4)")
         }
       }, error = function(e) {
         message(sprintf("Could not load spline from ensemble: %s - falling back to isotonic", e$message))
@@ -5676,7 +5674,7 @@ if (exists("CALIBRATION_METHOD") && tolower(CALIBRATION_METHOD) == "spline") {
     }
     map_iso_nested <- function(p, fold_id = NULL) map_iso(p)
     .calibration_handled <- TRUE
-    message("Using SPLINE calibration (-6.9% Brier improvement)")
+    message("Using SPLINE calibration (unvalidated, see docs/EVIDENCE_LEDGER.md)")
 
     if (exists("update_calibration_quality", mode = "function")) {
       update_calibration_quality(method = "spline", leakage_free = FALSE)
@@ -5697,9 +5695,7 @@ if (exists("CALIBRATION_METHOD") && tolower(CALIBRATION_METHOD) == "spline") {
         message(sprintf("  Weights: iso=%.2f, platt=%.2f, beta=%.2f, spline=%.2f",
                        .ensemble_model$weights[1], .ensemble_model$weights[2],
                        .ensemble_model$weights[3], .ensemble_model$weights[4]))
-        if (!is.null(.ensemble_model$test_brier)) {
-          message(sprintf("  Test Brier (out-of-sample): %.4f", .ensemble_model$test_brier))
-        }
+        message("  Calibrator test Brier not reported (not out-of-sample, audit M4/M5)")
       } else {
         message("Ensemble file found but has invalid structure - falling back to isotonic")
       }
@@ -5717,7 +5713,7 @@ if (exists("CALIBRATION_METHOD") && tolower(CALIBRATION_METHOD) == "spline") {
 if (.calibration_handled) {
   # Spline (or other method) already set map_iso — skip Block 2
 } else if (.use_ensemble_calibration && !is.null(.ensemble_model)) {
-  message("Using ENSEMBLE calibration (2.1% Brier improvement)")
+  message("Using ENSEMBLE calibration (unvalidated, see docs/EVIDENCE_LEDGER.md)")
 
   # Create ensemble-based calibration function
   map_iso <- function(p) {
@@ -8072,96 +8068,9 @@ if (!is.null(fit_deploy)) {
 }
 
 
-# =============================================================================
-# 3) Apply shrinkage BEFORE calibration (CRITICAL FIX)
-# =============================================================================
-# Previous bug: Shrinkage was applied AFTER isotonic calibration, breaking calibration.
-# Correct order: (1) blend model+market, (2) apply situational shrinkage, (3) calibrate ONCE
+# 4) Calibration of the blend (no pre-calibration shrinkage; audit M2). The single
+#    market-weight stage (SHRINKAGE, applied to the no-vig market) is in NFLmarket.R.
 
-# Apply playoff-specific shrinkage (more market trust in playoffs) BEFORE calibration
-if (exists("get_playoff_shrinkage", mode = "function") && is_playoff_week_sim(WEEK_TO_SIM)) {
-  round_name <- derive_playoff_round_from_week(WEEK_TO_SIM)
-  playoff_shrinkage <- get_playoff_shrinkage(round_name)
-  default_shrinkage <- 0.60  # Regular season default
-
-  # Only adjust if playoff shrinkage is higher (more market trust)
-  if (!is.na(playoff_shrinkage) && playoff_shrinkage > default_shrinkage) {
-    extra_market_weight <- playoff_shrinkage - default_shrinkage
-    mask <- is.finite(final$home_p_2w_mkt)
-    if (any(mask)) {
-      # Blend more toward market for playoffs (applied to p_raw BEFORE calibration)
-      p_raw[mask] <- (1 - extra_market_weight) * p_raw[mask] +
-                     extra_market_weight * final$home_p_2w_mkt[mask]
-      message(sprintf("🏈 Playoff shrinkage: +%.0f%% extra market weight applied (%.0f%% total)",
-                      extra_market_weight * 100, playoff_shrinkage * 100))
-    }
-  }
-} else {
-  # Apply dynamic shrinkage for regular season games BEFORE calibration
-  .use_dynamic_shrinkage <- if (exists("USE_DYNAMIC_SHRINKAGE")) USE_DYNAMIC_SHRINKAGE else TRUE
-
-  if (isTRUE(.use_dynamic_shrinkage)) {
-    # Get config parameters with fallbacks
-    .shrinkage_base <- if (exists("SHRINKAGE_BASE")) SHRINKAGE_BASE else 0.55
-    .early_season_adj <- if (exists("SHRINKAGE_EARLY_SEASON_ADJ")) SHRINKAGE_EARLY_SEASON_ADJ else 0.10
-    .high_spread_adj <- if (exists("SHRINKAGE_HIGH_SPREAD_ADJ")) SHRINKAGE_HIGH_SPREAD_ADJ else 0.10
-    .close_game_adj <- if (exists("SHRINKAGE_CLOSE_GAME_ADJ")) SHRINKAGE_CLOSE_GAME_ADJ else -0.05
-    .high_spread_threshold <- if (exists("SHRINKAGE_HIGH_SPREAD_THRESHOLD")) SHRINKAGE_HIGH_SPREAD_THRESHOLD else 10
-    .close_game_threshold <- if (exists("SHRINKAGE_CLOSE_GAME_THRESHOLD")) SHRINKAGE_CLOSE_GAME_THRESHOLD else 3
-    .default_shrinkage <- if (exists("SHRINKAGE")) SHRINKAGE else 0.60
-
-    # Calculate per-game dynamic shrinkage
-    mask <- is.finite(final$home_p_2w_mkt)
-    if (any(mask)) {
-      # Get spread estimate (market-implied)
-      market_spread <- abs(final$home_p_2w_mkt - 0.5) * 28  # Rough conversion to points
-
-      # Calculate dynamic shrinkage for each game
-      dynamic_shrinkage <- rep(.shrinkage_base, nrow(final))
-
-      # Early season adjustment (weeks 1-4)
-      if (WEEK_TO_SIM <= 4) {
-        dynamic_shrinkage <- dynamic_shrinkage + .early_season_adj
-        message(sprintf("📊 Early season (week %d): +%.0f%% market weight adjustment",
-                        WEEK_TO_SIM, .early_season_adj * 100))
-      }
-
-      # High spread adjustment (10+ points)
-      high_spread_mask <- market_spread >= .high_spread_threshold
-      dynamic_shrinkage[high_spread_mask] <- dynamic_shrinkage[high_spread_mask] + .high_spread_adj
-
-      # Close game adjustment (< 3 points)
-      close_game_mask <- market_spread < .close_game_threshold
-      dynamic_shrinkage[close_game_mask] <- dynamic_shrinkage[close_game_mask] + .close_game_adj
-
-      # Clamp to valid range
-      dynamic_shrinkage <- pmin(pmax(dynamic_shrinkage, 0.30), 0.85)
-
-      # Apply game-specific shrinkage to p_raw BEFORE calibration
-      avg_shrinkage <- mean(dynamic_shrinkage[mask], na.rm = TRUE)
-      extra_market_weight <- dynamic_shrinkage - .default_shrinkage
-
-      for (i in which(mask)) {
-        if (extra_market_weight[i] != 0) {
-          p_raw[i] <- (1 - extra_market_weight[i]) * p_raw[i] +
-                      extra_market_weight[i] * final$home_p_2w_mkt[i]
-        }
-      }
-
-      # Log summary
-      n_high_spread <- sum(high_spread_mask[mask], na.rm = TRUE)
-      n_close <- sum(close_game_mask[mask], na.rm = TRUE)
-      if (n_high_spread > 0 || n_close > 0) {
-        message(sprintf("📊 Dynamic shrinkage: %d high-spread games (+%.0f%%), %d close games (%.0f%%), avg=%.0f%%",
-                        n_high_spread, .high_spread_adj * 100,
-                        n_close, .close_game_adj * 100,
-                        avg_shrinkage * 100))
-      }
-    }
-  }
-}
-
-# 4) NOW apply isotonic calibration AFTER all shrinkage adjustments
 final$home_p_2w_blend_raw <- if (!is.null(map_blend)) map_blend(p_raw) else p_raw
 
 final <- final %>%
