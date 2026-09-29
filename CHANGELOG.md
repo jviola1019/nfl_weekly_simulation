@@ -4,6 +4,12 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Session 2 hand-off (docs)
+
+- `HANDOFF.md` rewritten for the end of session 2: PR table (#194–#198), merge order and expected doc-only conflicts, gates at each head, owner decisions (M18/M19, A5, A7, Vercel/Neon, pending deletions, FF access, LICENSE), and defect log entries 9–17.
+- `reports/2026-09-29/ARCHITECTURE-SCAN.md`: architecture and ERD scan of main plus every open PR merged together (system diagram, module map, dependency edges, ERD generated from the Drizzle schema, computed drift from the spec ERD, findings).
+- `docs/handoff/2026-09-29-vscode-prompt.md`: prompt for Claude Code in VS Code to verify every phase with a full environment and finish the work this cloud session could not.
+
 ### Phase 0 — foundation (PR #192)
 
 - **Hygiene (Task 1):** retired dead code and scrapers, untracked `run_logs/` and local tool settings, hardened `.gitignore` (`.Renviron`, `.env*`, `.claude/settings*.json`, `.playwright-mcp/`, `bundles/`).
