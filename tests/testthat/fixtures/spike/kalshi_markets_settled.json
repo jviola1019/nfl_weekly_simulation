@@ -1,0 +1,68 @@
+{
+  "cursor": "",
+  "markets": [
+    {
+      "ticker": "KXNFLANYTD-26FEB08SEANE-SEAJSMITHNJIGBA11",
+      "event_ticker": "KXNFLANYTD-26FEB08SEANE",
+      "title": "Jaxon Smith-Njigba: Anytime Touchdown",
+      "yes_sub_title": "Jaxon Smith-Njigba",
+      "no_sub_title": "Jaxon Smith-Njigba",
+      "status": "finalized",
+      "result": "no",
+      "open_time": "2026-01-26T03:30:00Z",
+      "close_time": "2026-02-09T03:47:55Z",
+      "expected_expiration_time": "2026-02-09T02:30:00Z",
+      "settlement_ts": "2026-02-09T03:53:01.557728Z",
+      "volume_fp": "1793002.00",
+      "last_price_dollars": "0.0100",
+      "previous_price_dollars": "0.0100",
+      "custom_strike": {
+        "football_player": "547cb36f-de35-4617-9be8-b7a6b6b9fa94",
+        "football_team": "8e52cc75-cba8-4373-9b62-b535b53b3be8"
+      },
+      "market_type": "binary"
+    },
+    {
+      "ticker": "KXNFLANYTD-26FEB08SEANE-NEMHOLLINS13",
+      "event_ticker": "KXNFLANYTD-26FEB08SEANE",
+      "title": "Mack Hollins: Anytime Touchdown",
+      "yes_sub_title": "Mack Hollins",
+      "no_sub_title": "Mack Hollins",
+      "status": "finalized",
+      "result": "yes",
+      "open_time": "2026-02-05T18:17:00Z",
+      "close_time": "2026-02-09T02:37:51Z",
+      "expected_expiration_time": "2026-02-09T02:30:00Z",
+      "settlement_ts": "2026-02-09T02:55:32.450637Z",
+      "volume_fp": "182540.00",
+      "last_price_dollars": "0.9900",
+      "previous_price_dollars": "0.9900",
+      "custom_strike": {
+        "football_player": "42a1f21f-07d2-41e4-b204-c5d43dcd3946",
+        "football_team": "d1d64188-5cd5-4feb-97ff-8542c9dbeb43"
+      },
+      "market_type": "binary"
+    },
+    {
+      "ticker": "KXNFLANYTD-26FEB08SEANE-SEAGHOLANI36",
+      "event_ticker": "KXNFLANYTD-26FEB08SEANE",
+      "title": "George Holani: Anytime Touchdown",
+      "yes_sub_title": "George Holani",
+      "no_sub_title": "George Holani",
+      "status": "finalized",
+      "result": "no",
+      "open_time": "2026-02-05T18:17:00Z",
+      "close_time": "2026-02-09T03:47:16Z",
+      "expected_expiration_time": "2026-02-09T02:30:00Z",
+      "settlement_ts": "2026-02-09T03:52:22.060616Z",
+      "volume_fp": "107875.00",
+      "last_price_dollars": "0.0100",
+      "previous_price_dollars": "0.0100",
+      "custom_strike": {
+        "football_player": "f710b516-32b8-4cc7-ae91-8427e5d5c209",
+        "football_team": "8e52cc75-cba8-4373-9b62-b535b53b3be8"
+      },
+      "market_type": "binary"
+    }
+  ]
+}

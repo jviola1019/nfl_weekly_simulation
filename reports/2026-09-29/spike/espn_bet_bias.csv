@@ -1,0 +1,5 @@
+"market","scope","rows","excluded_athlete_unmatched","excluded_no_stat_row","excluded_no_open_target","priced_n","priced_hits","unpriced_n","unpriced_hits","priced_hit_rate","unpriced_hit_rate","diff","p_value","verdict","mean_open_target_priced","mean_open_target_unpriced","share_unpriced_integer_target","share_unpriced_in_priced_player_game"
+"anytime_td","2024 + 2025 wk1-13",26666,68,3297,570,516,84,22215,2167,0.1628,0.0975,0.0652,9.339e-07,"LINE-MOVEMENT ONLY",0.51,1.53,0.4786,0.0334
+"receiving_yards","2024 + 2025 wk1-13",43841,123,1007,155,8356,4216,34200,12570,0.5045,0.3675,0.137,8.931e-117,"LINE-MOVEMENT ONLY",35.26,48.05,0.4594,0.8643
+"receptions","2024 + 2025 wk1-13",34581,113,691,84,8988,4254,24705,9129,0.4733,0.3695,0.1038,1.97e-66,"LINE-MOVEMENT ONLY",3.13,4.1,0.5339,0.9297
+"rushing_yards","2024 + 2025 wk1-13",22205,0,70,62,4006,1894,18067,6813,0.4728,0.3771,0.0957,3.563e-29,"LINE-MOVEMENT ONLY",39.67,49.08,0.3809,0.8894

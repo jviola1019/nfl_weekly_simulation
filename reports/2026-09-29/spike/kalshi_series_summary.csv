@@ -1,0 +1,12 @@
+"series","events","first_event_date","last_event_date","events_matched_schedule","events_markets_listed","events_markets_failed","events_historical","events_live","markets_total","settled_markets","other_result_markets","markets_listed_scope","est_settled_markets_all_events","settled_player_games_sched","sample_events","pct_pre_kickoff_candle_top","pct_pre_kickoff_priced_top","pct_pre_kickoff_candle_random","pct_pre_kickoff_priced_random","est_player_games_pre_kickoff_priced"
+"KXNFLANYTD",285,"2025-09-04","2026-02-08",285,285,0,285,0,5482,5335,147,"all events",NA,5335,16,100,100,100,93.8,5002
+"KXNFLTD",54,"2026-08-06","2026-09-28",48,54,0,0,54,2318,2224,94,"all events",NA,1090,3,100,100,33.3,33.3,363
+"KXNFL2TD",279,"2025-09-04","2026-02-08",279,279,0,279,0,2163,2136,27,"all events",NA,2136,16,100,100,93.8,81.2,1736
+"KXNFLFIRSTTD",333,"2025-09-04","2026-09-28",333,333,0,285,48,6714,6513,201,"all events",NA,6512,19,100,94.7,100,84.2,5484
+"KXNFLRECYDS",258,"2025-10-06","2026-09-28",252,258,0,204,54,14845,14681,164,"all events",NA,2573,16,100,100,100,100,2573
+"KXNFLRSHYDS",253,"2025-10-06","2026-09-28",247,253,0,199,54,7221,7169,52,"all events",NA,1168,16,100,100,100,100,1168
+"KXNFLPASSYDS",277,"2025-10-06","2026-09-28",251,277,0,203,74,4439,4381,58,"all events",NA,491,16,100,100,100,100,491
+"KXNFLREC",209,"2025-10-27","2026-09-28",209,209,0,161,48,11304,11221,83,"all events",NA,2140,15,100,93.3,100,93.3,1997
+"KXNFLGAME",429,"2025-07-31","2026-09-28",331,18,0,15,3,36,36,0,"sampled events only",858,NA,18,100,100,100,100,NA
+"KXNFLSPREAD",398,"2025-08-21","2026-09-28",333,19,0,16,3,322,322,0,"sampled events only",6745,NA,19,100,100,100,100,NA
+"KXNFLTOTAL",398,"2025-08-21","2026-09-28",333,19,0,16,3,388,388,0,"sampled events only",8128,NA,19,100,100,100,89.5,NA
