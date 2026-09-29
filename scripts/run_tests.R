@@ -3,6 +3,9 @@
 # Exit 0 only with 0 failures, 0 errors and every skip allowlisted.
 if (!file.exists("tests/skip_allowlist.txt")) stop("Run from the repository root")
 source("R/test_policy.R")
+# Match CI (r-lib/actions/setup-r exports NOT_CRAN=true): run skip_on_cran() tests
+# locally too, so "On CRAN" is never a way to skip.
+Sys.setenv(NOT_CRAN = "true")
 res <- testthat::test_dir("tests/testthat", reporter = "summary", stop_on_failure = FALSE)
 df <- as.data.frame(res)
 rows <- list()

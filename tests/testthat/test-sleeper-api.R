@@ -72,14 +72,12 @@ test_that("load_injuries_sleeper function exists", {
 
 test_that("load_injuries_sleeper returns proper structure", {
   skip_if_not_installed()
-  skip_if_offline()
+  skip_live("api.sleeper.app")
 
-  # Use short timeout for CI
-  result <- tryCatch({
-    load_injuries_sleeper(teams = c("KC"), use_cache = FALSE, verbose = FALSE)
-  }, error = function(e) {
-    skip(sprintf("API call failed: %s", e$message))
-  })
+  result <- load_injuries_sleeper(teams = c("KC"), use_cache = FALSE, verbose = FALSE)
+  # load_injuries_sleeper() reports fetch failures as success = FALSE, not an error
+  if (!isTRUE(result$success)) skip_live("api.sleeper.app")
+  expect_true(result$success, info = result$message)
 
   # Should return a list with expected fields
   expect_type(result, "list")
@@ -131,20 +129,17 @@ test_that("normalize_sleeper_injuries produces correct schema", {
 
 test_that("availability scores are in valid range", {
   skip_if_not_installed()
-  skip_if_offline()
+  skip_live("api.sleeper.app")
 
-  result <- tryCatch({
-    load_injuries_sleeper(teams = c("DEN"), use_cache = TRUE, verbose = FALSE)
-  }, error = function(e) {
-    skip(sprintf("API call failed: %s", e$message))
-  })
+  result <- load_injuries_sleeper(teams = c("DEN"), use_cache = TRUE, verbose = FALSE)
+  if (!isTRUE(result$success)) skip_live("api.sleeper.app")
+  expect_true(result$success, info = result$message)
 
-  if (result$success && nrow(result$data) > 0) {
-    if ("availability" %in% names(result$data)) {
-      # All availability scores should be 0-1
-      expect_true(all(result$data$availability >= 0 & result$data$availability <= 1,
-                      na.rm = TRUE))
-    }
+  if (nrow(result$data) > 0) {
+    expect_true("availability" %in% names(result$data))
+    # All availability scores should be 0-1
+    expect_true(all(result$data$availability >= 0 & result$data$availability <= 1,
+                    na.rm = TRUE))
   }
 })
 
@@ -178,37 +173,21 @@ test_that("cache expiry is reasonable", {
 
 test_that("Sleeper API returns real injury data", {
   skip_if_not_installed()
-  skip_if_offline()
-  skip_on_cran()  # Don't run on CRAN
+  skip_live("api.sleeper.app")
 
-  result <- tryCatch({
-    load_injuries_sleeper(teams = NULL, use_cache = FALSE, verbose = FALSE)
-  }, error = function(e) {
-    skip(sprintf("Sleeper API unavailable: %s", e$message))
-  })
+  result <- load_injuries_sleeper(teams = NULL, use_cache = FALSE, verbose = FALSE)
+  if (!isTRUE(result$success)) skip_live("api.sleeper.app")
+  expect_true(result$success, info = result$message)
+  expect_true(nrow(result$data) > 0,
+              info = "Sleeper should return at least some player data")
 
-  if (result$success) {
-    expect_true(nrow(result$data) > 0,
-                info = "Sleeper should return at least some player data")
-
-    # Should have injured players during season
-    if ("status" %in% names(result$data)) {
-      has_injuries <- any(grepl("Out|IR|Questionable|Doubtful",
-                                result$data$status, ignore.case = TRUE))
-      # Not guaranteed to have injuries, but log it
-      if (!has_injuries) {
-        message("Note: No injured players found in Sleeper data")
-      }
+  # Should have injured players during season
+  if ("status" %in% names(result$data)) {
+    has_injuries <- any(grepl("Out|IR|Questionable|Doubtful",
+                              result$data$status, ignore.case = TRUE))
+    # Not guaranteed to have injuries, but log it
+    if (!has_injuries) {
+      message("Note: No injured players found in Sleeper data")
     }
   }
 })
-
-# Helper function to check if offline
-skip_if_offline <- function() {
-  tryCatch({
-    con <- url("https://api.sleeper.app", "r")
-    close(con)
-  }, error = function(e) {
-    skip("No internet connection available")
-  })
-}

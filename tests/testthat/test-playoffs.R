@@ -294,38 +294,35 @@ test_that("2023 postseason round detection works correctly", {
   # Skip if nflreadr not available
   skip_if_not_installed("nflreadr")
 
-  tryCatch({
-    schedule <- nflreadr::load_schedules(seasons = 2023)
+  # Only the download is wrapped: an unreachable host skips as LIVE, while
+  # failed expectations below still fail (a tryCatch around them would not).
+  schedule <- with_live("github.com", nflreadr::load_schedules(seasons = 2023))
 
-    # Filter to playoffs
-    playoffs <- schedule %>%
-      dplyr::filter(.data$game_type %in% c("WC", "DIV", "CON", "SB"))
+  # Filter to playoffs
+  playoffs <- schedule %>%
+    dplyr::filter(.data$game_type %in% c("WC", "DIV", "CON", "SB"))
+  expect_gt(nrow(playoffs), 0)
 
-    if (nrow(playoffs) > 0) {
-      # Check Wild Card (Week 19, 6 games)
-      wc <- playoffs %>% dplyr::filter(.data$week == 19)
-      expect_equal(nrow(wc), 6, label = "Wild Card should have 6 games")
+  # Check Wild Card (Week 19, 6 games)
+  wc <- playoffs %>% dplyr::filter(.data$week == 19)
+  expect_equal(nrow(wc), 6, label = "Wild Card should have 6 games")
 
-      # Check Divisional (Week 20, 4 games)
-      div <- playoffs %>% dplyr::filter(.data$week == 20)
-      expect_equal(nrow(div), 4, label = "Divisional should have 4 games")
+  # Check Divisional (Week 20, 4 games)
+  div <- playoffs %>% dplyr::filter(.data$week == 20)
+  expect_equal(nrow(div), 4, label = "Divisional should have 4 games")
 
-      # Check Conference (Week 21, 2 games)
-      con <- playoffs %>% dplyr::filter(.data$week == 21)
-      expect_equal(nrow(con), 2, label = "Conference should have 2 games")
+  # Check Conference (Week 21, 2 games)
+  con <- playoffs %>% dplyr::filter(.data$week == 21)
+  expect_equal(nrow(con), 2, label = "Conference should have 2 games")
 
-      # Check Super Bowl (Week 22, 1 game)
-      sb <- playoffs %>% dplyr::filter(.data$week == 22)
-      expect_equal(nrow(sb), 1, label = "Super Bowl should have 1 game")
+  # Check Super Bowl (Week 22, 1 game)
+  sb <- playoffs %>% dplyr::filter(.data$week == 22)
+  expect_equal(nrow(sb), 1, label = "Super Bowl should have 1 game")
 
-      # Test round derivation for actual games
-      first_wc <- wc[1, ]
-      expect_equal(derive_playoff_round(first_wc), "wild_card")
+  # Test round derivation for actual games
+  first_wc <- wc[1, ]
+  expect_equal(derive_playoff_round(first_wc), "wild_card")
 
-      first_sb <- sb[1, ]
-      expect_equal(derive_playoff_round(first_sb), "super_bowl")
-    }
-  }, error = function(e) {
-    skip(sprintf("Could not load 2023 schedule: %s", e$message))
-  })
+  first_sb <- sb[1, ]
+  expect_equal(derive_playoff_round(first_sb), "super_bowl")
 })

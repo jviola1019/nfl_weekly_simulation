@@ -1,12 +1,19 @@
 test_that("classify_skips accepts only allowlisted reasons", {
-  allow <- c("^On CRAN$", "^LIVE: ", "^KNOWN-DEFECT (M|P|S|U|T|H|D|SEC)[0-9]+: ")
-  reasons <- c("On CRAN", "LIVE: needs nflreadr network", "KNOWN-DEFECT P1: edge label is column-wide",
-               "correlated_props.R not found", "empty test", "KNOWN-DEFECT X9: bogus id")
-  expect_equal(classify_skips(reasons, allow), c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE))
+  allow <- c("^LIVE: ", "^KNOWN-DEFECT (M|P|S|U|T|H|D|SEC)[0-9]+: ")
+  reasons <- c("LIVE: api.sleeper.app unreachable", "KNOWN-DEFECT P1: edge label is column-wide",
+               "On CRAN", "correlated_props.R not found", "empty test", "KNOWN-DEFECT X9: bogus id")
+  expect_equal(classify_skips(reasons, allow), c(TRUE, TRUE, FALSE, FALSE, FALSE, FALSE))
+})
+
+test_that("the shipped allowlist does not allow On CRAN skips", {
+  allow <- trimws(readLines(file.path(PROJECT_ROOT, "tests", "skip_allowlist.txt"), warn = FALSE))
+  allow <- allow[nzchar(allow) & !startsWith(allow, "#")]
+  expect_false(classify_skips("On CRAN", allow))
+  expect_true(classify_skips("LIVE: github.com unreachable", allow))
 })
 
 test_that("classify_skips handles no skips", {
-  expect_equal(classify_skips(character(), "^On CRAN$"), logical())
+  expect_equal(classify_skips(character(), "^LIVE: "), logical())
 })
 
 test_that("summarize_test_run fails on failures, errors or unapproved skips", {

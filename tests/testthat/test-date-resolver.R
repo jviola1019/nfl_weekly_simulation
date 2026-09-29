@@ -105,15 +105,13 @@ test_that("mid-regular-season date resolves correctly", {
 
   # Week 10, 2024 - November 10, 2024 (Sunday of Week 10)
   context <- resolve_nfl_context("2024-11-10 13:00:00")
+  if (!isTRUE(context$success)) skip_live("github.com")  # schedules come from nflverse on GitHub
 
-  if (context$success) {
-    expect_equal(context$season, 2024L)
-    expect_equal(context$week, 10L)
-    expect_equal(context$phase, "regular_season")
-    expect_true(is.na(context$round))
-  } else {
-    skip(sprintf("Could not resolve date: %s", context$error))
-  }
+  expect_true(context$success, info = context$error)
+  expect_equal(context$season, 2024L)
+  expect_equal(context$week, 10L)
+  expect_equal(context$phase, "regular_season")
+  expect_true(is.na(context$round))
 })
 
 test_that("early January playoff date resolves correctly", {
@@ -124,14 +122,12 @@ test_that("early January playoff date resolves correctly", {
   # Wild Card Weekend 2024 season (January 2025)
   # 2024 Wild Card was Jan 13-15, 2024 (for 2023 season)
   context <- resolve_nfl_context("2024-01-14 13:00:00")
+  if (!isTRUE(context$success)) skip_live("github.com")
 
-  if (context$success) {
-    expect_equal(context$season, 2023L)  # 2023 season
-    expect_equal(context$phase, "playoffs")
-    expect_true(context$week >= 19)
-  } else {
-    skip(sprintf("Could not resolve date: %s", context$error))
-  }
+  expect_true(context$success, info = context$error)
+  expect_equal(context$season, 2023L)  # 2023 season
+  expect_equal(context$phase, "playoffs")
+  expect_true(context$week >= 19)
 })
 
 test_that("Super Bowl date resolves correctly", {
@@ -141,16 +137,14 @@ test_that("Super Bowl date resolves correctly", {
 
   # Super Bowl LVIII - February 11, 2024 (2023 season)
   context <- resolve_nfl_context("2024-02-11 18:30:00")
+  if (!isTRUE(context$success)) skip_live("github.com")
 
-  if (context$success) {
-    expect_equal(context$season, 2023L)
-    expect_equal(context$phase, "playoffs")
-    # Super Bowl is week 22
-    if (!is.na(context$round)) {
-      expect_equal(context$round, "super_bowl")
-    }
-  } else {
-    skip(sprintf("Could not resolve date: %s", context$error))
+  expect_true(context$success, info = context$error)
+  expect_equal(context$season, 2023L)
+  expect_equal(context$phase, "playoffs")
+  # Super Bowl is week 22
+  if (!is.na(context$round)) {
+    expect_equal(context$round, "super_bowl")
   }
 })
 
@@ -161,14 +155,12 @@ test_that("Week 1 kickoff date resolves correctly", {
 
   # Week 1, 2024 - Thursday Night Football kickoff
   context <- resolve_nfl_context("2024-09-05 20:15:00")
+  if (!isTRUE(context$success)) skip_live("github.com")
 
-  if (context$success) {
-    expect_equal(context$season, 2024L)
-    expect_equal(context$week, 1L)
-    expect_equal(context$phase, "regular_season")
-  } else {
-    skip(sprintf("Could not resolve date: %s", context$error))
-  }
+  expect_true(context$success, info = context$error)
+  expect_equal(context$season, 2024L)
+  expect_equal(context$week, 1L)
+  expect_equal(context$phase, "regular_season")
 })
 
 test_that("post-Super Bowl offseason date handles gracefully", {
@@ -207,34 +199,27 @@ test_that("get_week_boundaries returns expected structure", {
   skip_if_not_installed("nflreadr")
   skip_if_not_installed("dplyr")
 
-  tryCatch({
-    schedule <- nflreadr::load_schedules(seasons = 2024)
+  schedule <- with_live("github.com", nflreadr::load_schedules(seasons = 2024))
+  expect_gt(nrow(schedule), 0)
 
-    if (nrow(schedule) > 0) {
-      schedule <- parse_kickoff_times(schedule)
-      boundaries <- get_week_boundaries(schedule)
+  schedule <- parse_kickoff_times(schedule)
+  boundaries <- get_week_boundaries(schedule)
 
-      expect_s3_class(boundaries, "data.frame")
-      expect_true("season" %in% names(boundaries))
-      expect_true("week" %in% names(boundaries))
-      expect_true("earliest_kickoff" %in% names(boundaries))
-      expect_true("latest_kickoff" %in% names(boundaries))
-      expect_true("window_start" %in% names(boundaries))
-      expect_true("window_end" %in% names(boundaries))
-      expect_true("n_games" %in% names(boundaries))
+  expect_s3_class(boundaries, "data.frame")
+  expect_true("season" %in% names(boundaries))
+  expect_true("week" %in% names(boundaries))
+  expect_true("earliest_kickoff" %in% names(boundaries))
+  expect_true("latest_kickoff" %in% names(boundaries))
+  expect_true("window_start" %in% names(boundaries))
+  expect_true("window_end" %in% names(boundaries))
+  expect_true("n_games" %in% names(boundaries))
 
-      # Should have multiple weeks
-      expect_true(nrow(boundaries) > 1)
+  # Should have multiple weeks
+  expect_true(nrow(boundaries) > 1)
 
-      # Window start should be before earliest kickoff
-      if (nrow(boundaries) > 0) {
-        expect_true(all(boundaries$window_start < boundaries$earliest_kickoff))
-        expect_true(all(boundaries$window_end > boundaries$latest_kickoff))
-      }
-    }
-  }, error = function(e) {
-    skip(sprintf("Could not load schedule: %s", e$message))
-  })
+  # Window start should be before earliest kickoff
+  expect_true(all(boundaries$window_start < boundaries$earliest_kickoff))
+  expect_true(all(boundaries$window_end > boundaries$latest_kickoff))
 })
 
 # =============================================================================
@@ -276,39 +261,26 @@ test_that("validate_date_resolution runs without error", {
     list(date = "2024-11-10 13:00:00", season = 2024L, week = 10L)
   )
 
-  results <- tryCatch({
-    validate_date_resolution(test_cases)
-  }, error = function(e) {
-    NULL
-  })
+  # Schedule-load failures come back as success = FALSE rows, not errors
+  results <- with_live("github.com", validate_date_resolution(test_cases))
 
-  if (!is.null(results)) {
-    expect_s3_class(results, "data.frame")
-    expect_true("expected_season" %in% names(results))
-    expect_true("actual_season" %in% names(results))
-    expect_true("season_match" %in% names(results))
-  }
+  expect_s3_class(results, "data.frame")
+  expect_true("expected_season" %in% names(results))
+  expect_true("actual_season" %in% names(results))
+  expect_true("season_match" %in% names(results))
 })
 
 test_that("run_resolver_validation returns expected structure", {
   skip_if_not_installed("nflreadr")
   skip_if_not_installed("dplyr")
 
-  results <- tryCatch({
-    run_resolver_validation()
-  }, error = function(e) {
-    NULL
-  })
+  results <- with_live("github.com", run_resolver_validation())
 
-  if (!is.null(results)) {
-    expect_type(results, "list")
-    expect_true("passed" %in% names(results))
-    expect_true("failed" %in% names(results))
-    expect_true("all_passed" %in% names(results))
-    expect_true("details" %in% names(results))
-  } else {
-    skip("Could not run resolver validation")
-  }
+  expect_type(results, "list")
+  expect_true("passed" %in% names(results))
+  expect_true("failed" %in% names(results))
+  expect_true("all_passed" %in% names(results))
+  expect_true("details" %in% names(results))
 })
 
 # =============================================================================
@@ -345,21 +317,17 @@ test_that("resolver handles full 2024 season dates", {
   for (date_str in names(test_dates)) {
     expected <- test_dates[[date_str]]
 
-    context <- tryCatch({
-      resolve_nfl_context(paste(date_str, "13:00:00"))
-    }, error = function(e) {
-      list(success = FALSE, error = e$message)
-    })
+    context <- resolve_nfl_context(paste(date_str, "13:00:00"))
+    if (!isTRUE(context$success)) skip_live("github.com")
 
-    if (context$success) {
-      expect_equal(context$season, 2024L,
-                   label = sprintf("Season for %s", date_str))
-      expect_equal(context$phase, expected$phase,
-                   label = sprintf("Phase for %s", date_str))
-      # Week might be off by 1 due to Thursday games, so allow some tolerance
-      expect_true(abs(context$week - expected$week) <= 1,
-                  label = sprintf("Week for %s (got %d, expected %d)",
-                                  date_str, context$week, expected$week))
-    }
+    expect_true(context$success, info = sprintf("%s: %s", date_str, context$error))
+    expect_equal(context$season, 2024L,
+                 label = sprintf("Season for %s", date_str))
+    expect_equal(context$phase, expected$phase,
+                 label = sprintf("Phase for %s", date_str))
+    # Week might be off by 1 due to Thursday games, so allow some tolerance
+    expect_true(abs(context$week - expected$week) <= 1,
+                label = sprintf("Week for %s (got %s, expected %d)",
+                                date_str, context$week, expected$week))
   }
 })
