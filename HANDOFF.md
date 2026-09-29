@@ -2,18 +2,27 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec.
 
-## Current state — 2026-09-28 (Phase 0 in progress)
+## Current state — 2026-09-29 03:15Z (Phase 0 in progress, A0 approved)
 
 - **Spec (approved 2026-09-28):** `docs/superpowers/specs/2026-09-28-nfl-overhaul-design.md`
+- **Phase 0 task plan:** `docs/superpowers/plans/2026-09-29-phase0-foundation.md`. It covers Tasks 1–6 and awaits the owner's review.
 - **Audit ledger:** `reports/2026-09-28/AUDIT.md`
-- `main` is unchanged at `7723e3b`. Nothing pushed.
+- **`main` = `cbaf3eb`:** PR #190 (forward capture) merged 2026-09-29 03:00Z.
+- **The "Odds capture" workflow is live on GitHub.** The manual run 36515215104 succeeded: 184/184 requests, artifact 945 KB, expires 2026-12-28.
 
 | Branch | Where | State |
 |---|---|---|
-| `feat/forward-capture` | main checkout `nfl/` | Committed `a5ecde3`: keyless ESPN + Kalshi raw capture, tests, workflow. Not pushed. |
-| `docs/overhaul-spec` | worktree `../nfl-worktrees/overhaul-spec` | Spec, audit ledger, reports/README, this file, `.gitignore` un-ignores `reports/`. |
+| `feat/forward-capture` | main checkout `nfl/` | Merged (#190). The checkout can now move to any branch. |
+| `docs/overhaul-spec` | worktree `../nfl-worktrees/overhaul-spec` | PR #191 open: spec, audit, HANDOFF, Phase 0 plan. |
 
-**Why the main checkout must stay on `feat/forward-capture` tonight:** two background captures (≈23:45Z and 00:08Z, PHI@CHI MNF) run `scripts/capture_odds_raw.R` from it.
+**A0 approvals (2026-09-28):**
+- the deletion batch
+- untracking plus scoped settings
+- deps plus CI
+- the honest default
+- push and PRs, and merging the capture PR
+
+Merging #191 and the later Phase 0 PRs still needs approval.
 
 ## Context-reset packet
 
@@ -26,14 +35,14 @@ Resume point for the NFL overhaul. Read this first, then the spec.
 - Forward capture live: first run 2026-09-28 21:03Z, 186/186 requests OK, 0 hash mismatches.
 
 **Not yet done (Phase 0 remainder)**
-1. **Checkpoint A0 (needs owner approval):**
-   - the deletion batch (spec §5)
-   - untracking `run_logs/` and `.claude/settings.local.json`, and scoping `.claude/settings.json`
-   - adding `testthat` + `httptest2` to renv
+1. **A0 is approved, so execute plan Tasks 1–4 on `chore/phase0-foundation`:**
+   - the deletion batch (with the plan's recorded deviations: keep `core/calibration.R`; the calibrator and golden master move to Phase 1)
+   - untracking and scoped settings
+   - testthat in renv (httptest2 in Phase 2)
    - CI R 4.5.1
    - CLAUDE.md edits
    - `STAKING_MODE = "paper"`
-   - pushing branches and opening PRs (the capture workflow only runs on schedule after it reaches `main`)
+   - removing the three.js CDN script and escaping the fallback
 2. Honest default: `docs/EVIDENCE_LEDGER.md` with every M7 claim as Withdrawn; report banner; `leakage_free = FALSE`.
 3. Test harness: `setup.R` must `stop()` on a missing module (it only warns today); skip meta-test; fix T1; offline `run_matrix`.
 4. Golden master for a seeded fixture week.
@@ -56,7 +65,9 @@ Resume point for the NFL overhaul. Read this first, then the spec.
 - Docs say 60% or 70% shrinkage; the code does neither (M2, M3).
 - Docs claim correlations 0.75/0.60/0.50/0.40; config has 0.40/0.09/0.30/0.17.
 
-**Next target.** Checkpoint A0 decision → Phase 0 remainder → Phase 1 (M1, M2/M3, M10, M11, M12 first).
+**Next target.** The owner reviews the Phase 0 plan → execute Tasks 1–6 (subagent-driven, per spec §9) → Phase 1 (M1, then the golden master, then M2/M3, M10, M11, M12).
+
+**Test-suite facts for the harness task:** the 51 skips break down as 34 "X.R not loaded/not found" (tests use `getwd()` = `tests/testthat` instead of `.test_project_root`), 5 "NFLmarket.R not loaded" (it sources `NFLbrier_logloss.R` relative to the working directory), 5 "empty test", 4 date resolution, 3 On CRAN, 1 missing export, 2 schedule loads. `setup.R` loads only 7 of 13 `R/` modules.
 
 ## Owner actions
 
@@ -68,3 +79,6 @@ Resume point for the NFL overhaul. Read this first, then the spec.
 | # | Defect | Evidence it was real |
 |---|---|---|
 | 1 | Switching the main checkout to another branch would have broken tonight's scheduled captures (the script exists only on `feat/forward-capture`) | Caught before the first scheduled run; docs work moved to a worktree |
+| 2 | The local background captures for MNF (23:45Z, 00:08Z) never ran: the `sleep` timer stalled (likely machine sleep), and the job was still "waiting" at 03:00Z | The manifest had only the 21:0x entries. Recovery: Kalshi closes come back from `/historical` candles; only DraftKings line movement in the last 3h before kickoff is lost. The fix is GitHub-scheduled capture (#190), which doesn't depend on this machine. **Never rely on local sleeps for time-critical capture.** |
+| 3 | The Phase 0 plan draft had a regex-escaping bug in the ledger parser (`"\\\\|"` with `fixed = TRUE`) and compared config `0.4` to the ledger text `"0.40"` as strings | Caught by running the parser on the real ledger text before handing off (7/7 claims matched, 2 near-miss strings correctly not matched) |
+| 4 | Bash heredocs in this environment collapse `\\` to `\` even when quoted | A generated R script failed with "'\|' is an unrecognized escape". Write R scripts with the file tool, not heredocs. |
