@@ -50,7 +50,7 @@ bt_check_protocol <- function(win, window_path) {
     if (bt_git("ls-files", "--error-unmatch", f)$status != 0) stop("protocol check: not committed: ", f, call. = FALSE)
     if (bt_git("diff", "--quiet", "HEAD", "--", f)$status != 0) stop("protocol check: uncommitted changes in ", f, call. = FALSE)
   }
-  log <- bt_git("log", "-1", "--format=%H %cI", "--", proto)$out
+  log <- bt_git("log", "-1", shQuote("--format=%H %cI"), "--", proto)$out
   list(protocol_sha256 = got, protocol_commit = sub(" .*", "", log[1]), protocol_committed_at = sub("^\\S+ ", "", log[1]))
 }
 
@@ -280,8 +280,10 @@ bt_run <- function(window_path, stage, out_dir, run_controls = TRUE, run_repro =
 
   if (run_controls && run_repro) {
     tmp <- tempfile("bt_repro_")
+    # The second process runs the same controls (except this one), because gate G4 in
+    # the hashed metrics.json depends on them; only the reproducibility re-run is skipped.
     args <- c(file.path(bt_script_dir(), "walk_forward.R"), "--window", window_path, "--stage", stage,
-              "--out", tmp, "--no-controls", "--no-repro")
+              "--out", tmp, "--no-repro")
     st <- system2(file.path(R.home("bin"), "Rscript"), args, stdout = FALSE, stderr = FALSE)
     rm <- tryCatch(jsonlite::read_json(file.path(tmp, "run_meta.json")), error = function(e) NULL)
     controls$reproducibility <- list(first = result_sha256, second = if (is.null(rm$result_sha256)) NA else rm$result_sha256,
