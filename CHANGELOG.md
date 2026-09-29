@@ -2,6 +2,20 @@
 
 All notable changes to the NFL Prediction Model are documented in this file.
 
+## [Unreleased]
+
+### Added — keyless raw odds forward capture (overhaul Phase 0)
+
+- `R/capture_raw.R` + `scripts/capture_odds_raw.R`: snapshot ESPN core API (scoreboard, per-game odds, DraftKings propBets) and Kalshi public market data (open markets for every per-game `KXNFL*` series, discovered at run time) to `data/raw_capture/` as gzipped raw bodies with a sha256 `manifest.ndjson`. No API keys. Prop markets vanish at kickoff, so capture runs before each kickoff window.
+- `.github/workflows/odds-capture.yml`: scheduled captures (Tue/Thu/Sat snapshots + T-45 before TNF, Sunday early/late, SNF, MNF), uploaded as 90-day artifacts. Read-only permissions, no secrets.
+- `CAPTURE_*` settings in `config.R`; `data/raw_capture/` gitignored.
+- Tests: `tests/testthat/test-capture-raw.R` (9 tests, 31 expectations) on trimmed real ESPN fixtures; no network calls.
+- First live capture 2026-09-28 21:03Z: 186/186 requests OK, 0 manifest hash mismatches. Kalshi 2026 touchdown markets live under `KXNFLTD` (1+/2+ strikes), not the 2025 `KXNFLANYTD` series.
+
+### Known pre-existing failures (not introduced here)
+
+- `scripts/verify_repo_integrity.R`: 56 passed / 1 failed (`PROP_GAME_CORR_PASSING` range check vs config 0.40). Tracked as audit item T1.
+
 ## [2.9.4] - 2026-02-06
 
 ### Critical Parser Fix

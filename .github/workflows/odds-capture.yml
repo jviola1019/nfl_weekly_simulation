@@ -1,0 +1,56 @@
+name: Odds capture
+
+# Keyless forward capture of ESPN + Kalshi odds before each kickoff window.
+# Prop markets disappear at kickoff, so a missed run is data lost for good.
+# Times are UTC and target ~45 min before kickoff during EDT; after the switch
+# to EST (early November) kickoffs move 1h later, so every run stays pre-kickoff.
+# GitHub may start scheduled runs late; the targets leave room for that.
+
+on:
+  schedule:
+    - cron: "0 18 * * 2"    # Tue: early-week openers
+    - cron: "0 18 * * 4"    # Thu: midweek snapshot
+    - cron: "30 23 * * 4"   # Thu: TNF (00:15Z Fri)
+    - cron: "0 18 * * 6"    # Sat: pre-Sunday snapshot
+    - cron: "15 16 * * 0"   # Sun: early games (17:00Z)
+    - cron: "20 19 * * 0"   # Sun: late games (20:05Z / 20:25Z)
+    - cron: "35 23 * * 0"   # Sun: SNF (00:20Z Mon)
+    - cron: "30 23 * * 1"   # Mon: MNF (00:15Z Tue)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: odds-capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.5.1"
+          use-public-rspm: true
+
+      - name: Install capture dependencies
+        run: install.packages(c("httr2", "jsonlite", "digest", "lubridate"))
+        shell: Rscript {0}
+
+      - name: Capture
+        run: Rscript scripts/capture_odds_raw.R
+
+      - name: Upload raw capture
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: odds-capture-${{ github.run_id }}
+          path: data/raw_capture/
+          retention-days: 90
+          if-no-files-found: error

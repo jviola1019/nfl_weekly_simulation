@@ -46,6 +46,9 @@ r451_compatibility_report.rds
 # Cached data
 .cache/
 
+# Raw odds captures (archived as release assets, never committed)
+data/raw_capture/
+
 # Keep these tracked:
 # - All .R source files
 # - README.md and documentation
