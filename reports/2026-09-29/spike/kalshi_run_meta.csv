@@ -1,0 +1,2 @@
+"script","sample_mode","started_utc","finished_utc","minutes","stage2_complete","stage3_complete","status","requests_total","requests_by_stage","failed_requests","historical_cutoff_utc"
+"kalshi_coverage.R",FALSE,"2026-09-29T08:01:54Z","2026-09-29T08:22:50Z",20.9,TRUE,TRUE,"COMPLETE",2373,"events=22;cutoff=1;markets_historical=1663;candles=346;markets_live=341",0,"2026-07-31T00:00:00Z"

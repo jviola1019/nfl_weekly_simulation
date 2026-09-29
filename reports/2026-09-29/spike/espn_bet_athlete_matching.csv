@@ -1,0 +1,5 @@
+"scope","count"
+"distinct athletes in 4 markets",698
+"distinct athletes without gsis match",4
+"rows without gsis match",304
+"espn_ids mapping to >1 gsis (first kept)",13

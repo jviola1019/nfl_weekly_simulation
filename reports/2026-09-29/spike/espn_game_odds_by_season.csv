@@ -1,0 +1,9 @@
+"season","games_sampled","games_request_ok","games_with_any_provider","providers_seen","games_open_moneyline","games_close_moneyline","games_open_and_close_moneyline","games_current_moneyline","games_open_total","games_close_total"
+2018,5,5,5,"accuscore; Bet 365; Caesar's; Caesars; Caesars Sportsbook; CG Technology; consensus; numberfire; teamrankings; Unibet; Westgate; Wynn",0,0,0,5,0,0
+2019,5,5,5,"accuscore; Bet 365; Betradar; Caesars; Caesars Sportsbook; CG Technology; consensus; DraftKings; numberfire; SugarHouse; teamrankings; Unibet; Westgate; Wynn",0,0,0,5,0,0
+2020,5,5,5,"accuscore; Bet 365; Caesars; Caesars Sportsbook; Caesars Sportsbook (New Jersey); Caesars Sportsbook (Pennsylvania); consensus; DraftKings; numberfire; SugarHouse; teamrankings; Unibet; Westgate",0,0,0,5,0,0
+2021,5,5,5,"accuscore; Bet 365; Caesars Sportsbook; Caesars Sportsbook (Colorado); Caesars Sportsbook (New Jersey); Caesars Sportsbook (New Jersey) - Live Odds; Caesars Sportsbook (Pennsylvania); consensus; DraftKings; Holland Casino; MGM; PointsBet; SugarHouse; teamrankings; Titanbets; Unibet; Westgate",0,0,0,5,0,0
+2022,5,5,5,"accuscore; Bet 365; Caesars Sportsbook; Caesars Sportsbook (Colorado); Caesars Sportsbook (New Jersey); Caesars Sportsbook (New Jersey) - Live Odds; consensus; DraftKings; ESPN BET; Holland Casino; MGM; PointsBet; SugarHouse; teamrankings; Titanbets; Unibet; Westgate",0,5,0,5,0,5
+2023,5,5,5,"accuscore; Bet 365; Caesars Sportsbook; Caesars Sportsbook (Colorado); Caesars Sportsbook (New Jersey); Caesars Sportsbook (New Jersey) - Live Odds; Caesars Sportsbook (Tennessee); DraftKings; ESPN BET; ESPN Bet - Live Odds; MGM; PointsBet; SugarHouse; Titanbets; Unibet",5,5,5,5,5,5
+2024,5,5,5,"Bet 365; ESPN BET; ESPN Bet - Live Odds",5,5,5,5,5,5
+2025,5,5,5,"DraftKings; ESPN BET; ESPN Bet - Live Odds",5,5,5,5,5,5

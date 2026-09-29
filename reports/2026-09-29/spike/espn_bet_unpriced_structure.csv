@@ -1,0 +1,9 @@
+"market","season","player_games","priced_player_games","unpriced_player_games","unpriced_player_games_with_half_point_row","unpriced_rows","share_unpriced_rows_in_priced_player_game","share_unpriced_rows_integer_target","priced_rows_per_priced_player_game"
+"anytime_td",2024,5703,7,5696,0,12222,0.0023,1,1
+"receiving_yards",2024,3007,2089,918,0,16202,0.7132,1,2.07
+"receptions",2024,2883,2528,355,0,13500,0.8687,1,2.01
+"rushing_yards",2024,1279,900,379,0,6913,0.7204,1,2.07
+"anytime_td",2025,4700,294,4406,4406,13849,0.0573,0,2
+"receiving_yards",2025,2132,2103,29,29,19069,0.9883,0,2.02
+"receptions",2025,2094,2091,3,3,11825,0.9992,0,2
+"rushing_yards",2025,1082,1071,11,11,11276,0.9923,0,2.01
