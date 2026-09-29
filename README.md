@@ -112,6 +112,8 @@ The script generates a unified HTML report with:
 
 **Status**: Unvalidated. The accuracy and calibration figures previously shown here were withdrawn 2026-09-28 after an audit found no reproducible evidence for them (`docs/EVIDENCE_LEDGER.md`). Validated numbers will appear here only after a pre-registered backtest passes its promotion gates.
 
+**First pre-registered game backtest (`nfl_games_v1`, 2026-09-29):** on 2023–2024, no independent model (Elo, EPA GLM, their ensemble) or market blend beat the no-vig closing moneyline on Brier score. The simulator itself joins in `nfl_games_v2` once it is point-in-time (Phase 1b). Details: `reports/2026-09-29/backtest-games-v1/RESULT.md`.
+
 **See [DOCUMENTATION.md](DOCUMENTATION.md)** for methodology; treat any figures there as unvalidated until `docs/EVIDENCE_LEDGER.md` says otherwise.
 
 ---
@@ -289,6 +291,16 @@ Rscript scripts/run_matrix.R  # Should show 10/10 passed (golden-master needs ne
 | `tests/testthat/test-playoffs.R` | Tests for playoff detection |
 | `tests/testthat/test-date-resolver.R` | Tests for datetime parsing |
 | `tests/testthat/test-game-type-mapping.R` | Tests for game type constants |
+
+### Game Backtest (`backtest/`)
+| File | Purpose |
+|------|---------|
+| `backtest/walk_forward.R` | Pre-registered walk-forward shootout: `--stage dev` (Tune only) or `--stage score` (needs the committed, hash-matching protocol) |
+| `backtest/build_inputs.R` | Builds `backtest/data/` from nflverse release files, records sha256 in `SOURCES.json` |
+| `backtest/candidates/` | C0 market, C1 Elo, C2 EPA GLM |
+| `backtest/blends.R`, `backtest/calibrators.R` | E1/B1/B2 blends and nested walk-forward calibrators |
+| `backtest/metrics.R`, `backtest/controls.R` | Paired block bootstrap, DM-HLN, BH, ECE, CLV; leak canary, shuffled labels, market copy |
+| `backtest/eval_windows/nfl_games_v1.json` | Hash-locked windows, data and protocol |
 
 ### Validation Scripts (Model Testing)
 | File | Purpose |

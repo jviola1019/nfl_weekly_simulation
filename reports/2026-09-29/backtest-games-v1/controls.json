@@ -1,0 +1,52 @@
+{
+  "leak_canary": {
+    "assertion_rejected": true,
+    "bypass_skill": 0.7037538232,
+    "bypass_flagged": true,
+    "passed": true
+  },
+  "implausible_skill_guard": {
+    "threshold": 0.05,
+    "max_candidate_skill": 0.0002313053,
+    "passed": true
+  },
+  "shuffled_labels": {
+    "seed": 20260930,
+    "reference": "expanding-window climatology",
+    "skill_ci_lower": {
+      "C1": -0.1022832339,
+      "C2": -0.0107508699,
+      "E1": -0.0440108996,
+      "B1[C1]": -0.0145307408,
+      "B1[C2]": -0.0094207738,
+      "B1[E1]": -0.0130794511,
+      "B2[E1]": -0.1384876163,
+      "K[E1]": -0.0089897323
+    },
+    "skill": {
+      "C1": -0.0670498838,
+      "C2": -0.0050529692,
+      "E1": -0.0261361855,
+      "B1[C1]": -0.0085290945,
+      "B1[C2]": -0.0039436647,
+      "B1[E1]": -0.007615325,
+      "B2[E1]": -0.0779210068,
+      "K[E1]": -0.0047479595
+    },
+    "passed": true
+  },
+  "market_copy": {
+    "skill": 0,
+    "brier_diff": 0,
+    "b1_total_market_slope": 1.0551715334,
+    "slope_band": [0.85, 1.15],
+    "passed": true
+  },
+  "reproducibility": {
+    "first": "7244a0bc8ac63fec4d8d11b48b4b93be4ebf3fdba51b0fa3d6929cab336a3458",
+    "second": "7244a0bc8ac63fec4d8d11b48b4b93be4ebf3fdba51b0fa3d6929cab336a3458",
+    "passed": true
+  },
+  "all_passed": true,
+  "run_status": "complete"
+}

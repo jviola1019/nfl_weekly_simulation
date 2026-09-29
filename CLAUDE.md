@@ -356,6 +356,10 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `scripts/verify_requirements.R` - 20-issue audit verification
 - `scripts/run_matrix.R` - Execute all artifacts
 
+### Game Backtest
+- `backtest/walk_forward.R` - pre-registered walk-forward shootout; `--stage score` refuses to run unless `reports/<date>/backtest-games-v1/PROTOCOL.md` matches the hash in `backtest/eval_windows/nfl_games_v1.json` and is committed. Never edit a frozen PROTOCOL.md; register a new version instead.
+- `backtest/build_inputs.R` - derives the committed point-in-time inputs in `backtest/data/`
+
 ### Tests
 - `tests/testthat/setup.R` - Test infrastructure
 - `tests/testthat/test-*.R` - Unit tests
