@@ -68,34 +68,49 @@ test_that("injury caps are defined", {
 # POSITION GROUP MAPPING TESTS
 # =============================================================================
 
-test_that("position group mapping is comprehensive", {
-  # Standard NFL positions
-  qb_positions <- c("QB")
-  skill_positions <- c("WR", "RB", "TE", "FB", "HB")
-  trench_positions <- c("T", "OT", "LT", "RT", "G", "OG", "C", "OL")
-  secondary_positions <- c("CB", "S", "SS", "FS", "DB")
-  front7_positions <- c("LB", "ILB", "OLB", "EDGE", "DL", "DT", "DE", "NT", "IDL")
+# The position -> group mapping is inline in calc_injury_impacts() (a case_when
+# on `position`). NFLsimulation.R runs the whole pipeline when sourced, so
+# evaluate only that function's definition.
+load_calc_injury_impacts <- function() {
+  exprs <- parse(file.path(PROJECT_ROOT, "NFLsimulation.R"), keep.source = FALSE)
+  defs <- Filter(function(e) is.call(e) && identical(e[[1]], as.name("<-")) &&
+                   identical(e[[2]], as.name("calc_injury_impacts")), exprs)
+  if (length(defs) != 1) stop("expected one calc_injury_impacts definition in NFLsimulation.R")
+  env <- new.env(parent = globalenv())
+  eval(defs[[1]], env)
+  env$calc_injury_impacts
+}
 
-  # Test position mapping function if available
-  if (exists("map_position_to_group")) {
-    for (pos in qb_positions) {
-      expect_equal(map_position_to_group(pos), "qb")
+test_that("position group mapping is comprehensive", {
+  calc_injury_impacts <- load_calc_injury_impacts()
+  groups <- list(
+    skill = c("WR", "RB", "TE", "FB", "HB"),
+    trench = c("T", "OT", "LT", "RT", "G", "OG", "C", "OL"),
+    secondary = c("CB", "S", "SS", "FS", "DB"),
+    front7 = c("LB", "ILB", "OLB", "EDGE", "DL", "DT", "DE", "NT", "IDL")
+  )
+  ungrouped <- c("QB", "K", "P", "LS")  # QB is handled separately; others map to "other"
+
+  # One OUT player per position, each on its own "team" so every output row is
+  # one position. OUT has severity 1, so the row's group column is 1.
+  positions <- c(unlist(groups, use.names = FALSE), ungrouped)
+  out <- calc_injury_impacts(data.frame(team = positions, position = positions, status = "Out"))
+  expect_setequal(out$team, positions)
+
+  pen_cols <- c(skill = "skill_avail_pen", trench = "trench_avail_pen",
+                secondary = "secondary_avail_pen", front7 = "front7_avail_pen")
+  for (g in names(groups)) {
+    for (pos in groups[[g]]) {
+      row <- out[out$team == pos, ]
+      for (col in pen_cols) {
+        expect_equal(row[[col]], if (col == pen_cols[[g]]) 1 else 0,
+                     info = sprintf("%s -> %s: %s", pos, g, col))
+      }
     }
-    for (pos in skill_positions) {
-      expect_equal(map_position_to_group(pos), "skill")
-    }
-    for (pos in trench_positions) {
-      expect_equal(map_position_to_group(pos), "trenches")
-    }
-    for (pos in secondary_positions) {
-      expect_equal(map_position_to_group(pos), "secondary")
-    }
-    for (pos in front7_positions) {
-      expect_equal(map_position_to_group(pos), "front7")
-    }
-  } else {
-    # Just verify documentation covers all positions
-    expect_true(TRUE)
+  }
+  for (pos in ungrouped) {
+    row <- out[out$team == pos, ]
+    expect_equal(unname(unlist(row[pen_cols])), c(0, 0, 0, 0), info = pos)
   }
 })
 

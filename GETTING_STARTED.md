@@ -52,9 +52,9 @@ Rscript NFLsimulation.R
 
 The script generates an HTML report with:
 - Game-by-game predictions with win probabilities
-- EV analysis and betting recommendations
+- EV analysis and model picks (paper stakes, not betting advice)
 - Market comparison (model vs Vegas)
-- Stake sizing using Kelly criterion
+- Paper stake sizes (1/8 Kelly, tracking units; `STAKING_MODE = "paper"`)
 
 Output file: `NFLvsmarket_week15_2024.html` (or similar)
 
@@ -93,10 +93,7 @@ Output file: `NFLvsmarket_week15_2024.html` (or similar)
 
 ## Model Performance
 
-**Validation Results** (2022-2024, 2,282 games):
-- **Brier Score**: 0.211 (Vegas: 0.208) - Professional-grade accuracy
-- **Accuracy**: 67.1% - Correctly predicts 2 out of 3 games
-- **Competitive with** FiveThirtyEight (0.215) and ESPN FPI (0.218)
+> **Status (2026-09-29): unvalidated research model.** Earlier accuracy and calibration figures were withdrawn after an audit found no reproducible evidence for them. See `docs/EVIDENCE_LEDGER.md` and `reports/2026-09-28/AUDIT.md`. Validated numbers will appear here only after the pre-registered backtest passes its gates.
 
 See [DOCUMENTATION.md](DOCUMENTATION.md) for complete validation methodology.
 
@@ -144,7 +141,7 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Should be FALSE
 
 **Why this happens**: The snap weighting feature makes network calls to `nflreadr::load_participation()` which can timeout when data is unavailable for future or current seasons.
 
-**Note**: Disabling snap weighting does NOT affect model accuracy - position-level injury weights remain active and are validated (p < 0.001).
+**Note**: Disabling snap weighting does NOT affect model accuracy - position-level injury weights remain active (unvalidated, see ledger C-POSW in `docs/EVIDENCE_LEDGER.md`).
 
 ### VS Code R Extension Issues
 
@@ -217,12 +214,6 @@ If you see warnings about values outside domain, they are cosmetic and handled a
 ```bash
 # Every Tuesday after Monday Night Football
 Rscript run_week.R 16  # Increment week number
-```
-
-### Full Season Backtest
-```r
-source("professional_model_benchmarking.R")
-# Tests against FiveThirtyEight and ESPN FPI (15-20 min)
 ```
 
 ### Enable Debug Mode

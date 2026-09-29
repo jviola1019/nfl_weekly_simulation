@@ -4,6 +4,22 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Phase 0 — foundation (PR #192)
+
+- **Hygiene (Task 1):** retired dead code and scrapers, untracked `run_logs/` and local tool settings, hardened `.gitignore` (`.Renviron`, `.env*`, `.claude/settings*.json`, `.playwright-mcp/`, `bundles/`).
+- **Honest default (Task 2):** withdrew unreproducible accuracy and calibration claims into `docs/EVIDENCE_LEDGER.md` with a docs-truth test; `STAKING_MODE = "paper"`; config-driven "Unvalidated model" banner; removed the three.js CDN script; escaped the no-gt fallback table; fixed integrity check T1.
+- **Loud test harness (Task 3):** `setup.R` loads config and every `R/` module and stops if one is missing; `getwd()`-relative test paths fixed; `scripts/run_tests.R` fails on any failure, error, or skip not matched by `tests/skip_allowlist.txt`; the M15 snap-weighting test fails on the defect instead of passing vacuously.
+- **CI (Task 4):** R 4.5.1 via `r-lib/actions/setup-renv`, ripgrep, `audit_verify.sh` runs `run_tests.R`, `verify_repo_integrity.R` and `audit_verify.R`; workflow permissions `contents: read`; trigger narrowed to `main`.
+- **Close-out gate fixes:** `verify_requirements.R` audit path; `run_matrix.R` runs `run_tests.R` with a suite-sized timeout; stale `audit_verify.sh` pass-reason invariant.
+- **Final-review fixes:**
+  - Skip policy: `run_tests.R` sets `NOT_CRAN=true` like CI; `^On CRAN$` removed from the allowlist; LIVE skips only through `skip_live()`/`with_live()` (`tests/testthat/helper-live.R`), which check the host first; network and failure-path skips in the Sleeper, date-resolver and playoffs tests converted; `test-skip-hygiene.R` bans direct `skip("LIVE: ...")`, `expect_true(TRUE)` and error-to-empty-tibble swallowing.
+  - Vacuous passes removed: the position-group test now exercises `calc_injury_impacts()`; the `run_game_props`/`run_correlated_props` tests run from the repo root on real 2024 data and assert rows and columns; the log-level test asserts unconditionally.
+  - Module shadowing: tests load `NFLmarket.R` into a private environment (`helper-nflmarket.R`); `test-utils.R` checks no `R/utils.R` function is shadowed; `test-module-duplicates.R` also scans `NFLmarket.R`/`NFLbrier_logloss.R` and conditional `if (!exists())` copies against `KNOWN_H1_DUPLICATES`.
+  - Honest wording: README, GETTING_STARTED, report banner ("base market weight") and the `NFLmarket.R` report text and table note (built from config); ledger rows C-PROD and C-ADJ.
+  - `audit_verify.sh` "Market odds missing/placeholder" invariant; CLAUDE.md gates point at `run_tests.R`, `verify_repo_integrity.R` and `run_matrix.R`.
+- **Audit addendum** (`reports/2026-09-29/AUDIT-ADDENDUM.md`): M14 (date resolver), M15 (snap percentages), P13 (defense rankings never apply), each cited by a `KNOWN-DEFECT` skip.
+- **Keyless data spike:** separate PR #193.
+
 ### Added — keyless raw odds forward capture (overhaul Phase 0)
 
 - `R/capture_raw.R` + `scripts/capture_odds_raw.R`: snapshot ESPN core API (scoreboard, per-game odds, DraftKings propBets) and Kalshi public market data (open markets for every per-game `KXNFL*` series, discovered at run time) to `data/raw_capture/` as gzipped raw bodies with a sha256 `manifest.ndjson`. No API keys. Prop markets vanish at kickoff, so capture runs before each kickoff window.
@@ -14,7 +30,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ### Known pre-existing failures (not introduced here)
 
-- `scripts/verify_repo_integrity.R`: 56 passed / 1 failed (`PROP_GAME_CORR_PASSING` range check vs config 0.40). Tracked as audit item T1.
+- `scripts/verify_repo_integrity.R`: 56 passed / 1 failed (`PROP_GAME_CORR_PASSING` range check vs config 0.40). Tracked as audit item T1; fixed in Phase 0 Task 2 (60/60).
 
 ## [2.9.4] - 2026-02-06
 

@@ -1,12 +1,14 @@
 # NFL Game Prediction Model
 
+> **Status (2026-09-29): unvalidated research model.** Earlier accuracy and calibration figures were withdrawn after an audit found no reproducible evidence for them. See `docs/EVIDENCE_LEDGER.md` and `reports/2026-09-28/AUDIT.md`. Validated numbers will appear here only after the pre-registered backtest passes its gates.
+
 ![CI](https://github.com/jviola1019/nfl/actions/workflows/ci.yml/badge.svg)
 
-A production-ready statistical model for predicting NFL game outcomes using Monte Carlo simulation and data-driven analysis.
+A statistical model for predicting NFL game outcomes using Monte Carlo simulation and data-driven analysis.
 
 **Version**: 2.9.0
 **R Version Required**: 4.3.0+ (tested on 4.5.1)
-**Status**: Production-Ready
+**Status**: Unvalidated research model (see the banner above)
 
 ---
 
@@ -38,21 +40,21 @@ A production-ready statistical model for predicting NFL game outcomes using Mont
 │                   MARKET ANALYSIS                               │
 │  NFLmarket.R: Market comparison + Kelly staking                 │
 │  • build_moneyline_comparison_table()                           │
-│  • shrink_probability_toward_market() (60% market weight)       │
+│  • shrink_probability_toward_market() (70% base, unvalidated)   │
 │  • conservative_kelly_stake() (1/8 Kelly)                       │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │
 ┌───────────────────────────────▼─────────────────────────────────┐
 │                   VALIDATION & METRICS                          │
-│  NFLbrier_logloss.R: Brier = 0.211 (95% CI: 0.205-0.217)       │
+│  NFLbrier_logloss.R: scoring only — see docs/EVIDENCE_LEDGER.md │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 **Key Statistical Methods:**
 - **Score Distribution**: Negative binomial (captures overdispersion)
 - **Correlation**: Gaussian copula (rho ≈ -0.15)
-- **Calibration**: GAM spline (-6.9% Brier improvement)
-- **Shrinkage**: 60% market weight, 40% model weight
+- **Calibration**: GAM spline (calibrator currently invalid, audit M4; disabled in Phase 1)
+- **Shrinkage**: 70% base market weight, 30% model weight (`SHRINKAGE` in config.R; unvalidated, see `docs/EVIDENCE_LEDGER.md` C-SHRINK)
 - **Staking**: 1/8 Kelly with 10% max edge cap
 - **Player Props**: Correlated with game simulation via Gaussian copula (v2.9.0)
 - **Vigged Lines**: Model moneylines with ~10% juice (market-realistic)
@@ -99,7 +101,7 @@ The script generates a unified HTML report with:
 - **Player Props** (v2.9.0): Correlated with game simulation
 - **Market Comparison**: Blend vs Vegas odds
 - **Vigged Model Lines**: Realistic ~10% juice moneylines
-- **Stake Sizing**: Kelly criterion recommendations
+- **Paper Stakes**: 1/8 Kelly stake sizes in tracking units (`STAKING_MODE = "paper"`), not betting advice
 - **Tabbed Interface**: Switch between Games and Props sections
 
 **For detailed setup**: See **[GETTING_STARTED.md](GETTING_STARTED.md)** for IDE setup (RStudio + VS Code) and troubleshooting.
@@ -108,19 +110,9 @@ The script generates a unified HTML report with:
 
 ## Model Accuracy
 
-**Performance** (2022-2024, 2,282 games):
-- **Brier Score**: 0.211 (Vegas: 0.208) - Near-market accuracy
-- **Accuracy**: 67.1% (2 out of 3 games correct)
-- **RMSE**: 10.82 points (within target)
+**Status**: Unvalidated. The accuracy and calibration figures previously shown here were withdrawn 2026-09-28 after an audit found no reproducible evidence for them (`docs/EVIDENCE_LEDGER.md`). Validated numbers will appear here only after a pre-registered backtest passes its promotion gates.
 
-**Comparison** (same dataset):
-- **Vegas Market**: 0.208 Brier (benchmark)
-- **This Model**: 0.211 Brier (+0.003 from market)
-- Confidence interval includes 0 (not statistically distinguishable from market)
-
-*Note: External model comparisons (FiveThirtyEight, ESPN) are approximate since they use different datasets and time periods. See `tests/testthat/` for unit tests validating EV/Kelly/de-vig calculations.*
-
-**See [DOCUMENTATION.md](DOCUMENTATION.md) for complete validation results and statistical methodology.**
+**See [DOCUMENTATION.md](DOCUMENTATION.md)** for methodology; treat any figures there as unvalidated until `docs/EVIDENCE_LEDGER.md` says otherwise.
 
 ---
 
@@ -156,14 +148,14 @@ The model evaluates each team using:
 
 ### Step 3: Adjust for Current Conditions
 
-**Injuries** (validated with p < 0.01):
+**Injuries** (unvalidated config values; see `docs/EVIDENCE_LEDGER.md`):
 - Quarterback out: -7.2 points on average
 - Skill positions (WR/RB/TE): -0.55 points per injured starter
 - Offensive/defensive line: -0.65 points per injured starter
 - Secondary (CB/S): -0.45 points per injured starter
 - Linebackers/edge rushers: -0.50 points per injured starter
 
-**Weather** (validated with p < 0.05):
+**Weather** (unvalidated config values; see `docs/EVIDENCE_LEDGER.md`):
 - Indoor dome: +0.8 points to total scoring
 - High wind (>15 mph): -1.0 points to passing offense
 - Cold temperature (<32°F): -0.5 points to total scoring
@@ -171,7 +163,7 @@ The model evaluates each team using:
 
 **Other Adjustments:**
 - Division rivalry games: -0.2 points (games tend to be closer)
-- All adjustments are statistically validated (p < 0.05)
+- All adjustment sizes are unvalidated until a backtest passes its gates (`docs/EVIDENCE_LEDGER.md`)
 
 ### Step 4: Run Monte Carlo Simulation
 
@@ -202,14 +194,14 @@ WEEK_TO_SIM <- 12          # Week to predict (1-18)
 N_TRIALS <- 100000         # Simulation count
 ```
 
-All model parameters (injuries, weather, rest, etc.) are statistically validated (p < 0.05). See [DOCUMENTATION.md](DOCUMENTATION.md) for complete parameter details.
+All model parameters (injuries, weather, rest, etc.) are unvalidated until a backtest passes its gates; see `docs/EVIDENCE_LEDGER.md`. See [DOCUMENTATION.md](DOCUMENTATION.md) for complete parameter details.
 
 ---
 
 ## Statistical Validation
 
-All model parameters tested using:
-- 10-fold cross-validation (2,282 games, 2022-2024)
+Methods earlier parameter work reported using (results unvalidated; see `docs/EVIDENCE_LEDGER.md`):
+- 10-fold cross-validation (sample and results withdrawn 2026-09-28; see docs/EVIDENCE_LEDGER.md)
 - Permutation testing (p < 0.05 required)
 - Effect size analysis
 
@@ -217,7 +209,6 @@ All model parameters tested using:
 ```bash
 Rscript validation_pipeline.R              # Hyperparameter tuning
 Rscript injury_model_validation.R          # Injury impacts
-Rscript professional_model_benchmarking.R  # vs FiveThirtyEight/ESPN
 ```
 
 See [DOCUMENTATION.md](DOCUMENTATION.md) for complete validation methodology.
@@ -305,12 +296,9 @@ Rscript scripts/run_matrix.R  # Should show 9/9 passed
 | `validation_pipeline.R` | Hyperparameter tuning with cross-validation |
 | `model_validation.R` | Statistical significance testing |
 | `injury_model_validation.R` | Validate injury impact coefficients |
-| `professional_model_benchmarking.R` | Compare to FiveThirtyEight/ESPN |
 | `calibration_refinement.R` | Isotonic regression tuning |
-| `rolling_validation_system.R` | Rolling window backtesting |
 | `rolling_window_validation.R` | Time-series validation |
 | `ensemble_calibration_implementation.R` | Multi-method calibration |
-| `simplified_baseline_comparison.R` | Baseline model comparisons |
 | `lasso_feature_selection.R` | Feature importance via LASSO |
 | `run_validation_example.R` | Example validation run |
 | `validation/playoffs_validation.R` | Playoff-specific validation |
@@ -332,7 +320,7 @@ Rscript scripts/run_matrix.R  # Should show 9/9 passed
 | `DOCUMENTATION.md` | Complete technical methodology |
 | `CLAUDE.md` | **AUTHORITATIVE** - Agent context and API reference |
 | `CHANGELOG.md` | Version history and fixes |
-| `AUDIT.md` | File classification and inventory |
+| `reports/history/AUDIT.md` | Superseded file classification/inventory audit (current: `reports/2026-09-28/AUDIT.md`) |
 
 ### Configuration & Environment
 | File | Purpose |

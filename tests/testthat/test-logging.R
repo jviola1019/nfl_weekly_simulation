@@ -6,7 +6,7 @@
 
 # Skip all tests if logging.R is not available
 skip_if_logging_unavailable <- function() {
-  logging_path <- file.path(getwd(), "..", "..", "R", "logging.R")
+  logging_path <- file.path(.test_project_root, "R", "logging.R")
   if (!file.exists(logging_path) && !exists("log_info")) {
     if (file.exists("R/logging.R")) {
       source("R/logging.R")
@@ -50,20 +50,15 @@ test_that("logging functions are callable", {
 test_that("log levels are properly ordered", {
   skip_if_logging_unavailable()
 
-  # If log levels are defined, they should follow standard ordering
-  if (exists("LOG_LEVELS")) {
-    levels <- LOG_LEVELS
+  # R/logging.R defines LOG_LEVELS; it must follow standard ordering
+  expect_true(exists("LOG_LEVELS"))
+  levels <- LOG_LEVELS
+  expect_true(all(c("DEBUG", "INFO", "WARN", "ERROR") %in% names(levels)))
 
-    # Standard ordering: DEBUG < INFO < WARN < ERROR
-    if (all(c("DEBUG", "INFO", "WARN", "ERROR") %in% names(levels))) {
-      expect_true(levels[["DEBUG"]] < levels[["INFO"]])
-      expect_true(levels[["INFO"]] < levels[["WARN"]])
-      expect_true(levels[["WARN"]] < levels[["ERROR"]])
-    }
-  } else {
-    # Just verify logging works
-    expect_true(TRUE)
-  }
+  # Standard ordering: DEBUG < INFO < WARN < ERROR
+  expect_true(levels[["DEBUG"]] < levels[["INFO"]])
+  expect_true(levels[["INFO"]] < levels[["WARN"]])
+  expect_true(levels[["WARN"]] < levels[["ERROR"]])
 })
 
 # =============================================================================
@@ -73,43 +68,27 @@ test_that("log levels are properly ordered", {
 test_that("log messages include timestamp", {
   skip_if_logging_unavailable()
 
-  # Capture log output
-  if (exists("log_info")) {
-    output <- capture.output({
-      log_info("Test timestamp message")
-    }, type = "message")
+  # log_info writes "[YYYY-MM-DD HH:MM:SS] [INFO] msg" to stdout via cat()
+  old_level <- .nfl_log_level
+  set_log_level("INFO")
+  on.exit(set_log_level(old_level), add = TRUE)
 
-    # Should contain some form of timestamp or be empty (if suppressed)
-    if (length(output) > 0) {
-      # Look for common timestamp patterns
-      has_timestamp <- any(grepl("\\d{2}:\\d{2}", output)) ||  # HH:MM
-                       any(grepl("\\d{4}-\\d{2}-\\d{2}", output)) ||  # YYYY-MM-DD
-                       any(grepl("\\[.*\\]", output))  # [brackets]
+  output <- capture.output(log_info("Test timestamp message"))
 
-      # Timestamp is preferred but not required
-      if (!has_timestamp) {
-        message("Note: Log output may not include timestamps")
-      }
-    }
-  }
+  expect_length(output, 1)
+  expect_match(output,
+               "^\\[\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\] \\[INFO\\] Test timestamp message$",
+               perl = TRUE)
 })
 
 test_that("log messages include level indicator", {
   skip_if_logging_unavailable()
 
-  if (exists("log_warn")) {
-    output <- capture.output({
-      log_warn("Test level indicator")
-    }, type = "message")
+  # log_warn writes to stderr via message()
+  output <- capture.output(log_warn("Test level indicator"), type = "message")
 
-    if (length(output) > 0) {
-      # Should contain WARN or WARNING
-      has_level <- any(grepl("WARN|WARNING|\\[W\\]", output, ignore.case = TRUE))
-      if (!has_level) {
-        message("Note: Log output may not include level indicator")
-      }
-    }
-  }
+  expect_length(output, 1)
+  expect_match(output, "\\[WARN\\] Test level indicator$")
 })
 
 # =============================================================================
@@ -202,14 +181,18 @@ test_that("log_error captures error context", {
 test_that("timing logging works if available", {
   skip_if_logging_unavailable()
 
-  if (exists("log_timing") || exists("log_performance")) {
-    fn <- if (exists("log_timing")) log_timing else log_performance
+  # R/logging.R's timing API is create_timer() + log_timer()
+  # (log_timing/log_performance never existed)
+  old_level <- .nfl_log_level
+  set_log_level("INFO")
+  on.exit(set_log_level(old_level), add = TRUE)
 
-    # Should accept timing information
-    expect_silent(suppressMessages({
-      tryCatch(fn("Operation", 1.234), error = function(e) NULL)
-    }))
-  }
+  timer <- checkpoint(create_timer("Operation"), "step 1")
+  expect_s3_class(timer, "nfl_timer")
+  expect_length(timer$checkpoints, 1)
+
+  output <- capture.output(log_timer(timer))
+  expect_match(output[1], "\\[INFO\\] Timer 'Operation': \\d+\\.\\d{2} seconds total$")
 })
 
 # =============================================================================

@@ -514,7 +514,7 @@ if (length(missing_tests) == 0) {
 # ISSUE 20: Documentation files
 # =============================================================================
 cat("\n--- Issue 20: Documentation ---\n")
-doc_files <- c("CLAUDE.md", "AUDIT.md", "README.md")
+doc_files <- c("CLAUDE.md", "reports/history/AUDIT.md", "README.md")
 existing_docs <- doc_files[file.exists(doc_files)]
 missing_docs <- doc_files[!file.exists(doc_files)]
 
