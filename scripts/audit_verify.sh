@@ -12,7 +12,8 @@ rg -n "ML Implied Home % \(Raw\)" NFLmarket.R >/dev/null
 rg -n "EV Edge \(Raw\)" NFLmarket.R >/dev/null
 rg -n "EV Edge \(Displayed, Capped\)" NFLmarket.R >/dev/null
 rg -n "Min Stake \(%\)" NFLmarket.R >/dev/null
-rg -n "Market odds missing/placeholder|Negative EV|Stake below minimum" NFLmarket.R >/dev/null
+rg -n "Negative EV" R/utils.R >/dev/null
+rg -n "Stake below minimum" R/utils.R >/dev/null
 rg -n "MODEL ERROR / REVIEW" NFLmarket.R >/dev/null
 
 if command -v Rscript >/dev/null 2>&1; then
