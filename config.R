@@ -30,14 +30,14 @@ if (getRversion() < "4.0.0") {
 #' @description Current NFL season to simulate
 #' @default Current year (auto-detected from system date)
 #' @examples 2024, 2025
-SEASON <- 2025  # or set manually: SEASON <- 2024
+SEASON <- as.integer(getOption("nfl.season", 2025L))  # CLI: Rscript run_week.R <week> <season> (audit M1)
 
 #' @description Week number to simulate
 #' @important **CHANGE THIS VALUE** to run predictions for different weeks
 #' @note Regular season: 1-18, Playoffs: 19=Wild Card, 20=Divisional, 21=Conference, 22=Super Bowl
 #' @default 18
 #' @examples 1, 2, 3, ..., 18 (regular season), 19, 20, 21, 22 (playoffs)
-WEEK_TO_SIM <- 22  # <-- **CHANGE THIS TO RUN A DIFFERENT WEEK [19 = WILD CARD, 20 = DIVISIONAL, 21 = CONFERENCE, 22 = SUPER BOWL]**
+WEEK_TO_SIM <- as.integer(getOption("nfl.week", 22L))  # <-- **CHANGE THE DEFAULT (22L) TO RUN A DIFFERENT WEEK [19 = WILD CARD, 20 = DIVISIONAL, 21 = CONFERENCE, 22 = SUPER BOWL]**; CLI overrides via options
 
 # =============================================================================
 # SIMULATION PARAMETERS
