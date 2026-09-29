@@ -18,20 +18,32 @@ have headers and no rows.
 
 - **Kalshi is the usable historical prop source.** It has anytime TD from
   2025-09-04 (2025 week 1) and receiving, rushing and passing yards from
-  2025-10-06. Every settled market has hourly candles back to at least 48 h
-  before kickoff. In a seeded random sample, 161/173 markets (93.1%) had a
-  pre-kickoff price (a trade or a two-sided quote).
-  - **GO:** anytime TD plus all three yardage markets clear ≥300 settled
-    player-games with a pre-kickoff price. They clear it even at the 95% lower
-    confidence bound.
-  - **The spec rule is met.** The GO window is only the 2025 season plus 2026
-    weeks 1–3.
+  2025-10-06.
+  - In the candle sample, 170/173 random markets had at least one hourly candle
+    in the 48 h before kickoff.
+  - 161/173 (93.1%) had a pre-kickoff price, meaning a trade or a two-sided
+    quote.
+- **GO (primary definition):** anytime TD plus all three yardage markets clear
+  ≥300 settled player-games with a pre-kickoff price.
+  - They clear it even at the event-level 95% lower bound. The tightest margin
+    is passing yards: 390 vs 300.
+  - These counts extrapolate from one random market per sampled event, and
+    assume the same priced rate within an event (section 4).
+- **The spec rule is met under the primary definition.**
+  - The GO window is the 2025 season, plus 2026 weeks 1–3 for the yardage,
+    receptions and first-TD series. The 2026 anytime-TD series (KXNFLTD) rests
+    on n=3 and must be re-measured.
+  - Under a stricter trade-in-the-final-hour reading, passing yards drops below
+    300 (276), and the rule would not be met (section 4).
+  - No measured market is NO-GO under the primary definition. Unmeasured ESPN
+    props are labeled NOT MEASURED.
 - **ESPN BET props (provider 58): the verdict is LINE-MOVEMENT ONLY for all
   four tested markets, under the rule as written.**
   - The row-level test is confounded: unpriced rows are alternate-ladder rungs,
     not main lines that lost their price (section 2).
-  - ESPN BET anytime-TD rows carry prices in only one week (2025 week 1), so
-    ESPN offers no historical anytime-TD prices.
+  - ESPN BET anytime-TD rows carry prices in only two weeks: 7 player-games in
+    2024 week 8, and 294 in 2025 week 1. That leaves 265 settled player-games,
+    so ESPN offers effectively no historical anytime-TD prices.
 - **ESPN game odds:** open and close moneylines are present for every sampled
   game from 2023 on. In 2022 only close is present; in 2018–2021 neither is.
   From 2025 week 15, ESPN's game-odds provider is DraftKings (100), not ESPN BET
@@ -221,47 +233,144 @@ exist for 2025 weeks 14 onward was **not measured**; that is a follow-up.
 **Spec rule (copied exactly from the brief):** anytime TD plus at least 3
 yardage markets, each with ≥300 settled player-games that have a pre-kickoff
 price.
-- **GO** markets are backtested historically in Phase 5.
-- **NO-GO** markets are prospective-only, labeled that way.
 
-How the counts are built:
-- **Kalshi.** Player-games with a pre-kickoff price = settled player-games
-  (exact) × the random-market priced rate (k/n). The "lower" column uses the
-  Clopper–Pearson 95% lower bound of k/n, `qbeta(0.025, k, n − k + 1)`.
-- **ESPN BET.** It counts only when its verdict is USABLE, and it is not USABLE
-  for any market.
+The labels in this section:
+- **GO** means measured, and at or above the rule. GO markets are backtested
+  historically in Phase 5.
+- **NO-GO** means measured, and below the rule. NO-GO markets are
+  prospective-only, labeled that way.
+- **NOT MEASURED** means this spike took no measurement, so the market is
+  neither GO nor NO-GO. It stays prospective-only until it is measured.
 
-| Market | Source used | Window with prices | Settled player-games | Pre-kickoff priced (k/n) | Player-games with pre-kickoff price (point / 95% lower) | ESPN BET verdict | Decision |
-|---|---|---|---|---|---|---|---|
-| **Anytime TD** | Kalshi KXNFLANYTD (plus KXNFLTD 1+ strike from 2026) | 2025-09-04 → 2026-02-08, then 2026 wks 1–3 | 5335 (+1090 KXNFLTD) | 15/16 | 5002 / 3722 | LINE-MOVEMENT ONLY (and priced in only 2 weeks) | **GO** |
-| **Receiving yards** | Kalshi KXNFLRECYDS | 2025-10-06 → 2026-09-28 | 2573 | 16/16 | 2573 / 2043 | LINE-MOVEMENT ONLY | **GO** |
-| **Rushing yards** | Kalshi KXNFLRSHYDS | 2025-10-06 → 2026-09-28 | 1168 | 16/16 | 1168 / 928 | LINE-MOVEMENT ONLY | **GO** |
-| **Passing yards** | Kalshi KXNFLPASSYDS | 2025-10-06 → 2026-09-28 | 491 | 16/16 | 491 / 390 | not tested (outside the brief's 4 markets) | **GO** |
-| Receptions | Kalshi KXNFLREC | 2025-10-27 → 2026-09-28 | 2140 | 14/15 | 1997 / 1456 | LINE-MOVEMENT ONLY | **GO** |
-| 2+ TD | Kalshi KXNFL2TD (2+ strike inside KXNFLTD from 2026) | 2025-09-04 → 2026-02-08 | 2136 | 13/16 | 1736 / 1161 | not tested | **GO** |
-| First TD | Kalshi KXNFLFIRSTTD | 2025-09-04 → 2026-09-28 | 6512 | 16/19 | 5484 / 3935 | not tested | **GO** |
-| Other ESPN-only props (rush+rec yards, longest reception/rush, carries, passing TDs/attempts/completions, 1st-half/1st-quarter, tackles, …) | none measured | – | – | – | – | not tested | **NO-GO: prospective-only** |
+### How the counts are built, and what they assume
+
+- **The sampling unit is the event.**
+  - For each series, 3 events per calendar month were drawn with a seed.
+  - For each drawn event, one market was drawn uniformly at random from that
+    event's markets, and checked for a pre-kickoff price (section 1).
+  - k/n counts events: n sampled events, k of which had a random market that
+    was priced. So the Clopper–Pearson 95% lower bound,
+    `qbeta(0.025, k, n − k + 1)`, is an **event-level binomial bound**. It is
+    not a bound over markets or player-games.
+- **The extrapolation assumes the rate holds everywhere.** Player-games with a
+  pre-kickoff price = settled player-games (exact, from every event) × k/n.
+  That **assumes the priced rate is the same for every market within an event,
+  and across the events of the series.** This was not tested. Three things
+  weaken it:
+  - Months are equally weighted, not weighted by event count.
+  - A player-game with several strikes counts as priced if any strike is
+    priced, while the check looked at one market.
+  - Liquidity varies by player and by strike. Top-volume markets were priced
+    98.8% of the time, random markets 93.1%.
+- **"Priced"** means the last candle at or before kickoff has a traded close
+  price, or a two-sided quote (yes_bid > 0 and yes_ask < 1). A stricter
+  trade-only reading is tested below.
+- **ESPN BET** counts only when its verdict is USABLE, and it is not USABLE for
+  any market (section 2).
+
+### Primary table (priced = trade or two-sided quote)
+
+The margin column is (settled × CP lower bound) − 300. The source for every
+number is `kalshi_series_summary.csv` (settled player-games) and
+`kalshi_candle_sample.csv` (k/n).
+
+| Market | Source used | Window with prices | Settled player-games | k/n (events) | CP 95% lower of rate | Point: settled × k/n | Lower: settled × CP lower | Margin at lower vs 300 | Decision |
+|---|---|---|---|---|---|---|---|---|---|
+| **Anytime TD** | Kalshi KXNFLANYTD | 2025-09-04 → 2026-02-08 | 5335 | 15/16 | 0.6977 | 5002 | 3722 | +3422 | **GO** |
+| **Receiving yards** | Kalshi KXNFLRECYDS | 2025-10-06 → 2026-09-28 | 2573 | 16/16 | 0.7941 | 2573 | 2043 | +1743 | **GO** |
+| **Rushing yards** | Kalshi KXNFLRSHYDS | 2025-10-06 → 2026-09-28 | 1168 | 16/16 | 0.7941 | 1168 | 928 | +628 | **GO** |
+| **Passing yards** | Kalshi KXNFLPASSYDS | 2025-10-06 → 2026-09-28 | 491 | 16/16 | 0.7941 | 491 | 390 | **+90 (tightest)** | **GO** |
+| Receptions | Kalshi KXNFLREC | 2025-10-27 → 2026-09-28 | 2140 | 14/15 | 0.6805 | 1997 | 1456 | +1156 | **GO** |
+| 2+ TD | Kalshi KXNFL2TD | 2025-09-04 → 2026-02-08 | 2136 | 13/16 | 0.5435 | 1736 | 1161 | +861 | **GO** |
+| First TD | Kalshi KXNFLFIRSTTD | 2025-09-04 → 2026-09-28 | 6512 | 16/19 | 0.6042 | 5484 | 3935 | +3635 | **GO** |
+| Anytime TD, 2026 source alone | Kalshi KXNFLTD (1+/2+/3+ strikes) | 2026 wks 1–3 | 1090 | 1/3 | 0.0084 | 363 | 9 | −291 | **LOW CONFIDENCE (n=3).** Not used for the anytime-TD verdict; see below |
+| Other ESPN-only props (rush+rec yards, longest reception/rush, carries, passing TDs/attempts/completions, 1st-half/1st-quarter, tackles, …) | none | – | – | – | – | – | – | – | **NOT MEASURED** (prospective-only until measured) |
+
+ESPN BET, all four tested markets: not USABLE (LINE-MOVEMENT ONLY), so ESPN
+contributes 0 to every count above. Even if ESPN anytime TD were usable, it
+would fall below the rule: it has 7 + 258 = 265 open-priced settled
+player-games (`espn_bet_market_season.csv`, 2024 + 2025). There are 7 + 294 =
+301 open-priced player-games before requiring an outcome, but only 265 have a
+weekly stat row.
 
 Game-level markets (moneyline, spread, total) are not player-games, so the rule
 does not apply to them. ESPN game odds give open and close from 2023, and
 Kalshi GAME, SPREAD and TOTAL cover 2025 onward.
 
-**Spec rule outcome: MET.** Anytime TD is GO, and three yardage markets
-(receiving, rushing and passing yards) are each GO. They clear 300 even at the
-95% lower bounds of 3722, 2043, 928 and 390.
+**Tightest margin (primary definition):** passing yards. 491 × 0.7941 = 390,
+which is **90** above 300.
+- If every pre-kickoff rate were as low as its Clopper–Pearson lower bound,
+  **no GO verdict would flip**. The smallest lower-bound count among GO markets
+  is 390.
+- For passing yards to fall below 300, its rate would have to drop below
+  300/491 = 0.611. The sample was 16/16.
 
-Caveats that bind Phase 5:
+**Under the primary definition, no measured market is NO-GO.**
+
+### Stricter reading: a trade in the final pre-kickoff hour
+
+Here "priced" requires `last_pre_trade_price` to be non-missing, meaning a trade
+printed in the last hourly candle at or before kickoff. A two-sided quote alone
+does not count. This is stricter than the rule's "a pre-kickoff price". The
+columns come from `kalshi_candle_sample.csv`, random picks.
+
+| Market | k/n traded | CP 95% lower | Point | Lower | Decision under this reading |
+|---|---|---|---|---|---|
+| Anytime TD (KXNFLANYTD) | 12/16 | 0.4762 | 4001 | 2541 | GO |
+| Receiving yards | 11/16 | 0.4134 | 1769 | 1064 | GO |
+| Rushing yards | 13/16 | 0.5435 | 949 | 635 | GO |
+| **Passing yards** | **9/16** | 0.2988 | **276** | **147** | **NO-GO** (below 300 even at the point estimate: −24 at point, −153 at lower) |
+| Receptions | 5/15 | 0.1182 | 713 | 253 | GO at point; **below 300 at the lower bound (−47)** |
+| 2+ TD | 9/16 | 0.2988 | 1202 | 638 | GO |
+| First TD | 14/19 | 0.4880 | 4798 | 3178 | GO |
+
+**Spec rule outcome:**
+- **MET under the primary definition** (trade or two-sided quote). Anytime TD
+  and receiving, rushing and passing yards are GO, with lower-bound margins of
+  +3422, +1743, +628 and +90.
+- **NOT MET under the stricter trade-only reading.** Passing yards drops to
+  NO-GO (276 / 147), which leaves only two yardage markets.
+
+A two-sided quote is an executable price: one can buy at the ask. That is why it
+is the primary definition. The median random-market spread was 0.03–0.06
+(section 1). Phase 5 must fix the price definition, and the maximum acceptable
+spread, before it relies on passing yards.
+
+### KXNFLTD: low confidence, re-measure in Phase 2
+
+KXNFLTD's rate rests on **n = 3 events** (1/3 priced), so it is low-confidence.
+- The two unpriced random picks were a 2+ strike and a 3+ strike. They opened
+  1.4 h and 1.0 h after kickoff, so they could not have had a pre-kickoff price.
+- The 1+ strikes that were checked were all priced: 1 random pick and 3
+  top-volume picks, the latter biased toward liquidity.
+- The anytime-TD GO above rests on KXNFLANYTD (2025) alone. The 2026 KXNFLTD
+  counts (1090 settled player-games) are **not** added to it.
+
+Before the historical props backtest uses any 2026 anytime-TD prices, Phase 2
+must re-measure:
+1. **The pre-kickoff price rate at the market level for KXNFLTD 1+ strikes.**
+   Use every 2026 regular-season event (48 events, 2280 markets in
+   `kalshi_events.csv`), via the live `/series/KXNFLTD/markets/{T}/candlesticks`
+   endpoint, since these are past the historical cutoff.
+2. **`open_time` against kickoff for every strike,** to count the strikes
+   created in-game.
+3. **Market-level rates for the GO series,** replacing this event-level
+   extrapolation. Check all markets of the sampled events, or a larger n. This
+   applies above all to passing yards, whose margin is the thinnest (+90).
+
+### Caveats that bind Phase 5
+
 1. **The historical window is short.**
-   - Anytime TD covers 2025 weeks 1–22 plus 2026 weeks 1–3.
+   - Anytime TD covers 2025 weeks 1–22 (2026 weeks 1–3 pending the KXNFLTD
+     re-measure).
    - The yardage series start 2025-10-06, about 2025 week 5.
    - No 2024 prop prices are usable under the rule.
 2. **Kalshi yardage and reception markets are threshold ladders** ("70+
    receiving yards"), not over/under main lines. The backtest must price
    P(stat ≥ k) per strike.
-3. **The pre-kickoff rate is estimated from 15–19 sampled events per series.**
-   KXNFLTD alone has n=3, and 2 of its 3 random markets were 2+/3+ strikes
-   created after kickoff, so no pre-kickoff price is possible for those
-   (section 5).
+3. **The GO counts are extrapolations.** They rest on the event-level sample and
+   the within-event equal-rate assumption stated above, not on a count of every
+   market's candles.
 
 ## 5. Deviations and failures
 
