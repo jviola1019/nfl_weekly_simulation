@@ -549,11 +549,6 @@ VERBOSE <- TRUE
 #' @default FALSE (enable during season)
 ENABLE_MONITORING <- FALSE
 
-#' @description Model Brier score (2022-2024, 2282 games, without spline calibration)
-#' @note With spline calibration: 0.211. Update when re-validated.
-MODEL_BRIER_SCORE <- 0.214
-MARKET_BRIER_SCORE <- 0.210
-
 #' @description Brier score alert threshold
 #' @default 0.23
 MONITORING_BRIER_THRESHOLD <- 0.23
@@ -788,6 +783,11 @@ VIG <- 0.10
 #' @default 0.02 (2%)
 MAX_STAKE <- 0.02
 
+#' @description Staking mode. "paper" labels every stake as a paper/tracking unit
+#'   until a backtest passes the promotion gates (docs/EVIDENCE_LEDGER.md).
+#' @default "paper"
+STAKING_MODE <- "paper"
+
 #' @description Isotonic calibration boundary padding
 #' @default 0.01
 ISOTONIC_EPSILON <- 0.01
@@ -806,27 +806,27 @@ RUN_PLAYER_PROPS <- TRUE
 #' @default c("passing", "rushing", "receiving", "td")
 PROP_TYPES <- c("passing", "rushing", "receiving", "receptions", "td")
 
-# Correlation coefficients (empirically derived from 2019-2024 NFL data)
+# Correlation coefficients (unvalidated config values, see docs/EVIDENCE_LEDGER.md)
 # These control how strongly player stats correlate with game outcomes
 
 #' @description QB passing yards correlation with game total
-#' @default 0.75
-#' @validation Based on nflreadr data 2019-2024, r = 0.72-0.78
+#' @default 0.40
+#' @note Unvalidated config value (docs/EVIDENCE_LEDGER.md)
 PROP_GAME_CORR_PASSING <- 0.40
 
 #' @description RB rushing yards correlation with game total
-#' @default 0.60
-#' @validation Based on nflreadr data 2019-2024, r = 0.55-0.65
+#' @default 0.09
+#' @note Unvalidated config value (docs/EVIDENCE_LEDGER.md)
 PROP_GAME_CORR_RUSHING <- 0.09
 
 #' @description WR/TE receiving yards correlation with team passing
-#' @default 0.50
-#' @validation Based on nflreadr data 2019-2024, r = 0.45-0.55
+#' @default 0.30
+#' @note Unvalidated config value (docs/EVIDENCE_LEDGER.md)
 PROP_GAME_CORR_RECEIVING <- 0.30
 
 #' @description TD probability correlation with game total
-#' @default 0.40
-#' @validation Overdispersed count data, correlation weaker
+#' @default 0.17
+#' @note Unvalidated config value (docs/EVIDENCE_LEDGER.md)
 PROP_GAME_CORR_TD <- 0.17
 
 #' @description Intra-team player correlation (cannibalization effect)
@@ -860,8 +860,8 @@ USE_REAL_PROP_ODDS <- TRUE
 PROP_ODDS_SOURCE <- "auto"
 
 #' @description Prop odds source order when PROP_ODDS_SOURCE="auto"
-#' @default c("scoresandodds","oddstrader","covers","odds_api","csv","model")
-PROP_ODDS_SOURCE_ORDER <- c("scoresandodds", "oddstrader", "covers", "odds_api", "csv", "model")
+#' @default c("scoresandodds","odds_api","csv","model")
+PROP_ODDS_SOURCE_ORDER <- c("scoresandodds", "odds_api", "csv", "model")
 
 #' @description Allow remote HTML/API scraping for prop odds
 #' @default TRUE
@@ -1040,15 +1040,13 @@ if (interactive() || getOption("nfl_sim.show_config", default = FALSE)) {
   cat(sprintf("  Calibration:      %s\n", CALIBRATION_METHOD))
   cat(sprintf("  Meta-model:       %s\n", BLEND_META_MODEL))
   cat("\n")
-  cat("  Validated Parameters:\n")
-  cat(sprintf("    • Short rest penalty:  %.2f points (p=0.003)\n", REST_SHORT_PENALTY))
-  cat(sprintf("    • Bye week bonus:      %.2f points (p=0.009)\n", BYE_BONUS))
-  cat(sprintf("    • Division adjust:     %.2f points (p=0.078)\n", DIVISION_GAME_ADJUST))
+  cat("  Parameters (unvalidated, see docs/EVIDENCE_LEDGER.md):\n")
+  cat(sprintf("    • Short rest penalty:  %.2f points\n", REST_SHORT_PENALTY))
+  cat(sprintf("    • Bye week bonus:      %.2f points\n", BYE_BONUS))
+  cat(sprintf("    • Division adjust:     %.2f points\n", DIVISION_GAME_ADJUST))
   cat("\n")
-  cat("  Model Performance (Validation):\n")
-  cat("    • RMSE:           10.82 ± 0.43 points\n")
-  cat(sprintf("    • Brier Score:    %.3f (market: %.3f)\n", MODEL_BRIER_SCORE, MARKET_BRIER_SCORE))
-  cat("    • Rank:           #2 vs professional models\n")
+  cat("  Model status:     UNVALIDATED (see docs/EVIDENCE_LEDGER.md)\n")
+  cat(sprintf("  Staking mode:     %s\n", STAKING_MODE))
   cat("\n")
   cat("  Week Selection:\n")
   cat("    • Weeks 1-18:     Regular season\n")
@@ -1138,8 +1136,6 @@ list2env(
     GENERATE_HTML_REPORTS = GENERATE_HTML_REPORTS,
     VERBOSE = VERBOSE,
     ENABLE_MONITORING = ENABLE_MONITORING,
-    MODEL_BRIER_SCORE = MODEL_BRIER_SCORE,
-    MARKET_BRIER_SCORE = MARKET_BRIER_SCORE,
     MONITORING_BRIER_THRESHOLD = MONITORING_BRIER_THRESHOLD,
     MONITORING_ACCURACY_THRESHOLD = MONITORING_ACCURACY_THRESHOLD,
     USE_SOBOL = USE_SOBOL,
@@ -1175,6 +1171,7 @@ list2env(
     MAX_EDGE = MAX_EDGE,
     VIG = VIG,
     MAX_STAKE = MAX_STAKE,
+    STAKING_MODE = STAKING_MODE,
     ISOTONIC_EPSILON = ISOTONIC_EPSILON,
     # Player props configuration (v2.9.0)
     RUN_PLAYER_PROPS = RUN_PLAYER_PROPS,

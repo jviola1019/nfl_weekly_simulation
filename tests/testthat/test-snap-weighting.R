@@ -195,6 +195,7 @@ test_that("calc_injury_impacts sources injury_scalp.R when needed", {
 # =============================================================================
 
 test_that("snap percentages have expected structure", {
+  skip("KNOWN-DEFECT M15: load_player_snap_percentages() always returns 0 rows with the current nflreadr participation schema")
   injury_scalp_path <- file.path(.test_project_root, "injury_scalp.R")
   if (!file.exists(injury_scalp_path)) {
     skip("injury_scalp.R not found")
@@ -208,18 +209,16 @@ test_that("snap percentages have expected structure", {
     skip("load_player_snap_percentages function not available")
   }
 
-  # Try to load snap data for a team
-  snap_data <- tryCatch({
-    load_player_snap_percentages("DAL", 2024, use_cache = TRUE)
-  }, error = function(e) tibble::tibble())
+  # Load snap data for a team (errors surface; 0 rows is the M15 defect)
+  snap_data <- load_player_snap_percentages("DAL", 2024, use_cache = TRUE)
 
-  if (nrow(snap_data) > 0) {
-    # Check expected columns
-    expect_true("player" %in% names(snap_data) || "full_name" %in% names(snap_data),
-                info = "Snap data should have player name column")
-    expect_true("snap_pct" %in% names(snap_data) || "snaps" %in% names(snap_data),
-                info = "Snap data should have snap percentage column")
-  }
+  expect_gt(nrow(snap_data), 0)
+
+  # Check expected columns
+  expect_true("player" %in% names(snap_data) || "full_name" %in% names(snap_data),
+              info = "Snap data should have player name column")
+  expect_true("snap_pct" %in% names(snap_data) || "snaps" %in% names(snap_data),
+              info = "Snap data should have snap percentage column")
 })
 
 # =============================================================================

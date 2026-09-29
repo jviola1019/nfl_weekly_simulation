@@ -4,6 +4,21 @@
 # Note: R/utils.R is loaded by tests/testthat/setup.R
 # =============================================================================
 
+# Earlier test files load NFLmarket.R, which carries its own copies of several
+# R/utils.R functions (audit H1). helper-nflmarket.R keeps those out of the
+# global environment; if any copy leaked, the tests below would exercise it
+# instead of R/utils.R.
+test_that("R/utils.R functions are not shadowed in the global environment", {
+  fresh <- new.env()
+  sys.source(file.path(PROJECT_ROOT, "R", "utils.R"), envir = fresh)
+  fns <- Filter(function(nm) is.function(fresh[[nm]]), ls(fresh))
+  expect_gt(length(fns), 20)
+  shadowed <- Filter(function(nm) {
+    !identical(get0(nm, envir = globalenv(), inherits = FALSE), fresh[[nm]], ignore.environment = TRUE)
+  }, fns)
+  expect_equal(shadowed, character())
+})
+
 # =============================================================================
 # ODDS CONVERSION TESTS
 # =============================================================================

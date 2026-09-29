@@ -22,14 +22,12 @@
 library(testthat)
 
 # Source props modules
-props_dir <- file.path(getwd(), "sports", "nfl", "props")
-if (dir.exists(props_dir)) {
-  source(file.path(props_dir, "props_config.R"))
-  source(file.path(props_dir, "passing_yards.R"))
-  source(file.path(props_dir, "rushing_yards.R"))
-  source(file.path(props_dir, "receiving_yards.R"))
-  source(file.path(props_dir, "touchdowns.R"))
-}
+props_dir <- file.path(.test_project_root, "sports", "nfl", "props")
+source(file.path(props_dir, "props_config.R"))
+source(file.path(props_dir, "passing_yards.R"))
+source(file.path(props_dir, "rushing_yards.R"))
+source(file.path(props_dir, "receiving_yards.R"))
+source(file.path(props_dir, "touchdowns.R"))
 
 # =============================================================================
 # CONFIGURATION PARAMETERS TESTS
@@ -536,16 +534,14 @@ test_that("defense multiplier ranges are symmetric around 1", {
 # =============================================================================
 
 test_that("get_player_projections_with_fallback is defined", {
-  data_sources_path <- file.path(getwd(), "sports", "nfl", "props", "data_sources.R")
-  skip_if_not(file.exists(data_sources_path), "data_sources.R not found")
+  data_sources_path <- file.path(.test_project_root, "sports", "nfl", "props", "data_sources.R")
 
   source(data_sources_path, local = TRUE)
   expect_true(exists("get_player_projections_with_fallback", mode = "function"))
 })
 
 test_that("create_baseline_projections returns valid structure", {
-  data_sources_path <- file.path(getwd(), "sports", "nfl", "props", "data_sources.R")
-  skip_if_not(file.exists(data_sources_path), "data_sources.R not found")
+  data_sources_path <- file.path(.test_project_root, "sports", "nfl", "props", "data_sources.R")
 
   source(data_sources_path, local = TRUE)
   skip_if_not(exists("create_baseline_projections", mode = "function"),
@@ -571,8 +567,7 @@ test_that("create_baseline_projections returns valid structure", {
 })
 
 test_that("baseline projections have valid statistical values", {
-  data_sources_path <- file.path(getwd(), "sports", "nfl", "props", "data_sources.R")
-  skip_if_not(file.exists(data_sources_path), "data_sources.R not found")
+  data_sources_path <- file.path(.test_project_root, "sports", "nfl", "props", "data_sources.R")
 
   source(data_sources_path, local = TRUE)
   skip_if_not(exists("create_baseline_projections", mode = "function"),
@@ -602,38 +597,37 @@ test_that("baseline projections have valid statistical values", {
 })
 
 test_that("apply_defense_adjustments is defined in correlated_props", {
-  props_path <- file.path(getwd(), "R", "correlated_props.R")
-  skip_if_not(file.exists(props_path), "correlated_props.R not found")
+  props_path <- file.path(.test_project_root, "R", "correlated_props.R")
 
   source(props_path, local = TRUE)
   expect_true(exists("apply_defense_adjustments", mode = "function"))
 })
 
 test_that("apply_game_context is defined in correlated_props", {
-  props_path <- file.path(getwd(), "R", "correlated_props.R")
-  skip_if_not(file.exists(props_path), "correlated_props.R not found")
+  props_path <- file.path(.test_project_root, "R", "correlated_props.R")
 
   source(props_path, local = TRUE)
   expect_true(exists("apply_game_context", mode = "function"))
 })
 
 test_that("load_game_players handles future seasons", {
-  props_path <- file.path(getwd(), "R", "correlated_props.R")
-  skip_if_not(file.exists(props_path), "correlated_props.R not found")
+  props_path <- file.path(.test_project_root, "R", "correlated_props.R")
 
   source(props_path, local = TRUE)
   skip_if_not(exists("load_game_players", mode = "function"),
               "load_game_players not defined")
 
   # Test with a future season (no data should exist)
-  # Should return players from fallback (previous seasons)
-  result <- tryCatch(
-    load_game_players("KC", "SF", season = 2030, week = 1),
-    error = function(e) NULL
-  )
+  # Should return players from fallback (previous seasons, else league baselines).
+  # load_game_players() sources sports/nfl/props/data_sources.R relative to the
+  # working directory, so call it from the repo root as run_week.R does.
+  result <- withr::with_dir(.test_project_root,
+                            load_game_players("KC", "SF", season = 2030, week = 1))
 
-  # Should not be NULL or should have is_projection flag
-  if (!is.null(result) && nrow(result) > 0) {
-    expect_true("is_projection" %in% names(result) || "is_baseline" %in% names(result))
-  }
+  expect_s3_class(result, "data.frame")
+  expect_gt(nrow(result), 0)
+  expect_true(all(c("is_projection", "is_baseline") %in% names(result)))
+  # No 2030 data exists, so every row must be flagged as a projection
+  expect_true(all(result$is_projection))
+  expect_true(all(result$recent_team %in% c("KC", "SF")))
 })

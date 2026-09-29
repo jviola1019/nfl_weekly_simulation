@@ -58,3 +58,12 @@ data/raw_capture/
 
 # Archived files (unused/superseded code)
 archive/
+
+# Secrets and local tool state
+.Renviron
+.env*
+.claude/settings*.json
+.playwright-mcp/
+
+# Generated data (local bundles, never committed)
+bundles/

@@ -8,12 +8,11 @@
 
 context("Game Table Invariants (G1-G8)")
 
-# Source NFLmarket.R for harmonize_home_margin (not loaded by setup.R)
-tryCatch({
-  source(file.path(.test_project_root, "NFLmarket.R"))
-}, error = function(e) {
-  # NFLmarket.R may fail to load in CI; tests that need it will skip individually
-})
+# harmonize_home_margin lives in NFLmarket.R (not loaded by setup.R). Load it
+# privately so NFLmarket's copies of R/utils.R functions don't shadow the
+# canonical ones for later test files (helper-nflmarket.R). The odds, EV and
+# Kelly helpers used below are the canonical R/utils.R versions.
+harmonize_home_margin <- nflmarket_env()$harmonize_home_margin
 
 # =============================================================================
 # G1: Matchup Parsing - "SEA @ NE" means NE is home

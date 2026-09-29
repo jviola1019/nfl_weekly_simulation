@@ -1,0 +1,7 @@
+# One regex per line. A skip whose reason matches none of these fails the run.
+# KNOWN-DEFECT skips must cite an audit ID from reports/2026-09-28/AUDIT.md (or
+# reports/2026-09-29/AUDIT-ADDENDUM.md) and are removed by the phase that fixes that ID.
+# LIVE skips come only from skip_live()/with_live() in tests/testthat/helper-live.R,
+# after a real connectivity check to the host fails (test-skip-hygiene.R enforces this).
+^LIVE: 
+^KNOWN-DEFECT (M|P|S|U|T|H|D|SEC)[0-9]+: 

@@ -15,10 +15,8 @@
 library(testthat)
 
 # Source utils
-utils_path <- file.path(getwd(), "R", "utils.R")
-if (file.exists(utils_path)) {
-  source(utils_path, local = FALSE)
-}
+utils_path <- file.path(.test_project_root, "R", "utils.R")
+source(utils_path, local = FALSE)
 
 # =============================================================================
 # APPLY_MODEL_VIG TESTS

@@ -10,7 +10,7 @@
 
 An NFL game prediction model using Monte Carlo simulation with:
 - Negative Binomial score distributions with Gaussian copula correlation
-- Spline calibration (GAM with smoothing penalty, -6.9% Brier improvement)
+- Spline calibration (calibrator currently invalid, audit M4; disabled in Phase 1)
 - 70% market shrinkage for probability estimates (increased from 60% when spline calibration unavailable)
 - 1/8 Kelly staking with edge skepticism
 - Strength-of-schedule, injury, and coaching change adjustments
@@ -24,6 +24,7 @@ An NFL game prediction model using Monte Carlo simulation with:
 |------|---------|-------------|
 | `run_week.R` | Weekly predictions | `source("run_week.R")` |
 | `config.R` | Configuration | Edit `SEASON`, `WEEK_TO_SIM` |
+| `scripts/run_tests.R` | Test suite + skip policy | `Rscript scripts/run_tests.R` |
 | `scripts/verify_repo_integrity.R` | Integrity check | `Rscript scripts/verify_repo_integrity.R` |
 | `scripts/run_matrix.R` | Run all artifacts | `Rscript scripts/run_matrix.R` |
 
@@ -36,19 +37,19 @@ An NFL game prediction model using Monte Carlo simulation with:
 | `sports/nfl/props/data_sources.R` | Player data loading with fallback chain |
 | `sports/nfl/props/*.R` | Position-specific simulations |
 
-**Correlation Model** (empirically validated against 2019-2024 NFL data):
+**Correlation Model** (current config values, unvalidated, see docs/EVIDENCE_LEDGER.md):
 - Player props are correlated with game simulation outcomes
 - Uses Gaussian copula to link player stats to game totals
 - Same random seed ensures consistency across simulation
 
-**Hyperparameters** (validated r values from historical analysis):
+**Hyperparameters** (current config values, unvalidated, see docs/EVIDENCE_LEDGER.md):
 
 | Parameter | Value | Empirical Source |
 |-----------|-------|------------------|
-| QB passing ↔ game total | r = 0.75 | 2019-2024 game logs |
-| RB rushing ↔ game total | r = 0.60 | 2019-2024 game logs |
-| WR receiving ↔ team passing | r = 0.50 | 2019-2024 game logs |
-| TD probability ↔ game total | r = 0.40 | 2019-2024 game logs |
+| QB passing ↔ game total | r = 0.40 | config.R (unvalidated) |
+| RB rushing ↔ game total | r = 0.09 | config.R (unvalidated) |
+| WR receiving ↔ team passing | r = 0.30 | config.R (unvalidated) |
+| TD probability ↔ game total | r = 0.17 | config.R (unvalidated) |
 | Same-team cannibalization | r = -0.15 | Player target share data |
 | Model vig percentage | 10% | Industry standard |
 
@@ -81,25 +82,18 @@ apply_game_context(players, game)
 
 ### Hyperparameter Empirical Sources
 
-**Correlation Coefficients** (validated against nflreadr 2019-2024 data):
+**Correlation Coefficients** (current config values, unvalidated, see docs/EVIDENCE_LEDGER.md):
 
-| Parameter | Value | 95% CI | Validation Method |
-|-----------|-------|--------|-------------------|
-| QB passing ↔ game total | 0.75 | [0.72, 0.78] | 5-season Pearson correlation |
-| RB rushing ↔ game total | 0.60 | [0.55, 0.65] | 5-season Pearson correlation |
-| WR receiving ↔ team passing | 0.50 | [0.45, 0.55] | 5-season Pearson correlation |
-| TD probability ↔ game total | 0.40 | [0.35, 0.45] | Overdispersed count regression |
-| Same-team cannibalization | -0.15 | [-0.20, -0.10] | Within-team target share analysis |
-| Model vig percentage | 0.10 | [0.08, 0.12] | Industry standard sportsbook juice |
+| Parameter | Value | Validation Method |
+|-----------|-------|-------------------|
+| QB passing ↔ game total | 0.40 | config.R (unvalidated) |
+| RB rushing ↔ game total | 0.09 | config.R (unvalidated) |
+| WR receiving ↔ team passing | 0.30 | config.R (unvalidated) |
+| TD probability ↔ game total | 0.17 | config.R (unvalidated) |
+| Same-team cannibalization | -0.15 | Within-team target share analysis |
+| Model vig percentage | 0.10 | Industry standard sportsbook juice |
 
-**Model Accuracy Benchmarks** (2022-2024, 2,282 games):
-
-| Metric | Model | Vegas | Industry Range |
-|--------|-------|-------|----------------|
-| Brier Score | 0.214 (0.211 w/ spline) | 0.210 | 0.205-0.215 |
-| Log-Loss | 0.54 | 0.52 | 0.52-0.56 |
-| Accuracy | 67.1% | 68% | 65-70% |
-| RMSE | 10.82 pts | 10.5 pts | 10-12 pts |
+**Model Accuracy Benchmarks**: Withdrawn 2026-09-28; see docs/EVIDENCE_LEDGER.md.
 
 ### Expected Outputs
 
@@ -110,9 +104,9 @@ When `run_week.R` completes successfully:
 
 ### What "Correct" Looks Like
 
-- `scripts/verify_repo_integrity.R`: 50+/50+ checks pass (expanded for v2.9.0)
+- `scripts/verify_repo_integrity.R` exits 0
 - `scripts/run_matrix.R`: 9/9 artifacts pass
-- `testthat::test_dir("tests/testthat")`: ~625+ tests pass (some skips OK)
+- `scripts/run_tests.R` exits 0 (skip policy enforced)
 - `run_week.R`: Completes without exit code 1
 
 ---
@@ -124,7 +118,7 @@ When `run_week.R` completes successfully:
 1. **Start in READ-ONLY audit mode** - Never modify code before understanding the failure
 2. **Reproduce errors before fixing** - Run the failing command first
 3. **Prefer minimal diffs** - Small, reversible changes only
-4. **Run verification after changes** - `Rscript scripts/verify_repo_integrity.R`
+4. **Run verification after changes** - `Rscript scripts/run_tests.R` and `Rscript scripts/verify_repo_integrity.R` (both exit 0)
 5. **No silent fallbacks** - Every data issue must be logged and flagged
 6. **No unverifiable claims** - Don't claim metrics without running scripts
 7. **Use canonical API** - Check R/data_validation.R for correct function signatures
@@ -183,7 +177,7 @@ Rules:
 1. Change only the lines needed to fix the issue
 2. Add regression test if applicable
 3. No refactors, no feature additions
-4. Run verify_repo_integrity.R after fix
+4. Run `Rscript scripts/run_tests.R` and `Rscript scripts/verify_repo_integrity.R` after fix (both exit 0)
 5. Document the change in CHANGELOG.md
 ```
 
@@ -191,9 +185,9 @@ Rules:
 
 ```
 Re-run all verification:
-1. Rscript scripts/verify_repo_integrity.R (must show 55/55 pass)
-2. Rscript scripts/run_matrix.R (must show 9/9 pass)
-3. testthat::test_dir("tests/testthat") (check for regressions)
+1. Rscript scripts/run_tests.R (must exit 0: no failures, no errors, only allowlisted skips)
+2. Rscript scripts/verify_repo_integrity.R (must exit 0)
+3. Rscript scripts/run_matrix.R (must show 9/9 pass)
 4. Verify HTML report generates if run_week.R was changed
 
 Report: PASS/FAIL with evidence.
@@ -315,7 +309,7 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 ```
 
 **Important**: Disabling snap weighting does NOT affect model accuracy:
-- Position-level injury weights remain active (validated p < 0.001)
+- Position-level injury weights remain active (unvalidated, see ledger C-POSW)
 - Snap weighting had no empirical evidence of improving Brier/log-loss
 - The feature was disabled in v2.6.7 as the default
 
@@ -357,7 +351,8 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `sports/nfl/props/props_config.R` - Prop hyperparameters and baselines
 
 ### Scripts
-- `scripts/verify_repo_integrity.R` - 50+ check verification (expanded v2.9.0)
+- `scripts/run_tests.R` - testthat suite; exits 0 only with 0 failures, 0 errors and every skip on `tests/skip_allowlist.txt`
+- `scripts/verify_repo_integrity.R` - repository integrity checks; exits 0 when all pass
 - `scripts/verify_requirements.R` - 20-issue audit verification
 - `scripts/run_matrix.R` - Execute all artifacts
 
@@ -370,7 +365,7 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `GETTING_STARTED.md` - Setup guide
 - `DOCUMENTATION.md` - Technical reference
 - `CLAUDE.md` - This file (agent guide)
-- `AUDIT.md` - Repository audit report
+- `reports/history/AUDIT.md` - superseded audit (current: `reports/2026-09-28/AUDIT.md`)
 - `CHANGELOG.md` - Change log
 
 ---
@@ -378,14 +373,14 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 ## 7. VERIFICATION COMMANDS (Run These)
 
 ```bash
-# 1. Basic integrity (should show 50+/50+ pass)
+# 1. Unit tests + skip policy (must exit 0; only KNOWN-DEFECT and LIVE skips are allowed)
+Rscript scripts/run_tests.R
+
+# 2. Integrity checks (must exit 0)
 Rscript scripts/verify_repo_integrity.R
 
-# 2. Full artifact matrix (should show 9/9 pass)
+# 3. Full artifact matrix (must show 9/9 pass)
 Rscript scripts/run_matrix.R
-
-# 3. Unit tests (625+ tests, some skips OK)
-Rscript -e "testthat::test_dir('tests/testthat')"
 
 # 4. Run weekly simulation (use valid week!)
 # Edit config.R first: WEEK_TO_SIM <- 16; SEASON <- 2024
@@ -396,7 +391,7 @@ Rscript -e "source('run_week.R')"
 
 ## 8. WHEN IN DOUBT
 
-1. Run `scripts/verify_repo_integrity.R` first
+1. Run `Rscript scripts/run_tests.R` and `Rscript scripts/verify_repo_integrity.R` first
 2. Read error messages carefully - they usually tell you exactly what's wrong
 3. Check this file's API reference section
 4. Search for similar patterns in test files

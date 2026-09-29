@@ -1,5 +1,7 @@
 # NFL Prediction Model - Complete Documentation
 
+> Sections describing professional_model_benchmarking.R, simplified_baseline_comparison.R and rolling_validation_system.R refer to scripts removed on 2026-09-29 (audit M7).
+
 Comprehensive technical reference for the NFL game prediction system.
 
 **Version**: 2.6.4

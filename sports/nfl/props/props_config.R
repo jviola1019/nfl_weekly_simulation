@@ -128,7 +128,7 @@ if (!exists("PROP_ODDS_SOURCE")) PROP_ODDS_SOURCE <- "auto"
 
 # Source order when PROP_ODDS_SOURCE = "auto"
 if (!exists("PROP_ODDS_SOURCE_ORDER")) {
-  PROP_ODDS_SOURCE_ORDER <- c("scoresandodds", "oddstrader", "covers", "odds_api", "csv", "model")
+  PROP_ODDS_SOURCE_ORDER <- c("scoresandodds", "odds_api", "csv", "model")
 }
 
 # Allow remote HTML/API scraping (ScoresAndOdds) for props

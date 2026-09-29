@@ -4,14 +4,9 @@
 
 context("Moneyline report schema contract")
 
-tryCatch({
-  old_dir <- getwd()
-  setwd(.test_project_root)
-  on.exit(setwd(old_dir), add = TRUE)
-  source(file.path(.test_project_root, "NFLmarket.R"))
-}, error = function(e) {
-  # Tests will skip if NFLmarket.R fails to source in this environment
-})
+# Loaded privately so NFLmarket.R doesn't shadow R/ modules (helper-nflmarket.R)
+moneyline_report_schema_contract <- nflmarket_env()$moneyline_report_schema_contract
+validate_moneyline_report_schema <- nflmarket_env()$validate_moneyline_report_schema
 
 sample_moneyline_report_row <- function() {
   tibble::tibble(

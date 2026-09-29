@@ -48,57 +48,38 @@ find_project_root <- function() {
 # Get project root
 PROJECT_ROOT <- find_project_root()
 
-# Helper to source R/ modules safely
+# Helper to source R/ modules; a missing module stops the run
 source_module <- function(module_name) {
   path <- file.path(PROJECT_ROOT, "R", paste0(module_name, ".R"))
-  if (file.exists(path)) {
-    source(path, local = FALSE)
-    message(sprintf("  Loaded: R/%s.R", module_name))
-  } else {
-    warning(sprintf("Module not found: R/%s.R", module_name))
+  if (!file.exists(path)) {
+    stop(sprintf("Test setup: required module missing: R/%s.R", module_name), call. = FALSE)
   }
+  source(path, local = FALSE)
+  message(sprintf("  Loaded: R/%s.R", module_name))
 }
 
 # Load config.R first (defines all global parameters)
 config_path <- file.path(PROJECT_ROOT, "config.R")
-if (file.exists(config_path)) {
-  message("Loading config from: ", config_path)
-  source(config_path, local = FALSE)
-  message("  Loaded: config.R")
-} else {
-  warning("config.R not found at: ", config_path)
-}
+if (!file.exists(config_path)) stop("Test setup: config.R not found at: ", config_path, call. = FALSE)
+message("Loading config from: ", config_path)
+source(config_path, local = FALSE)
+message("  Loaded: config.R")
 
 # Load all R/ modules in dependency order
 message("Loading R modules from: ", PROJECT_ROOT)
 
-# Core utilities first (no dependencies)
-source_module("logging")
-source_module("utils")
-source_module("capture_raw")
-
-# Modules that depend on utils
-source_module("data_validation")
-
-# Modules that may depend on logging/utils
-source_module("playoffs")
-source_module("date_resolver")
-
-# Optional modules (may not exist in all versions)
-tryCatch({
-  source_module("sleeper_api")
-}, error = function(e) {
-  message("  Skipped: R/sleeper_api.R (optional)")
-})
+# Core modules first, then every other R/*.R alphabetically
+LOAD_FIRST <- c("logging", "utils", "capture_raw", "data_validation", "playoffs", "date_resolver", "test_policy")
+all_modules <- sub("\\.R$", "", list.files(file.path(PROJECT_ROOT, "R"), pattern = "\\.R$"))
+for (m in c(LOAD_FIRST, setdiff(sort(all_modules), LOAD_FIRST))) source_module(m)
 
 # Load player props configuration (v2.9.0)
 props_config_path <- file.path(PROJECT_ROOT, "sports", "nfl", "props", "props_config.R")
-if (file.exists(props_config_path)) {
-  source(props_config_path, local = FALSE)
-  message("  Loaded: sports/nfl/props/props_config.R")
-} else {
-  message("  Skipped: sports/nfl/props/props_config.R (not found)")
+if (!file.exists(props_config_path)) {
+  stop("Test setup: sports/nfl/props/props_config.R not found", call. = FALSE)
 }
+source(props_config_path, local = FALSE)
+message("  Loaded: sports/nfl/props/props_config.R")
 
 message("Test setup complete.\n")
 

@@ -1,36 +1,12 @@
 library(testthat)
 
-find_repo_root <- function(start_dir) {
-  candidates <- c(
-    start_dir,
-    dirname(start_dir),
-    dirname(dirname(start_dir)),
-    dirname(dirname(dirname(start_dir)))
-  )
-  for (candidate in candidates) {
-    if (file.exists(file.path(candidate, "config.R"))) {
-      return(normalizePath(candidate, winslash = "/", mustWork = FALSE))
-    }
-  }
-  normalizePath(start_dir, winslash = "/", mustWork = FALSE)
-}
-
-start_dir <- getwd()
-test_file <- sys.frame(1)$ofile
-if (!is.null(test_file)) {
-  start_dir <- dirname(test_file)
-}
-repo_root <- find_repo_root(start_dir)
+repo_root <- .test_project_root
 
 props_config_path <- file.path(repo_root, "sports", "nfl", "props", "props_config.R")
-if (file.exists(props_config_path)) {
-  source(props_config_path, local = FALSE)
-}
+source(props_config_path, local = FALSE)
 
 passing_path <- file.path(repo_root, "sports", "nfl", "props", "passing_yards.R")
-if (file.exists(passing_path)) {
-  source(passing_path, local = FALSE)
-}
+source(passing_path, local = FALSE)
 
 test_that("missing odds are not synthesized when disabled", {
   skip_if_not(exists("passing_yards_over_under"), "passing_yards_over_under not loaded")
