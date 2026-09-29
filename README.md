@@ -241,7 +241,7 @@ The shell wrapper fails fast (`set -euo pipefail`) and prints a machine-readable
 
 **Additional integrity checks**:
 ```bash
-Rscript scripts/run_matrix.R  # Should show 9/9 passed
+Rscript scripts/run_matrix.R  # Should show 10/10 passed (golden-master needs network)
 ```
 
 ---

@@ -1,0 +1,12 @@
+{
+  "week": "15",
+  "season": "2024",
+  "n_games": 16,
+  "git_sha": "64aa0b49b2bf142eaed5af4edeb2f64246e61d26",
+  "n_trials": 100000,
+  "seed": 471,
+  "r_version": "R version 4.5.1 (2025-06-13)",
+  "nflreadr": "1.5.0",
+  "run_seconds": 379,
+  "csv_sha256": "2f4ca1c5e2685c2d518f4cdc41e3514ae6ef48e0b20236b8af29a79218a38fc5"
+}

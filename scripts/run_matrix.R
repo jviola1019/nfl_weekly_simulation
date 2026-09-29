@@ -76,8 +76,8 @@ run_artifact <- function(name, category, command, timeout_secs = 120) {
     unlink(output_file)
   }
 
-  # Determine status
-  status <- if (exit_code == 0) "PASS" else "FAIL"
+  # Determine status (exit 3 = LIVE skip: a network source was unreachable)
+  status <- if (exit_code == 0) "PASS" else if (exit_code == 3) "SKIP" else "FAIL"
 
   # Extract error message if failed
   error_msg <- ""
@@ -160,6 +160,16 @@ artifacts <- list(
     command = "source('config.R'); cat('OK')"
   ),
 
+  # Offline-capable pipeline run: the game model for a fixture week against the
+  # committed golden master (Phase 0 Ruling R14; Phase 1a Task 9). SKIP when the
+  # nflverse host is unreachable. Timeout = 2 x the recorded runtime (379 s in CI).
+  list(
+    name = "golden-master",
+    category = "pipeline",
+    command = "system2('Rscript', c('scripts/golden_master.R', 'compare', '15', '2024', 'reports/2026-09-29/golden-master/2024-w15')) -> st; quit(status = st)",
+    timeout_secs = 800
+  ),
+
   # Test suite
   list(
     name = "testthat",
@@ -198,10 +208,12 @@ cat("=================================================================\n")
 
 pass_count <- sum(results$status == "PASS")
 fail_count <- sum(results$status == "FAIL")
+skip_count <- sum(results$status == "SKIP")
 total_count <- nrow(results)
 
 cat(sprintf("  Total:  %d artifacts\n", total_count))
 cat(sprintf("  Passed: %d\n", pass_count))
+cat(sprintf("  Skipped (LIVE, network unreachable): %d\n", skip_count))
 cat(sprintf("  Failed: %d\n", fail_count))
 cat("=================================================================\n")
 

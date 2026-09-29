@@ -8,6 +8,10 @@
 # CI (.github/workflows/golden-master.yml) records every commit of a PR in parallel and
 # runs `attribute`, because the model needs packages and network a local sandbox may lack.
 
+# compare tolerance: the CI determinism check (baseline recorded twice) differs by up to
+# 4e-9 in fitted SD / NB-size columns (optimizer noise); anything above 1e-6 is a change.
+GM_COMPARE_TOL <- 1e-6
+
 gm_diff <- function(golden, current, tol = 0) {
   if (!setequal(golden$game_id, current$game_id)) stop("gm_diff: game_id sets differ")
   current <- current[match(golden$game_id, current$game_id), , drop = FALSE]
@@ -36,6 +40,12 @@ gm_run_model <- function(week, season) {
   num <- vapply(final, is.numeric, logical(1))
   list(data = as.data.frame(final[, c("game_id", names(final)[num & names(final) != "game_id"])]),
        seconds = as.numeric(difftime(Sys.time(), started, units = "secs")))
+}
+
+# Same check as tests/testthat/helper-live.R: any HTTP response counts as reachable
+gm_host_reachable <- function(host, timeout = 5) {
+  handle <- curl::new_handle(nobody = TRUE, connecttimeout = timeout, timeout = timeout)
+  tryCatch({ curl::curl_fetch_memory(paste0("https://", host, "/"), handle = handle); TRUE }, error = function(e) FALSE)
 }
 
 gm_read <- function(dir) utils::read.csv(file.path(dir, "final_numeric.csv"), stringsAsFactors = FALSE)
@@ -71,6 +81,11 @@ gm_main <- function(args) {
   mode <- args[[1]]
   if (mode == "attribute") return(invisible(gm_attribute(args[[2]], args[-(1:2)])))
   week <- args[[2]]; season <- args[[3]]; dir <- args[[4]]
+  if (mode == "compare" && !gm_host_reachable("github.com")) {
+    # nflverse data come from GitHub releases; offline is a LIVE skip, not a failure
+    cat("LIVE: github.com unreachable; golden master not compared\n")
+    quit(status = 3)
+  }
   run <- gm_run_model(week, season)
   if (mode == "record") {
     dir.create(dir, recursive = TRUE, showWarnings = FALSE)
@@ -84,7 +99,7 @@ gm_main <- function(args) {
     writeLines(jsonlite::toJSON(meta, auto_unbox = TRUE, pretty = TRUE), file.path(dir, "meta.json"))
     cat("recorded", nrow(run$data), "games to", dir, "\n")
   } else if (mode == "compare") {
-    d <- gm_diff(gm_read(dir), run$data)
+    d <- gm_diff(gm_read(dir), run$data, tol = GM_COMPARE_TOL)
     if (nrow(d)) print(d, row.names = FALSE) else cat("golden master: no differences\n")
     if (nrow(d)) quit(status = 1)
   } else stop("mode must be record, compare or attribute")
