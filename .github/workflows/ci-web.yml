@@ -1,0 +1,119 @@
+name: CI (web)
+
+# The Broadcast Line web app and the R -> web contract. The R side of the shared
+# contract fixtures (tests/testthat/test-bundle-writer.R) runs in ci.yml with the
+# rest of the testthat suite.
+
+on:
+  push:
+    branches: [main]
+  # any base branch, so stacked phase PRs are checked too; paths keep it scoped
+  pull_request:
+    paths:
+      - "web/**"
+      - "contracts/**"
+      - "R/bundle_writer.R"
+      - ".github/workflows/ci-web.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: web
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: nfl_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ci" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      # a throwaway service database; nothing here is a secret
+      DATABASE_URL: postgres://ci:ci@127.0.0.1:5432/nfl_ci
+      TEST_DATABASE_URL: postgres://ci:ci@127.0.0.1:5432/nfl_test
+      REQUIRE_DB_TESTS: "1"
+      E2E_BASE_URL: http://127.0.0.1:3100
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Contract drift (Drizzle schema -> contracts/schema)
+        run: |
+          npm run contracts:export
+          git diff --exit-code -- ../contracts/schema
+
+      - name: Create the test database
+        run: PGPASSWORD=ci psql -h 127.0.0.1 -U ci -d nfl_ci -c "create database nfl_test"
+
+      - name: Unit + Postgres integration tests (pg suites must not skip)
+        run: npm test
+
+      - name: Migrate, ingest the fixture bundles, seed the desk user
+        run: |
+          npm run db:migrate
+          npm run ingest -- ../contracts/fixtures/bundles/weekly-2026-w04
+          npm run ingest -- ../contracts/fixtures/bundles/backtest-nfl-games-v1
+          # the second ingest of the same bundle must be a no-op
+          npm run ingest -- ../contracts/fixtures/bundles/weekly-2026-w04 | tee ingest-again.log
+          grep -q "^duplicate:" ingest-again.log
+          # per-run credentials, generated here and masked; never stored
+          echo "DESK_EMAIL=desk@example.test" >> "$GITHUB_ENV"
+          pw="$(openssl rand -base64 24)"; echo "::add-mask::$pw"; echo "DESK_PASSWORD=$pw" >> "$GITHUB_ENV"
+          secret="$(openssl rand -base64 32)"; echo "::add-mask::$secret"; echo "AUTH_SECRET=$secret" >> "$GITHUB_ENV"
+
+      - name: Seed desk user
+        run: npm run seed:user
+
+      - name: Build
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start the server
+        run: |
+          nohup npm run start -- -p 3100 > next.log 2>&1 &
+          for i in $(seq 1 60); do curl -fsS -o /dev/null http://127.0.0.1:3100/login && exit 0; sleep 1; done
+          cat next.log; exit 1
+
+      - name: E2E (axe, overflow, headers, desk auth, stakes never public, ID leaks, reduced motion)
+        run: npm run e2e
+
+      - name: Server log
+        if: failure()
+        run: cat next.log || true
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report
+          retention-days: 7

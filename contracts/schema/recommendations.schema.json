@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "rec_id": {
+      "type": "string"
+    },
+    "snapshot_id": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "game_id": {
+      "type": "string"
+    },
+    "candidate": {
+      "type": "string"
+    },
+    "side": {
+      "type": "string",
+      "enum": [
+        "home",
+        "away",
+        "none",
+        "over",
+        "under",
+        "yes",
+        "no"
+      ]
+    },
+    "price_american": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "p_model": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "p_mkt_novig": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "ev": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": -140737488355328,
+          "maximum": 140737488355327
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "stake_pct": {
+      "type": "number",
+      "minimum": -140737488355328,
+      "maximum": 140737488355327
+    },
+    "tier": {
+      "type": "string",
+      "enum": [
+        "bet",
+        "lean",
+        "pass"
+      ]
+    },
+    "pass_reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "rec_id",
+    "game_id",
+    "candidate",
+    "side",
+    "p_model",
+    "stake_pct",
+    "tier"
+  ],
+  "additionalProperties": false
+}

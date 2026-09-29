@@ -345,6 +345,7 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `R/simulation_helpers.R` - Simulation utility functions
 - `R/model_diagnostics.R` - Calibration diagnostics
 - `R/correlated_props.R` - Gaussian copula player props (v2.9.0)
+- `R/bundle_writer.R` - R side of the R -> web data contract (validates against `contracts/schema/`)
 
 ### Props Data Sources
 - `sports/nfl/props/data_sources.R` - Player projections with fallback chain

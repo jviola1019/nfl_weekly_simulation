@@ -301,6 +301,17 @@ Rscript scripts/run_matrix.R  # Should show 9/9 passed
 | `backtest/blends.R`, `backtest/calibrators.R` | E1/B1/B2 blends and nested walk-forward calibrators |
 | `backtest/metrics.R`, `backtest/controls.R` | Paired block bootstrap, DM-HLN, BH, ECE, CLV; leak canary, shuffled labels, market copy |
 | `backtest/eval_windows/nfl_games_v1.json` | Hash-locked windows, data and protocol |
+| `backtest/prospective.R` | Weekly bundle of unplayed games from the v1 candidates (never predicts a played game) |
+
+### Data Contract and Web App (`contracts/`, `web/`)
+| File | Purpose |
+|------|---------|
+| `R/bundle_writer.R` | Validates rows against `contracts/schema/` and writes `bundles/<cycle_id>/` with a hash-pinned manifest |
+| `scripts/write_backtest_bundle.R` | Backtest bundle from `reports/2026-09-29/backtest-games-v1/` and the evidence ledger |
+| `contracts/schema/` | JSON Schemas generated from `web/src/db/schema.ts` (`npm run contracts:export`) |
+| `contracts/fixtures/` | Shared valid/invalid rows for both validators, and the fixture bundles CI ingests |
+| `data/reference/teams.csv` | 32 franchises with division and time zone |
+| `web/` | Broadcast Line site and private desk (Next.js, Drizzle, Postgres); see `web/README.md` |
 
 ### Validation Scripts (Model Testing)
 | File | Purpose |

@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0.0",
+  "bundle_kind": "backtest",
+  "cycle_id": "backtest-nfl-games-v1-7244a0bc",
+  "season": null,
+  "week": null,
+  "model_label": "nfl_games_v1 model and blend shootout",
+  "generated_utc": "2026-09-29T20:55:59Z",
+  "data_asof_utc": "2025-02-10T03:30:00Z",
+  "code_git_sha": "06e32da0d484f11d8525d540bc200603ba7a0124",
+  "code_dirty": false,
+  "config_hash": "6535f70f0aa47fceee0c668f435d03d2c653a3cbd2000f9f8bc8d025bb6cb798",
+  "config": {
+    "protocol_id": "nfl_games_v1",
+    "protocol_sha256": "664c42d12a2a38b0d08d8aca3ac2dc1b2c9754d6e2d752e4cae7b6a8b8715149",
+    "result_sha256": "7244a0bc8ac63fec4d8d11b48b4b93be4ebf3fdba51b0fa3d6929cab336a3458",
+    "result_code_git_sha": "c7d8bcee7887cacdc00e5ff4bd041c2485609dc7",
+    "holdout_sealed": true
+  },
+  "seed": 20260929,
+  "n_sims": null,
+  "renv_lock_sha256": "6f0288babdb084ab5142bb6a00010d71bbd3b2b4333d801f7ed366a8ff41e429",
+  "files": [
+    {
+      "name": "teams.json",
+      "sha256": "225d156d67369e7884f5ee5d94602329d759cb670628ee5f7345883868e29fdc",
+      "rows": 32
+    },
+    {
+      "name": "games.json",
+      "sha256": "e9602775c27eb7212678afcb269df76d6ca37e02ee0e577f8355bfcdc16602d7",
+      "rows": 1942
+    },
+    {
+      "name": "eval_windows.json",
+      "sha256": "5d67ecff2165ffa839fa270663912cea864241769408c5ad1f2b0d293a7b5e8b",
+      "rows": 1
+    },
+    {
+      "name": "backtest_runs.json",
+      "sha256": "1a651dfb9e66eb1ce7e821b8262a5efb5444b319400ebc7bc752da8ea7c0d81e",
+      "rows": 1
+    },
+    {
+      "name": "backtest_metrics.json",
+      "sha256": "8a182b739d051a5c379ad2d14246cf7e5a78627a4ee11bdce36b20292fcfc031",
+      "rows": 54
+    },
+    {
+      "name": "calibration_bins.json",
+      "sha256": "29ebd5e646edf344930cdd2c617701152107ab3b770d0070059fadeabe759733",
+      "rows": 180
+    },
+    {
+      "name": "promotion_gates.json",
+      "sha256": "de2aa234aa08210a8d9cf39439ff759700c766d8c8ea60870fefb94934095c2e",
+      "rows": 8
+    },
+    {
+      "name": "clv_picks.json",
+      "sha256": "33cae4f3d9dd3df7e8b6d006ff54f75f5ab6f3492e48a657c53bd5cd43eaf92d",
+      "rows": 820
+    },
+    {
+      "name": "evidence_ledger.json",
+      "sha256": "4d7c8dacd1b2386bd7659a883ab1f7b474042c98c80c37d6c9ceda43987554b1",
+      "rows": 18
+    }
+  ],
+  "qa": {
+    "ok": true,
+    "failures": []
+  }
+}

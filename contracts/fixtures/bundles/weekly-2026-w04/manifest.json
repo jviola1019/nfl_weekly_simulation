@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.0.0",
+  "bundle_kind": "weekly",
+  "cycle_id": "2026-w04-20260929T205129Z",
+  "season": 2026,
+  "week": 4,
+  "model_label": "nfl_games_v1 candidates (prospective; unvalidated)",
+  "generated_utc": "2026-09-29T20:51:29Z",
+  "data_asof_utc": "2026-09-29T20:51:29Z",
+  "code_git_sha": "06e32da0d484f11d8525d540bc200603ba7a0124",
+  "code_dirty": false,
+  "config_hash": "8401281705b4832d082a20c7f82becd5460ffa058e0608953467eab185551db8",
+  "config": {
+    "protocol_id": "nfl_games_v1",
+    "result_sha256": "7244a0bc8ac63fec4d8d11b48b4b93be4ebf3fdba51b0fa3d6929cab336a3458",
+    "selections": {
+      "c1": {
+        "K": 20,
+        "hfa": 30,
+        "regress": 0.45
+      },
+      "c2": {
+        "halflife": 8,
+        "lambda": 100
+      },
+      "b1": {
+        "c1": 0.1,
+        "c2": 10,
+        "e1": 0.1
+      },
+      "b2_e1": {
+        "w": 0.95
+      },
+      "k_e1": {
+        "method": "platt"
+      }
+    },
+    "paper_edge": 0.03,
+    "b1_e1_coefficients": {
+      "intercept": -0.052943,
+      "market": 1.121708,
+      "model": -0.069176
+    },
+    "market_source": "nflverse consensus moneyline, proportional devig"
+  },
+  "seed": null,
+  "n_sims": null,
+  "renv_lock_sha256": "6f0288babdb084ab5142bb6a00010d71bbd3b2b4333d801f7ed366a8ff41e429",
+  "files": [
+    {
+      "name": "teams.json",
+      "sha256": "225d156d67369e7884f5ee5d94602329d759cb670628ee5f7345883868e29fdc",
+      "rows": 32
+    },
+    {
+      "name": "games.json",
+      "sha256": "733178fefe09c9db7edc95617fcb3b95f95b69ba3705580ffaf4f056b8318c8c",
+      "rows": 16
+    },
+    {
+      "name": "game_predictions.json",
+      "sha256": "e9cafdef52b58dbb8e14ae7e2735701a98fbfd4b77bdfb9f0350ec740b22a9c1",
+      "rows": 112
+    },
+    {
+      "name": "recommendations.json",
+      "sha256": "dacb2b7993081e930a00936684806089b4c6a14bc34d13c20b08e0f6dc300f43",
+      "rows": 16
+    },
+    {
+      "name": "source_status.json",
+      "sha256": "80db4718bf456a8fdcd1f2f55058e263c995a26495700b01d439eb607dae2172",
+      "rows": 4
+    }
+  ],
+  "qa": {
+    "ok": true,
+    "failures": []
+  }
+}

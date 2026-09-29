@@ -4,6 +4,17 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Data contract, database and Broadcast Line web UI (overhaul Phases 6–7, run locally)
+
+- **Contract:** `web/src/db/schema.ts` (Drizzle) owns it; drizzle-zod derives the row schemas and `npm run contracts:export` writes `contracts/schema/*.json`. `R/bundle_writer.R` validates rows against those schemas and writes `bundles/<cycle_id>/` with a manifest that pins each file's sha256 and row count, the config hash, the renv.lock hash and QA. `contracts/fixtures/rows.json` holds valid and invalid rows, and both languages must agree on them.
+- **Bundles:** `scripts/write_backtest_bundle.R` (nfl_games_v1 results, evidence ledger, CLV picks) and `backtest/prospective.R` (the 2026 week-4 slate from the v1 candidates, with market-only public lines and paper leans at stake 0; it never predicts a played game or the sealed 2025 holdout). Committed copies in `contracts/fixtures/bundles/` feed CI.
+- **Database:** 32 tables. `drizzle/0001_invariants.sql` adds `CHECK ((tier = 'bet') = (stake_pct > 0))` and append-only triggers on the evidence tables. `0002` keys `recommendations` by `(run_id, rec_id)`; the Postgres ingest test found that a second run of the same week collided on `rec_id`.
+- **Ingest** (`npm run ingest`): verifies hashes, row counts, the schema major version and every row; writes one transaction, idempotent on the bundle sha256; a QA-failed bundle is stored as `qa_failed` and the publish pointer stays on the last good run.
+- **Web** (`web/`, Next.js 16, React 19, Tailwind 4): This week (Field strips), game detail, props (not priced until validated), evidence (skill intervals, reliability small multiples, promotion gates, CLV distribution, protocol hashes, ledger), methodology, data health, and a private desk (paper leans). It uses the Broadcast Line tokens in both themes. Every page renders dynamically under a per-request CSP nonce. Auth is next-auth v5 with scrypt passwords, a DB-backed throttle and `requireUser()`. No model line is public, because no candidate passed its gates.
+- **Tests:** vitest, 64 tests: contract drift, shared fixtures, CSP and headers, passwords, policy, slop scan, docs truth, and the Postgres suites for ingest idempotency, tampering, qa_failed, triggers, CHECK and public queries without stakes. Playwright, 69 tests: axe with 0 serious issues and no overflow or console errors at 390/768/1440 in both themes, the `/desk` redirect, stakes never public, ID leaks, reduced motion and security headers. `tests/testthat/test-bundle-writer.R` has 8 tests.
+- **CI:** `.github/workflows/ci-web.yml` runs Postgres 16, typecheck, lint, contract drift, vitest with the pg suites required, migrate, ingest of both fixtures (re-ingest must be a no-op), build and e2e.
+- Not done here: Vercel/Neon deploy (connectors not authorized), Lighthouse, the monorepo move (`model/`), the forward-capture odds layer and unmatched-entity queue (Phase 2), and the simulator bundle (margin/total histograms appear once Phase 1b emits one).
+
 ### Game backtest v1: model and blend shootout (overhaul Phase 3, A2)
 
 - `backtest/`: point-in-time walk-forward harness (`walk_forward.R`, `candidates/{market,elo,epa_glm}.R`, `blends.R`, `calibrators.R`, `metrics.R`, `controls.R`) and `build_inputs.R`, which derives the committed inputs in `backtest/data/` from nflverse release files (raw sha256 in `SOURCES.json`). The 2025 holdout is absent from the inputs.
