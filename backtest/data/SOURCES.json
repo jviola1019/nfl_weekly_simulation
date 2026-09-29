@@ -1,0 +1,155 @@
+{
+  "built_utc": "2026-09-29T19:44:10Z",
+  "max_season": 2024,
+  "raw": [
+    {
+      "file": "games.csv",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/schedules/games.csv",
+      "sha256": "e4c16b2b9208ae95f6deef29e17ff63793c5a982b1ac3c27d1d7d43e23a1f472",
+      "bytes": 2181696
+    },
+    {
+      "file": "play_by_play_2006.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2006.rds",
+      "sha256": "302a77005b4327c6a9bd41fa92908a197313439c6c4a1645afd3c2aea2962b79",
+      "bytes": 13041176
+    },
+    {
+      "file": "play_by_play_2007.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2007.rds",
+      "sha256": "2c5f5f82d4a55464ee0508866be72d7a7b8ff427c84048b22ca19bfd96c81201",
+      "bytes": 13166995
+    },
+    {
+      "file": "play_by_play_2008.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2008.rds",
+      "sha256": "cdbeda26d85949e8d8925cf6d8a19c048e1fb2e59f73b45d078715543072ea17",
+      "bytes": 13090967
+    },
+    {
+      "file": "play_by_play_2009.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2009.rds",
+      "sha256": "2f48e152db837f6c04d72baf084ed5c4445c4d4bc870587bd44a2481d05d5831",
+      "bytes": 13356955
+    },
+    {
+      "file": "play_by_play_2010.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2010.rds",
+      "sha256": "ab1f9295e83a45ae53a23b9eccb8787e212ff5a1bcff75fc4bde804b9019bbac",
+      "bytes": 13461173
+    },
+    {
+      "file": "play_by_play_2011.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2011.rds",
+      "sha256": "c6fe1d689053cfda3c963f20ca6db72859b1193857926cf56a28976657475b11",
+      "bytes": 13504797
+    },
+    {
+      "file": "play_by_play_2012.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2012.rds",
+      "sha256": "4cd2ad487e517f0212a68610210112308685f6ea55b78502845d44fb264bc659",
+      "bytes": 13633357
+    },
+    {
+      "file": "play_by_play_2013.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2013.rds",
+      "sha256": "87d4d1bb1019cd8effa9fef07cc55c0a1822a9f259791accdb5d5a82bc42bfb1",
+      "bytes": 13759140
+    },
+    {
+      "file": "play_by_play_2014.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2014.rds",
+      "sha256": "f894796d0b59e3dc544f327b159e794e78ffd0516c4c9f33e90fb3eb3cc33841",
+      "bytes": 13623443
+    },
+    {
+      "file": "play_by_play_2015.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2015.rds",
+      "sha256": "6c063bbcbf873b95adb76d707a557467a0736b3df5205c970677f8a867fea247",
+      "bytes": 13786480
+    },
+    {
+      "file": "play_by_play_2016.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2016.rds",
+      "sha256": "a117a298ba8a4eb3d29df4cb79af62456b903e6bb3fa590e0d3e4182ecd3c039",
+      "bytes": 13654320
+    },
+    {
+      "file": "play_by_play_2017.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2017.rds",
+      "sha256": "e50bf58c19c966555da8ebec8897b38abeb688faf40772105a3cfe60508d1196",
+      "bytes": 13460885
+    },
+    {
+      "file": "play_by_play_2018.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2018.rds",
+      "sha256": "7605a83218b2101e44435edd825ade252bd01aea24c06680120897f1f8c7d90c",
+      "bytes": 13480901
+    },
+    {
+      "file": "play_by_play_2019.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2019.rds",
+      "sha256": "50034f43c9d8bfeca0698480df325a6a80ed8bc79a4ab53b286c13b6b725d028",
+      "bytes": 13509603
+    },
+    {
+      "file": "play_by_play_2020.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2020.rds",
+      "sha256": "aa5b87433f94f0d9d9b1faa914d257f59bee1c3cf6c913c519853a94e8a32df8",
+      "bytes": 13628119
+    },
+    {
+      "file": "play_by_play_2021.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2021.rds",
+      "sha256": "5dce170c3a273e783118099bd16e8995c43ac3c819c8e6f2f639ae3dd4c5ff87",
+      "bytes": 14321160
+    },
+    {
+      "file": "play_by_play_2022.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2022.rds",
+      "sha256": "041c28890d1d552d1936fd2bb031b7282de680897a45fdd0c7785531c5a4918c",
+      "bytes": 14430736
+    },
+    {
+      "file": "play_by_play_2023.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2023.rds",
+      "sha256": "044a4ee3d5cc99ccd3528cfd2344b79ff77e7bbde781e0fb31449bda00dcfa5e",
+      "bytes": 14481390
+    },
+    {
+      "file": "play_by_play_2024.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2024.rds",
+      "sha256": "6333647574b22f69ba7ee8317b23ac8b492ede61cd687a4a2e5c7f0a5e9b8477",
+      "bytes": 14507404
+    },
+    {
+      "file": "espn_open_close_2024_2025.csv",
+      "url": "reports/2026-09-29/clv-power/espn_open_close_2024_2025.csv",
+      "sha256": "15dddd4b18c2cc341b17ed3da9b092771fda1af0c0faf42711c6a9f3048fd240",
+      "bytes": 61097
+    }
+  ],
+  "derived": {
+    "games": {
+      "file": "games.csv",
+      "rows": 6991,
+      "sha256": "fae0e4cabda2357a19d7a12bf370a74b0a090008e7cbfc97b8098ada4c536063"
+    },
+    "team_games": {
+      "file": "team_games.csv",
+      "rows": 10292,
+      "sha256": "bad973261fa472daa0c98d65beb632b284bd29029b3b3b3619764e2bce602305"
+    },
+    "qb_games": {
+      "file": "qb_games.csv",
+      "rows": 12536,
+      "sha256": "65b2f7f0938b44966b1cf5bfaf95831ca00808061a50b2deeadd7816fed57bee"
+    },
+    "espn_open_close": {
+      "file": "espn_open_close.csv",
+      "rows": 284,
+      "sha256": "98dfb3198f91492982432abbb8474043cfa95cc1e97890aee1ef04bfd37cc746"
+    }
+  },
+  "r_version": "R version 4.3.3 (2024-02-29)"
+}
