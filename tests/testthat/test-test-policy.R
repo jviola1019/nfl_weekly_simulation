@@ -1,0 +1,19 @@
+test_that("classify_skips accepts only allowlisted reasons", {
+  allow <- c("^On CRAN$", "^LIVE: ", "^KNOWN-DEFECT (M|P|S|U|T|H|D|SEC)[0-9]+: ")
+  reasons <- c("On CRAN", "LIVE: needs nflreadr network", "KNOWN-DEFECT P1: edge label is column-wide",
+               "correlated_props.R not found", "empty test", "KNOWN-DEFECT X9: bogus id")
+  expect_equal(classify_skips(reasons, allow), c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE))
+})
+
+test_that("classify_skips handles no skips", {
+  expect_equal(classify_skips(character(), "^On CRAN$"), logical())
+})
+
+test_that("summarize_test_run fails on failures, errors or unapproved skips", {
+  df <- data.frame(failed = c(0L, 0L), error = c(FALSE, FALSE), skipped = c(FALSE, TRUE), passed = c(3L, 0L))
+  skips <- data.frame(file = "test-a.R", test = "t", reason = "empty test")
+  expect_false(summarize_test_run(df, skips, allowed = FALSE)$ok)
+  expect_true(summarize_test_run(df, skips, allowed = TRUE)$ok)
+  df$failed[1] <- 1L
+  expect_false(summarize_test_run(df, skips, allowed = TRUE)$ok)
+})

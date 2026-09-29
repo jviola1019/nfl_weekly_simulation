@@ -4,14 +4,8 @@
 
 context("Moneyline report schema contract")
 
-tryCatch({
-  old_dir <- getwd()
-  setwd(.test_project_root)
-  on.exit(setwd(old_dir), add = TRUE)
-  source(file.path(.test_project_root, "NFLmarket.R"))
-}, error = function(e) {
-  # Tests will skip if NFLmarket.R fails to source in this environment
-})
+# NFLmarket.R sources NFLbrier_logloss.R relative to the working directory
+withr::with_dir(.test_project_root, source(file.path(.test_project_root, "NFLmarket.R"), local = FALSE))
 
 sample_moneyline_report_row <- function() {
   tibble::tibble(

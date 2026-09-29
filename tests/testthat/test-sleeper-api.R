@@ -6,7 +6,7 @@
 
 # Skip all tests if sleeper_api.R is not available
 skip_if_not_installed <- function() {
-  sleeper_path <- file.path(getwd(), "..", "..", "R", "sleeper_api.R")
+  sleeper_path <- file.path(.test_project_root, "R", "sleeper_api.R")
   if (!file.exists(sleeper_path) && !exists("load_injuries_sleeper")) {
     skip("R/sleeper_api.R not available")
   }
@@ -95,31 +95,34 @@ test_that("load_injuries_sleeper returns proper structure", {
 # DATA VALIDATION TESTS
 # =============================================================================
 
-test_that("normalize_sleeper_data produces correct schema", {
+test_that("normalize_sleeper_injuries produces correct schema", {
   skip_if_not_installed()
 
-  if (!exists("normalize_sleeper_data")) {
-    skip("normalize_sleeper_data not exported")
-  }
-
-  # Mock data
+  # Mock data: the Sleeper /players payload is a list keyed by player_id.
+  # R/sleeper_api.R normalizes in two steps: filter_sleeper_injuries() then
+  # normalize_sleeper_injuries() (there is no normalize_sleeper_data()).
   mock_player <- list(
     player_id = "12345",
     first_name = "Patrick",
     last_name = "Mahomes",
     team = "KC",
     position = "QB",
+    sport = "nfl",
     injury_status = "Questionable",
     status = "Active"
   )
 
   # Normalize
-  result <- normalize_sleeper_data(list(mock_player))
+  result <- normalize_sleeper_injuries(filter_sleeper_injuries(list("12345" = mock_player)))
 
   expect_true(is.data.frame(result) || tibble::is_tibble(result))
+  expect_equal(nrow(result), 1)
+  expect_equal(result$player, "Patrick Mahomes")
+  expect_equal(result$game_status, "Questionable")
+  expect_equal(result$availability, SLEEPER_STATUS_MAP[["Questionable"]])
 
   # Check required columns exist
-  expected_cols <- c("team", "player", "position", "status", "availability")
+  expected_cols <- c("team", "player", "position", "game_status", "availability")
   for (col in expected_cols) {
     expect_true(col %in% names(result),
                 info = sprintf("Column '%s' should be in normalized data", col))

@@ -21,22 +21,16 @@
 library(testthat)
 
 # Source correlated props module
-correlated_props_path <- file.path(getwd(), "R", "correlated_props.R")
-if (file.exists(correlated_props_path)) {
-  # Source config first
-  config_path <- file.path(getwd(), "config.R")
-  if (file.exists(config_path)) {
-    suppressMessages(source(config_path, local = FALSE))
-  }
+correlated_props_path <- file.path(.test_project_root, "R", "correlated_props.R")
+# Source config first
+config_path <- file.path(.test_project_root, "config.R")
+suppressMessages(source(config_path, local = FALSE))
 
-  # Source props config
-  props_config_path <- file.path(getwd(), "sports", "nfl", "props", "props_config.R")
-  if (file.exists(props_config_path)) {
-    source(props_config_path, local = FALSE)
-  }
+# Source props config
+props_config_path <- file.path(.test_project_root, "sports", "nfl", "props", "props_config.R")
+source(props_config_path, local = FALSE)
 
-  source(correlated_props_path, local = FALSE)
-}
+source(correlated_props_path, local = FALSE)
 
 # =============================================================================
 # CORRELATION COEFFICIENT TESTS

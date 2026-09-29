@@ -4,13 +4,9 @@
 
 library(testthat)
 
+# NFLmarket.R sources NFLbrier_logloss.R relative to the working directory
 if (!exists("export_moneyline_comparison_html", mode = "function")) {
-  tryCatch({
-    old_dir <- getwd()
-    setwd(.test_project_root)
-    on.exit(setwd(old_dir), add = TRUE)
-    source(file.path(.test_project_root, "NFLmarket.R"))
-  }, error = function(e) NULL)
+  withr::with_dir(.test_project_root, source(file.path(.test_project_root, "NFLmarket.R"), local = FALSE))
 }
 
 test_that("moneyline HTML headers include governance columns and percent formatting", {

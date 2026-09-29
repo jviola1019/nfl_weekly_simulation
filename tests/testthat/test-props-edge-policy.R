@@ -1,9 +1,7 @@
 library(testthat)
 
-props_config_path <- file.path(getwd(), "sports", "nfl", "props", "props_config.R")
-if (file.exists(props_config_path)) {
-  source(props_config_path, local = FALSE)
-}
+props_config_path <- file.path(.test_project_root, "sports", "nfl", "props", "props_config.R")
+source(props_config_path, local = FALSE)
 
 test_that("edge bins are centrally defined and respected", {
   skip_if_not(exists("classify_prop_edge_quality"), "props policy helpers not loaded")
