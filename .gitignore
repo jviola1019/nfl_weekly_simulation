@@ -64,3 +64,6 @@ archive/
 .env*
 .claude/settings*.json
 .playwright-mcp/
+
+# Generated data (local bundles, never committed)
+bundles/
