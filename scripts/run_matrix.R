@@ -164,7 +164,8 @@ artifacts <- list(
   list(
     name = "testthat",
     category = "test",
-    command = "testthat::test_dir('tests/testthat', stop_on_failure=FALSE); cat('OK')"
+    command = "source('scripts/run_tests.R')",
+    timeout_secs = 1200  # full suite takes ~8 min; policy runner sets exit code
   )
 )
 
@@ -181,7 +182,7 @@ for (artifact in artifacts) {
     name = artifact$name,
     category = artifact$category,
     command = artifact$command,
-    timeout_secs = 180
+    timeout_secs = if (is.null(artifact$timeout_secs)) 180 else artifact$timeout_secs
   )
   results <- rbind(results, result)
 }
