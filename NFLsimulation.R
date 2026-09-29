@@ -6673,19 +6673,33 @@ market_probs_from_sched <- function(sched_df) {
 mkt_now <- tryCatch(
   market_probs_from_sched(sched) %>%
     dplyr::transmute(game_id, home_p_2w_mkt = p_home_mkt_2w),
-  error = function(e) tibble::tibble(game_id = character(), home_p_2w_mkt = numeric())
+  error = function(e) {
+    warning("market_probs_from_sched failed: ", conditionMessage(e), call. = FALSE)
+    tibble::tibble(game_id = character(), home_p_2w_mkt = numeric())
+  }
 )
 
+#' Join market probabilities; flag, log and track games without a line (audit M11).
+#' Games without a line keep the model probability as the blend *input* only, marked
+#' market_available = FALSE; betting governance already passes on missing odds.
+attach_market_probs <- function(final, mkt_now) {
+  out <- dplyr::left_join(final, mkt_now, by = "game_id")
+  out$market_available <- is.finite(out$home_p_2w_mkt)
+  missing <- out$game_id[!out$market_available]
+  out$home_p_2w_mkt <- ifelse(out$market_available, .clp(out$home_p_2w_mkt), out$home_p_2w_cal)
+  out$away_p_2w_mkt <- 1 - out$home_p_2w_mkt
+  if (length(missing)) {
+    warning(sprintf("No market line for %d game(s): %s. Model probability used as blend input only; no market comparison or bet.",
+                    length(missing), paste(missing, collapse = ", ")), call. = FALSE)
+    update_market_quality(if (length(missing) == nrow(out)) "unavailable" else "partial", missing_games = missing)
+  } else {
+    update_market_quality("full")
+  }
+  out
+}
+
 # Join market data and calculate away market probability
-final <- final %>%
-  dplyr::left_join(mkt_now, by = "game_id") %>%
-  dplyr::mutate(
-    home_p_2w_mkt = .clp(home_p_2w_mkt),
-    away_p_2w_mkt = 1 - home_p_2w_mkt,  # Away market prob is complement of home
-    # Fill missing market data with model predictions (for games without lines)
-    home_p_2w_mkt = ifelse(is.na(home_p_2w_mkt), home_p_2w_cal, home_p_2w_mkt),
-    away_p_2w_mkt = ifelse(is.na(away_p_2w_mkt), away_p_2w_cal, away_p_2w_mkt)
-  )
+final <- attach_market_probs(final, mkt_now)
 
 # Add prediction intervals and model uncertainty metrics (CRITICAL for uncertainty quantification)
 final <- final |>
