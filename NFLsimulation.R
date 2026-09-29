@@ -6573,9 +6573,8 @@ final <- final |>
 
 # Convert spread to implied probability (using historical logistic fit)
 map_spread_prob <- function(sp) {
-  # sp = home spread (negative favors home)
-  # Logistic regression fit from historical data
-  plogis(-sp / 3.5)  # roughly ~14% per point near pk, flatter at extremes
+  # sp = nflreadr spread_line (positive = home favoured); audit M10
+  spread_line_to_home_prob(sp, SPREAD_MARGIN_SD)
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════════
@@ -7230,7 +7229,7 @@ map_spread_total_prob <- function(sp, tot) {
   sp <- suppressWarnings(as.numeric(sp)); tot <- suppressWarnings(as.numeric(tot))
   if (is.null(spread_total_map)) {
     # fallback to your simple map or normal-approx default (13.86 = Historical NFL margin standard deviation)
-    if (is.null(spread_map)) pnorm(-sp/13.86) else
+    if (is.null(spread_map)) spread_line_to_home_prob(sp, SPREAD_MARGIN_SD) else
       .clp(as.numeric(predict(spread_map, newdata = data.frame(spread = sp), type = "response")))
   } else {
     .clp(as.numeric(predict(spread_total_map,

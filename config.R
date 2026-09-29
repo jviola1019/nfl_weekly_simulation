@@ -722,6 +722,10 @@ WEEK_BUFFER_POST <- 2
 #' @note Increased to 0.70 when spline_calibration.rds is unavailable (ensemble fallback)
 SHRINKAGE <- 0.70
 
+#' @description NFL final-margin SD used to convert spread_line to win probability
+#' @default 13.86
+SPREAD_MARGIN_SD <- 13.86
+
 #' @description Enable dynamic shrinkage based on game context
 #' @default TRUE
 #' @note When TRUE, shrinkage varies by week, spread size, and game type
@@ -1160,6 +1164,7 @@ list2env(
     WEEK_BUFFER_POST = WEEK_BUFFER_POST,
     # Betting/market parameters
     SHRINKAGE = SHRINKAGE,
+    SPREAD_MARGIN_SD = SPREAD_MARGIN_SD,
     USE_DYNAMIC_SHRINKAGE = USE_DYNAMIC_SHRINKAGE,
     SHRINKAGE_BASE = SHRINKAGE_BASE,
     SHRINKAGE_EARLY_SEASON_ADJ = SHRINKAGE_EARLY_SEASON_ADJ,
