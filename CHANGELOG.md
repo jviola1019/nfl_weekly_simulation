@@ -4,6 +4,15 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Game backtest v1: model and blend shootout (overhaul Phase 3, A2)
+
+- `backtest/`: point-in-time walk-forward harness (`walk_forward.R`, `candidates/{market,elo,epa_glm}.R`, `blends.R`, `calibrators.R`, `metrics.R`, `controls.R`) and `build_inputs.R`, which derives the committed inputs in `backtest/data/` from nflverse release files (raw sha256 in `SOURCES.json`). The 2025 holdout is absent from the inputs.
+- `backtest/eval_windows/nfl_games_v1.json` hash-locks the data and `reports/2026-09-29/backtest-games-v1/PROTOCOL.md`; `--stage score` refuses to run unless the protocol hash matches and is committed. The protocol was committed and pushed (`e9876fa`) before any Confirm scoring.
+- Result (`RESULT.md`): no candidate beats the no-vig close on Brier on Confirm 2023–2024 (570 games). Elo, EPA GLM and their ensembles are 4.5–5.6% worse; market blends are indistinguishable from the close. All controls passed; `result_sha256` 7244a0bc…. CLV at the 2024 ESPN BET opener is descriptive only (below the 400-pick gate).
+- The first scoring run was void (reproducibility re-run lacked controls, so gate G4 differed); fixed in `c7d8bce` with no model or metric change, and the re-run reproduced the void run's outputs byte for byte (`run1-void/`).
+- Tests: `tests/testthat/test-backtest-games.R` (ridge vs glm, 538 Elo update, as-of feature invariance, walk-forward label isolation, DM-HLN, ECE, bootstrap determinism, CLV arithmetic, calibrators, input and result hash integrity).
+- Evidence ledger rows BT-V1-BRIER, BT-V1-C0, BT-V1-B2W, BT-V1-CLV.
+
 ### Phase 0 — foundation (PR #192)
 
 - **Hygiene (Task 1):** retired dead code and scrapers, untracked `run_logs/` and local tool settings, hardened `.gitignore` (`.Renviron`, `.env*`, `.claude/settings*.json`, `.playwright-mcp/`, `bundles/`).
