@@ -219,12 +219,6 @@ If you see warnings about values outside domain, they are cosmetic and handled a
 Rscript run_week.R 16  # Increment week number
 ```
 
-### Full Season Backtest
-```r
-source("professional_model_benchmarking.R")
-# Tests against FiveThirtyEight and ESPN FPI (15-20 min)
-```
-
 ### Enable Debug Mode
 ```r
 options(nfl.ev_debug = TRUE)

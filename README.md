@@ -217,7 +217,6 @@ All model parameters tested using:
 ```bash
 Rscript validation_pipeline.R              # Hyperparameter tuning
 Rscript injury_model_validation.R          # Injury impacts
-Rscript professional_model_benchmarking.R  # vs FiveThirtyEight/ESPN
 ```
 
 See [DOCUMENTATION.md](DOCUMENTATION.md) for complete validation methodology.
@@ -305,12 +304,9 @@ Rscript scripts/run_matrix.R  # Should show 9/9 passed
 | `validation_pipeline.R` | Hyperparameter tuning with cross-validation |
 | `model_validation.R` | Statistical significance testing |
 | `injury_model_validation.R` | Validate injury impact coefficients |
-| `professional_model_benchmarking.R` | Compare to FiveThirtyEight/ESPN |
 | `calibration_refinement.R` | Isotonic regression tuning |
-| `rolling_validation_system.R` | Rolling window backtesting |
 | `rolling_window_validation.R` | Time-series validation |
 | `ensemble_calibration_implementation.R` | Multi-method calibration |
-| `simplified_baseline_comparison.R` | Baseline model comparisons |
 | `lasso_feature_selection.R` | Feature importance via LASSO |
 | `run_validation_example.R` | Example validation run |
 | `validation/playoffs_validation.R` | Playoff-specific validation |

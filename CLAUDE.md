@@ -370,7 +370,7 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `GETTING_STARTED.md` - Setup guide
 - `DOCUMENTATION.md` - Technical reference
 - `CLAUDE.md` - This file (agent guide)
-- `AUDIT.md` - Repository audit report
+- `reports/history/AUDIT.md` - superseded audit (current: `reports/2026-09-28/AUDIT.md`)
 - `CHANGELOG.md` - Change log
 
 ---

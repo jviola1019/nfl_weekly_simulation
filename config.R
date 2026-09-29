@@ -860,8 +860,8 @@ USE_REAL_PROP_ODDS <- TRUE
 PROP_ODDS_SOURCE <- "auto"
 
 #' @description Prop odds source order when PROP_ODDS_SOURCE="auto"
-#' @default c("scoresandodds","oddstrader","covers","odds_api","csv","model")
-PROP_ODDS_SOURCE_ORDER <- c("scoresandodds", "oddstrader", "covers", "odds_api", "csv", "model")
+#' @default c("scoresandodds","odds_api","csv","model")
+PROP_ODDS_SOURCE_ORDER <- c("scoresandodds", "odds_api", "csv", "model")
 
 #' @description Allow remote HTML/API scraping for prop odds
 #' @default TRUE
