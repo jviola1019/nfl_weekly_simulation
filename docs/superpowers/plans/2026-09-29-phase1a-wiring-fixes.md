@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Fix the output-changing wiring bugs in the game model: the CLI override (M1), the single market-weight stage (M2/M3), the spread sign (M10), silent market fill (M11), per-game random streams (M12), the date resolver (M14) and snap percentages (M15). Record a golden master first, so every change in output is attributed to a specific fix.
+**Goal:** Fix the output-changing wiring bugs in the game model: the CLI override (M1), the single market-weight stage (M2/M3), the spread sign (M10), silent market fill (M11), per-game random streams (M12), the date resolver (M14), snap percentages (M15) and the inverted injury clamp (M16). Record a golden master first, so every change in output is attributed to a specific fix.
 
 **Architecture:** Minimal, test-first edits to the existing script-style pipeline. Functions defined at the top level of `NFLsimulation.R` are unit-tested by loading only their definitions (`load_script_functions()`), without running the 8,640-line script. The point-in-time and extraction refactor (M4, M5, M6, M8, M9) is out of scope; it is Phase 1b and gets its own plan once this lands.
 
@@ -479,7 +479,12 @@ The `tryCatch` that builds `mkt_now` swallows errors into an empty tibble. Make 
 **Files:**
 - Create: `tests/testthat/test-market-weight.R`
 - Modify:
-  - `NFLsimulation.R`: delete the whole `# 3) Apply shrinkage BEFORE calibration` section (the playoff branch and the dynamic-shrinkage branch, ~:8055-8142). Also replace the log message `"Using SPLINE calibration (-6.9% Brier improvement)"` with `"Using SPLINE calibration (unvalidated, see docs/EVIDENCE_LEDGER.md)"`.
+  - `NFLsimulation.R`: delete the whole `# 3) Apply shrinkage BEFORE calibration` section (the playoff branch and the dynamic-shrinkage branch, ~:8055-8142). Also neutralize all four calibration console messages that print withdrawn or outcome-leaked numbers. This is Phase 0 final review I5, per Ruling R16; the M4 logic stays in Phase 1b.
+    - `~:5644` "Ensemble test Brier: …" (prints the M4-leaked 0.1049): replace with `"Ensemble calibrator loaded (invalid: fit on outcome-leaked data, audit M4)"`.
+    - `~:5672` "Using SPLINE calibration (-6.9% Brier improvement)": replace with `"Using SPLINE calibration (unvalidated, see docs/EVIDENCE_LEDGER.md)"`.
+    - `~:5694` "Test Brier (out-of-sample)": replace with `"Calibrator test Brier (not out-of-sample, audit M4/M5)"`.
+    - `~:5713` "(2.1% Brier improvement)": remove the parenthetical.
+    - Do not print any of these numbers.
   - `NFLmarket.R` (~:2220-2224): `.game_shrinkage = SHRINKAGE` for every game type, and its comment block. The source-note subtitle mentioning "Playoff shrinkage 70-75%" (~:3599) is reworded to the single weight.
   - `config.R`: remove `USE_DYNAMIC_SHRINKAGE`, `SHRINKAGE_BASE`, `SHRINKAGE_EARLY_SEASON_ADJ`, `SHRINKAGE_HIGH_SPREAD_ADJ`, `SHRINKAGE_CLOSE_GAME_ADJ`, `SHRINKAGE_HIGH_SPREAD_THRESHOLD`, `SHRINKAGE_CLOSE_GAME_THRESHOLD`, `PLAYOFF_SHRINKAGE`, `SUPER_BOWL_SHRINKAGE`. Also remove their `list2env` entries and the summary print that references them (~:1036). `SHRINKAGE` stays at 0.70.
   - `R/playoffs.R`: delete `get_playoff_shrinkage`.
@@ -504,7 +509,7 @@ test_that("no dynamic or playoff-specific shrinkage remains", {
   expect_false(any(grepl("dynamic_shrinkage|get_playoff_shrinkage\\(", sim)))
   expect_false(any(grepl("PLAYOFF_SHRINKAGE|SUPER_BOWL_SHRINKAGE", c(mkt, cfg))))
   expect_false(any(grepl("^(USE_DYNAMIC_SHRINKAGE|SHRINKAGE_BASE|SHRINKAGE_[A-Z_]+_(ADJ|THRESHOLD))\\s*<-", cfg)))
-  expect_false(any(grepl("6\\.9% Brier", sim)))
+  expect_false(any(grepl("6\\.9% Brier|2\\.1% Brier improvement|Ensemble test Brier:", sim)))
 })
 ```
 - [ ] **Step 2: Run it and confirm the guard test FAILS.** The invariant test passes already; it pins the kept function.
@@ -558,7 +563,7 @@ test_that("parse_datetime accepts nflreadr 'YYYY-MM-DD HH:MM' kickoffs (audit M1
 - Modify: `injury_scalp.R`. In `load_player_snap_percentages`, move the play-level branch before the snap-column detection (~:1384-1394).
 - Modify: `tests/testthat/test-snap-weighting.R`. Remove the `skip("KNOWN-DEFECT M15: ...")` line.
 
-- [ ] **Step 1: Confirm the test fails with the skip removed.** Run the M15 test without its skip; it should fail with `nrow(snap_data) > 0` (this is the Phase 0 test).
+- [ ] **Step 1: Confirm the test fails with the skip removed.** Run the M15 test without its skip; it should fail with `nrow(snap_data) > 0` (this is the Phase 0 test). Also make the test pass explicit weeks (`weeks = 1:4`) instead of reading `WEEK_TO_SIM` from config (Phase 0 ledger minor), so it doesn't depend on config.
 
 - [ ] **Step 2: Implement.** Immediately after the `if (nrow(filtered) == 0) return(default_result)` check, insert:
 ```r
@@ -577,8 +582,37 @@ Then delete the now-unreachable `offense_players` branch inside the `if (is.null
 
 ---
 
+### Task 8b: M16 — Offensive injury penalty clamp and scope
+
+**Files:**
+- Create: `tests/testthat/test-injury-penalty-clamp.R`
+- Modify: `NFLsimulation.R`, in the injury summarise/mutate block (~:3445 offensive sum, ~:3457 clamp)
+
+**Interfaces:** Extract the summarise+mutate into a top-level function `summarise_injury_points(inj, group_vars)` directly above its current use, and call it in place. It is then testable with `load_script_functions()`. Behavior is otherwise unchanged except for the two fixes below.
+
+- [ ] **Step 1: Write the failing test.** Give it a fixture `inj` data frame with columns `position`, `pos_group`, `pen`, `severity`, `snap_weight`, plus a `team` group column. Cover:
+  - one questionable WR (`pen = -0.20 * 1.05`, severity 0.4) → `inj_off_pts` in (−1.5, 0), not ≤ −1.5;
+  - many OUT offensive starters → `inj_off_pts` ≥ −4.0 (the floor holds);
+  - one OUT CB → `inj_off_pts == 0` (defensive injuries don't lower offensive points) and `inj_def_pts` in (0, 1.5];
+  - a team with no rows → absent, so the caller's `coalesce(…, 0)` applies.
+- [ ] **Step 2: Run it and confirm it FAILS.** The questionable-WR case returns −1.5, and the CB case lowers `inj_off_pts`.
+- [ ] **Step 3: Implement.**
+  - Offensive sum only over offensive non-QB positions: `pos_group %in% c("trenches", "skill")`.
+  - Clamp `inj_off_pts = pmin(pmax(inj_off_pts_raw * w, -4.0), 0)`, i.e. bounds [−4.0, 0]. This mirrors the defensive clamp's shape. The −4.0 floor is the existing value; keep it and don't tune it here.
+  - Add `INJURY_OFF_PTS_FLOOR <- -4.0` and `INJURY_DEF_PTS_CAP <- 1.5` to `config.R` (no hardcoded values), and use them.
+- [ ] **Step 4: Run it and confirm it PASSES.**
+- [ ] **Step 5: Golden-master compare.** Expect totals and margins to shift for every game with injury rows. The mean total should rise by about 2–3 points. Report the per-column diff and the change in mean predicted total vs actual 2024 week 15 totals.
+- [ ] **Step 6: Run the gates, then commit** `fix(M16): offensive injury penalty clamp and offensive-only scope`.
+
+---
+
 ### Task 9: Phase 1a close-out
 
+- [ ] **Step 0a: Add an offline pipeline artifact to `run_matrix.R`** (Phase 0 Ruling R14, spec Phase 0 item). Add an artifact `golden-master` that runs `Rscript scripts/golden_master.R compare 15 2024 reports/<date>/golden-master/2024-w15`. Its timeout is the golden master's recorded runtime × 2.
+  - It passes only when there are no differences from the recorded golden master.
+  - After an intentional, attributed change, re-record the golden master in the same PR and cite the ATTRIBUTION table.
+  - "Offline" here means it uses the nflreadr cache. If the cache is cold it needs network, and a network miss skips as `LIVE:` rather than failing.
+- [ ] **Step 0b: Validate KNOWN-DEFECT IDs** (Phase 0 ledger minor). In `R/test_policy.R`, add `known_defect_ids(paths)`, which parses the `| ID |` first column of `reports/2026-09-28/AUDIT.md` and `reports/2026-09-29/AUDIT-ADDENDUM.md`. In `scripts/run_tests.R`, treat a `KNOWN-DEFECT <ID>:` skip as unapproved when that ID isn't listed. Add tests: `KNOWN-DEFECT M999` → unapproved, `KNOWN-DEFECT M15` → approved. This requires #191 merged, so `AUDIT.md` is on `main`.
 - [ ] **Step 1: Run the gates.** `Rscript scripts/run_tests.R`, `Rscript scripts/verify_repo_integrity.R` and `Rscript scripts/run_matrix.R`. Quote the output of each.
 - [ ] **Step 2: Build the golden-master attribution table.** For each of Tasks 3–6, list the columns changed, the max |Δ| and the cause. Save it as `reports/<date>/golden-master/2024-w15/ATTRIBUTION.md`.
 - [ ] **Step 3: Update the docs.** CHANGELOG entries for each fix. In HANDOFF, record the next target, Phase 1b (point-in-time features, `predict_week()` extraction, disabling the invalid calibrator). Also note that `standardize_join_keys` still has duplicates outside `R/`.
