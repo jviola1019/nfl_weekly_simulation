@@ -13,7 +13,7 @@ An NFL game prediction model using Monte Carlo simulation with:
 - Spline calibration (calibrator currently invalid, audit M4; disabled in Phase 1)
 - 70% market shrinkage for probability estimates (increased from 60% when spline calibration unavailable)
 - 1/8 Kelly staking with edge skepticism
-- Strength-of-schedule, injury, and coaching change adjustments
+- Strength-of-schedule and injury adjustments
 - **Player props correlated with game simulation outcomes (v2.9.0)**
 - **Vigged model moneylines matching market juice (~10%)**
 - **v2.9.1 Audit Fixes**: Roster exclusivity, CV-scaled SD, scoring TD separation, hybrid win probability, EV tier system
@@ -341,9 +341,6 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `R/date_resolver.R` - Date resolution
 - `R/sleeper_api.R` - Sleeper fantasy API integration
 - `R/red_zone_data.R` - Red zone efficiency metrics
-- `R/coaching_adjustments.R` - Coaching change adjustments
-- `R/simulation_helpers.R` - Simulation utility functions
-- `R/model_diagnostics.R` - Calibration diagnostics
 - `R/correlated_props.R` - Gaussian copula player props (v2.9.0)
 
 ### Props Data Sources

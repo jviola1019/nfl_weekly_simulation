@@ -4,6 +4,12 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Deletion batch 2 (owner-approved 2026-09-29)
+
+- Removed, with usage evidence in the PR: `scripts/parameter_grid_search.R` (tuned settings removed in Phase 1a), `validation_pipeline.R` and `validation_reports.R` (reduced-model validation, audit M6; replaced by `backtest/`), `validation/validate_correlations.R` (withdrawn claim C-CORR), `validation/playoffs_validation.R` (covered by `test-playoffs.R`), `R/coaching_adjustments.R`, `R/simulation_helpers.R`, `R/model_diagnostics.R` (no call sites anywhere), `core/calibration.R`, `validation/calibration_harness.R` and its test (replaced by `backtest/calibrators.R`).
+- `test-calibration.R` now loads `mgcv` itself; it had relied on the deleted harness test loading it first.
+- README, CLAUDE.md, DOCUMENTATION.md and docs/ARCHITECTURE.md no longer list the removed files or advertise coaching adjustments; `test-repo-hygiene.R` keeps them from returning.
+
 ### Phase 0 — foundation (PR #192)
 
 - **Hygiene (Task 1):** retired dead code and scrapers, untracked `run_logs/` and local tool settings, hardened `.gitignore` (`.Renviron`, `.env*`, `.claude/settings*.json`, `.playwright-mcp/`, `bundles/`).
