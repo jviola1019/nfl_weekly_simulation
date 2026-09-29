@@ -52,9 +52,9 @@ Rscript NFLsimulation.R
 
 The script generates an HTML report with:
 - Game-by-game predictions with win probabilities
-- EV analysis and betting recommendations
+- EV analysis and model picks (paper stakes, not betting advice)
 - Market comparison (model vs Vegas)
-- Stake sizing using Kelly criterion
+- Paper stake sizes (1/8 Kelly, tracking units; `STAKING_MODE = "paper"`)
 
 Output file: `NFLvsmarket_week15_2024.html` (or similar)
 
@@ -141,7 +141,7 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Should be FALSE
 
 **Why this happens**: The snap weighting feature makes network calls to `nflreadr::load_participation()` which can timeout when data is unavailable for future or current seasons.
 
-**Note**: Disabling snap weighting does NOT affect model accuracy - position-level injury weights remain active and are validated (p < 0.001).
+**Note**: Disabling snap weighting does NOT affect model accuracy - position-level injury weights remain active (unvalidated, see ledger C-POSW in `docs/EVIDENCE_LEDGER.md`).
 
 ### VS Code R Extension Issues
 

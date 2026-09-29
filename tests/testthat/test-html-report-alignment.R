@@ -90,4 +90,14 @@ test_that("moneyline HTML headers include governance columns and percent formatt
     expect_true(is.finite(pos) && pos > 0, label = paste("missing column", col))
     expect_true(grepl("%", cell_values[[pos]]), label = paste("missing percent for", col))
   }
+
+  # Honest-default wording: the table note is built from config values and
+  # makes no calibration or risk-management claims
+  page_text <- xml2::xml_text(html_doc)
+  expect_match(page_text, sprintf("Unvalidated model | %.0f%% base market weight | %s stakes | 1/%.0f Kelly",
+                                  SHRINKAGE * 100, STAKING_MODE, 1 / KELLY_FRACTION), fixed = TRUE)
+  expect_match(page_text, "* = Pass | ✓ OK = 0-5% | ⚠ High = 5-10%", fixed = TRUE)
+  expect_false(grepl("CALIBRATED", page_text, fixed = TRUE))
+  expect_false(grepl("professional risk management", page_text, fixed = TRUE))
+  expect_false(grepl("Recommended stake", page_text, fixed = TRUE))
 })

@@ -4,11 +4,11 @@
 
 ![CI](https://github.com/jviola1019/nfl/actions/workflows/ci.yml/badge.svg)
 
-A production-ready statistical model for predicting NFL game outcomes using Monte Carlo simulation and data-driven analysis.
+A statistical model for predicting NFL game outcomes using Monte Carlo simulation and data-driven analysis.
 
 **Version**: 2.9.0
 **R Version Required**: 4.3.0+ (tested on 4.5.1)
-**Status**: Production-Ready
+**Status**: Unvalidated research model (see the banner above)
 
 ---
 
@@ -40,7 +40,7 @@ A production-ready statistical model for predicting NFL game outcomes using Mont
 │                   MARKET ANALYSIS                               │
 │  NFLmarket.R: Market comparison + Kelly staking                 │
 │  • build_moneyline_comparison_table()                           │
-│  • shrink_probability_toward_market() (60% market weight)       │
+│  • shrink_probability_toward_market() (70% base, unvalidated)   │
 │  • conservative_kelly_stake() (1/8 Kelly)                       │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │
@@ -54,7 +54,7 @@ A production-ready statistical model for predicting NFL game outcomes using Mont
 - **Score Distribution**: Negative binomial (captures overdispersion)
 - **Correlation**: Gaussian copula (rho ≈ -0.15)
 - **Calibration**: GAM spline (calibrator currently invalid, audit M4; disabled in Phase 1)
-- **Shrinkage**: 60% market weight, 40% model weight
+- **Shrinkage**: 70% base market weight, 30% model weight (`SHRINKAGE` in config.R; unvalidated, see `docs/EVIDENCE_LEDGER.md` C-SHRINK)
 - **Staking**: 1/8 Kelly with 10% max edge cap
 - **Player Props**: Correlated with game simulation via Gaussian copula (v2.9.0)
 - **Vigged Lines**: Model moneylines with ~10% juice (market-realistic)
@@ -101,7 +101,7 @@ The script generates a unified HTML report with:
 - **Player Props** (v2.9.0): Correlated with game simulation
 - **Market Comparison**: Blend vs Vegas odds
 - **Vigged Model Lines**: Realistic ~10% juice moneylines
-- **Stake Sizing**: Kelly criterion recommendations
+- **Paper Stakes**: 1/8 Kelly stake sizes in tracking units (`STAKING_MODE = "paper"`), not betting advice
 - **Tabbed Interface**: Switch between Games and Props sections
 
 **For detailed setup**: See **[GETTING_STARTED.md](GETTING_STARTED.md)** for IDE setup (RStudio + VS Code) and troubleshooting.
@@ -148,14 +148,14 @@ The model evaluates each team using:
 
 ### Step 3: Adjust for Current Conditions
 
-**Injuries** (validated with p < 0.01):
+**Injuries** (unvalidated config values; see `docs/EVIDENCE_LEDGER.md`):
 - Quarterback out: -7.2 points on average
 - Skill positions (WR/RB/TE): -0.55 points per injured starter
 - Offensive/defensive line: -0.65 points per injured starter
 - Secondary (CB/S): -0.45 points per injured starter
 - Linebackers/edge rushers: -0.50 points per injured starter
 
-**Weather** (validated with p < 0.05):
+**Weather** (unvalidated config values; see `docs/EVIDENCE_LEDGER.md`):
 - Indoor dome: +0.8 points to total scoring
 - High wind (>15 mph): -1.0 points to passing offense
 - Cold temperature (<32°F): -0.5 points to total scoring
@@ -163,7 +163,7 @@ The model evaluates each team using:
 
 **Other Adjustments:**
 - Division rivalry games: -0.2 points (games tend to be closer)
-- All adjustments are statistically validated (p < 0.05)
+- All adjustment sizes are unvalidated until a backtest passes its gates (`docs/EVIDENCE_LEDGER.md`)
 
 ### Step 4: Run Monte Carlo Simulation
 
@@ -194,13 +194,13 @@ WEEK_TO_SIM <- 12          # Week to predict (1-18)
 N_TRIALS <- 100000         # Simulation count
 ```
 
-All model parameters (injuries, weather, rest, etc.) are statistically validated (p < 0.05). See [DOCUMENTATION.md](DOCUMENTATION.md) for complete parameter details.
+All model parameters (injuries, weather, rest, etc.) are unvalidated until a backtest passes its gates; see `docs/EVIDENCE_LEDGER.md`. See [DOCUMENTATION.md](DOCUMENTATION.md) for complete parameter details.
 
 ---
 
 ## Statistical Validation
 
-All model parameters tested using:
+Methods earlier parameter work reported using (results unvalidated; see `docs/EVIDENCE_LEDGER.md`):
 - 10-fold cross-validation (sample and results withdrawn 2026-09-28; see docs/EVIDENCE_LEDGER.md)
 - Permutation testing (p < 0.05 required)
 - Effect size analysis

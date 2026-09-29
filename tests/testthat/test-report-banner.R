@@ -1,9 +1,17 @@
 test_that("banner derives every number from its arguments", {
   html <- render_model_status_banner(0.70, 0.125, 0.02, "paper")
-  expect_match(html, "70% market weight", fixed = TRUE)
+  expect_match(html, "70% base market weight", fixed = TRUE)
   expect_match(html, "1/8 Kelly", fixed = TRUE)
   expect_match(html, "2% max stake", fixed = TRUE)
   expect_false(grepl("60%", html, fixed = TRUE))
+  expect_match(render_model_status_banner(0.55, 0.25, 0.05, "paper"), "55% base market weight", fixed = TRUE)
+})
+
+test_that("banner calls the weight a base weight, not the weight applied to every game", {
+  # Playoff and Super Bowl games use their own shrinkage (config.R), so the
+  # banner must not claim SHRINKAGE is what every game received.
+  html <- render_model_status_banner(0.70, 0.125, 0.02, "paper")
+  expect_false(grepl("market weight applied", html, fixed = TRUE))
 })
 
 test_that("banner states the model is unvalidated and stakes are paper", {

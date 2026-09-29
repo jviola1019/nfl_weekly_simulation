@@ -2993,7 +2993,7 @@ export_moneyline_comparison_html <- function(comparison_tbl,
   intro_html <- paste0(
     "<section class=\"report-intro\">",
     "<h2>NFL Model vs Market Analysis</h2>",
-    "<p class=\"report-subtitle\">Probabilistic model comparison with professional risk management</p>",
+    "<p class=\"report-subtitle\">Probabilistic model comparison against market prices</p>",
 
     "<div class=\"intro-section warning-box\">",
     render_model_status_banner(SHRINKAGE, KELLY_FRACTION, MAX_STAKE, STAKING_MODE),
@@ -3032,7 +3032,7 @@ export_moneyline_comparison_html <- function(comparison_tbl,
     "<div class=\"intro-section color-legend\">",
     "<h3>Color Coding</h3>",
     "<span class=\"color-chip green\"></span> Positive edge / Blend wins ",
-    "<span class=\"color-chip coral\"></span> Recommended action ",
+    "<span class=\"color-chip coral\"></span> Model action ",
     "<span class=\"color-chip muted\"></span> Market wins / No edge ",
     "<span class=\"color-chip gray\"></span> N/A",
     "</div>",
@@ -3043,7 +3043,7 @@ export_moneyline_comparison_html <- function(comparison_tbl,
     "<ul class=\"compact-list\">",
     "<li>Model finds 4.2% expected return per unit bet</li>",
     "<li>Edge is in the realistic range (0-5%)</li>",
-    "<li>Recommended stake: 0.015 units (1.5% of 1/8 Kelly)</li>",
+    "<li>Paper stake: 0.015 units (1.5% of 1/8 Kelly)</li>",
     "</ul>",
     "<p><strong>* = Pass game</strong>: No positive EV found; the asterisk shows the favorite but recommends not betting.</p>",
     "</div>",
@@ -3596,7 +3596,10 @@ export_moneyline_comparison_html <- function(comparison_tbl,
 
     gt_tbl <- gt::tab_source_note(
       gt_tbl,
-      source_note = "⚠️ CALIBRATED: Playoff shrinkage 70-75% | 1/8 Kelly | Max edge 10% (Review) | Min stake 1% | * = Pass | ✓ OK = 0-5% | ⚠ High = 5-10%"
+      source_note = sprintf(
+        "Unvalidated model | %.0f%% base market weight | %s stakes | 1/%.0f Kelly | Max edge %.0f%% (Review) | Min stake %.0f%% | * = Pass | ✓ OK = 0-5%% | ⚠ High = 5-10%%",
+        SHRINKAGE * 100, STAKING_MODE, 1 / KELLY_FRACTION, MAX_EDGE * 100, MIN_STAKE_THRESHOLD * 100
+      )
     )
     gt_tbl <- gt::tab_options(
       gt_tbl,

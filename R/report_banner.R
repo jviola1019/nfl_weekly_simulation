@@ -27,7 +27,7 @@ render_model_status_banner <- function(shrinkage, kelly_fraction, max_stake, sta
     "<h3>Unvalidated model: research output</h3>",
     "<p>No backtest has passed the promotion gates yet. See docs/EVIDENCE_LEDGER.md.</p>",
     "<ul>",
-    sprintf("<li>%.0f%% market weight applied to the model probability</li>", shrinkage * 100),
+    sprintf("<li>%.0f%% base market weight blended into the model probability</li>", shrinkage * 100),
     sprintf("<li>%s staking, %.0f%% max stake per game</li>", kelly_label, max_stake * 100),
     stake_line,
     "</ul></div>"
