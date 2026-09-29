@@ -209,18 +209,16 @@ test_that("snap percentages have expected structure", {
     skip("load_player_snap_percentages function not available")
   }
 
-  # Try to load snap data for a team
-  snap_data <- tryCatch({
-    load_player_snap_percentages("DAL", 2024, use_cache = TRUE)
-  }, error = function(e) tibble::tibble())
+  # Load snap data for a team (errors surface; 0 rows is the M15 defect)
+  snap_data <- load_player_snap_percentages("DAL", 2024, use_cache = TRUE)
 
-  if (nrow(snap_data) > 0) {
-    # Check expected columns
-    expect_true("player" %in% names(snap_data) || "full_name" %in% names(snap_data),
-                info = "Snap data should have player name column")
-    expect_true("snap_pct" %in% names(snap_data) || "snaps" %in% names(snap_data),
-                info = "Snap data should have snap percentage column")
-  }
+  expect_gt(nrow(snap_data), 0)
+
+  # Check expected columns
+  expect_true("player" %in% names(snap_data) || "full_name" %in% names(snap_data),
+              info = "Snap data should have player name column")
+  expect_true("snap_pct" %in% names(snap_data) || "snaps" %in% names(snap_data),
+              info = "Snap data should have snap percentage column")
 })
 
 # =============================================================================
