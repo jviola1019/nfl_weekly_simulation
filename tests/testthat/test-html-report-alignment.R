@@ -4,10 +4,8 @@
 
 library(testthat)
 
-# NFLmarket.R sources NFLbrier_logloss.R relative to the working directory
-if (!exists("export_moneyline_comparison_html", mode = "function")) {
-  withr::with_dir(.test_project_root, source(file.path(.test_project_root, "NFLmarket.R"), local = FALSE))
-}
+# Loaded privately so NFLmarket.R doesn't shadow R/ modules (helper-nflmarket.R)
+export_moneyline_comparison_html <- nflmarket_env()$export_moneyline_comparison_html
 
 test_that("moneyline HTML headers include governance columns and percent formatting", {
   skip_if_not(exists("export_moneyline_comparison_html", mode = "function"),

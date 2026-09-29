@@ -4,8 +4,9 @@
 
 context("Moneyline report schema contract")
 
-# NFLmarket.R sources NFLbrier_logloss.R relative to the working directory
-withr::with_dir(.test_project_root, source(file.path(.test_project_root, "NFLmarket.R"), local = FALSE))
+# Loaded privately so NFLmarket.R doesn't shadow R/ modules (helper-nflmarket.R)
+moneyline_report_schema_contract <- nflmarket_env()$moneyline_report_schema_contract
+validate_moneyline_report_schema <- nflmarket_env()$validate_moneyline_report_schema
 
 sample_moneyline_report_row <- function() {
   tibble::tibble(

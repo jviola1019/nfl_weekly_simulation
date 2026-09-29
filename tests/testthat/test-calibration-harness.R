@@ -2,8 +2,16 @@
 # Tests for time-aware calibration harness and leakage guards
 # =============================================================================
 
-source(file.path(.test_project_root, "core", "calibration.R"), local = FALSE)
-source(file.path(.test_project_root, "validation", "calibration_harness.R"), local = FALSE)
+# Loaded into a private environment: core/calibration.R defines its own
+# clamp_probability(), which would otherwise replace R/utils.R's for every later
+# test file (audit H1; checked in test-utils.R).
+calibration_env <- new.env(parent = globalenv())
+sys.source(file.path(.test_project_root, "core", "calibration.R"), envir = calibration_env)
+sys.source(file.path(.test_project_root, "validation", "calibration_harness.R"), envir = calibration_env)
+create_time_aware_folds <- calibration_env$create_time_aware_folds
+assert_temporal_leakage_guards <- calibration_env$assert_temporal_leakage_guards
+assert_default_calibration_performance <- calibration_env$assert_default_calibration_performance
+run_calibration_harness <- calibration_env$run_calibration_harness
 
 make_calibration_fixture <- function(n = 480) {
   set.seed(2026)
