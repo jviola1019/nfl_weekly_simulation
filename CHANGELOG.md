@@ -9,6 +9,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
 - `HANDOFF.md` rewritten for the end of session 2: PR table (#194–#198), merge order and expected doc-only conflicts, gates at each head, owner decisions (M18/M19, A5, A7, Vercel/Neon, pending deletions, FF access, LICENSE), and defect log entries 9–17.
 - `reports/2026-09-29/ARCHITECTURE-SCAN.md`: architecture and ERD scan of main plus every open PR merged together (system diagram, module map, dependency edges, ERD generated from the Drizzle schema, computed drift from the spec ERD, findings).
 - `docs/handoff/2026-09-29-vscode-prompt.md`: prompt for Claude Code in VS Code to verify every phase with a full environment and finish the work this cloud session could not.
+- 2026-09-30: #194–#198 merged into `main` at the owner's request (doc-only CHANGELOG/ledger conflicts resolved by keeping both sides). The VS Code prompt now verifies `main` directly, and Part B lists everything left (items 1–19, including the open owner decisions).
 
 ### Data contract, database and Broadcast Line web UI (overhaul Phases 6–7, run locally)
 

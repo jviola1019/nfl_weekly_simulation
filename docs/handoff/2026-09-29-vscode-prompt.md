@@ -40,22 +40,22 @@ cd web && npm ci && npx playwright install --with-deps chromium && cd ..
 
 ## Part A: verify every phase
 
-Before the merge-stack step, check out each PR branch in its own worktree. Record the actual output of every command, not a paraphrase.
+Every PR from sessions 1–2 (#190–#199) is merged into `main`, so run all of Part A on an up-to-date `main`. Record the actual output of every command, not a paraphrase.
 
-### A0. Open PRs and merge state
-- Open PRs: #194 (A2 decisions, owner's), #195 `feat/backtest-games`, #196 `fix/phase1a-wiring`, #197 `chore/deletion-batch-2`, #198 `feat/web-ui` (stacked on #195). #190–#193 are merged.
-- Confirm CI is green on every head (GitHub checks). Report any red check with its log. Don't re-run a job more than once.
+### A0. Merge state
+- `git pull` on `main`, and confirm no PR from #190–#199 is still open.
+- Confirm CI is green on the latest `main` commit: `CI` (audit-verify, lint-and-check), `CI (web)` and `Golden master`. Report any red check with its log. Don't re-run a job more than once.
 
-### A1. Phase 0 foundation (on `main`)
+### A1. Phase 0 foundation
 ```bash
 Rscript scripts/run_tests.R            # must exit 0: 0 failed, 0 errors, only allowlisted skips (KNOWN-DEFECT M14/M15/P13, LIVE)
 Rscript scripts/verify_repo_integrity.R   # 60/60
 Rscript scripts/verify_requirements.R     # exit 0
-Rscript scripts/run_matrix.R              # 9/9 on main
+Rscript scripts/run_matrix.R              # 10/10 (9 + golden master) now that Phase 1a is merged
 ```
 Check that `tests/skip_allowlist.txt` matches every skip, and that no test contains `expect_true(TRUE)` or swallows errors into empty tibbles (`test-skip-hygiene.R` enforces this).
 
-### A2. Game backtest v1 (#195)
+### A2. Game backtest v1 (merged from #195)
 ```bash
 Rscript -e 'testthat::test_file("tests/testthat/test-backtest-games.R")'     # 14 tests, 0 failed
 # Reproduce the scored result byte for byte (protocol hash must match and be committed)
@@ -69,7 +69,7 @@ Rscript -e 'a <- jsonlite::read_json("/tmp/bt_repro/run_meta.json"); b <- jsonli
 - Controls: every row in `controls.json` passes (leak canary, implausible-skill guard, global shuffled labels, market copy, reproducibility).
 - Don't rebuild `backtest/data/` from a fresh nflverse download to "check" it. `games.csv` is a live file, so its sha will differ. The committed inputs and `SOURCES.json` are the hash-locked record. If you want an independent check, rebuild into a temp dir and compare only rows with `season <= 2024` and final scores.
 
-### A3. Phase 1a wiring fixes (#196)
+### A3. Phase 1a wiring fixes (merged from #196)
 ```bash
 Rscript scripts/run_tests.R               # exit 0
 Rscript scripts/verify_repo_integrity.R   # 60/60
@@ -85,11 +85,11 @@ Rscript scripts/golden_master.R compare 15 2024 reports/2026-09-29/golden-master
   ```
   It must exit 0 and write `NFLvsmarket_report.html` with game and props tabs, plus `run_logs/config_*.rds` and `run_logs/final_*.rds`. Open the HTML and describe what you see.
 
-### A4. Deletion batch 2 (#197)
+### A4. Deletion batch 2 (merged from #197)
 - `run_tests.R`, integrity and `run_matrix` pass as in A1.
 - `git grep -n -E "coaching_adjustments|simulation_helpers|model_diagnostics|core/calibration|calibration_harness|parameter_grid_search|validation_pipeline|validation_reports|validate_correlations|playoffs_validation"` returns only CHANGELOG/history mentions.
 
-### A5. Contract, database and web UI (#198)
+### A5. Contract, database and web UI (merged from #198)
 ```bash
 cd web
 npm run typecheck && npm run lint
@@ -124,8 +124,8 @@ Rscript -e 'testthat::test_file("tests/testthat/test-bundle-writer.R")'  # 8 tes
   - For the prospective bundle, download the current nflverse `games.csv` and `play_by_play_2006…2026.rds` into a raw dir, then run `Rscript backtest/prospective.R <raw_dir> /tmp/bundles 2026 <next week>`. Ingest it and check the site shows that week. It must refuse any played game.
 - Try to break the ingest by hand: edit a row in a copied bundle (expect a sha rejection), set `qa.ok=false` (expect `qa_failed`, pointer unchanged), and run an UPDATE on `backtest_metrics` in psql (expect the append-only error).
 
-### A6. The merged stack
-Merge #194 → #195 → #196 → #197 → #198 onto `main` in a scratch branch. Resolve the CHANGELOG/ledger conflicts by keeping both sides. Then run all of A1–A5 on the result. Every gate must pass: `run_tests.R` exit 0, integrity 60/60, `run_matrix` 10/10, the golden-master compare, vitest 64, e2e 69.
+### A6. Whole-repo gate on `main`
+All of A1–A5 were run on `main`, which now holds the whole stack. Every gate must pass together: `run_tests.R` exit 0, integrity 60/60, `run_matrix` 10/10, the golden-master compare, vitest 64 and e2e 69. The PR merges were resolved by keeping both sides of the CHANGELOG/ledger conflicts. Read the merged CHANGELOG and `docs/EVIDENCE_LEDGER.md` once for duplicated or out-of-order sections, and check that the combined C-SHRINK row reads correctly.
 
 ## Part B: finish what the cloud session could not
 
@@ -167,6 +167,15 @@ Each item is its own branch and draft PR, with gates as listed. Items marked **(
     - Rewrite README, GETTING_STARTED and CLAUDE.md with numbers only from real runs; `docs/ARCHITECTURE.md` and `docs/API.md` are stale (v2.7.0).
     - Split DOCUMENTATION into model-spec (generated), backtest-protocol, PROMOTION_POLICY, data-contract and odds-sources.
     - Generate VALIDATION_REPORT.md, and unify the version string.
+11. **Refresh the backtest fixture bundle.** Phase 1a changed `docs/EVIDENCE_LEDGER.md` after the fixture was cut, so on `main` `contracts/fixtures/bundles/backtest-nfl-games-v1/evidence_ledger.json` no longer matches the ledger. Regenerate it with `Rscript scripts/write_backtest_bundle.R reports/2026-09-29/backtest-games-v1 contracts/fixtures/bundles-tmp`, copy the tables over the fixture, and re-run vitest and e2e. Then add a docs-truth test that fails when the fixture's ledger drifts from `docs/EVIDENCE_LEDGER.md`.
+12. **Evidence-page CLS.** The charts start at 720 px (`useChartWidth`) and re-lay out after hydration. If Lighthouse CLS is ≥ 0.1, reserve their height or measure before first paint.
+13. **Login throttle behind a self-hosted proxy.** The per-IP key trusts `x-forwarded-for`. On Vercel the platform sets it. Document this, or read the platform's client-IP header, before any non-Vercel deploy.
+14. **`R/prop_odds_api.R` scraper remnants.** The spec lists lines 249–518 for deletion. Check what Phase 0 already retired, and present what's left, with usage evidence, as a deletion item (owner, A3).
+15. **Forward-capture retention.** Odds-capture artifacts expire after 90 days. Add a job that copies each week's capture into a GitHub Release asset before that happens (Phase 2 needs the history).
+16. **ESPN open/close coverage.** Measure coverage for every 2023–2025 game (not the 5-per-season spike sample) before openers are used for CLV again. Record it in `reports/<date>/`.
+17. **Blend calibration extremes.** Investigate the near-0/1 blends (e.g. BAL@NYG 0.003 in the golden master) as part of the M4 calibrator decision in Phase 1b.
+18. **CI hygiene.** GitHub warns that `actions/checkout@v4`, `actions/download-artifact@v4` and `actions/upload-artifact@v4` target the deprecated Node 20. Bump them (and `setup-node`, `r-lib/actions`) to versions on Node 24, one workflow at a time, keeping each green.
+19. **Owner decisions still open (ask, then act):** M18/M19 approval (item 1), A5 (item 5), A7 public policy (the site stays market-only until a candidate passes its gates; confirm or change), Vercel/Neon connectors (item 4), the A3 deletions (items 7 and 14), FF read access (item 8), A8 and LICENSE (item 10).
 
 ## Per-phase acceptance gates (a phase is done only when every line holds)
 

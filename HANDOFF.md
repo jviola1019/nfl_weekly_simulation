@@ -2,7 +2,7 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec. To verify everything and finish the remaining work in a full local environment (VS Code), use `docs/handoff/2026-09-29-vscode-prompt.md`.
 
-## Current state — 2026-09-29, end of session 2
+## Current state — 2026-09-30, end of session 2 (everything merged)
 
 Session 2 covered:
 - the pre-registered game backtest, scored end to end;
@@ -26,16 +26,14 @@ Session 2 covered:
 | PR | Branch | State |
 |---|---|---|
 | #190–#193 | forward capture, spec, Phase 0, spike | **Merged** |
-| #194 | docs/a2-protocol-decisions | Open (owner's). A2: a 400-pick betting-value gate, pooled headline, and the holdout scored once after C3 is point-in-time. |
-| #195 | feat/backtest-games | Draft, stacked on #194. CI green. |
-| #196 | fix/phase1a-wiring | Draft. **15/15 checks green** at `54d03fc`, including golden-master attribution: the head differs from its parent only by ~2e-10 float noise. |
-| #197 | chore/deletion-batch-2 | Draft. CI green. |
-| #198 | feat/web-ui | Draft, stacked on #195. **`ci-web` green**: 64 vitest (Postgres suites ran), re-ingest is a no-op, 69 Playwright. |
+| #194 | docs/a2-protocol-decisions | **Merged** 2026-09-29 (`0b0f02b`). A2: a 400-pick betting-value gate, pooled headline, and the holdout scored once after C3 is point-in-time. |
+| #195 | feat/backtest-games | **Merged** (`96ff3f2`) |
+| #196 | fix/phase1a-wiring | **Merged** (`b5d1ac4`) after merging `main` in (CHANGELOG sections kept; C-SHRINK ledger row combined). CI green on the merge commit. |
+| #197 | chore/deletion-batch-2 | **Merged** (`526ec9d`) after merging `main` in. CI green. |
+| #198 | feat/web-ui | **Merged** (`37e92d8`) after merging `main` in and retargeting to `main`; `CI` and `CI (web)` green |
+| #199 | claude/gallant-albattani-ohova3 | This hand-off (HANDOFF, architecture scan, VS Code prompt); merged last |
 
-**Merge order:** #194 → #195 → #196 → #197 → #198.
-- #196 and #197 conflict only in `CHANGELOG.md` (and #196 also in `docs/EVIDENCE_LEDGER.md`), where parallel entries sit at the same spot. Keep both sides.
-- After each merge, bring `main` into the next PR and let CI re-run.
-- Tested on a scratch merge of all five: integrity 60/60, and the R suite shows no failure that isn't also present on #196 alone in a container without nflreadr/randtoolbox.
+The owner asked (2026-09-30) to merge everything and move the remaining work to the VS Code list. Merge conflicts were parallel doc entries only, resolved by keeping both sides.
 
 ### Results that matter
 
@@ -61,13 +59,13 @@ Session 2 covered:
 
 | Branch | Gates |
 |---|---|
-| #196 | CI: `run_tests.R` exit 0, integrity 60/60, `run_matrix` 10/10 (golden-master artifact added) |
-| #198 | Local: typecheck and lint clean; vitest 64/64 with `REQUIRE_DB_TESTS=1`; Playwright 69/69; axe 0 serious/critical at 390/768/1440 in both themes; `test-bundle-writer.R` 8/8; integrity 60/60. CI: the same. |
+| Phase 1a | CI: `run_tests.R` exit 0, integrity 60/60, `run_matrix` 10/10 (golden-master artifact added) |
+| Web UI | Local: typecheck and lint clean; vitest 64/64 with `REQUIRE_DB_TESTS=1`; Playwright 69/69; axe 0 serious/critical at 390/768/1440 in both themes; `test-bundle-writer.R` 8/8; integrity 60/60. CI: the same. |
 | This container | R 4.3.3 without gt, nflreadr or randtoolbox, so `run_tests.R` locally exits 1 on those skips only. CI (R 4.5.1 + renv) is authoritative. |
 
 ## Owner decisions pending
 
-1. **Merge** #194–#198 in the order above. Draft PRs need marking ready first.
+1. **Remaining work** is listed in `docs/handoff/2026-09-29-vscode-prompt.md` Part B (items 1–19); the decisions below are item 19 there.
 2. **M18/M19 fix approval.** Both touch `injury_scalp.R`/`NFLsimulation.R` (a STOP item). The golden master will attribute the change.
 3. **A5 (before any props backtest):** define "pre-kickoff price" (a trade or two-sided quote, vs a spread cap ≤ 0.05 or "traded in the final hour"). The spike's GO verdict depends on it (see the previous HANDOFF text in git history, `8adcc79:HANDOFF.md`).
 4. **A7 (public launch gate):** confirm the policy above, market-only until a candidate passes.
@@ -83,7 +81,7 @@ Session 2 covered:
 **Done:** audit; forward capture; Phase 0; A2 decisions; backtest v1 (Tune/Confirm scored, holdout sealed); Phase 1a plus the golden master; deletion batches 1–2; contract, DB, ingest and web UI with tests and CI.
 
 **Next target:**
-1. Merge the stack.
+1. Run the VS Code prompt: Part A verifies `main`, Part B is the list.
 2. Phase 1b: point-in-time features, `predict_week()` extraction, M4/M5/M6/M8/M9, M18/M19 if approved, and the simulator emitting a weekly bundle through `R/bundle_writer.R` (with `score_distributions`). This makes C3 point-in-time, after which the 2025 holdout is scored once.
 3. Phase 2 odds layer: load the raw captures into `source_fetches`/`odds_snapshots`/`closing_lines`, add the unmatched-entity queue, redesign the ESPN bias test.
 4. Deploy (after item 5 above).
