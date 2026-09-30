@@ -207,10 +207,9 @@ Methods earlier parameter work reported using (results unvalidated; see `docs/EV
 - Permutation testing (p < 0.05 required)
 - Effect size analysis
 
-**Validation scripts**:
+**Validation**: the pre-registered walk-forward backtest (`backtest/`):
 ```bash
-Rscript validation_pipeline.R              # Hyperparameter tuning
-Rscript injury_model_validation.R          # Injury impacts
+Rscript backtest/walk_forward.R --window backtest/eval_windows/nfl_games_v1.json --stage dev --out <dir>
 ```
 
 See [DOCUMENTATION.md](DOCUMENTATION.md) for complete validation methodology.
@@ -305,15 +304,9 @@ Rscript scripts/run_matrix.R  # Should show 10/10 passed (golden-master needs ne
 ### Validation Scripts (Model Testing)
 | File | Purpose |
 |------|---------|
-| `validation_pipeline.R` | Hyperparameter tuning with cross-validation |
-| `model_validation.R` | Statistical significance testing |
-| `injury_model_validation.R` | Validate injury impact coefficients |
-| `calibration_refinement.R` | Isotonic regression tuning |
-| `rolling_window_validation.R` | Time-series validation |
-| `ensemble_calibration_implementation.R` | Multi-method calibration |
-| `lasso_feature_selection.R` | Feature importance via LASSO |
-| `run_validation_example.R` | Example validation run |
-| `validation/playoffs_validation.R` | Playoff-specific validation |
+| `ensemble_calibration_implementation.R` | Builds the ensemble calibrator (invalid: fit on outcome-leaked data, audit M4; removed in Phase 1b) |
+| `validation/injury_ab_comparison.R` | A/B check to run before enabling snap-weighted injuries |
+| `validation/primetime_significance_test.R` | Significance check to run before enabling primetime adjustments |
 
 ### Utility Scripts
 | File | Purpose |
