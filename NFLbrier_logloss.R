@@ -634,7 +634,7 @@ compare_to_market <- function(res,
       mkt_tbl <- sched_eval %>%
         dplyr::transmute(game_id, season, week, home_spread = suppressWarnings(as.numeric(.data[[spread_col]]))) %>%
         dplyr::filter(is.finite(home_spread)) %>%
-        dplyr::mutate(p_home_mkt_2w = .clamp01(pnorm(-home_spread / SD_MARGIN)))
+        dplyr::mutate(p_home_mkt_2w = spread_line_to_home_prob(home_spread, SD_MARGIN))  # nflreadr convention (audit M10)
       msg <- "Market comparison: using spreads (Normal margin model)."
     }
   }

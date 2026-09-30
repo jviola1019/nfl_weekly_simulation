@@ -1,0 +1,23 @@
+Rscript reports/2026-09-29/clv-power/clv_power.R   (run 2026-09-29; nflreadr 1.5.0; R 4.5.1)
+
+  provider_name games sd_bps mad_bps share_moved
+1      ESPN BET   477  514.0   386.1      0.9329
+2    DraftKings    94  712.6   504.5      0.8617
+
+Main provider: ESPN BET | games=477 | sigma=514 bps | week ICC=0.008 | design effect=1.11 | fails=0
+  true_clv_bps candidates required_picks
+1           50          1            919
+2           75          1            409
+3          100          1            230
+4          150          1            103
+5           50          8           1497
+6           75          8            665
+7          100          8            375
+8          150          8            167
+
+For comparison, flat ROI at -110: detecting +3% ROI needs ~7938 bets (single test)
+
+Power for a true +100 bps edge, 8 candidates (Bonferroni), design effect 1.11, sigma 514 bps:
+  300 picks -> power 0.679
+  400 picks -> power 0.831
+  500 picks -> power 0.918

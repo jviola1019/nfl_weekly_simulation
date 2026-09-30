@@ -1,0 +1,107 @@
+name: Golden master
+
+# Records the game model's numeric output for a fixture week (2024 week 15) at every
+# commit from the golden-master baseline to the PR head, in parallel, then prints a
+# commit-by-commit attribution of every output change (audit plan Phase 1a/1b gate:
+# "every golden-master diff explained in the PR"). The baseline is also recorded twice
+# to prove the run is deterministic.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "NFLsimulation.R"
+      - "NFLmarket.R"
+      - "NFLbrier_logloss.R"
+      - "config.R"
+      - "injury_scalp.R"
+      - "R/**"
+      - "scripts/golden_master.R"
+      - ".github/workflows/golden-master.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: golden-master-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GM_WEEK: "15"
+  GM_SEASON: "2024"
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.list.outputs.matrix }}
+      commits: ${{ steps.list.outputs.commits }}
+      head: ${{ steps.list.outputs.head }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - id: list
+        run: |
+          HEAD_SHA=$(git rev-parse HEAD)
+          # baseline: the commit that added the golden-master harness (no output change)
+          BASE=$(git log --reverse --first-parent --format=%H --diff-filter=A -- scripts/golden_master.R | head -1)
+          COMMITS=$(git rev-list --reverse --first-parent "${BASE}^..${HEAD_SHA}")
+          echo "commits=$(echo $COMMITS)" >> "$GITHUB_OUTPUT"
+          echo "head=${HEAD_SHA}" >> "$GITHUB_OUTPUT"
+          MATRIX=$( (for c in $COMMITS; do echo "{\"commit\":\"$c\",\"dir\":\"$c\"}"; done; \
+                     echo "{\"commit\":\"$BASE\",\"dir\":\"$BASE-rep2\"}") | jq -sc .)
+          echo "matrix=${MATRIX}" >> "$GITHUB_OUTPUT"
+          echo "Baseline ${BASE}; commits:"; echo "$COMMITS"
+
+  record:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ matrix.commit }}
+      - name: Use the head's golden-master script
+        run: git show "${{ needs.plan.outputs.head }}:scripts/golden_master.R" > "$RUNNER_TEMP/golden_master.R"
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.5.1"
+          use-public-rspm: true
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev gfortran
+      - uses: r-lib/actions/setup-renv@v2
+      - name: Record
+        run: Rscript "$RUNNER_TEMP/golden_master.R" record "$GM_WEEK" "$GM_SEASON" "gm_out/${{ matrix.dir }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gm-${{ matrix.dir }}
+          path: gm_out/
+          retention-days: 30
+
+  attribute:
+    needs: [plan, record]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.head }}
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.5.1"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: gm-*
+          path: gm_out
+          merge-multiple: true
+      - name: Attribution
+        run: Rscript --vanilla scripts/golden_master.R attribute gm_out ${{ needs.plan.outputs.commits }}

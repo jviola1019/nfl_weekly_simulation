@@ -16,7 +16,9 @@ for (r in res) for (x in r$results) if (inherits(x, "expectation_skip")) {
 skips <- if (length(rows)) do.call(rbind, rows) else data.frame(file = character(), test = character(), reason = character())
 allow <- trimws(readLines("tests/skip_allowlist.txt", warn = FALSE))
 allow <- allow[nzchar(allow) & !startsWith(allow, "#")]
-out <- summarize_test_run(df, skips, classify_skips(skips$reason, allow))
+audit_ids <- known_defect_ids(c("reports/2026-09-28/AUDIT.md", "reports/2026-09-29/AUDIT-ADDENDUM.md"))
+allowed <- classify_skips(skips$reason, allow) & classify_known_defects(skips$reason, audit_ids)
+out <- summarize_test_run(df, skips, allowed)
 cat("\n", paste(out$lines, collapse = "\n"), "\n", sep = "")
 if (nrow(skips)) { cat("All skips:\n"); print(as.data.frame(table(reason = skips$reason)), row.names = FALSE) }
 quit(status = if (out$ok) 0 else 1)

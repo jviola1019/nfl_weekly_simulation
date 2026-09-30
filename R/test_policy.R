@@ -9,6 +9,30 @@ classify_skips <- function(reasons, allow_patterns) {
          logical(1), USE.NAMES = FALSE)
 }
 
+#' Audit IDs listed in the first column of the audit ledgers' tables ("| M14 |",
+#' "| P2/P3 |" -> P2, P3)
+known_defect_ids <- function(paths) {
+  ids <- character()
+  for (p in paths) {
+    lines <- readLines(p, warn = FALSE, encoding = "UTF-8")
+    m <- regmatches(lines, regexec("^\\|\\s*([A-Z]+[0-9]+(/[A-Z]*[0-9]+)*)\\s*\\|", lines))
+    cells <- vapply(m, function(x) if (length(x)) x[2] else NA_character_, character(1))
+    for (cell in cells[!is.na(cells)]) {
+      parts <- strsplit(cell, "/", fixed = TRUE)[[1]]
+      prefix <- sub("[0-9]+$", "", parts[1])
+      ids <- c(ids, ifelse(grepl("^[0-9]+$", parts), paste0(prefix, parts), parts))
+    }
+  }
+  unique(ids)
+}
+
+#' TRUE for each skip reason that is not a KNOWN-DEFECT skip or cites a listed audit ID
+classify_known_defects <- function(reasons, ids) {
+  cited <- sub("^KNOWN-DEFECT ([A-Z]+[0-9]+):.*$", "\\1", reasons)
+  is_kd <- grepl("^KNOWN-DEFECT", reasons)
+  !is_kd | (grepl("^KNOWN-DEFECT [A-Z]+[0-9]+:", reasons) & cited %in% ids)
+}
+
 #' Decide pass/fail for a testthat run and build a printable summary
 summarize_test_run <- function(df, skips, allowed) {
   n_fail <- sum(df$failed)

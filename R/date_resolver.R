@@ -163,6 +163,14 @@ parse_datetime <- function(datetime_str, tz = DATE_RESOLVER_CONFIG$timezone) {
   }, warning = function(w) lubridate::NA_POSIXct_,
   error = function(e) lubridate::NA_POSIXct_)
 
+  # nflreadr kickoffs are "YYYY-MM-DD HH:MM" (no seconds); audit M14
+  if (is.na(parsed)) {
+    parsed <- tryCatch({
+      lubridate::ymd_hm(datetime_str, tz = tz, quiet = TRUE)
+    }, warning = function(w) lubridate::NA_POSIXct_,
+    error = function(e) lubridate::NA_POSIXct_)
+  }
+
   if (is.na(parsed)) {
     parsed <- tryCatch({
       lubridate::ymd(datetime_str, tz = tz, quiet = TRUE)
@@ -408,10 +416,11 @@ resolve_nfl_context <- function(target_date = Sys.time(),
       # Within a week of next slate
       matching_weeks <- upcoming
     } else {
-      # Find most recent past week
+      # Find most recent past week: the smallest positive gap since a window ended
+      # (audit M17: arrange(desc(...)) picked the oldest week instead)
       past <- boundaries %>%
         dplyr::filter(.data$days_to_end > 0) %>%
-        dplyr::arrange(dplyr::desc(.data$days_to_end)) %>%
+        dplyr::arrange(.data$days_to_end) %>%
         dplyr::slice(1)
 
       if (nrow(past) > 0) {
