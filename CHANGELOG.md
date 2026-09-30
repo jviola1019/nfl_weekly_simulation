@@ -4,6 +4,32 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Validation sprint v2: can any model beat the close? (Tune 2018–2022, 2026-09-30)
+
+- **Inputs:** `backtest/v2/` with sha-locked context inputs in `backtest/data_v2/` (seasons ≤ 2024, sealed-season guards):
+  - schedule prices and venues;
+  - injury reports read by game status and timestamped > 6 h before kickoff;
+  - geocoded stadiums.
+- **Variable screen** (`screen.R`, 36 point-in-time features × moneyline/spread/totals):
+  - Each feature is tested beyond the no-vig close by LR/F tests with week-clustered robust checks and BH q-values.
+  - Nothing survives correction for moneyline or totals. The joint tests are null (LR p = 0.63, F p = 0.38/0.42).
+  - The close is well calibrated.
+  - On spreads, away teams cover 0.88 points less per time zone crossed (p = 0.004, q = 0.15). This is the one hypothesis carried forward.
+- **Blend families** (`models.R`): logistic stack, glmnet, xgboost (market-anchored and not), and gbm, fit walk-forward on identical inputs, each with none/Platt/isotonic/spline calibration fit on earlier weeks only.
+  - None beats the close (best: glmnet +0.03% [−0.20, +0.28]).
+  - Anchored logistic blends are the most useful: as accurate, half the variance and a fraction of the cost of boosting.
+  - Unanchored XGBoost loses 0.86%.
+  - Isotonic calibration hurts. The v2 logistic stack reproduces v1's B1[E1] Tune result exactly.
+- **Handicapping** (`handicap.R`): spread and totals against the devigged closing prices. No edge; every totals rule loses.
+- **Controls and tests:**
+  - A shuffled-label control passes for every flexible family.
+  - Leak canary and reproducibility for all model families and calibrators (`test-backtest-v2-models.R`).
+  - Feature point-in-time tests (`test-backtest-v2-features.R`) and input locks (`test-backtest-v2-inputs.R`).
+- **Tracking:** per-game CSVs for moneyline and handicapping. `track_append.R` grades prospective 2026 weeks; it refuses any season before 2026 and double counts (`test-backtest-v2-track.R`).
+- **Report and protocol:**
+  - `reports/2026-09-30/validation-sprint/REPORT.md` and `TABLES.md` (rendered from the CSVs by `report.R`).
+  - The draft protocol `reports/2026-09-30/backtest-games-v2/PROTOCOL-DRAFT.md` and `backtest/eval_windows/nfl_games_v2.DRAFT.json`, not frozen until the owner signs.
+
 ### Session 2 hand-off (docs)
 
 - `HANDOFF.md` rewritten for the end of session 2: PR table (#194–#198), merge order and expected doc-only conflicts, gates at each head, owner decisions (M18/M19, A5, A7, Vercel/Neon, pending deletions, FF access, LICENSE), and defect log entries 9–17.

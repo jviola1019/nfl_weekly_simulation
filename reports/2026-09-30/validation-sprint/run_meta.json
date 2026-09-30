@@ -1,0 +1,79 @@
+{
+  "generated_utc": "2026-09-30T20:11:08Z",
+  "max_season_loaded": 2022,
+  "tune_seasons": [2018, 2019, 2020, 2021, 2022],
+  "base_check_vs_v1": {
+    "games_compared": 1372,
+    "max_abs_diff": [4.99221219918411e-11, 4.99967289790959e-11, 4.99690289146315e-11]
+  },
+  "r_version": "R version 4.5.1 (2025-06-13 ucrt)",
+  "packages": {
+    "data.table": "1.17.8",
+    "sandwich": "3.1.1",
+    "glmnet": "4.1.10",
+    "xgboost": "3.1.3.1",
+    "gbm": "2.2.3",
+    "mgcv": "1.9.3"
+  },
+  "screen": {
+    "n": {
+      "ml": 1365,
+      "ats": 1372,
+      "tot": 1372
+    },
+    "seasons": [2018, 2019, 2020, 2021, 2022]
+  },
+  "models": {
+    "n_tune": 1365,
+    "seconds_by_model": {
+      "LR_E1": 0.827867269515991,
+      "LR_C1C2": 1.03316569328308,
+      "GLMNET": 199.488794565201,
+      "XGB": 57.5796258449554,
+      "XGB_FREE": 131.087527751923,
+      "GBM": 1217.42475581169
+    },
+    "spline_nonmonotone_share": {
+      "p_LR_E1": 0,
+      "p_LR_C1C2": 0,
+      "p_GLMNET": 0,
+      "p_XGB": 0,
+      "p_XGB_FREE": 0,
+      "p_GBM": 0,
+      "p_e1": 0
+    },
+    "rounds_summary": [
+      {
+        "model": "XGB",
+        "median_rounds": 9,
+        "min": 1,
+        "max": 274
+      },
+      {
+        "model": "XGB_FREE",
+        "median_rounds": 170,
+        "min": 81,
+        "max": 725
+      },
+      {
+        "model": "GBM",
+        "median_rounds": 17,
+        "min": 1,
+        "max": 1475
+      }
+    ],
+    "total_seconds": 1795.92426085472
+  },
+  "handicap": {
+    "n": {
+      "ats": 1339,
+      "totals": 1357
+    },
+    "edge_threshold": 0.03
+  },
+  "control_shuffled_labels": {
+    "all_passed": true,
+    "seed": 20260930
+  },
+  "runtime_sec": 2569.97904205322
+}

@@ -1,0 +1,253 @@
+{
+  "built_utc": "2026-09-30T04:07:34Z",
+  "max_season": 2024,
+  "seasons": [2009, 2024],
+  "builder": "backtest/v2/build_inputs.R",
+  "nflreadr_version": "1.5.0",
+  "r_version": "R version 4.5.1 (2025-06-13 ucrt)",
+  "sources": {
+    "schedules": {
+      "call": "nflreadr::load_schedules(seasons = 2009:2024)",
+      "url": "https://github.com/nflverse/nfldata/raw/master/data/games.rds",
+      "nflverse_timestamp": "2026-09-30 00:06:56 EDT",
+      "rows": 4345,
+      "note": "all-season file filtered to 2009-2024 by nflreadr in memory; cache off",
+      "consistency_vs_v1": {
+        "games_matched": 4345,
+        "home_team_mismatch": 0,
+        "home_score_mismatch": 0,
+        "spread_line_mismatch": 0
+      }
+    },
+    "venues": {
+      "api": "https://geocoding-api.open-meteo.com/v1/search",
+      "requests": [
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Atlanta&count=10&language=en&format=json&countryCode=US",
+          "sha256": "05ed2b37a318d130bef95c3e24cf654a0e53a50fc3cc66cbbb75cfbe542d4268"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Atlanta&count=10&language=en&format=json&countryCode=US",
+          "sha256": "f495d4bab0d4d4167a2034609207175c2090d9da958e4fd3de2c6beb0364bcee"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Baltimore&count=10&language=en&format=json&countryCode=US",
+          "sha256": "566fd64c1416e5a41d7141dcdd059bdc905bb670cbb5e961de76c33cb73396b9"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Foxborough&count=10&language=en&format=json&countryCode=US",
+          "sha256": "816980e4510891032f637043e7f9b52f8bb8b9b89fd618479c0ee142195b3620"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Orchard%20Park&count=10&language=en&format=json&countryCode=US",
+          "sha256": "9a174471e08dc11e1fdd21cd556ec3f04f06dbaa0b8e9fb74745db74dad281c2"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Toronto&count=10&language=en&format=json&countryCode=CA",
+          "sha256": "5d6e341e561d9618e83c421a37a872cb41a40b5bd61d5ae82a77f81fab71bc5a"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Charlotte&count=10&language=en&format=json&countryCode=US",
+          "sha256": "d6894cd43e493c7b38a8acaf150d19ac2dcb30a24bbcdceb5ee08f87ab99b67e"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Chicago&count=10&language=en&format=json&countryCode=US",
+          "sha256": "94056ac6762cc02c5243783c6fdb1fea32d59a2d69d2236699f38a68ff43d17d"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Cincinnati&count=10&language=en&format=json&countryCode=US",
+          "sha256": "2c2ea4165e0b036c4a5f088fd9e99d78709f7ad2b4bc50b50122e0eb9f03d262"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Cleveland&count=10&language=en&format=json&countryCode=US",
+          "sha256": "fa24f0465608ebb682afef427057e83803e71585c1941ed3835ef00070bc78d7"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Arlington&count=10&language=en&format=json&countryCode=US",
+          "sha256": "aec5fd45ba5d2dacaa6df34c1bc46c74b28ddf5308ebde95fd5fefac5fbb4903"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Denver&count=10&language=en&format=json&countryCode=US",
+          "sha256": "33f3a2455167b997358202e9486cc4aa0c41fead550603ab8bc06ca5f09670dc"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Detroit&count=10&language=en&format=json&countryCode=US",
+          "sha256": "0829cb2af1cbdcd7e15e86d451d3b07217e05b42d479f749fa1591c2e887a5a6"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Frankfurt%20am%20Main&count=10&language=en&format=json&countryCode=DE",
+          "sha256": "e14444a0fa6cbd46fea296388766d138b39ebde4ec66aeebf731d33c703538dd"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Munich&count=10&language=en&format=json&countryCode=DE",
+          "sha256": "ea742ff6928b44a4b862f655db512a191e5cf612ae57d8549d9062d10c594fdf"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Green%20Bay&count=10&language=en&format=json&countryCode=US",
+          "sha256": "38ebb1387833f5b5ce19c5f0c4c9c7fbd42ec975c2718280bf70edfbd6020554"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Houston&count=10&language=en&format=json&countryCode=US",
+          "sha256": "7456b1d211e7172792525527eb61a0f0318c1d09c63adf2c1fcf69b9b43cae7a"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Indianapolis&count=10&language=en&format=json&countryCode=US",
+          "sha256": "c1ed9cfce2080dcedc896f660f9e44449adf4617e7b194ada08aa827099ab556"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Jacksonville&count=10&language=en&format=json&countryCode=US",
+          "sha256": "3c272701f6ae350ca91bb0dd4ab06aa0692379f6aaf168b19d1c02e6be8b0111"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Kansas%20City&count=10&language=en&format=json&countryCode=US",
+          "sha256": "3849c96cdd7b1a213820d5786463069d1672f2b07148a2e99177a6dcf1b6df96"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Inglewood&count=10&language=en&format=json&countryCode=US",
+          "sha256": "d0002e4fe6e5b8bbde1f714d53c854d3fb68ecc764537e6339f96aed3d79d57e"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Carson&count=10&language=en&format=json&countryCode=US",
+          "sha256": "5d2f5cda28b2dd7884f969c42a86e1e785bd4305fe7f280b771436055862b0ee"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Los%20Angeles&count=10&language=en&format=json&countryCode=US",
+          "sha256": "02d9fda7d5a3ecc6379c4c17b9b17bf82886340b92ae30f7a49fab5f3da8b869"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=London&count=10&language=en&format=json&countryCode=GB",
+          "sha256": "f00e1c2d01501043fcc2f3b5f822fe999bd578db7baf1d9d3600f2a7eb28a613"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=London&count=10&language=en&format=json&countryCode=GB",
+          "sha256": "c54685cb940c272dca34608e926aa029afd582487ebedc55b42ac9529444c865"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=London&count=10&language=en&format=json&countryCode=GB",
+          "sha256": "cb74531df883580bf905052db37259e837797e40531e34f64cfd15c9ab1a47fb"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Mexico%20City&count=10&language=en&format=json&countryCode=MX",
+          "sha256": "b564d8e3d5df061fc6a89d2808a1618bb044a9e293d15dc7ba5f3d98df85525f"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Miami%20Gardens&count=10&language=en&format=json&countryCode=US",
+          "sha256": "255286303e49739f9a3c08dac48fe1c6d3ba1deb21f7059d3b065ac1d0f770ae"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Minneapolis&count=10&language=en&format=json&countryCode=US",
+          "sha256": "2fb765022e3646b84296b874ab2f8bd475d841cbc2128bfcc5fe17c886bd0ef5"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Minneapolis&count=10&language=en&format=json&countryCode=US",
+          "sha256": "22315823554c861dde6c8aae726a2f6b403c67e7e938b372e3b15f6bd22b40ef"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Minneapolis&count=10&language=en&format=json&countryCode=US",
+          "sha256": "8615d37efddad0b869908c6fd1e93b58dca99e68c723e8fb6103a32c968e4163"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Nashville&count=10&language=en&format=json&countryCode=US",
+          "sha256": "7636571155b4bc396077cd29f3fd087b5974844d6297ad60fb22b36f9bc1c20d"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=New%20Orleans&count=10&language=en&format=json&countryCode=US",
+          "sha256": "55a5470504b1c8949952e19e13c75d1f3274c7c9bf8294e5c8e4d1c8e01c7ec2"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=East%20Rutherford&count=10&language=en&format=json&countryCode=US",
+          "sha256": "b68e2bafd28d67ad228cd8f7a825399810299f61935b8d2307f1aaede4900abd"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=East%20Rutherford&count=10&language=en&format=json&countryCode=US",
+          "sha256": "8c86215ece0257b523bc5f340d4f745aaba05fa9bbae23b32327947eda2d977a"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Oakland&count=10&language=en&format=json&countryCode=US",
+          "sha256": "a95e86042eb3afc439f0598cde3bcc5178a8f8b9e237dc456c0eb27f24919028"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Philadelphia&count=10&language=en&format=json&countryCode=US",
+          "sha256": "6de8c78c8f3de1c27e39693f4c4056048f7589d789a011586a309ffd953550da"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Glendale&count=10&language=en&format=json&countryCode=US",
+          "sha256": "c0692d0954a90116fbe5413460b74929ef37f0c954fb1544d97ad05ef7451687"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Pittsburgh&count=10&language=en&format=json&countryCode=US",
+          "sha256": "1e36d94db952547249760844fb7cfbf4b36a7ce25a69db9356d51c072e84ac4c"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Sao%20Paulo&count=10&language=en&format=json&countryCode=BR",
+          "sha256": "65af9f2ce1c3923a5ac694ef3cd4fbf5160d4654b3e7af71689aa6da0abbb788"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=San%20Diego&count=10&language=en&format=json&countryCode=US",
+          "sha256": "ebc023f0710b84e40923e37073f91fc720be224d311fbf6c76bcea1c5930669b"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Seattle&count=10&language=en&format=json&countryCode=US",
+          "sha256": "180c8c035135cd5f56c781ab275dcb308a89412a8575d709ab707cc17b51063f"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=San%20Francisco&count=10&language=en&format=json&countryCode=US",
+          "sha256": "d2e2fcd7e1b4422d426030ca4f0fd8f746f1b451f4e22dd364150dba23617327"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Santa%20Clara&count=10&language=en&format=json&countryCode=US",
+          "sha256": "c0cb53bbf7fb22abcd063546af042d07d7c18a3d884e5eaee1701ad49f7183bf"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=St%20Louis&count=10&language=en&format=json&countryCode=US",
+          "sha256": "c91743141eeeb87890c56b27faea991a553ad37bb8fdcf80dd87b2e3afef4cea"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Tampa&count=10&language=en&format=json&countryCode=US",
+          "sha256": "0447f0b0a169c83aa0aa01e3f8adac5ba90fce64fb03e644ab558fbb65ab367b"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Las%20Vegas&count=10&language=en&format=json&countryCode=US",
+          "sha256": "c222f5008a67281bb3b8881fcb40317ff7eab5f727ee41f60d0dad3f7bda682a"
+        },
+        {
+          "url": "https://geocoding-api.open-meteo.com/v1/search?name=Landover&count=10&language=en&format=json&countryCode=US",
+          "sha256": "1788b512b4bf4c2c8cdec79d45472b0d40abf9296ce25e0344cbd620cf456b92"
+        }
+      ]
+    },
+    "injuries": {
+      "call": "nflreadr::load_injuries(seasons = 2009:2024)",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_{season}.rds",
+      "nflverse_timestamp": "2025-02-13 02:16:33 EST",
+      "rows_raw": 84684,
+      "date_modified_tzone": "UTC",
+      "rows_unmatched_team_week": 17,
+      "rows_dropped_not_before_kickoff": 4903,
+      "rows_kept": 79764,
+      "point_in_time_rule": "date_modified (as UTC) + 6 h < team kickoff"
+    }
+  },
+  "derived": {
+    "game_context": {
+      "file": "game_context.csv",
+      "rows": 4345,
+      "sha256": "9c0d4fbf5aac0bc3b47fb2b4790ad8ccf29b1a3f96fc11ba8f1a906110f176f3"
+    },
+    "injuries_team": {
+      "file": "injuries_team.csv",
+      "rows": 8129,
+      "sha256": "8e459b7c0ca8d4113af01e26e6898b899cd4d00a6dbed9d26796522b63f46ac5"
+    },
+    "injuries_qb": {
+      "file": "injuries_qb.csv",
+      "rows": 1060,
+      "sha256": "5342fd211dc9c4ad819cff248637bd4eda5c0be559408242643f9b78aa229421"
+    },
+    "venues": {
+      "file": "venues.csv",
+      "rows": 48,
+      "sha256": "39c290f2b66e2ae57dbf9154a0eabf8f1d104a541517cd8b185a8491daf85156"
+    }
+  }
+}
