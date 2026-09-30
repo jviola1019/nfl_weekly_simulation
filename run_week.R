@@ -19,39 +19,11 @@
 #
 # =============================================================================
 
-# Parse command line arguments
-args <- commandArgs(trailingOnly = TRUE)
-
-# Override config before sourcing if args provided
-if (length(args) >= 1) {
-  week_arg <- as.integer(args[1])
-  if (is.na(week_arg) || week_arg < 1 || week_arg > 22) {
-    stop("Invalid week number. Must be 1-22.")
-  }
-}
-
-if (length(args) >= 2) {
-  season_arg <- as.integer(args[2])
-  if (is.na(season_arg) || season_arg < 2011 || season_arg > 2030) {
-    stop("Invalid season. Must be 2011-2030.")
-  }
-}
-
-# Source configuration
+# Parse command line arguments and publish them before config.R is sourced (audit M1:
+# NFLsimulation.R re-sources config.R, so overrides must live in options, not globals)
+source("R/run_config.R")
+set_run_options(parse_run_args(commandArgs(trailingOnly = TRUE)))
 source("config.R")
-
-# Apply command line overrides AFTER sourcing config
-if (length(args) >= 1) {
-  WEEK_TO_SIM <- week_arg
-  assign("WEEK_TO_SIM", WEEK_TO_SIM, envir = .GlobalEnv)
-  message(sprintf("Week override: %d", WEEK_TO_SIM))
-}
-
-if (length(args) >= 2) {
-  SEASON <- season_arg
-  assign("SEASON", SEASON, envir = .GlobalEnv)
-  message(sprintf("Season override: %d", SEASON))
-}
 
 # Print run info
 cat("\n")

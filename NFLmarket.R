@@ -2210,18 +2210,10 @@ build_moneyline_comparison_table <- function(market_comparison_result,
       # significantly from market are almost certainly overfit. We shrink toward
       # market to produce more realistic betting recommendations.
       #
-      # Shrinkage levels (validated):
-      #   - Regular season: 60% market weight (SHRINKAGE default)
-      #   - Playoffs (WC/DIV/CON): 70% market weight (more efficient markets)
-      #   - Super Bowl: 75% market weight (most efficient market of the year)
-      #
-      # Use coalesce to handle potential NA values in game_type
-      .game_type_safe = dplyr::coalesce(game_type, "REG"),
-      .game_shrinkage = dplyr::case_when(
-        .game_type_safe %in% c("SB") ~ get0("SUPER_BOWL_SHRINKAGE", envir = .GlobalEnv, ifnotfound = 0.75),
-        .game_type_safe %in% c("WC", "DIV", "CON") ~ get0("PLAYOFF_SHRINKAGE", envir = .GlobalEnv, ifnotfound = 0.70),
-        TRUE ~ SHRINKAGE  # Regular season: 0.60
-      ),
+      # One market weight for every game type (audit M2/M3): SHRINKAGE from config.R,
+      # unvalidated until the backtest supports a value (docs/EVIDENCE_LEDGER.md C-SHRINK).
+      # Playoff and Super Bowl variants were removed with no evidence behind them.
+      .game_shrinkage = SHRINKAGE,
       blend_home_prob_shrunk = shrink_probability_toward_market(
         blend_home_prob, market_home_prob, shrinkage = .game_shrinkage
       ),

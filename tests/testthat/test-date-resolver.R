@@ -99,7 +99,6 @@ test_that("parse_datetime handles various formats", {
 # =============================================================================
 
 test_that("mid-regular-season date resolves correctly", {
-  skip("KNOWN-DEFECT M14: parse_kickoff_times() returns NA for nflreadr HH:MM gametimes, so week boundaries are empty")
   skip_if_not_installed("nflreadr")
   skip_if_not_installed("lubridate")
 
@@ -115,7 +114,6 @@ test_that("mid-regular-season date resolves correctly", {
 })
 
 test_that("early January playoff date resolves correctly", {
-  skip("KNOWN-DEFECT M14: parse_kickoff_times() returns NA for nflreadr HH:MM gametimes, so week boundaries are empty")
   skip_if_not_installed("nflreadr")
   skip_if_not_installed("lubridate")
 
@@ -131,7 +129,6 @@ test_that("early January playoff date resolves correctly", {
 })
 
 test_that("Super Bowl date resolves correctly", {
-  skip("KNOWN-DEFECT M14: parse_kickoff_times() returns NA for nflreadr HH:MM gametimes, so week boundaries are empty")
   skip_if_not_installed("nflreadr")
   skip_if_not_installed("lubridate")
 
@@ -149,7 +146,6 @@ test_that("Super Bowl date resolves correctly", {
 })
 
 test_that("Week 1 kickoff date resolves correctly", {
-  skip("KNOWN-DEFECT M14: parse_kickoff_times() returns NA for nflreadr HH:MM gametimes, so week boundaries are empty")
   skip_if_not_installed("nflreadr")
   skip_if_not_installed("lubridate")
 
@@ -163,21 +159,27 @@ test_that("Week 1 kickoff date resolves correctly", {
   expect_equal(context$phase, "regular_season")
 })
 
-test_that("post-Super Bowl offseason date handles gracefully", {
+test_that("post-Super Bowl offseason date falls back to the most recent week (audit M17)", {
   skip_if_not_installed("nflreadr")
   skip_if_not_installed("lubridate")
 
-  # March 2024 - offseason
+  # March 2024 - offseason: no week window contains it, so the resolver falls back
+  # to the most recent past week, the 2023 Super Bowl (week 22)
   context <- resolve_nfl_context("2024-03-15 12:00:00")
+  if (!isTRUE(context$success)) skip_live("github.com")
 
-  # Should either find nearest week or indicate offseason
-  expect_type(context$success, "logical")
-  if (context$success) {
-    expect_type(context$season, "integer")
-  } else {
-    # Offseason should be gracefully handled
-    expect_equal(context$phase, "offseason")
-  }
+  expect_true(context$success, info = context$error)
+  expect_equal(context$season, 2023L)
+  expect_equal(context$week, 22L)
+  expect_equal(context$round, "super_bowl")
+})
+
+test_that("parse_datetime accepts nflreadr 'YYYY-MM-DD HH:MM' kickoffs (audit M14)", {
+  x <- parse_datetime("2024-09-05 20:20", tz = "America/New_York")
+  expect_false(is.na(x))
+  expect_equal(format(x, "%H:%M"), "20:20")
+  expect_equal(format(parse_datetime("2024-09-05 20:20:30", tz = "UTC"), "%H:%M:%S"), "20:20:30")
+  expect_equal(format(parse_datetime("2024-09-05", tz = "UTC"), "%Y-%m-%d"), "2024-09-05")
 })
 
 # =============================================================================
@@ -195,7 +197,6 @@ test_that("clear_schedule_cache works", {
 # =============================================================================
 
 test_that("get_week_boundaries returns expected structure", {
-  skip("KNOWN-DEFECT M14: parse_kickoff_times() returns NA for nflreadr HH:MM gametimes, so week boundaries are empty")
   skip_if_not_installed("nflreadr")
   skip_if_not_installed("dplyr")
 
@@ -220,6 +221,10 @@ test_that("get_week_boundaries returns expected structure", {
   # Window start should be before earliest kickoff
   expect_true(all(boundaries$window_start < boundaries$earliest_kickoff))
   expect_true(all(boundaries$window_end > boundaries$latest_kickoff))
+
+  # every 2024 week (1-18 regular season, 19-22 playoffs) has parsed kickoffs (audit M14)
+  expect_equal(sort(boundaries$week), 1:22)
+  expect_equal(sum(boundaries$n_games), nrow(schedule))
 })
 
 # =============================================================================
@@ -302,7 +307,6 @@ test_that("resolve_gameday parses date correctly", {
 # =============================================================================
 
 test_that("resolver handles full 2024 season dates", {
-  skip("KNOWN-DEFECT M14: parse_kickoff_times() returns NA for nflreadr HH:MM gametimes, so week boundaries are empty")
   skip_if_not_installed("nflreadr")
   skip_if_not_installed("lubridate")
 

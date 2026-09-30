@@ -15,7 +15,7 @@ A claim becomes **validated** only through a backtest run that passed the promot
 | C-PROD | Model status "production-ready" | `[Pp]roduction-[Rr]eady` | withdrawn | No backtest has passed the promotion gates; status is "unvalidated research model" | reports/2026-09-28/AUDIT.md (D1) |
 | C-ADJ | Injury, weather and other adjustments "statistically validated" / "validated with p < 0.05" | `statistically validated\|validated with p` | withdrawn | No saved test output reproduces the p-values; adjustments are config values | reports/2026-09-28/AUDIT.md (D1) |
 | C-POSW | Position injury weights "validated p < 0.001" | `p < 0\.001` | unvalidated | No saved test output found; re-test in Phase 3 | reports/2026-09-28/AUDIT.md (M7) |
-| C-SHRINK | "60%" / "70%" market shrinkage | – | unvalidated | Effective weight ≈65.5% via two stages plus anti-shrink (M2, M3); fixed in Phase 1. For the Elo+EPA ensemble, Tune selects a 95% market weight (BT-V1-B2W); the simulator is judged in nfl_games_v2 | reports/2026-09-28/AUDIT.md (M2, M3) |
+| C-SHRINK | "60%" / "70%" market shrinkage | – | unvalidated | Single 70% market weight since Phase 1a (was ≈65.5% via two stages plus anti-shrink, M2, M3). For the Elo+EPA ensemble, Tune selects a 95% market weight (BT-V1-B2W); the simulator is judged in nfl_games_v2 | reports/2026-09-28/AUDIT.md (M2, M3) |
 | PROP_GAME_CORR_PASSING | 0.40 | – | unvalidated | Config value; to be estimated point-in-time in Phase 4 | config.R |
 | PROP_GAME_CORR_RUSHING | 0.09 | – | unvalidated | as above | config.R |
 | PROP_GAME_CORR_RECEIVING | 0.30 | – | unvalidated | as above | config.R |

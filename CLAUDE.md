@@ -105,7 +105,7 @@ When `run_week.R` completes successfully:
 ### What "Correct" Looks Like
 
 - `scripts/verify_repo_integrity.R` exits 0
-- `scripts/run_matrix.R`: 9/9 artifacts pass
+- `scripts/run_matrix.R`: 10/10 artifacts pass (the golden-master artifact may SKIP as LIVE when nflverse is unreachable)
 - `scripts/run_tests.R` exits 0 (skip policy enforced)
 - `run_week.R`: Completes without exit code 1
 
@@ -187,7 +187,7 @@ Rules:
 Re-run all verification:
 1. Rscript scripts/run_tests.R (must exit 0: no failures, no errors, only allowlisted skips)
 2. Rscript scripts/verify_repo_integrity.R (must exit 0)
-3. Rscript scripts/run_matrix.R (must show 9/9 pass)
+3. Rscript scripts/run_matrix.R (must show 10/10 pass, or 9 pass + golden-master LIVE skip offline)
 4. Verify HTML report generates if run_week.R was changed
 
 Report: PASS/FAIL with evidence.
@@ -383,7 +383,7 @@ Rscript scripts/run_tests.R
 # 2. Integrity checks (must exit 0)
 Rscript scripts/verify_repo_integrity.R
 
-# 3. Full artifact matrix (must show 9/9 pass)
+# 3. Full artifact matrix (must show 10/10 pass; golden-master needs network)
 Rscript scripts/run_matrix.R
 
 # 4. Run weekly simulation (use valid week!)

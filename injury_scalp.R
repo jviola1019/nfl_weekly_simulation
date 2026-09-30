@@ -1379,6 +1379,13 @@ load_player_snap_percentages <- function(team, season = NULL, weeks = NULL, use_
       return(default_result)
     }
 
+    # nflreadr participation is play-level (offense_players strings, n_offense counts);
+    # route it to the play-level calculator before looking for per-player snap columns
+    # (audit M15: n_offense was mistaken for a per-player snap count)
+    if ("offense_players" %in% names(filtered)) {
+      return(calculate_snap_pct_from_plays(filtered, team))
+    }
+
     # Calculate average snap percentage per player
     # Need to identify the snap count and total snap columns
     snap_col <- if ("offense_snaps" %in% names(filtered)) "offense_snaps" else
@@ -1386,11 +1393,6 @@ load_player_snap_percentages <- function(team, season = NULL, weeks = NULL, use_
                 if ("n_offense" %in% names(filtered)) "n_offense" else NULL
 
     if (is.null(snap_col)) {
-      # Try to calculate from participation strings
-      if ("offense_players" %in% names(filtered)) {
-        # This is a play-level dataset, need different approach
-        return(calculate_snap_pct_from_plays(filtered, team))
-      }
       return(default_result)
     }
 
