@@ -15,6 +15,25 @@ All notable changes to the NFL Prediction Model are documented in this file.
 - **CI:** `.github/workflows/ci-web.yml` runs Postgres 16, typecheck, lint, contract drift, vitest with the pg suites required, migrate, ingest of both fixtures (re-ingest must be a no-op), build and e2e.
 - Not done here: Vercel/Neon deploy (connectors not authorized), Lighthouse, the monorepo move (`model/`), the forward-capture odds layer and unmatched-entity queue (Phase 2), and the simulator bundle (margin/total histograms appear once Phase 1b emits one).
 
+### Phase 1a: game-model wiring fixes (A1a approved 2026-09-29)
+
+- **M1:** `Rscript run_week.R <week> <season>` survives `NFLsimulation.R` re-sourcing `config.R`. `R/run_config.R` publishes the arguments as options, and `config.R` reads them.
+- **Golden master:** `scripts/golden_master.R` (record, compare, attribute) plus `.github/workflows/golden-master.yml`, which records 2024 week 15 at every PR commit and prints a commit-by-commit attribution.
+  - The committed golden master is at `reports/2026-09-29/golden-master/2024-w15/`, with a pre-fix `baseline/` and `ATTRIBUTION.md`.
+  - `scripts/run_matrix.R` gains a `golden-master` artifact (10 artifacts). It uses a 1e-6 tolerance, and skips as LIVE offline.
+- **M12:** per-game randomized Sobol streams (Cranley–Patterson rotation from the caller's seeded RNG).
+- **M10:** one `spread_line_to_home_prob()` in the nflreadr convention (positive `spread_line` = home favoured), with `SPREAD_MARGIN_SD` in config.
+- **M11:** games without a market line are flagged (`market_available`), warned about, and tracked in market quality.
+- **M2/M3:** a single 70% market-weight stage.
+  - The anti-shrink "dynamic shrinkage", its settings, the playoff and Super Bowl weights and `get_playoff_shrinkage()` are removed.
+  - Console messages and header comments no longer print withdrawn or outcome-leaked Brier numbers.
+- **M14:** the date resolver parses nflreadr `HH:MM` kickoffs, and the six KNOWN-DEFECT M14 skips are removed.
+- **M17 (new):** in the offseason the resolver falls back to the most recent week, not the oldest.
+- **M15:** snap percentages come from play-level participation data, and the skip is removed.
+- **M16:** the offensive injury penalty is clamped to `[INJURY_OFF_PTS_FLOOR, 0]` over offensive positions only; both bounds are in config.
+- **Test policy:** a `KNOWN-DEFECT` skip must cite an ID listed in the audit ledgers.
+- **Found by the golden master, not fixed:** **M18**, current-week injury points never reach the scoring means, and **M19**, game-status designations are ignored in favour of practice status. Both are in the audit addendum, and fixing them needs owner approval.
+
 ### Game backtest v1: model and blend shootout (overhaul Phase 3, A2)
 
 - `backtest/`: point-in-time walk-forward harness (`walk_forward.R`, `candidates/{market,elo,epa_glm}.R`, `blends.R`, `calibrators.R`, `metrics.R`, `controls.R`) and `build_inputs.R`, which derives the committed inputs in `backtest/data/` from nflverse release files (raw sha256 in `SOURCES.json`). The 2025 holdout is absent from the inputs.
@@ -23,6 +42,12 @@ All notable changes to the NFL Prediction Model are documented in this file.
 - The first scoring run was void (reproducibility re-run lacked controls, so gate G4 differed); fixed in `c7d8bce` with no model or metric change, and the re-run reproduced the void run's outputs byte for byte (`run1-void/`).
 - Tests: `tests/testthat/test-backtest-games.R` (ridge vs glm, 538 Elo update, as-of feature invariance, walk-forward label isolation, DM-HLN, ECE, bootstrap determinism, CLV arithmetic, calibrators, input and result hash integrity).
 - Evidence ledger rows BT-V1-BRIER, BT-V1-C0, BT-V1-B2W, BT-V1-CLV.
+
+### Deletion batch 2 (owner-approved 2026-09-29)
+
+- Removed, with usage evidence in the PR: `scripts/parameter_grid_search.R` (tuned settings removed in Phase 1a), `validation_pipeline.R` and `validation_reports.R` (reduced-model validation, audit M6; replaced by `backtest/`), `validation/validate_correlations.R` (withdrawn claim C-CORR), `validation/playoffs_validation.R` (covered by `test-playoffs.R`), `R/coaching_adjustments.R`, `R/simulation_helpers.R`, `R/model_diagnostics.R` (no call sites anywhere), `core/calibration.R`, `validation/calibration_harness.R` and its test (replaced by `backtest/calibrators.R`).
+- `test-calibration.R` now loads `mgcv` itself; it had relied on the deleted harness test loading it first.
+- README, CLAUDE.md, DOCUMENTATION.md and docs/ARCHITECTURE.md no longer list the removed files or advertise coaching adjustments; `test-repo-hygiene.R` keeps them from returning.
 
 ### Phase 0 — foundation (PR #192)
 

@@ -30,14 +30,14 @@ if (getRversion() < "4.0.0") {
 #' @description Current NFL season to simulate
 #' @default Current year (auto-detected from system date)
 #' @examples 2024, 2025
-SEASON <- 2025  # or set manually: SEASON <- 2024
+SEASON <- as.integer(getOption("nfl.season", 2025L))  # CLI: Rscript run_week.R <week> <season> (audit M1)
 
 #' @description Week number to simulate
 #' @important **CHANGE THIS VALUE** to run predictions for different weeks
 #' @note Regular season: 1-18, Playoffs: 19=Wild Card, 20=Divisional, 21=Conference, 22=Super Bowl
 #' @default 18
 #' @examples 1, 2, 3, ..., 18 (regular season), 19, 20, 21, 22 (playoffs)
-WEEK_TO_SIM <- 22  # <-- **CHANGE THIS TO RUN A DIFFERENT WEEK [19 = WILD CARD, 20 = DIVISIONAL, 21 = CONFERENCE, 22 = SUPER BOWL]**
+WEEK_TO_SIM <- as.integer(getOption("nfl.week", 22L))  # <-- **CHANGE THE DEFAULT (22L) TO RUN A DIFFERENT WEEK [19 = WILD CARD, 20 = DIVISIONAL, 21 = CONFERENCE, 22 = SUPER BOWL]**; CLI overrides via options
 
 # =============================================================================
 # SIMULATION PARAMETERS
@@ -407,6 +407,13 @@ INJURY_POS_MULT_FRONT7 <- 0.85
 #' @default 0.6
 INJURY_POS_MULT_OTHER <- 0.6
 
+#' @description Bounds on a team's weighted injury adjustments, in points (audit M16).
+#'   Offense (own points lost) is clamped to [INJURY_OFF_PTS_FLOOR, 0]; defense
+#'   (opponent points gained) to [0, INJURY_DEF_PTS_CAP]. Existing values, unvalidated.
+#' @default -4.0 and 1.5
+INJURY_OFF_PTS_FLOOR <- -4.0
+INJURY_DEF_PTS_CAP <- 1.5
+
 # =============================================================================
 # INJURY SCALPING - DETAILED POSITION WEIGHTS
 # =============================================================================
@@ -658,14 +665,6 @@ PHASE <- .playoff_context$phase
 #' @note Automatically detected from WEEK_TO_SIM
 PLAYOFF_ROUND <- .playoff_context$round
 
-#' @description Market shrinkage for playoff games (trust market more)
-#' @default 0.70 (vs 0.60 regular season)
-PLAYOFF_SHRINKAGE <- 0.70
-
-#' @description Market shrinkage for Super Bowl (maximum market trust)
-#' @default 0.75
-SUPER_BOWL_SHRINKAGE <- 0.75
-
 #' @description Home field advantage multiplier for playoffs
 #' @default 1.20 (20% boost over regular season HFA)
 PLAYOFF_HFA_MULTIPLIER <- 1.20
@@ -722,41 +721,9 @@ WEEK_BUFFER_POST <- 2
 #' @note Increased to 0.70 when spline_calibration.rds is unavailable (ensemble fallback)
 SHRINKAGE <- 0.70
 
-#' @description Enable dynamic shrinkage based on game context
-#' @default TRUE
-#' @note When TRUE, shrinkage varies by week, spread size, and game type
-USE_DYNAMIC_SHRINKAGE <- TRUE
-
-#' @description Base shrinkage when dynamic mode is enabled
-#' @default 0.55
-#' @range 0.40 to 0.70
-SHRINKAGE_BASE <- 0.55
-
-#' @description Additional shrinkage for early season (weeks 1-4)
-#' @default 0.10
-#' @range 0.0 to 0.20
-#' @note Early season has less data; trust market more
-SHRINKAGE_EARLY_SEASON_ADJ <- 0.10
-
-#' @description Shrinkage adjustment for high spreads (10+ points)
-#' @default 0.10
-#' @range 0.0 to 0.15
-#' @note Market is more confident on big mismatches
-SHRINKAGE_HIGH_SPREAD_ADJ <- 0.10
-
-#' @description Shrinkage adjustment for close games (< 3 points)
-#' @default -0.05
-#' @range -0.10 to 0.0
-#' @note Model may have edge in toss-up games
-SHRINKAGE_CLOSE_GAME_ADJ <- -0.05
-
-#' @description Spread threshold for "high spread" adjustment
-#' @default 10
-SHRINKAGE_HIGH_SPREAD_THRESHOLD <- 10
-
-#' @description Spread threshold for "close game" adjustment
-#' @default 3
-SHRINKAGE_CLOSE_GAME_THRESHOLD <- 3
+#' @description NFL final-margin SD used to convert spread_line to win probability
+#' @default 13.86
+SPREAD_MARGIN_SD <- 13.86
 
 #' @title Kelly Criterion Fraction
 #' @description Fraction of Kelly criterion for conservative stake sizing.
@@ -1032,8 +999,6 @@ if (interactive() || getOption("nfl_sim.show_config", default = FALSE)) {
       PLAYOFF_ROUND
     )
     cat(sprintf("  Playoff Round:    %s\n", .round_display))
-    cat(sprintf("  Shrinkage:        %.0f%% (playoff adjustment)\n",
-        if (PLAYOFF_ROUND == "super_bowl") SUPER_BOWL_SHRINKAGE * 100 else PLAYOFF_SHRINKAGE * 100))
   }
   cat(sprintf("  Trials:           %s\n", format(N_TRIALS, big.mark = ",")))
   cat(sprintf("  Seed:             %d\n", SEED))
@@ -1113,6 +1078,8 @@ list2env(
     INJURY_POS_MULT_SECONDARY = INJURY_POS_MULT_SECONDARY,
     INJURY_POS_MULT_FRONT7 = INJURY_POS_MULT_FRONT7,
     INJURY_POS_MULT_OTHER = INJURY_POS_MULT_OTHER,
+    INJURY_OFF_PTS_FLOOR = INJURY_OFF_PTS_FLOOR,
+    INJURY_DEF_PTS_CAP = INJURY_DEF_PTS_CAP,
     INJURY_MODE = INJURY_MODE,
     INJURY_MANUAL_FILE = INJURY_MANUAL_FILE,
     ALLOW_INJURY_SCRAPE = ALLOW_INJURY_SCRAPE,
@@ -1147,8 +1114,6 @@ list2env(
     # Playoff configuration
     PHASE = PHASE,
     PLAYOFF_ROUND = PLAYOFF_ROUND,
-    PLAYOFF_SHRINKAGE = PLAYOFF_SHRINKAGE,
-    SUPER_BOWL_SHRINKAGE = SUPER_BOWL_SHRINKAGE,
     PLAYOFF_HFA_MULTIPLIER = PLAYOFF_HFA_MULTIPLIER,
     PLAYOFF_BYE_BONUS = PLAYOFF_BYE_BONUS,
     PLAYOFF_INJURY_VARIANCE = PLAYOFF_INJURY_VARIANCE,
@@ -1160,13 +1125,7 @@ list2env(
     WEEK_BUFFER_POST = WEEK_BUFFER_POST,
     # Betting/market parameters
     SHRINKAGE = SHRINKAGE,
-    USE_DYNAMIC_SHRINKAGE = USE_DYNAMIC_SHRINKAGE,
-    SHRINKAGE_BASE = SHRINKAGE_BASE,
-    SHRINKAGE_EARLY_SEASON_ADJ = SHRINKAGE_EARLY_SEASON_ADJ,
-    SHRINKAGE_HIGH_SPREAD_ADJ = SHRINKAGE_HIGH_SPREAD_ADJ,
-    SHRINKAGE_CLOSE_GAME_ADJ = SHRINKAGE_CLOSE_GAME_ADJ,
-    SHRINKAGE_HIGH_SPREAD_THRESHOLD = SHRINKAGE_HIGH_SPREAD_THRESHOLD,
-    SHRINKAGE_CLOSE_GAME_THRESHOLD = SHRINKAGE_CLOSE_GAME_THRESHOLD,
+    SPREAD_MARGIN_SD = SPREAD_MARGIN_SD,
     KELLY_FRACTION = KELLY_FRACTION,
     MAX_EDGE = MAX_EDGE,
     VIG = VIG,

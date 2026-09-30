@@ -24,9 +24,9 @@ shrunk_prob = (1 - shrinkage) * model_prob + shrinkage * market_prob
 
 | Context | Shrinkage | Config Key |
 |---------|-----------|------------|
-| Regular season | 0.70 | `SHRINKAGE` |
-| Wild Card / Divisional / Conference | 0.70 | (same) |
-| Super Bowl | 0.75 | `SUPER_BOWL_SHRINKAGE` |
+| Every game (regular season and playoffs) | 0.70 | `SHRINKAGE` |
+
+One stage, applied once to the no-vig market probability (audit M2/M3, Phase 1a). The value is unvalidated (`docs/EVIDENCE_LEDGER.md`, C-SHRINK).
 
 **Rationale:** NFL markets are extremely efficient. Raw model disagreements with the market are more likely to reflect overfit or noise than genuine edge. A 70% weight toward the market keeps the model's contribution meaningful while respecting the information already priced in.
 

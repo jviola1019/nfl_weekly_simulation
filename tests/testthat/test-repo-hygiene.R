@@ -6,7 +6,12 @@ test_that("dead and misleading files are gone", {
     "professional_model_benchmarking.R", "simplified_baseline_comparison.R",
     "rolling_validation_system.R", "scripts/grid_search_results_copula.rds",
     "artifacts/oddstrader_playerprops.js", "artifacts/tmp_check.R",
-    "AUDIT.md", "IMPROVEMENT_PLAN.md", "docs/AUDIT_REPORT.md"
+    "AUDIT.md", "IMPROVEMENT_PLAN.md", "docs/AUDIT_REPORT.md",
+    # deletion batch 2 (2026-09-29): superseded by backtest/ or never called
+    "scripts/parameter_grid_search.R", "validation_pipeline.R", "validation_reports.R",
+    "validation/validate_correlations.R", "validation/playoffs_validation.R",
+    "R/coaching_adjustments.R", "R/simulation_helpers.R", "R/model_diagnostics.R",
+    "core/calibration.R", "validation/calibration_harness.R"
   )
   still_there <- removed[file.exists(file.path(PROJECT_ROOT, removed))]
   expect_equal(still_there, character())
