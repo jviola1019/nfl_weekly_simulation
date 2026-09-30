@@ -121,6 +121,10 @@ run_logs/final_20260930_144804.rds, games_ready_20260930_144804.rds, config_… 
   - mismatched background bands (U3).
 - This is the page `run_week.R` still opens. The redesign lives in the separate web app, and retiring this report is owner decision A8.
 - "11 of 12 props with positive EV" is itself the audit's props red flag (P6/P12), not a result.
+- **Policy breach during this step (S5):** because `config.R` still enables the ScoresAndOdds scraper by default, this run called its private endpoint with a spoofed browser user agent. It also priced a 2024 game with current-season lines (P14).
+  - I did not check the default before running the prompt's command.
+  - `run_week.R` should not be run again until the owner approves disabling the scraper.
+  - The two tracked files the run rewrote (H2) were restored.
 
 ## A4. Deletion batch 2
 
@@ -223,7 +227,8 @@ Pending. It needs #201 (LF checkout), #202 (Windows web scripts) and the T6 LF-w
    - (c) restore only the injury terms (M18 as approved), plus the M23 rest fix.
 3. **Sign the v2 protocol** (`reports/2026-09-30/backtest-games-v2/PROTOCOL-DRAFT.md`) before any Confirm or Holdout scoring.
 4. **Merges:** #201, #202 and #204 (fixes, CI green); #203 after its golden-master attribution; #200 (docs).
-5. **Carried over:**
+5. **Disable the ScoresAndOdds scraper now** (S5: set `PROP_ODDS_ALLOW_REMOTE_HTML` to FALSE and drop it from the default source order; this is a config default change), then delete it (item 14).
+6. **Carried over:**
    - A5 is decided (quote definition).
    - Vercel/Neon connectors.
    - A3 deletions (the calibrator `.rds` after M4; the `NFLsimulation.R` fallback copies; the `prop_odds_api.R` scraper remnants).
