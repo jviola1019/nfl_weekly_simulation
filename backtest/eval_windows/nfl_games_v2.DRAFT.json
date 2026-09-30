@@ -1,0 +1,26 @@
+{
+  "status": "DRAFT - not frozen; walk_forward must refuse this file until protocol_sha256 is filled at the owner-approved freeze",
+  "protocol_id": "nfl_games_v2",
+  "protocol_path": "reports/2026-09-30/backtest-games-v2/PROTOCOL.md",
+  "protocol_draft_path": "reports/2026-09-30/backtest-games-v2/PROTOCOL-DRAFT.md",
+  "protocol_sha256": null,
+  "data_dirs": ["backtest/data", "backtest/data_v2"],
+  "max_input_season_before_holdout_build": 2024,
+  "first_prediction_season": 2010,
+  "windows": {
+    "burn_in": { "seasons": [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017], "use": "training history only" },
+    "tune": { "seasons": [2018, 2019, 2020, 2021, 2022], "use": "all choices were made here (validation sprint 2026-09-30)" },
+    "confirm": { "seasons": [2023, 2024], "use": "moneyline: secondary evidence (viewed in v1); spread H-TZ: unseen" },
+    "holdout": { "seasons": [2025], "use": "sealed; built and scored once after the freeze (and after C3 if Phase 1b lands first)" },
+    "prospective": { "seasons_from": 2026, "use": "graded weekly with backtest/v2/track_append.R" }
+  },
+  "moneyline_candidates": {
+    "L1": { "model": "LR_E1", "ridge_lambda": 0.1, "calibration": "none" },
+    "G1": { "model": "GLMNET", "alpha": 0.25, "lambda": "lambda.1se, season-grouped CV on training weeks", "calibration": "none" },
+    "X1": { "model": "XGB", "anchor": "base_margin = logit(C0)", "params": { "eta": 0.02, "max_depth": 2, "min_child_weight": 30, "subsample": 0.8, "colsample_bytree": 0.8, "lambda": 10 }, "rounds": "early stopping on the most recent 267 training games, then refit", "calibration": "none" },
+    "C3": { "model": "production simulator", "condition": "only if Phase 1b makes it point-in-time before the holdout is scored" }
+  },
+  "spread_hypothesis": { "id": "H-TZ", "model": "OLS (home margin - spread_line) ~ abs_tz_away", "test": "one-sided coefficient < 0, week-clustered robust SE, alpha 0.05", "seasons": [2023, 2024, 2025] },
+  "bootstrap": { "B": 10000, "unit": "NFL week", "seed": 20260930 },
+  "gates": ["G1 skill CI lower bound > 0", "G2 DM-HLN one-sided p < 0.05 after BH", "G3 slope CI covers 1 and ECE <= ECE(C0) + 0.005", "G4 all controls pass"]
+}
