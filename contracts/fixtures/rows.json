@@ -1,0 +1,23 @@
+{
+  "$comment": "Shared contract fixtures. web/src/lib/contracts/bundle.test.ts (zod) and tests/testthat/test-bundle-writer.R (bw_validate_rows) must both accept every valid case and reject every invalid one, so the two validators cannot drift apart.",
+  "valid": [
+    { "table": "teams", "row": { "team_id": "ARI", "full_name": "Arizona Cardinals", "division": "NFC West", "tz": "America/Phoenix" } },
+    { "table": "games", "row": { "game_id": "2026_04_PIT_CLE", "season": 2026, "week": 4, "game_type": "REG", "home_team_id": "CLE", "away_team_id": "PIT", "kickoff_utc": "2026-10-02T00:15:00Z", "roof": "outdoors", "neutral": false } },
+    { "table": "game_predictions", "row": { "game_id": "2026_04_PIT_CLE", "candidate": "C0", "p_home_raw": 0.43, "p_home_final": 0.43, "p_home_mkt_novig": 0.43 } },
+    { "table": "recommendations", "row": { "rec_id": "2026_04_PIT_CLE:C2", "game_id": "2026_04_PIT_CLE", "candidate": "C2", "side": "home", "price_american": 124, "p_model": 0.573, "p_mkt_novig": 0.428, "ev": 0.28, "stake_pct": 0, "tier": "lean", "pass_reason": "paper only" } },
+    { "table": "source_status", "row": { "source": "espn_core_odds", "status": "unavailable", "detail": "not fetched" } }
+  ],
+  "invalid": [
+    { "table": "games", "why": "kickoff is not ISO-8601 UTC", "row": { "game_id": "2026_04_PIT_CLE", "season": 2026, "week": 4, "home_team_id": "CLE", "away_team_id": "PIT", "kickoff_utc": "2026-10-02 00:15:00" } },
+    { "table": "games", "why": "required game_id missing", "row": { "season": 2026, "week": 4, "home_team_id": "CLE", "away_team_id": "PIT", "kickoff_utc": "2026-10-02T00:15:00Z" } },
+    { "table": "games", "why": "column not in the contract", "row": { "game_id": "2026_04_PIT_CLE", "season": 2026, "week": 4, "home_team_id": "CLE", "away_team_id": "PIT", "kickoff_utc": "2026-10-02T00:15:00Z", "spread": -2.5 } },
+    { "table": "games", "why": "game_type not in enum", "row": { "game_id": "2026_04_PIT_CLE", "season": 2026, "week": 4, "game_type": "PRE", "home_team_id": "CLE", "away_team_id": "PIT", "kickoff_utc": "2026-10-02T00:15:00Z" } },
+    { "table": "game_predictions", "why": "probability above 1", "row": { "game_id": "2026_04_PIT_CLE", "candidate": "C0", "p_home_final": 1.2 } },
+    { "table": "game_predictions", "why": "probability below 0", "row": { "game_id": "2026_04_PIT_CLE", "candidate": "C0", "p_home_raw": -0.01 } },
+    { "table": "game_predictions", "why": "number sent as a string", "row": { "game_id": "2026_04_PIT_CLE", "candidate": "C0", "p_home_raw": "0.5" } },
+    { "table": "recommendations", "why": "tier not in enum", "row": { "rec_id": "x:C2", "game_id": "x", "candidate": "C2", "side": "home", "p_model": 0.5, "stake_pct": 0, "tier": "strong" } },
+    { "table": "recommendations", "why": "side not in enum", "row": { "rec_id": "x:C2", "game_id": "x", "candidate": "C2", "side": "left", "p_model": 0.5, "stake_pct": 0, "tier": "pass" } },
+    { "table": "source_status", "why": "status not in enum", "row": { "source": "espn_core_odds", "status": "green" } },
+    { "table": "source_status", "why": "run_id is assigned by the ingest, never by R", "row": { "run_id": "weekly:forged", "source": "espn_core_odds", "status": "ok" } }
+  ]
+}

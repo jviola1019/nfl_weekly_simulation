@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "market_id": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "outcome_kind": {
+      "type": "string"
+    },
+    "grading_rule": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "market_id",
+    "scope",
+    "outcome_kind",
+    "grading_rule"
+  ],
+  "additionalProperties": false
+}

@@ -202,6 +202,10 @@ test_that("ensemble calibrate function works on sample data", {
   }
 
   ensemble <- readRDS(artifact_path)
+  # The spline component is an mgcv::gam; predict() dispatches to predict.gam only
+  # once mgcv's namespace is loaded (NFLsimulation.R loads it for the same reason).
+  # This test used to rely on test-calibration-harness.R loading it first.
+  expect_true(requireNamespace("mgcv", quietly = TRUE))
 
   # Test calibration function
   test_probs <- c(0.1, 0.3, 0.5, 0.7, 0.9)

@@ -1,0 +1,17 @@
+{
+  "result_sha256": "7244a0bc8ac63fec4d8d11b48b4b93be4ebf3fdba51b0fa3d6929cab336a3458",
+  "stage": "score",
+  "window": "backtest/eval_windows/nfl_games_v1.json",
+  "generated_utc": "2026-09-29T19:59:58Z",
+  "code_git_sha": "e9876fac277643248cb9d9dae83e30f51b430eae",
+  "code_dirty": false,
+  "r_version": "R version 4.3.3 (2024-02-29)",
+  "packages": {
+    "data.table": "1.14.10",
+    "jsonlite": "1.8.8",
+    "digest": "0.6.34"
+  },
+  "protocol_sha256": "664c42d12a2a38b0d08d8aca3ac2dc1b2c9754d6e2d752e4cae7b6a8b8715149",
+  "protocol_commit": "fatal:",
+  "protocol_committed_at": "bad revision '%cI'"
+}

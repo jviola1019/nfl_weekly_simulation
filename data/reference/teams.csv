@@ -1,0 +1,33 @@
+team_id,full_name,conference,division,tz
+ARI,Arizona Cardinals,NFC,NFC West,America/Phoenix
+ATL,Atlanta Falcons,NFC,NFC South,America/New_York
+BAL,Baltimore Ravens,AFC,AFC North,America/New_York
+BUF,Buffalo Bills,AFC,AFC East,America/New_York
+CAR,Carolina Panthers,NFC,NFC South,America/New_York
+CHI,Chicago Bears,NFC,NFC North,America/Chicago
+CIN,Cincinnati Bengals,AFC,AFC North,America/New_York
+CLE,Cleveland Browns,AFC,AFC North,America/New_York
+DAL,Dallas Cowboys,NFC,NFC East,America/Chicago
+DEN,Denver Broncos,AFC,AFC West,America/Denver
+DET,Detroit Lions,NFC,NFC North,America/Detroit
+GB,Green Bay Packers,NFC,NFC North,America/Chicago
+HOU,Houston Texans,AFC,AFC South,America/Chicago
+IND,Indianapolis Colts,AFC,AFC South,America/Indiana/Indianapolis
+JAX,Jacksonville Jaguars,AFC,AFC South,America/New_York
+KC,Kansas City Chiefs,AFC,AFC West,America/Chicago
+LA,Los Angeles Rams,NFC,NFC West,America/Los_Angeles
+LAC,Los Angeles Chargers,AFC,AFC West,America/Los_Angeles
+LV,Las Vegas Raiders,AFC,AFC West,America/Los_Angeles
+MIA,Miami Dolphins,AFC,AFC East,America/New_York
+MIN,Minnesota Vikings,NFC,NFC North,America/Chicago
+NE,New England Patriots,AFC,AFC East,America/New_York
+NO,New Orleans Saints,NFC,NFC South,America/Chicago
+NYG,New York Giants,NFC,NFC East,America/New_York
+NYJ,New York Jets,AFC,AFC East,America/New_York
+PHI,Philadelphia Eagles,NFC,NFC East,America/New_York
+PIT,Pittsburgh Steelers,AFC,AFC North,America/New_York
+SEA,Seattle Seahawks,NFC,NFC West,America/Los_Angeles
+SF,San Francisco 49ers,NFC,NFC West,America/Los_Angeles
+TB,Tampa Bay Buccaneers,NFC,NFC South,America/New_York
+TEN,Tennessee Titans,AFC,AFC South,America/Chicago
+WAS,Washington Commanders,NFC,NFC East,America/New_York

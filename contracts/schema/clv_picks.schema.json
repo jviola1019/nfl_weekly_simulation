@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "bt_run_id": {
+      "type": "string"
+    },
+    "candidate": {
+      "type": "string"
+    },
+    "game_id": {
+      "type": "string"
+    },
+    "side": {
+      "type": "string",
+      "enum": [
+        "home",
+        "away",
+        "none",
+        "over",
+        "under",
+        "yes",
+        "no"
+      ]
+    },
+    "clv_bps": {
+      "type": "number",
+      "minimum": -140737488355328,
+      "maximum": 140737488355327
+    },
+    "units": {
+      "type": "number",
+      "minimum": -140737488355328,
+      "maximum": 140737488355327
+    }
+  },
+  "required": [
+    "bt_run_id",
+    "candidate",
+    "game_id",
+    "side",
+    "clv_bps",
+    "units"
+  ],
+  "additionalProperties": false
+}

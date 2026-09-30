@@ -112,6 +112,8 @@ The script generates a unified HTML report with:
 
 **Status**: Unvalidated. The accuracy and calibration figures previously shown here were withdrawn 2026-09-28 after an audit found no reproducible evidence for them (`docs/EVIDENCE_LEDGER.md`). Validated numbers will appear here only after a pre-registered backtest passes its promotion gates.
 
+**First pre-registered game backtest (`nfl_games_v1`, 2026-09-29):** on 2023–2024, no independent model (Elo, EPA GLM, their ensemble) or market blend beat the no-vig closing moneyline on Brier score. The simulator itself joins in `nfl_games_v2` once it is point-in-time (Phase 1b). Details: `reports/2026-09-29/backtest-games-v1/RESULT.md`.
+
 **See [DOCUMENTATION.md](DOCUMENTATION.md)** for methodology; treat any figures there as unvalidated until `docs/EVIDENCE_LEDGER.md` says otherwise.
 
 ---
@@ -205,10 +207,9 @@ Methods earlier parameter work reported using (results unvalidated; see `docs/EV
 - Permutation testing (p < 0.05 required)
 - Effect size analysis
 
-**Validation scripts**:
+**Validation**: the pre-registered walk-forward backtest (`backtest/`):
 ```bash
-Rscript validation_pipeline.R              # Hyperparameter tuning
-Rscript injury_model_validation.R          # Injury impacts
+Rscript backtest/walk_forward.R --window backtest/eval_windows/nfl_games_v1.json --stage dev --out <dir>
 ```
 
 See [DOCUMENTATION.md](DOCUMENTATION.md) for complete validation methodology.
@@ -241,7 +242,7 @@ The shell wrapper fails fast (`set -euo pipefail`) and prints a machine-readable
 
 **Additional integrity checks**:
 ```bash
-Rscript scripts/run_matrix.R  # Should show 9/9 passed
+Rscript scripts/run_matrix.R  # Should show 10/10 passed (golden-master needs network)
 ```
 
 ---
@@ -290,18 +291,33 @@ Rscript scripts/run_matrix.R  # Should show 9/9 passed
 | `tests/testthat/test-date-resolver.R` | Tests for datetime parsing |
 | `tests/testthat/test-game-type-mapping.R` | Tests for game type constants |
 
+### Game Backtest (`backtest/`)
+| File | Purpose |
+|------|---------|
+| `backtest/walk_forward.R` | Pre-registered walk-forward shootout: `--stage dev` (Tune only) or `--stage score` (needs the committed, hash-matching protocol) |
+| `backtest/build_inputs.R` | Builds `backtest/data/` from nflverse release files, records sha256 in `SOURCES.json` |
+| `backtest/candidates/` | C0 market, C1 Elo, C2 EPA GLM |
+| `backtest/blends.R`, `backtest/calibrators.R` | E1/B1/B2 blends and nested walk-forward calibrators |
+| `backtest/metrics.R`, `backtest/controls.R` | Paired block bootstrap, DM-HLN, BH, ECE, CLV; leak canary, shuffled labels, market copy |
+| `backtest/eval_windows/nfl_games_v1.json` | Hash-locked windows, data and protocol |
+| `backtest/prospective.R` | Weekly bundle of unplayed games from the v1 candidates (never predicts a played game) |
+
+### Data Contract and Web App (`contracts/`, `web/`)
+| File | Purpose |
+|------|---------|
+| `R/bundle_writer.R` | Validates rows against `contracts/schema/` and writes `bundles/<cycle_id>/` with a hash-pinned manifest |
+| `scripts/write_backtest_bundle.R` | Backtest bundle from `reports/2026-09-29/backtest-games-v1/` and the evidence ledger |
+| `contracts/schema/` | JSON Schemas generated from `web/src/db/schema.ts` (`npm run contracts:export`) |
+| `contracts/fixtures/` | Shared valid/invalid rows for both validators, and the fixture bundles CI ingests |
+| `data/reference/teams.csv` | 32 franchises with division and time zone |
+| `web/` | Broadcast Line site and private desk (Next.js, Drizzle, Postgres); see `web/README.md` |
+
 ### Validation Scripts (Model Testing)
 | File | Purpose |
 |------|---------|
-| `validation_pipeline.R` | Hyperparameter tuning with cross-validation |
-| `model_validation.R` | Statistical significance testing |
-| `injury_model_validation.R` | Validate injury impact coefficients |
-| `calibration_refinement.R` | Isotonic regression tuning |
-| `rolling_window_validation.R` | Time-series validation |
-| `ensemble_calibration_implementation.R` | Multi-method calibration |
-| `lasso_feature_selection.R` | Feature importance via LASSO |
-| `run_validation_example.R` | Example validation run |
-| `validation/playoffs_validation.R` | Playoff-specific validation |
+| `ensemble_calibration_implementation.R` | Builds the ensemble calibrator (invalid: fit on outcome-leaked data, audit M4; removed in Phase 1b) |
+| `validation/injury_ab_comparison.R` | A/B check to run before enabling snap-weighted injuries |
+| `validation/primetime_significance_test.R` | Significance check to run before enabling primetime adjustments |
 
 ### Utility Scripts
 | File | Purpose |

@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "game_id": {
+      "type": "string"
+    },
+    "season": {
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
+    },
+    "week": {
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
+    },
+    "game_type": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "REG",
+            "WC",
+            "DIV",
+            "CON",
+            "SB"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "home_team_id": {
+      "type": "string"
+    },
+    "away_team_id": {
+      "type": "string"
+    },
+    "kickoff_utc": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+    },
+    "roof": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "neutral": {
+      "type": "boolean"
+    },
+    "home_score": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "away_score": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "game_id",
+    "season",
+    "week",
+    "home_team_id",
+    "away_team_id",
+    "kickoff_utc"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "bt_run_id": {
+      "type": "string"
+    },
+    "candidate": {
+      "type": "string"
+    },
+    "g1": {
+      "type": "boolean"
+    },
+    "g2": {
+      "type": "boolean"
+    },
+    "g3": {
+      "type": "boolean"
+    },
+    "g4": {
+      "type": "boolean"
+    },
+    "brier_status": {
+      "type": "string"
+    },
+    "betting_value_status": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "bt_run_id",
+    "candidate",
+    "g1",
+    "g2",
+    "g3",
+    "g4",
+    "brier_status",
+    "betting_value_status"
+  ],
+  "additionalProperties": false
+}

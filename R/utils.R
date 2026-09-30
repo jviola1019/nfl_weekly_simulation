@@ -196,6 +196,14 @@ shrink_probability_toward_market <- function(model_prob, market_prob, shrinkage 
   clamp_probability(shrunk)
 }
 
+#' Home win probability from an nflverse spread_line (positive = home favoured)
+#' @param spread_line nflreadr `spread_line` (home favoured by this many points)
+#' @param sigma NFL final-margin SD (config SPREAD_MARGIN_SD)
+spread_line_to_home_prob <- function(spread_line, sigma) {
+  p <- stats::pnorm(suppressWarnings(as.numeric(spread_line)) / sigma)
+  ifelse(is.na(p), NA_real_, clamp_probability(p))
+}
+
 #' Classify edge magnitude for warnings
 #' @param edge EV edge as decimal (e.g., 0.15 = 15%)
 #' @return Classification string

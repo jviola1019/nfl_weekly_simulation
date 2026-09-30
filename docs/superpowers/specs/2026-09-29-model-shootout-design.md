@@ -1,6 +1,6 @@
 # Model and blend shootout (design, Phase 3 addendum)
 
-Status: **draft for owner review** (checkpoint A2). This document fixes *what* gets compared and *how it's judged* before any scoring runs. Once the owner approves it, the protocol file is hashed and locked, and changing it means registering a new version.
+Status: **A2 decisions recorded 2026-09-29** (see "A2 decisions"); `PROTOCOL.md` is hashed and locked before scoring. This document fixes *what* gets compared and *how it's judged* before any scoring runs. Once the owner approves it, the protocol file is hashed and locked, and changing it means registering a new version.
 
 ## Why
 
@@ -86,7 +86,7 @@ A candidate may be described as "better than the market (Brier)" only if all of 
 4. Every control passes (below).
 
 A candidate may be described as having "betting value" only if both hold:
-- Mean CLV ≥ +100 bps, with the 95% CI lower bound > 0, on ≥ 300 recommendations taken at decision-time prices (ESPN openers from 2023, Kalshi from 2025, and forward capture).
+- Mean CLV ≥ +100 bps, with the 95% CI lower bound > 0, on ≥ 400 recommendations taken at decision-time prices (ESPN openers from 2023, Kalshi from 2025, and forward capture). The count comes from the power analysis in A2 decisions §1, and the gate is evaluated once.
 - Flat-stake ROI has a 95% CI lower bound > −2%. That is a sanity bound, not a profitability claim.
 
 Candidates that fail stay in the report, labeled "not better than market". The public site shows market-equivalent probabilities for them, and no picks.
@@ -112,11 +112,24 @@ Candidates that fail stay in the report, labeled "not better than market". The p
 
 1. Phase 1a (wiring fixes) is independent of this shootout.
 2. Build C0, C1, C2, E1, B1, B2 and K with the walk-forward harness, the controls and the metrics. This doesn't depend on the simulator, so it can run in parallel with Phase 1b.
-3. Owner signs `PROTOCOL.md` (A2). Score Confirm. Score Holdout once.
-4. Phase 1b makes the simulator point-in-time. Register v2 with C3 added. Score it the same way.
+3. The owner signs `PROTOCOL.md` (A2). Score Tune (out-of-fold) and Confirm for C0/C1/C2/E1/B1/B2/K.
+4. Phase 1b makes the simulator point-in-time, and C3 is added to the same protocol before Holdout. Score Confirm for C3, then score the 2025 Holdout **once** for every candidate together (A2 decision 3).
 
-## Open questions for the owner (A2)
+## A2 decisions (2026-09-29)
 
-1. **Minimum sample for the betting-value gate:** 300 recommendations (proposed), or the NBA policy's 500. At NFL volume, 500 may take more than a season of forward capture.
-2. **Include playoffs** in the headline metrics, or report them separately only?
-3. **Holdout timing:** score the 2025 holdout as soon as the confirm window is done, or wait for C3 so every candidate is judged on it at once? Proposed: wait.
+1. **Minimum sample for the betting-value gate: 400 decision-time recommendations, evaluated once (single look).** The owner asked for a research-based choice, so this number was measured, not assumed. Evidence: `reports/2026-09-29/clv-power/`.
+   - **Per-bet CLV noise.** No-vig open→close moneyline movement for 477 games in 2024–2025 (ESPN BET via the ESPN core API, keyless) has σ = **514 bps** per bet. Clustering by week is negligible: ICC 0.008, design effect 1.11.
+   - **Power.** For a true +100 bps edge with a 95% lower bound > 0, applying a Bonferroni correction for up to 8 candidates (conservative relative to BH) and the design effect:
+
+     | Picks | Power |
+     |---|---|
+     | 300 | 68% |
+     | **400** | **83%** |
+     | 500 | 92% |
+
+     400 is the smallest round number that clears the conventional 80% power.
+   - **Why a single look.** Checking repeatedly and stopping at the first pass inflates false positives, so the sample is fixed in advance.
+   - **Why not ROI.** Detecting a +3% flat ROI at −110 would need about 7,900 bets. This confirms CLV, not ROI, as the gate metric; ROI stays a reported sanity bound.
+   - **Smaller edges are out of reach.** Published guidance agrees there is no universal count, because the number depends on per-bet variance. A true +50 bps edge would need about 1,500 picks with 8 candidates, which is beyond a season of NFL volume. Edges that small are not claimable under this protocol.
+2. **Playoffs:** the headline metrics pool regular season and playoffs, and every table also reports each phase separately. Playoffs contribute about 13 games per season, too few to gate on alone.
+3. **Holdout timing:** wait. The 2025 holdout is scored **once**, after Phase 1b makes the simulator (C3) point-in-time, so every candidate is judged on the same sealed data. Until then only the Tune and Confirm windows are scored.

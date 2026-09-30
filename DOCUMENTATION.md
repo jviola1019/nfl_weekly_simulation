@@ -237,33 +237,7 @@ Data Loading → Team Stats → Adjustments → Simulation → Calibration → O
 
 ## Validation Files
 
-### validation_pipeline.R (740 lines)
-
-**Purpose**: Hyperparameter tuning with train/validation/test splits
-
-**Methodology**:
-- **Training Set**: 2011-2018 (tune hyperparameters)
-- **Validation Set**: 2019-2022 (evaluate performance)
-- **Test Set**: 2023-current (final assessment)
-
-**Grid Search**:
-```r
-Parameters tuned:
-- GLMM_BLEND_W: 0.3, 0.38, 0.5
-- RECENCY_HALFLIFE: 2.0, 3.0, 4.0
-- N_RECENT: 4, 6, 8
-- SOS_STRENGTH: 0.3, 0.45, 0.6
-
-Grid size: 3 × 3 × 3 × 3 = 81 combinations
-Selection metric: Minimize 2-way Brier score
-Tiebreaker: Minimize log-loss
-```
-
-**Functions**:
-- `tune_hyperparams()`: Grid search with cross-validation
-- `apply_best_hyperparams()`: Updates config.R with optimal values
-- `build_calibration()`: Trains isotonic regression
-- `evaluate_phase()`: Computes metrics on held-out data
+> **Removed 2026-09-29 (deletion batch 2):** `validation_pipeline.R` and `validation_reports.R` were a reduced-model validation that did not run the production path (audit M6). The pre-registered walk-forward backtest in `backtest/` replaces them (`reports/2026-09-29/backtest-games-v1/`).
 
 ### model_validation.R (935 lines)
 
@@ -1287,7 +1261,6 @@ Mean Absolute Error: 2.1% (excellent calibration)
 | R/date_resolver.R | 250+ | Week/date resolution | Active |
 | R/sleeper_api.R | 350+ | Sleeper API injury data integration | Active |
 | **Validation** | | | |
-| validation_pipeline.R | 740 | Hyperparameter tuning | Active |
 | model_validation.R | 935 | K-fold CV | Active |
 | injury_model_validation.R | 668 | Injury validation | Active |
 | professional_model_benchmarking.R | 750 | vs FTE/ESPN | Active |
@@ -1295,7 +1268,6 @@ Mean Absolute Error: 2.1% (excellent calibration)
 | ensemble_calibration_implementation.R | 680 | Ensemble | Active |
 | final_verification_checklist.R | 670 | Pre-deploy checks | Active |
 | rolling_validation_system.R | 599 | Real-time monitor | Active |
-| validation_reports.R | 388 | Report generation | Active |
 | run_validation_example.R | 259 | Usage example | Active |
 | **Testing** | | | |
 | comprehensive_r451_test_suite.R | 463 | R 4.5.1 tests | Active |

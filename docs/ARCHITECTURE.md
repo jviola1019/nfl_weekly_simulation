@@ -192,7 +192,6 @@ nfl/
 ├── NFLmarket.R             # Market analysis (3,900+ lines)
 ├── NFLbrier_logloss.R      # Scoring metrics (1,200+ lines)
 ├── injury_scalp.R          # Injury data processing
-├── validation_reports.R    # Report generation
 │
 ├── R/                      # Core utility modules
 │   ├── utils.R             # Shared utilities (CANONICAL)
@@ -201,10 +200,7 @@ nfl/
 │   ├── playoffs.R          # Playoff logic
 │   ├── date_resolver.R     # Date handling
 │   ├── sleeper_api.R       # Sleeper fantasy integration
-│   ├── coaching_adjustments.R
-│   ├── red_zone_data.R
-│   ├── simulation_helpers.R
-│   └── model_diagnostics.R
+│   └── red_zone_data.R
 │
 ├── docs/                   # Documentation
 │   ├── API.md              # Function reference
