@@ -4,6 +4,13 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### M19: read injury game designations, not practice participation (approved 2026-09-30)
+
+- Both injury readers in `NFLsimulation.R` now pick the status column through one shared preference, `INJ_STATUS_CANDIDATES`: `game_status`, `status` (the Sleeper fallback), `report_status`, `player_status`, then `practice_status`. nflverse reports have no `game_status` or `status` column, so the old order took `practice_status`, and Out/Doubtful/Questionable were never read. For the 2024 week-15 slate that meant 83 "Did Not Participate" rows scored 0 and only "Limited" (−0.10) counted.
+- The QB reader matched `LIMITED|PART`, so every listed QB (including "Full Participation") was flagged LIMITED. It now reads designations.
+- `tests/testthat/test-injury-status-column.R` (6 expectations): designation preferred, Sleeper `status` still found, practice status used only when nothing else exists, the penalty follows the designations, and both readers share the choice.
+- **Effect on the scoring means is nil until M22 is resolved:** M22 (audit addendum) drops every adjustment, injuries included, from the simulator's expected scores. The golden master attributes whatever this changes in the variance and history paths.
+
 ### Session 2 hand-off (docs)
 
 - `HANDOFF.md` rewritten for the end of session 2: PR table (#194–#198), merge order and expected doc-only conflicts, gates at each head, owner decisions (M18/M19, A5, A7, Vercel/Neon, pending deletions, FF access, LICENSE), and defect log entries 9–17.
