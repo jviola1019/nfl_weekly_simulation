@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "bt_run_id": {
+      "type": "string"
+    },
+    "split": {
+      "type": "string"
+    },
+    "phase": {
+      "type": "string"
+    },
+    "candidate": {
+      "type": "string"
+    },
+    "n": {
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
+    },
+    "brier": {
+      "type": "number",
+      "minimum": -140737488355328,
+      "maximum": 140737488355327
+    },
+    "logloss": {
+      "type": "number",
+      "minimum": -140737488355328,
+      "maximum": 140737488355327
+    },
+    "accuracy": {
+      "type": "number",
+      "minimum": -140737488355328,
+      "maximum": 140737488355327
+    },
+    "ece": {
+      "type": "number",
+      "minimum": -140737488355328,
+      "maximum": 140737488355327
+    },
+    "slope": {
+      "type": "number",
+      "minimum": -140737488355328,
+      "maximum": 140737488355327
+    },
+    "slope_lo": {
+      "type": "number",
+      "minimum": -140737488355328,
+      "maximum": 140737488355327
+    },
+    "slope_hi": {
+      "type": "number",
+      "minimum": -140737488355328,
+      "maximum": 140737488355327
+    },
+    "skill": {
+      "type": "number",
+      "minimum": -140737488355328,
+      "maximum": 140737488355327
+    },
+    "skill_lo": {
+      "type": "number",
+      "minimum": -140737488355328,
+      "maximum": 140737488355327
+    },
+    "skill_hi": {
+      "type": "number",
+      "minimum": -140737488355328,
+      "maximum": 140737488355327
+    },
+    "dm_p_better_bh": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": -140737488355328,
+          "maximum": 140737488355327
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "bt_run_id",
+    "split",
+    "phase",
+    "candidate",
+    "n",
+    "brier",
+    "logloss",
+    "accuracy",
+    "ece",
+    "slope",
+    "slope_lo",
+    "slope_hi",
+    "skill",
+    "skill_lo",
+    "skill_hi"
+  ],
+  "additionalProperties": false
+}

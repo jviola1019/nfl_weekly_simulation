@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "claim_id": {
+      "type": "string"
+    },
+    "claim": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "complete",
+        "void",
+        "ok",
+        "stale",
+        "failed",
+        "unavailable",
+        "validated",
+        "reproducible",
+        "unvalidated",
+        "withdrawn"
+      ]
+    },
+    "reason": {
+      "type": "string"
+    },
+    "evidence_path": {
+      "type": "string"
+    },
+    "supersedes": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "claim_id",
+    "claim",
+    "status",
+    "reason",
+    "evidence_path"
+  ],
+  "additionalProperties": false
+}

@@ -65,5 +65,5 @@ archive/
 .claude/settings*.json
 .playwright-mcp/
 
-# Generated data (local bundles, never committed)
-bundles/
+# Generated data (local bundles at the repo root, never committed; contracts/fixtures/bundles is committed)
+/bundles/

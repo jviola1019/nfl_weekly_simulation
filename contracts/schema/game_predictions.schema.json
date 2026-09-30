@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "game_id": {
+      "type": "string"
+    },
+    "candidate": {
+      "type": "string"
+    },
+    "p_home_raw": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "p_home_final": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "p_home_mkt_novig": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "margin_q50": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": -140737488355328,
+          "maximum": 140737488355327
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "total_q50": {
+      "anyOf": [
+        {
+          "type": "number",
+          "minimum": -140737488355328,
+          "maximum": 140737488355327
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "game_id",
+    "candidate"
+  ],
+  "additionalProperties": false
+}
