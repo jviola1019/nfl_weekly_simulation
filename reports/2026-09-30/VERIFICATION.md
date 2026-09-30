@@ -212,7 +212,7 @@ Pending. It needs #201 (LF checkout), #202 (Windows web scripts) and the T6 LF-w
 | #202 | `fix/web-windows-paths` | Web scripts on Windows (T7) | vitest 65/65, e2e 69/69 on Windows; CI green, including web |
 | #203 (draft) | `fix/m19-injury-report-status` | M19: injury game designations read ahead of practice participation | `run_tests.R` exit 0, integrity 60/60; golden-master attribution running in CI |
 | #204 | `fix/lf-writers` | LF writers so `result_sha256` reproduces on Windows (T6) | A2 byte-exact on Windows; `run_tests.R` exit 0 |
-| (not pushed) | `feat/validation-sprint-v2` | Validation sprint on the Tune window: variable screen, logistic vs XGBoost vs gbm blends, calibration maps, spread/totals handicapping, tracking, draft v2 protocol | see `reports/2026-09-30/validation-sprint/REPORT.md` |
+| #205 (draft) | `feat/validation-sprint-v2` | Validation sprint on the Tune window: variable screen, logistic vs XGBoost vs gbm blends, calibration maps, spread/totals handicapping, tracking, draft v2 protocol | see `reports/2026-09-30/validation-sprint/REPORT.md` |
 
 **Validation sprint in one line:** nothing beats the closing line on Tune 2018–2022, and nothing is validated. The market-anchored logistic blends match the close (+0.03% [−0.20, +0.28]) and are the most useful family. No situational variable survives multiple-testing correction. The time-zone effect on spreads (q = 0.15) is the one hypothesis pre-registered for an out-of-sample test.
 

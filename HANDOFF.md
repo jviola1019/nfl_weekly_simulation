@@ -16,7 +16,7 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 - **M20/M21:** the Sleeper injury look-ahead, and venues joined by name.
 - **T5–T8:** cross-OS reproducibility.
 
-**Validation sprint** (`feat/validation-sprint-v2`, not yet pushed; `reports/2026-09-30/validation-sprint/REPORT.md`):
+**Validation sprint** (#205, `reports/2026-09-30/validation-sprint/REPORT.md`):
 - Tune 2018–2022 only; the Holdout stays sealed.
 - No variable beats the close after BH correction.
 - Market-anchored logistic blends match the close (+0.03% [−0.20, +0.28]) and beat boosting on stability and cost. Unanchored XGBoost loses 0.86%. Calibration maps don't help, and isotonic hurts.
@@ -31,7 +31,8 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 | #201 | fix/eol-hash-locks | Open, CI green: `.gitattributes` LF |
 | #202 | fix/web-windows-paths | Open, CI green (including web): Windows web scripts |
 | #203 | fix/m19-injury-report-status | Draft: M19 fix; golden-master attribution in CI |
-| #204 | fix/lf-writers | Open: LF evidence writers |
+| #204 | fix/lf-writers | Open: LF evidence writers (golden master: no change) |
+| #205 | feat/validation-sprint-v2 | Draft: validation sprint (screen, blends, calibration, handicapping, tracking) and the v2 protocol draft |
 
 **Local environment notes:**
 - Postgres 17 cluster on 127.0.0.1:5433 (data dir in the session scratchpad; it stops when the machine restarts).
