@@ -4,7 +4,7 @@
  * code change that breaks the claim fails here instead of misleading a reader.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { extname, join } from "node:path";
+import { extname, join, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 import { BUNDLE_TABLES } from "../lib/contracts/bundle";
 
@@ -76,7 +76,18 @@ describe("docs truth: source comments", () => {
       .filter((f) => [".ts", ".tsx"].includes(extname(f)))
       .flatMap((f) => [...readFileSync(f, "utf8").matchAll(/\b([\w/-]+\.(?:test|spec)\.tsx?)\b/g)].map((m) => [f, m[1]!] as const));
     expect(refs.length).toBeGreaterThan(0);
-    const all = [...walk(join(WEB, "src")), ...(existsSync(join(WEB, "e2e")) ? walk(join(WEB, "e2e")) : [])];
+    const all = [...walk(join(WEB, "src")), ...(existsSync(join(WEB, "e2e")) ? walk(join(WEB, "e2e")) : [])].map((f) => f.split(sep).join("/"));
     for (const [from, ref] of refs) expect(all.some((f) => f.endsWith(ref.replace(/^.*\//, "/")) || f.endsWith(ref)), `${ref} (named in ${from})`).toBe(true);
+  });
+});
+
+describe("portable paths", () => {
+  it("no file path comes from a file: URL's .pathname or a file:// string compare (both break on Windows)", () => {
+    const files = [...walk(join(WEB, "scripts")), ...walk(join(WEB, "src")), join(WEB, "next.config.mjs")].filter(
+      (f) => [".ts", ".tsx", ".mjs"].includes(extname(f)) && !f.endsWith("docsTruth.test.ts"),
+    );
+    const patterns = [/import\.meta\.url\)\.pathname/, /`file:\/\/\$\{process\.argv/];
+    const bad = files.flatMap((f) => patterns.filter((re) => re.test(readFileSync(f, "utf8"))).map((re) => `${f}: ${re}`));
+    expect(bad).toEqual([]);
   });
 });

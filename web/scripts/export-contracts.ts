@@ -3,7 +3,8 @@
  * fails on any diff (the Drizzle schema is the single owner of the contract).
  */
 import { mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { BUNDLE_KINDS, manifestSchema, ROW_SCHEMAS, SCHEMA_VERSION } from "../src/lib/contracts/bundle";
 
@@ -18,7 +19,7 @@ export function contractFiles(): Record<string, string> {
   return out;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   const dir = join(import.meta.dirname, "..", "..", "contracts", "schema");
   mkdirSync(dir, { recursive: true });
   for (const [name, text] of Object.entries(contractFiles())) writeFileSync(join(dir, name), text);

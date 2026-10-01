@@ -1,0 +1,12 @@
+# Line endings: store and check out text files with LF on every OS.
+# Hash-locked evidence (backtest/data, eval windows, PROTOCOL.md, golden
+# masters, contract fixtures) is compared byte-for-byte; a CRLF checkout on
+# Windows (core.autocrlf=true) breaks those locks without changing any data.
+* text=auto eol=lf
+
+# Binary
+*.rds binary
+*.png binary
+*.jpg binary
+*.xlsx binary
+*.gz binary
