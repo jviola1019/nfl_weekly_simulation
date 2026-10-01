@@ -3338,6 +3338,14 @@ inj_pick <- function(df, candidates) {
   if (length(nm)) nm[1] else NA_character_
 }
 
+# Injury status column, in order of preference. nflverse reports carry the game
+# designation (Out/Doubtful/Questionable) in report_status and practice participation
+# in practice_status; the designation decides availability, so it is read first and
+# practice_status only when no designation column exists (audit M19). The Sleeper
+# fallback maps its designation to `status`.
+INJ_STATUS_CANDIDATES <- c("game_status", "status", "report_status", "player_status", "practice_status")
+inj_status_col <- function(df) inj_pick(df, INJ_STATUS_CANDIDATES)
+
 #' Calculate team-level injury impacts on expected scoring
 #'
 #' Aggregates individual player injuries into team-level scoring adjustments
@@ -3497,8 +3505,7 @@ if (!is.data.frame(inj_all) || nrow(inj_all) == 0) {
   col_week   <- inj_pick(inj_all, c("week","Week","game_week","gameday"))
   col_team   <- inj_pick(inj_all, c("team","team_abbr","club_code","club"))
   col_pos    <- inj_pick(inj_all, c("position","pos"))
-  col_status <- inj_pick(inj_all, c("game_status","status","practice_status",
-                                    "player_status","report_status"))
+  col_status <- inj_status_col(inj_all)
   col_player <- inj_pick(inj_all, c("full_name","player","player_name","name"))
 
   if (is.na(col_team)) {
@@ -3919,8 +3926,7 @@ qb_importance <- qb_importance %>%
 qb_status_from_inj <- {
   col_team   <- inj_pick(inj_all, c("team","team_abbr","club_code","club"))
   col_pos    <- inj_pick(inj_all, c("position","pos"))
-  col_status <- inj_pick(inj_all, c("game_status","status","practice_status",
-                                    "player_status","report_status"))
+  col_status <- inj_status_col(inj_all)
   col_season <- inj_pick(inj_all, c("season","Season","season_year","year"))
   col_week   <- inj_pick(inj_all, c("week","Week","game_week","gameday"))
 

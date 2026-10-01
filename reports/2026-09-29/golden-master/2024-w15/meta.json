@@ -2,11 +2,11 @@
   "week": "15",
   "season": "2024",
   "n_games": 16,
-  "git_sha": "19bba55e108574b06ef18d4b21275766c62be70f",
+  "git_sha": "84df935f8cad076e9df856f07565c3406574183f",
   "n_trials": 100000,
   "seed": 471,
   "r_version": "R version 4.5.1 (2025-06-13)",
   "nflreadr": "1.5.0",
-  "run_seconds": 313,
-  "csv_sha256": "73def3695783c5d8b5a1ec48bc622617c3072a21e9b3885ef0eef7ca02e8458b"
+  "run_seconds": 318,
+  "csv_sha256": "795e476fcd3e1c206847dac1098ccefe2f9bfa6054f7269363e9249c40837932"
 }

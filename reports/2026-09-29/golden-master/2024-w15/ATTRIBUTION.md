@@ -4,7 +4,7 @@ The game model's numeric output (`run_logs/final_*.rds`, 16 games, N = 100,000 t
 
 - **Run:** workflow run 36625811742; `attribute` job 109605752053.
 - **Files here:**
-  - `final_numeric.csv` and `meta.json`: the **current** golden master, recorded at `19bba55`.
+  - `final_numeric.csv` and `meta.json`: the **current** golden master. It was recorded at `19bba55` in Phase 1a and re-recorded at `84df935` (M19, #203). The new record is the CI artifact `gm-84df935…` from workflow run 36767126473, `csv_sha256 795e476f…`. See "M19" below.
   - `baseline/`: the pre-fix record at `64aa0b4`.
 - **Provenance:** both CSVs were reconstructed from the CI log. Their sha256 match the `csv_sha256` CI recorded (`73def369…`, `2f4ca1c5…`).
 - **Runtime:** 379 s at baseline and 313 s at head, so the run_matrix `golden-master` timeout is 800 s.
@@ -44,3 +44,27 @@ Both are recorded in `reports/2026-09-29/AUDIT-ADDENDUM.md`. Fixing them changes
 ## Observation for Phase 1b (M4)
 
 The blend's calibration map produces extreme values that the market doesn't support. For BAL @ NYG (market 8.8% home win, model 11.3%), `home_p_2w_blend_raw` is 0.003 and the displayed blend is 0.039. That calibrator is the invalid, outcome-leaked one (audit M4). Phase 1b disables it.
+
+## M19 (#203): injury game designations
+
+The record was made by `.github/workflows/golden-master.yml` on #203: workflow run 36767126473, `attribute` job 110068173753. The baseline was recorded twice (`b5d1ac4` and `b5d1ac4-rep2`) and differs only by fit noise (≤ 4e-9). The merges `526ec9d`, `37e92d8` and `eaa4138` show no differences.
+
+**`84df935` against `eaa4138`:**
+
+| Columns | Games changed | Max abs diff |
+|---|---|---|
+| `mu_home`, `mu_away` | **0** | – |
+| `home_sd_pts`, `away_sd_pts`, `total_sd`, `margin_sd` | 16 | 0.19, 0.13, 0.16, 0.18 |
+| `sd_home`, `sd_away` (fitted inputs) | 15 | 0.19, 0.14 |
+| `k_home`, `k_away` (NB size) | 11, 9 | 1.7, 45 (one game moves between the clamps 5 and 50) |
+| `home_mean_pts`, `away_mean_pts`, `total_mean` | 16 | 0.0029, 0.0016, 0.0045 (Monte Carlo, from the new SDs) |
+| `home_p_2w_raw` / `_cal`, `home_win_prob` | 16 | ≤ 0.0029 |
+| `home_p_2w_blend`, `home_win_prob_blend`, `margin_blend` | 15–16 | ≤ 0.0011, 0.24 |
+| Integer interval columns (CI and PI bounds, `margin_median`) | 1–4 | 1–16 (one-point shifts, and the `k_away` game's interval) |
+
+**Verdict: explained.**
+- M19 changes which status column the injury readers use. The historical injury features, which feed the variance fits, now count Out/Doubtful/Questionable instead of practice participation. So the SDs move.
+- The current-week injury points change too, but **the means cannot move**. Audit M22 (Critical, #200): the turnover prior is NaN for every team (nflverse schedules have no turnover columns). That makes every expected score NaN at the turnover join, and a safety block rebuilds it as drives × points per drive (+ home field). Every adjustment, injuries included, is lost.
+- That is also the answer to the M16 contradiction above: M18's "injury points do not reach mu" is a symptom of M22.
+
+**Head vs baseline (`84df935` vs `b5d1ac4`):** the same columns and sizes as above. Nothing between the baseline and `eaa4138` changed the output.
