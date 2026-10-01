@@ -70,14 +70,14 @@ export default async function DeskPage() {
 
           <section className="mt-10" aria-labelledby="board">
             <h2 id="board" className="text-lg font-semibold">Board</h2>
-            <div className="mt-2"><FieldKey showModel modelLabel={candidateLabel(DESK_MODEL)} /></div>
-            <div className="mt-2 divide-y divide-rule">
+            <div className="mt-2"><FieldKey showModel modelLabel={candidateLabel(DESK_MODEL)} validated={false} /></div>
+            <div className="mt-3 grid gap-5 lg:grid-cols-2">
               {games.map((g) => {
                 const l = lines.find((x) => x.gameId === g.gameId && x.candidate === DESK_MODEL && x.p !== null);
                 return (
                   <Field key={g.gameId} gameId={g.gameId} awayId={g.awayTeamId} homeId={g.homeTeamId} awayName={g.awayName}
                     homeName={g.homeName} kickoffUtc={g.kickoffUtc} neutral={g.neutral} pMarket={g.pMarket}
-                    model={l ? { p: l.p as number, label: candidateLabel(DESK_MODEL) } : null} />
+                    model={l ? { p: l.p as number, label: candidateLabel(DESK_MODEL), validated: false } : null} />
                 );
               })}
             </div>
