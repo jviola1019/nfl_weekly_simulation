@@ -15,6 +15,13 @@ All notable changes to the NFL Prediction Model are documented in this file.
 - The scraper code is deleted separately (Part B item 14).
 - **Test:** `test-repo-hygiene.R` "ScoresAndOdds scraping is off by default". It failed 6 ways before the change (including the resolver actually reaching the scraper) and passes after.
 
+### Evidence writers emit LF on every OS (audit T6, 2026-09-30)
+
+- On Windows, `data.table::fwrite`, `writeLines` and `jsonlite::write_json` write CRLF. So re-running the scored backtest there gave `result_sha256` `2e6d2d9d…` instead of the committed `7244a0bc…`, although every prediction and metric was identical.
+- `backtest/common.R` gains `bt_write_text()` (binary UTF-8, LF) and `bt_write_csv()` (`eol = "\n"`). `walk_forward.R` and `build_inputs.R` use them. `R/bundle_writer.R` writes its tables and manifest through the same binary LF writer (`bw_write_text()`).
+- On Linux the bytes are unchanged (these writers already produced LF there).
+- On Windows the scored backtest now reproduces byte for byte: `result_sha256` `7244a0bc…`, `predictions.csv` and `metrics.json` identical to the committed files, and all controls pass, including the internal reproducibility re-run.
+- `tests/testthat/test-lf-writers.R`: no CR byte in any backtest JSON/CSV or any bundle file, and every file ends with a newline.
 ### Web scripts run on Windows (VS Code verification, 2026-09-29)
 
 - On Windows, `npm run db:migrate` failed with "Can't find meta/_journal.json file". `npm run build` failed with "failed to canonicalize path `/C:/…`". `npm run contracts:export` exited 0 but wrote nothing, so its drift check was a no-op. Ingest, seeding and all 69 e2e tests then failed, because there were no tables and no build.

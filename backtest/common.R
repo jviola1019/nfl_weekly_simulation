@@ -112,5 +112,16 @@ bt_week_schedule <- function(games, seasons) {
   w[]
 }
 
+#' Write text as UTF-8 with LF line endings on every OS. Evidence files are hash-locked,
+#' and writeLines/fwrite default to CRLF on Windows (audit T6).
+bt_write_text <- function(text, path) {
+  con <- file(path, open = "wb")
+  on.exit(close(con))
+  writeBin(charToRaw(enc2utf8(paste0(paste(text, collapse = "\n"), "\n"))), con)
+  invisible(path)
+}
+
+bt_write_csv <- function(x, path) data.table::fwrite(x, path, eol = "\n")
+
 #' Canonical rounding before hashing so a result hash is stable to print noise
 bt_round <- function(x, digits = 10) round(x, digits)
