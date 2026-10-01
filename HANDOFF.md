@@ -33,6 +33,10 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 | #203 | fix/m19-injury-report-status | Draft: M19 fix; golden-master attribution in CI |
 | #204 | fix/lf-writers | Open: LF evidence writers (golden master: no change) |
 | #205 | feat/validation-sprint-v2 | Draft: validation sprint (screen, blends, calibration, handicapping, tracking) and the v2 protocol draft |
+| #206 | fix/disable-scoresandodds | ScoresAndOdds scraping off by default (S5); owner approved 2026-10-01; merging after CI |
+| #207 | feat/broadcast-redesign | Broadcast Line redesign from the approved mockup (fields, scoreboard, research line labelled unvalidated); verified, awaiting the owner's merge |
+
+**Merged 2026-10-01 (owner-approved):** #201, #202, #204. The main checkout was re-checked out with LF endings, so the hash locks pass locally.
 
 **Local environment notes:**
 - Postgres 17 cluster on 127.0.0.1:5433 (data dir in the session scratchpad; it stops when the machine restarts).
@@ -108,7 +112,13 @@ The owner asked (2026-09-30) to merge everything and move the remaining work to 
    - A5: a two-sided quote, spread ≤ 0.10, updated ≤ 60 min before kickoff; the mid is the fair price and ask + fee the executable price.
    - A7: validate by every means (done on Tune; see the sprint report).
    - Postgres: local cluster.
-3. **New, open:**
+3. **Decided 2026-10-01:**
+   - Disable the scraper now and delete it later (#206).
+   - **M22:** explicit model, and each term must earn its place (Phase 1b plan).
+   - Mockup approved and built (#207).
+   - **A7 public policy changed:** the fields show the E1 research line labelled unvalidated; stakes stay private.
+   - Merge #201, #202, #204.
+4. **Still open:**
    - **M22 fix approach.** Recommended: make the effective model explicit, then re-admit each adjustment only after it passes the walk-forward test.
    - **Sign the v2 protocol draft.**
    - **Approve the redesign mockup.**
@@ -184,3 +194,5 @@ The owner asked (2026-09-30) to merge everything and move the remaining work to 
 | 19 | The first verification of A2 and the web suites on Windows reported failures that were line-ending and path artefacts, not model or app defects | Diagnosed to CRLF writers/checkouts and POSIX path assumptions; fixed in #201/#202/#204 and verified byte for byte |
 | 20 | The first "no contract drift" reading was vacuous (the export never ran on Windows) | Caught from the missing "wrote N files" line; the vitest drift test was the real check |
 | 21 | The first mockup palette failed the dataviz validator (lightness band, contrast on turf, numbers coloured by series) | Re-stepped to the validated palette with a darker turf, and republished |
+| 22 | **A delete without looking first:** a screenshot path passed unconverted made Playwright create `C:\c\Users\…\rd_shots`; I moved the images and ran `rm -rf /c/c` without first checking `C:\c` for other content | It very likely held only that run's output (a top-level `C:\c` is unusual), but this was not verified; disclosed to the owner. Rule: list a directory before any delete |
+| 23 | The ScoresAndOdds scraper ran during the A3 end-to-end step because config still enabled it (S5) | Disclosed; defaults turned off in #206; `run_week.R` not run again |
