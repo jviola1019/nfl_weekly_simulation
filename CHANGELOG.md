@@ -4,6 +4,37 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Broadcast Line redesign: every game is a field (owner-approved mockup, 2026-10-01)
+
+- **The field:**
+  - Each game is a night-turf field between team-coloured end zones.
+  - The line splits the field by win chance, so each team's side is its probability of winning.
+  - The no-vig market is the blue line, the model the gold line, with a hatched band for the gap. Yard lines and numbers mark the scale.
+  - Every value is printed beside a colour swatch, with numbers in ink and never in series colours.
+- **Colour validation:** the series colours were checked with the dataviz validator on the night panel and on both turf stripes. Worst colour-blind ΔE is 10.6, normal vision 20.2, and contrast against the turf is ≥ 3:1. Team colours are tokens in `globals.css`.
+- **Public policy:** fields show one research line, the Elo + EPA ensemble, labelled "unvalidated" wherever it appears. A candidate that passes its gates would replace it as validated (`publicFieldLine`, tested). Stakes stay private.
+- **This week:**
+  - a broadcast-scale "Week N" hero and a model-status card;
+  - three real counts: games, different favourites and largest gap;
+  - kickoff, biggest-gap and closest sorts, a day filter and a model-line toggle;
+  - day-grouped field cards.
+- **Game page:** a scoreboard with team-coloured blocks (market win chance before kickoff, the score once final), a hero field with Market and Model flags, and market-versus-model cards. The panels for data that doesn't exist yet stay honest.
+- **Header, layout and desk:**
+  - The header has the two broadcast lines as its wordmark, the current section underlined, and Desk as a button.
+  - The page sits on the sunken surface with cards on the surface.
+  - The desk board uses the new fields.
+- **Fixes along the way:**
+  - Base element rules moved into `@layer base`, so utilities win; an unlayered `a { color }` had blanked every selected button.
+  - The model toggle uses an accessible name instead of `aria-pressed` on a link (axe).
+  - Hero yard numbers scale down on phones.
+  - The turf stripes and five-yard ticks are one background-image token. That cut home-page mobile blocking time from 420 ms to 242–294 ms.
+- **Verified:**
+  - typecheck and lint clean; vitest 67/67 with the Postgres suites;
+  - Playwright 69/69 (axe, overflow, both themes at 390/768/1440, desk redirect, no public stakes, ID leaks, reduced motion, headers);
+  - review-ui 48/48 rows clean;
+  - Lighthouse desktop passes on every page.
+  - Mobile LCP: the game page 2.43–2.45 s (pass); the home page 2.12–2.61 s (on the 2.5 s gate, on a machine Lighthouse flags as slow); `/evidence` is unchanged (Part B item 12).
+
 ### ScoresAndOdds scraping off by default (audit S5, owner-approved 2026-10-01)
 
 - `config.R` and `sports/nfl/props/props_config.R` still had `PROP_ODDS_ALLOW_REMOTE_HTML <- TRUE` with `scoresandodds` first in `PROP_ODDS_SOURCE_ORDER`. Every `run_week.R` therefore called the ScoresAndOdds private endpoint with a browser user agent, which breaks the keyless, truthful-user-agent policy.
