@@ -1,0 +1,4 @@
+engine's neutral-column candidates present: 0 | location values 2015-2024: Home 2690, Neutral 53 
+neutral games 2015-2024: regular season 42 | postseason 11 
+league HFA 1.7061 -> 1.7203 | 2024 wk15 home teams 16 | HFA_pts change -0.33..0.20 | |change| > 0.05: ARI, CLE, JAX, LAC, NO, SF, TEN
+2026 unplayed games: 224 | location: Home 218, Neutral 6 

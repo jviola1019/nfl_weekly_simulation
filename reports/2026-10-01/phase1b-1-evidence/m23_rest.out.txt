@@ -1,0 +1,5 @@
+2024 wk15 first slate row: 2024_15_LA_SF 2024-12-12 
+short rest (<= 6 days): today 24/32 teams, own game date 4/32 | rest days wrong for 30 teams
+2024 weeks 2+: nflverse rest == own-date rest in 538 of 538 team-games
+2024 week 1 nflverse rest values: 7 x 32 | own-date range: 207..246 
+2026 unplayed games: 224 | home_rest NA 0 | away_rest NA 0
