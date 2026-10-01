@@ -4,6 +4,12 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Web scripts run on Windows (VS Code verification, 2026-09-29)
+
+- On Windows, `npm run db:migrate` failed with "Can't find meta/_journal.json file". `npm run build` failed with "failed to canonicalize path `/C:/…`". `npm run contracts:export` exited 0 but wrote nothing, so its drift check was a no-op. Ingest, seeding and all 69 e2e tests then failed, because there were no tables and no build.
+- The cause in all three: a file path taken from `new URL(…, import.meta.url).pathname`, which is `/C:/…` on Windows, and a main-module check against a `file://${argv[1]}` string. `scripts/migrate.ts`, `scripts/export-contracts.ts` and `next.config.mjs` now use `fileURLToPath`.
+- The docs-truth test matched paths with `/` only, so on Windows it failed on `e2e/public-no-stakes.spec.ts`. It now normalises separators. A new docs-truth test fails if either pattern comes back. CI on Linux was unaffected.
+
 ### Session 2 hand-off (docs)
 
 - `HANDOFF.md` rewritten for the end of session 2: PR table (#194–#198), merge order and expected doc-only conflicts, gates at each head, owner decisions (M18/M19, A5, A7, Vercel/Neon, pending deletions, FF access, LICENSE), and defect log entries 9–17.
