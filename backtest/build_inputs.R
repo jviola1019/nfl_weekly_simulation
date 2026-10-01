@@ -114,7 +114,7 @@ bt_build_all <- function(raw_dir, out_dir = file.path("backtest", "data")) {
   out_meta <- list()
   for (nm in names(files)) {
     path <- file.path(out_dir, paste0(nm, ".csv"))
-    fwrite(files[[nm]], path)
+    bt_write_csv(files[[nm]], path)
     out_meta[[nm]] <- list(file = basename(path), rows = nrow(files[[nm]]), sha256 = bt_sha256_file(path))
   }
   sources <- list(
@@ -127,7 +127,7 @@ bt_build_all <- function(raw_dir, out_dir = file.path("backtest", "data")) {
     derived = out_meta,
     r_version = R.version.string
   )
-  jsonlite::write_json(sources, file.path(out_dir, "SOURCES.json"), auto_unbox = TRUE, pretty = TRUE)
+  bt_write_text(jsonlite::toJSON(sources, auto_unbox = TRUE, pretty = TRUE), file.path(out_dir, "SOURCES.json"))
   invisible(sources)
 }
 

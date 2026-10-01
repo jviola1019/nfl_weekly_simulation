@@ -128,11 +128,11 @@ if (!exists("PROP_ODDS_SOURCE")) PROP_ODDS_SOURCE <- "auto"
 
 # Source order when PROP_ODDS_SOURCE = "auto"
 if (!exists("PROP_ODDS_SOURCE_ORDER")) {
-  PROP_ODDS_SOURCE_ORDER <- c("scoresandodds", "odds_api", "csv", "model")
+  PROP_ODDS_SOURCE_ORDER <- c("odds_api", "csv", "model")
 }
 
-# Allow remote HTML/API scraping (ScoresAndOdds) for props
-if (!exists("PROP_ODDS_ALLOW_REMOTE_HTML")) PROP_ODDS_ALLOW_REMOTE_HTML <- TRUE
+# Remote HTML/API scraping (ScoresAndOdds) is off by default (audit S5)
+if (!exists("PROP_ODDS_ALLOW_REMOTE_HTML")) PROP_ODDS_ALLOW_REMOTE_HTML <- FALSE
 
 # Delay between scrape requests (seconds)
 if (!exists("PROP_ODDS_SCRAPE_DELAY_SEC")) PROP_ODDS_SCRAPE_DELAY_SEC <- 0.4

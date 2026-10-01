@@ -92,6 +92,15 @@ bw_utc <- function(t = Sys.time()) format(as.POSIXct(t, tz = "UTC"), "%Y-%m-%dT%
 
 bw_sha256_file <- function(path) digest::digest(file = path, algo = "sha256")
 
+# UTF-8 with LF line endings on every OS: the manifest pins each file's sha256, and
+# the committed fixtures are compared byte for byte (audit T6)
+bw_write_text <- function(text, path) {
+  con <- file(path, open = "wb")
+  on.exit(close(con))
+  writeBin(charToRaw(enc2utf8(paste0(paste(text, collapse = "\n"), "\n"))), con)
+  invisible(path)
+}
+
 #' Canonical JSON for a config list, and its sha256
 bw_config_hash <- function(config) {
   txt <- jsonlite::toJSON(config[order(names(config))], auto_unbox = TRUE, digits = NA, null = "null")
@@ -119,7 +128,7 @@ bw_write_bundle <- function(out_root, kind, meta, tables, extra_qa_failures = ch
     df <- as.data.frame(tables[[nm]], stringsAsFactors = FALSE)
     fails <- c(fails, bw_validate_rows(df, bw_read_schema(nm, contracts_dir), nm))
     path <- file.path(dir, paste0(nm, ".json"))
-    jsonlite::write_json(df, path, dataframe = "rows", auto_unbox = TRUE, digits = NA, pretty = FALSE)
+    bw_write_text(jsonlite::toJSON(df, dataframe = "rows", auto_unbox = TRUE, digits = NA, pretty = FALSE), path)
     files[[length(files) + 1]] <- list(name = paste0(nm, ".json"), sha256 = bw_sha256_file(path), rows = nrow(df))
   }
   config <- if (is.null(meta$config)) list() else meta$config
@@ -144,7 +153,7 @@ bw_write_bundle <- function(out_root, kind, meta, tables, extra_qa_failures = ch
   )
   mpath <- file.path(dir, "manifest.json")
   txt <- jsonlite::toJSON(manifest, auto_unbox = TRUE, digits = NA, null = "null", pretty = TRUE)
-  writeLines(txt, mpath, useBytes = TRUE)
+  bw_write_text(txt, mpath)
   manifest$bundle_sha256 <- bw_sha256_file(mpath)
   manifest$dir <- dir
   invisible(manifest)
