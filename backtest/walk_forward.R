@@ -179,7 +179,7 @@ bt_gates <- function(scores_confirm, controls_passed, clv) {
 
 bt_write_json <- function(x, path) {
   rnd <- function(v) if (is.list(v)) lapply(v, rnd) else if (is.numeric(v)) bt_round(v) else v
-  jsonlite::write_json(rnd(x), path, auto_unbox = TRUE, pretty = TRUE, digits = NA, null = "null", na = "null")
+  bt_write_text(jsonlite::toJSON(rnd(x), auto_unbox = TRUE, pretty = TRUE, digits = NA, null = "null", na = "null"), path)
 }
 
 bt_run <- function(window_path, stage, out_dir, run_controls = TRUE, run_repro = TRUE) {
@@ -230,7 +230,7 @@ bt_run <- function(window_path, stage, out_dir, run_controls = TRUE, run_repro =
   setorder(long, game_id, candidate)
 
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
-  fwrite(long, file.path(out_dir, "predictions.csv"))
+  bt_write_csv(long, file.path(out_dir, "predictions.csv"))
   metrics <- list(protocol = "nfl_games_v1", stage = stage, windows = windows, selections = sel$selections,
                   grids = sel$grids, scores = scores, clv = clv)
 
