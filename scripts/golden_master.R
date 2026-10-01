@@ -12,6 +12,39 @@
 # 4e-9 in fitted SD / NB-size columns (optimizer noise); anything above 1e-6 is a change.
 GM_COMPARE_TOL <- 1e-6
 
+# Input statuses change the output without any code change (audit M20: a run that lost the
+# nflverse injury file and fell back to Sleeper differed in 69 columns). Every record keeps
+# them, and compare/attribute flag drift instead of attributing it to code.
+gm_input_status <- function() {
+  if (!exists("get_data_quality", mode = "function")) stop("golden_master: get_data_quality() is not loaded")
+  q <- get_data_quality()
+  list(injury = q$injury$status, weather = q$weather$status, market = q$market$status,
+       calibration = q$calibration$method,
+       weather_fallback_games = sort(as.character(q$weather$fallback_games)),
+       market_missing_games = sort(as.character(q$market$missing_games)))
+}
+
+gm_flat <- function(v) paste(sort(as.character(unlist(v))), collapse = ";")
+
+# inputs.csv rather than JSON: `attribute` runs under Rscript --vanilla without jsonlite
+gm_write_inputs <- function(inputs, dir) {
+  utils::write.csv(data.frame(field = names(inputs), value = vapply(inputs, gm_flat, character(1)), row.names = NULL),
+                   file.path(dir, "inputs.csv"), row.names = FALSE)
+}
+
+gm_read_inputs <- function(dir) {
+  path <- file.path(dir, "inputs.csv")
+  if (!file.exists(path)) return(NULL)
+  x <- utils::read.csv(path, colClasses = "character", na.strings = character())
+  stats::setNames(as.list(x$value), x$field)
+}
+
+gm_input_drift <- function(a, b) {
+  if (is.null(a) || is.null(b)) return(character())
+  keys <- union(names(a), names(b))
+  keys[vapply(keys, function(k) !identical(gm_flat(a[[k]]), gm_flat(b[[k]])), logical(1))]
+}
+
 gm_diff <- function(golden, current, tol = 0) {
   if (!setequal(golden$game_id, current$game_id)) stop("gm_diff: game_id sets differ")
   current <- current[match(golden$game_id, current$game_id), , drop = FALSE]
@@ -39,7 +72,8 @@ gm_run_model <- function(week, season) {
   final <- readRDS(latest[which.max(file.mtime(latest))])
   num <- vapply(final, is.numeric, logical(1))
   list(data = as.data.frame(final[, c("game_id", names(final)[num & names(final) != "game_id"])]),
-       seconds = as.numeric(difftime(Sys.time(), started, units = "secs")))
+       seconds = as.numeric(difftime(Sys.time(), started, units = "secs")),
+       inputs = gm_input_status())
 }
 
 # Same check as tests/testthat/helper-live.R: any HTTP response counts as reachable
@@ -57,6 +91,12 @@ gm_print_diff <- function(title, d) {
 
 gm_attribute <- function(root, commits) {
   base <- gm_read(file.path(root, commits[1]))
+  base_inputs <- gm_read_inputs(file.path(root, commits[1]))
+  for (cm in c(paste0(commits[1], "-rep2"), commits[-1])) {
+    drift <- gm_input_drift(base_inputs, gm_read_inputs(file.path(root, cm)))
+    if (length(drift)) cat(sprintf("INPUT DRIFT at %s vs baseline %s: %s\n", substr(cm, 1, 7),
+                                   substr(commits[1], 1, 7), paste(drift, collapse = ", ")))
+  }
   rep_dir <- file.path(root, paste0(commits[1], "-rep2"))
   if (dir.exists(rep_dir)) gm_print_diff(sprintf("determinism: %s recorded twice", substr(commits[1], 1, 7)),
                                          gm_diff(base, gm_read(rep_dir)))
@@ -90,18 +130,23 @@ gm_main <- function(args) {
   if (mode == "record") {
     dir.create(dir, recursive = TRUE, showWarnings = FALSE)
     utils::write.csv(run$data, file.path(dir, "final_numeric.csv"), row.names = FALSE)
+    gm_write_inputs(run$inputs, dir)
     meta <- list(week = week, season = season, n_games = nrow(run$data),
                  git_sha = system2("git", c("rev-parse", "HEAD"), stdout = TRUE),
                  n_trials = N_TRIALS, seed = SEED, r_version = R.version.string,
                  nflreadr = as.character(utils::packageVersion("nflreadr")),
                  run_seconds = round(run$seconds),
+                 inputs = run$inputs,
                  csv_sha256 = digest::digest(file = file.path(dir, "final_numeric.csv"), algo = "sha256"))
     writeLines(jsonlite::toJSON(meta, auto_unbox = TRUE, pretty = TRUE), file.path(dir, "meta.json"))
     cat("recorded", nrow(run$data), "games to", dir, "\n")
   } else if (mode == "compare") {
+    golden_inputs <- gm_read_inputs(dir)
+    drift <- gm_input_drift(golden_inputs, run$inputs)
+    for (f in drift) cat(sprintf("INPUT DRIFT: %s golden=%s current=%s\n", f, golden_inputs[[f]], gm_flat(run$inputs[[f]])))
     d <- gm_diff(gm_read(dir), run$data, tol = GM_COMPARE_TOL)
     if (nrow(d)) print(d, row.names = FALSE) else cat("golden master: no differences\n")
-    if (nrow(d)) quit(status = 1)
+    if (nrow(d) || length(drift)) quit(status = 1)
   } else stop("mode must be record, compare or attribute")
 }
 
