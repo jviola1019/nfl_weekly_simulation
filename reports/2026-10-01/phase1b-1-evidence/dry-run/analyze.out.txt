@@ -1,0 +1,29 @@
+== Tasks 1-3 vs the pre-fix run (claim: means bit-identical) ==
+mu_home identical: TRUE | mu_away identical: TRUE | max |d mu|: 0 
+sd_home identical: TRUE | max |d sd|: 0 | rho max |d|: 0 
+mu_terms max |term| (Tasks 1-3): base=31.6 hfa=3.24 glmm=2.94 qb=1.09 rest=1 injury=0.61 travel=0 div_conf=0.1 pressure=0.02 explosive=0.01 location=16.18 special_teams=5.73 situational=1.64 turnover=NA weather=0 
+== Tasks 1-7 vs Tasks 1-3 ==
+HFA_pts change -0.329..0.205 | |change| > 0.05: ARI, CLE, JAX, LAC, NO, SF, TEN
+mu_home - HFA change max |residual|: 3.77e-15 | mu_away identical: TRUE 
+sd_goal Tasks 1-7: 13.02..16.84 | sd_home change vs pre-fix -0.32..1.39 (up in 10) | sd_away change -0.32..1.39 (up in 10)
+total_mu == mu_home + mu_away (Tasks 1-7): TRUE 
+neutral_site in games_ready: TRUE | any neutral: FALSE 
+rest term (Tasks 1-7):
+    game home_rest away_rest
+   LA_SF     -0.85     -0.85
+ DAL_CAR      0.00     -0.85
+  KC_CLE      0.00      0.00
+ MIA_HOU      1.00      0.00
+ NYJ_JAX      0.00      0.00
+  WAS_NO      0.00      1.00
+ BAL_NYG      0.00      1.00
+ CIN_TEN      0.00     -0.85
+  NE_ARI      0.00      1.00
+ IND_DEN      1.00      1.00
+ BUF_DET      0.00      0.00
+  TB_LAC      0.00      0.00
+ PIT_PHI      0.00      0.00
+  GB_SEA      0.00      0.00
+ CHI_MIN      0.00      0.00
+  ATL_LV      0.00      0.00
+teams with -0.85 (short rest): 4 of 32

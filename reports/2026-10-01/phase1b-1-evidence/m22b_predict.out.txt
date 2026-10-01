@@ -1,0 +1,4 @@
+file: run_logs/games_ready_20260929_224207.rds | games where the 5.0 floor bound (inversion unreliable): 0 
+sd_goal: today 9.50..16.84 -> predicted 13.02..16.84
+sd_home change -0.31..1.39 (up in 10 games) | sd_away change -0.31..1.39 (up in 10 games)
+largest change: 2024_15_CHI_MIN (legacy total 22.4, simulated total 50.3)
