@@ -12,8 +12,11 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 
 **New defects** (audit addendum, #200):
 - **M22 (Critical):** the simulator's expected scores are drives × points per drive (+ home field) in 16 of 16 games. A NaN turnover term forces a rescue that drops every other adjustment. This is the root cause of M18.
-- **M23:** rest days are measured from the week's first kickoff.
+- **M23:** rest days are measured from the week's first kickoff. In 2024 week 15, 24 of 32 teams are scored short rest (4 really were). It already reaches the blend through the calibration-history simulator.
+- **M22b (Critical, 2026-10-01):** score SDs, NB sizes and rho come from the legacy chain's total, which is off by up to 28 points (CHI @ MIN 22.4 vs 50.3 simulated; a ±16-point "location" term).
+- **M24 (High, 2026-10-01):** neutral sites are never recognized (nflverse uses `location`), so the listed home team gets home field at international games and the Super Bowl.
 - **M20/M21:** the Sleeper injury look-ahead, and venues joined by name.
+- **Plan for M22 (owner chose "explicit model, earn each term"):** #208, `docs/superpowers/plans/2026-10-01-phase1b-1-explicit-model.md`. It was dry-run on a throwaway worktree: every replacement anchor matched once, and the five new test files pass at the stated counts. It awaits owner approval and an execution method.
 - **T5–T8:** cross-OS reproducibility.
 
 **Validation sprint** (#205, `reports/2026-09-30/validation-sprint/REPORT.md`):
@@ -23,20 +26,21 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 - Nothing beats the close on spreads or totals.
 - The time-zone spread effect (q = 0.15) is pre-registered in the draft v2 protocol (`reports/2026-09-30/backtest-games-v2/PROTOCOL-DRAFT.md`, awaiting the owner's signature).
 
-**Design:** the owner rejected the shipped look. A redesign mockup (real data, dataviz-validated palette) is on the canvas: https://claude.ai/artifact/27TfoyhX17gU6hjskbukEM. Awaiting approval before it is built into `web/`.
+**Design:** the owner rejected the shipped look. They approved the redesign mockup (real data, dataviz-validated palette; https://claude.ai/artifact/27TfoyhX17gU6hjskbukEM) on 2026-10-01, and it is built in #207.
 
 | PR | Branch | State |
 |---|---|---|
-| #200 | docs/findings-m20-m21 | Draft: audit rows M20–M23 and T5–T8, data-sources addendum, VERIFICATION.md, Lighthouse JSON |
+| #200 | docs/findings-m20-m21 | Draft: audit rows M20–M24 (with M22b) and T5–T8, data-sources addendum, VERIFICATION.md, Lighthouse JSON |
 | #201 | fix/eol-hash-locks | Open, CI green: `.gitattributes` LF |
 | #202 | fix/web-windows-paths | Open, CI green (including web): Windows web scripts |
 | #203 | fix/m19-injury-report-status | Draft: M19 fix; golden-master attribution in CI |
 | #204 | fix/lf-writers | Open: LF evidence writers (golden master: no change) |
 | #205 | feat/validation-sprint-v2 | Draft: validation sprint (screen, blends, calibration, handicapping, tracking) and the v2 protocol draft |
-| #206 | fix/disable-scoresandodds | ScoresAndOdds scraping off by default (S5); owner approved 2026-10-01; merging after CI |
-| #207 | feat/broadcast-redesign | Broadcast Line redesign from the approved mockup (fields, scoreboard, research line labelled unvalidated); verified, awaiting the owner's merge |
+| #206 | fix/disable-scoresandodds | **Merged** 2026-10-01 (`cb7eaac`); golden master: fit noise only (≤ 4e-9) |
+| #207 | feat/broadcast-redesign | Broadcast Line redesign from the approved mockup (fields, scoreboard, research line labelled unvalidated). Main merged in (CHANGELOG conflict had blocked CI); verified, awaiting the owner's merge |
+| #208 | docs/phase1b-1-plan | Draft: the Phase 1b-1 plan (M22, M22b, M24, M23, M20) with measured evidence; awaiting owner approval |
 
-**Merged 2026-10-01 (owner-approved):** #201, #202, #204. The main checkout was re-checked out with LF endings, so the hash locks pass locally.
+**Merged 2026-10-01 (owner-approved):** #201, #202, #204, #206. The main checkout was re-checked out with LF endings, so the hash locks pass locally. `run_week.R` is safe to run again: the scraper is off by default.
 
 **Local environment notes:**
 - Postgres 17 cluster on 127.0.0.1:5433 (data dir in the session scratchpad; it stops when the machine restarts).
@@ -117,12 +121,11 @@ The owner asked (2026-09-30) to merge everything and move the remaining work to 
    - **M22:** explicit model, and each term must earn its place (Phase 1b plan).
    - Mockup approved and built (#207).
    - **A7 public policy changed:** the fields show the E1 research line labelled unvalidated; stakes stay private.
-   - Merge #201, #202, #204.
+   - Merge #201, #202, #204 (done), and #206 once CI passed (done).
 4. **Still open:**
-   - **M22 fix approach.** Recommended: make the effective model explicit, then re-admit each adjustment only after it passes the walk-forward test.
-   - **Sign the v2 protocol draft.**
-   - **Approve the redesign mockup.**
-   - **Merges:** #201, #202, #204; #203 after attribution; #200.
+   - **Approve the Phase 1b-1 plan (#208)**, and choose subagent-driven or native execution.
+   - **Sign the v2 protocol draft** (#205).
+   - **Merges:** #207 (redesign; main merged in, CI re-running); #203 (M19, golden master attributed); #200 (docs); #205 after the protocol is signed.
 5. **Connectors:** authorize **Vercel** and **Neon** (`/mcp` or the claude.ai connector settings) to deploy #198. Secrets go only into GitHub environment secrets and Vercel env.
 6. **Deletions still pending** (A3): `ensemble_calibration_implementation.R` and its `.rds` (after the M4 calibrator decision), and the 32 `if (!exists())` fallback copies in `NFLsimulation.R` (H1).
 7. **Access:** allow reading `jviola1019/fantasy_football_dashboard` so the ported slopScan/docsTruth can be reconciled with the originals (this session wrote them fresh; reading FF was not permitted here).
