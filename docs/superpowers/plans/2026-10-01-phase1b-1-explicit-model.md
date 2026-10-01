@@ -62,6 +62,29 @@ The scripts and their saved outputs are in `reports/2026-10-01/phase1b-1-evidenc
 | **M24** | The engine's neutral-site column candidates are absent. nflverse `location` for 2015–2024: Home 2,690, Neutral 53 (42 regular season, 11 postseason). 2026 unplayed games: Home 218, Neutral 6, no missing values. |
 | M24 prediction | League HFA 1.7061 → 1.7203. The 2024 wk 15 home teams' `HFA_pts` change by −0.33..+0.20; 7 teams move more than 0.05: ARI, CLE, JAX, LAC, NO, SF, TEN. |
 
+### Dry run of this plan (2026-10-01)
+
+Every code block in this plan was applied verbatim to throwaway worktrees of `main` (`cb7eaac`) by `reports/2026-10-01/phase1b-1-evidence/dry-run/apply_plan.R`. Nothing was committed, and the worktrees were then removed.
+
+- Every replacement anchor matched exactly once in `NFLsimulation.R`, `config.R` and `scripts/golden_master.R`.
+- The new test files pass at the counts each task states: 23, 20, 13, 24 and 17.
+- With all seven tasks applied, the full gates pass:
+  - `scripts/run_tests.R`: 421 tests, 1,581 passed, 0 failed, 0 errors, 1 allowlisted skip (KNOWN-DEFECT P13), 0 unapproved; exit 0.
+  - `scripts/verify_repo_integrity.R`: 60/60; exit 0.
+- Full engine on 2024 week 15, Windows (`dry-run/analyze.out.txt`, `dry-run/compare_*.out.txt`):
+  - **After Tasks 1–3:** means, SDs and rho are bit-identical to the pre-fix run. The golden-master compare shows only the 8 T8 blend columns, at their known magnitudes.
+  - **After Tasks 1–7:**
+    - The engine runs to completion.
+    - `HFA_pts` changes by −0.329..+0.205 for the 7 predicted teams, and `mu_home` moves by exactly that (residual 4e-15). `mu_away` is identical.
+    - `sd_goal` spans 13.02–16.84, and score SDs change by −0.32..+1.39, rising in 10 games. `total_mu` equals the simulated total.
+    - 4 of 32 teams are on short rest: SF, LA, DAL and CIN.
+- The dry run found four defects in an earlier draft of this plan, all fixed here:
+  - a structural check that matched `simulate_game_nb`'s own guard;
+  - a 1-d array from `tapply()` in `compute_rest_table()`;
+  - `NB_SIZE_MIN`/`NB_SIZE_MAX` missing from the variance test's environment;
+  - wrong expectation counts.
+- The dry run validates the plan. It does not replace the per-task gates or the CI attribution.
+
 ## Review Focus
 
 1. **A non-finite admitted term** (missing turnover data, a failed join). The run must stop and name the term and the game ids. It must never simulate a substitute mean. → Task 2 tests `compose_mu()`; Task 3 removes the rescue.
