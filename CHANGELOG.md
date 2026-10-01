@@ -4,6 +4,17 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### ScoresAndOdds scraping off by default (audit S5, owner-approved 2026-10-01)
+
+- `config.R` and `sports/nfl/props/props_config.R` still had `PROP_ODDS_ALLOW_REMOTE_HTML <- TRUE` with `scoresandodds` first in `PROP_ODDS_SOURCE_ORDER`. Every `run_week.R` therefore called the ScoresAndOdds private endpoint with a browser user agent, which breaks the keyless, truthful-user-agent policy.
+- The verification run of 2024 week 16 did exactly that. It also priced a historical week with current lines (audit P14).
+- **The defaults are now off:**
+  - `PROP_ODDS_ALLOW_REMOTE_HTML <- FALSE`;
+  - the source order is `odds_api`, `csv`, `model`;
+  - `load_prop_odds_scoresandodds(allow_remote = FALSE)` and the resolver's own fallback order match.
+- The scraper code is deleted separately (Part B item 14).
+- **Test:** `test-repo-hygiene.R` "ScoresAndOdds scraping is off by default". It failed 6 ways before the change (including the resolver actually reaching the scraper) and passes after.
+
 ### Evidence writers emit LF on every OS (audit T6, 2026-09-30)
 
 - On Windows, `data.table::fwrite`, `writeLines` and `jsonlite::write_json` write CRLF. So re-running the scored backtest there gave `result_sha256` `2e6d2d9d…` instead of the committed `7244a0bc…`, although every prediction and metric was identical.

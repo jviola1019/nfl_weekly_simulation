@@ -342,7 +342,7 @@ parse_scoresandodds_market_json <- function(payload, prop_type) {
 #' @param sleep_sec Delay between requests
 #' @return Tibble of prop odds or NULL
 load_prop_odds_scoresandodds <- function(prop_types = NULL,
-                                         allow_remote = TRUE,
+                                         allow_remote = FALSE,
                                          sleep_sec = NULL) {
 
   if (!isTRUE(allow_remote)) {
@@ -736,7 +736,7 @@ resolve_prop_odds_cache <- function(source = NULL,
 
   source <- tolower(source %||% "auto")
   if (is.null(source_order) || !length(source_order)) {
-    source_order <- c("scoresandodds", "odds_api", "csv", "model")
+    source_order <- c("odds_api", "csv", "model")
   }
   source_order <- tolower(source_order)
   cache <- NULL
