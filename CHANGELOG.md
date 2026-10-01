@@ -11,6 +11,61 @@ All notable changes to the NFL Prediction Model are documented in this file.
 - `tests/testthat/test-injury-status-column.R` (6 expectations): designation preferred, Sleeper `status` still found, practice status used only when nothing else exists, the penalty follows the designations, and both readers share the choice.
 - **Effect on the scoring means is nil until M22 is resolved:** M22 (audit addendum) drops every adjustment, injuries included, from the simulator's expected scores. The golden master attributes whatever this changes in the variance and history paths.
 
+### Broadcast Line redesign: every game is a field (owner-approved mockup, 2026-10-01)
+
+- **The field:**
+  - Each game is a night-turf field between team-coloured end zones.
+  - The line splits the field by win chance, so each team's side is its probability of winning.
+  - The no-vig market is the blue line, the model the gold line, with a hatched band for the gap. Yard lines and numbers mark the scale.
+  - Every value is printed beside a colour swatch, with numbers in ink and never in series colours.
+- **Colour validation:** the series colours were checked with the dataviz validator on the night panel and on both turf stripes. Worst colour-blind ΔE is 10.6, normal vision 20.2, and contrast against the turf is ≥ 3:1. Team colours are tokens in `globals.css`.
+- **Public policy:** fields show one research line, the Elo + EPA ensemble, labelled "unvalidated" wherever it appears. A candidate that passes its gates would replace it as validated (`publicFieldLine`, tested). Stakes stay private.
+- **This week:**
+  - a broadcast-scale "Week N" hero and a model-status card;
+  - three real counts: games, different favourites and largest gap;
+  - kickoff, biggest-gap and closest sorts, a day filter and a model-line toggle;
+  - day-grouped field cards.
+- **Game page:** a scoreboard with team-coloured blocks (market win chance before kickoff, the score once final), a hero field with Market and Model flags, and market-versus-model cards. The panels for data that doesn't exist yet stay honest.
+- **Header, layout and desk:**
+  - The header has the two broadcast lines as its wordmark, the current section underlined, and Desk as a button.
+  - The page sits on the sunken surface with cards on the surface.
+  - The desk board uses the new fields.
+- **Fixes along the way:**
+  - Base element rules moved into `@layer base`, so utilities win; an unlayered `a { color }` had blanked every selected button.
+  - The model toggle uses an accessible name instead of `aria-pressed` on a link (axe).
+  - Hero yard numbers scale down on phones.
+  - The turf stripes and five-yard ticks are one background-image token. That cut home-page mobile blocking time from 420 ms to 242–294 ms.
+- **Verified:**
+  - typecheck and lint clean; vitest 67/67 with the Postgres suites;
+  - Playwright 69/69 (axe, overflow, both themes at 390/768/1440, desk redirect, no public stakes, ID leaks, reduced motion, headers);
+  - review-ui 48/48 rows clean;
+  - Lighthouse desktop passes on every page.
+  - Mobile LCP: the game page 2.43–2.45 s (pass); the home page 2.12–2.61 s (on the 2.5 s gate, on a machine Lighthouse flags as slow); `/evidence` is unchanged (Part B item 12).
+
+### ScoresAndOdds scraping off by default (audit S5, owner-approved 2026-10-01)
+
+- `config.R` and `sports/nfl/props/props_config.R` still had `PROP_ODDS_ALLOW_REMOTE_HTML <- TRUE` with `scoresandodds` first in `PROP_ODDS_SOURCE_ORDER`. Every `run_week.R` therefore called the ScoresAndOdds private endpoint with a browser user agent, which breaks the keyless, truthful-user-agent policy.
+- The verification run of 2024 week 16 did exactly that. It also priced a historical week with current lines (audit P14).
+- **The defaults are now off:**
+  - `PROP_ODDS_ALLOW_REMOTE_HTML <- FALSE`;
+  - the source order is `odds_api`, `csv`, `model`;
+  - `load_prop_odds_scoresandodds(allow_remote = FALSE)` and the resolver's own fallback order match.
+- The scraper code is deleted separately (Part B item 14).
+- **Test:** `test-repo-hygiene.R` "ScoresAndOdds scraping is off by default". It failed 6 ways before the change (including the resolver actually reaching the scraper) and passes after.
+
+### Evidence writers emit LF on every OS (audit T6, 2026-09-30)
+
+- On Windows, `data.table::fwrite`, `writeLines` and `jsonlite::write_json` write CRLF. So re-running the scored backtest there gave `result_sha256` `2e6d2d9d…` instead of the committed `7244a0bc…`, although every prediction and metric was identical.
+- `backtest/common.R` gains `bt_write_text()` (binary UTF-8, LF) and `bt_write_csv()` (`eol = "\n"`). `walk_forward.R` and `build_inputs.R` use them. `R/bundle_writer.R` writes its tables and manifest through the same binary LF writer (`bw_write_text()`).
+- On Linux the bytes are unchanged (these writers already produced LF there).
+- On Windows the scored backtest now reproduces byte for byte: `result_sha256` `7244a0bc…`, `predictions.csv` and `metrics.json` identical to the committed files, and all controls pass, including the internal reproducibility re-run.
+- `tests/testthat/test-lf-writers.R`: no CR byte in any backtest JSON/CSV or any bundle file, and every file ends with a newline.
+### Web scripts run on Windows (VS Code verification, 2026-09-29)
+
+- On Windows, `npm run db:migrate` failed with "Can't find meta/_journal.json file". `npm run build` failed with "failed to canonicalize path `/C:/…`". `npm run contracts:export` exited 0 but wrote nothing, so its drift check was a no-op. Ingest, seeding and all 69 e2e tests then failed, because there were no tables and no build.
+- The cause in all three: a file path taken from `new URL(…, import.meta.url).pathname`, which is `/C:/…` on Windows, and a main-module check against a `file://${argv[1]}` string. `scripts/migrate.ts`, `scripts/export-contracts.ts` and `next.config.mjs` now use `fileURLToPath`.
+- The docs-truth test matched paths with `/` only, so on Windows it failed on `e2e/public-no-stakes.spec.ts`. It now normalises separators. A new docs-truth test fails if either pattern comes back. CI on Linux was unaffected.
+
 ### Session 2 hand-off (docs)
 
 - `HANDOFF.md` rewritten for the end of session 2: PR table (#194–#198), merge order and expected doc-only conflicts, gates at each head, owner decisions (M18/M19, A5, A7, Vercel/Neon, pending deletions, FF access, LICENSE), and defect log entries 9–17.

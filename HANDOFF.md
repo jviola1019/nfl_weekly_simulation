@@ -2,7 +2,52 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec. To verify everything and finish the remaining work in a full local environment (VS Code), use `docs/handoff/2026-09-29-vscode-prompt.md`.
 
-## Current state — 2026-09-30, end of session 2 (everything merged)
+## Current state — 2026-09-30, session 3 (VS Code verification and validation sprint)
+
+**Part A verification of `main` (`eaa4138`):** `reports/2026-09-30/VERIFICATION.md`.
+- Every gate passes on an LF checkout with the locked renv library, with three exceptions, each diagnosed:
+  - Windows line endings (T5, T6) and web paths (T7) are fixed in #201, #204 and #202.
+  - The golden-master blend columns differ across operating systems (T8). Every simulator column matches.
+- The A2 backtest reproduces byte for byte on Windows once #204 is in: `result_sha256 7244a0bc…`.
+
+**New defects** (audit addendum, #200):
+- **M22 (Critical):** the simulator's expected scores are drives × points per drive (+ home field) in 16 of 16 games. A NaN turnover term forces a rescue that drops every other adjustment. This is the root cause of M18.
+- **M23:** rest days are measured from the week's first kickoff. In 2024 week 15, 24 of 32 teams are scored short rest (4 really were). It already reaches the blend through the calibration-history simulator.
+- **M22b (Critical, 2026-10-01):** score SDs, NB sizes and rho come from the legacy chain's total, which is off by up to 28 points (CHI @ MIN 22.4 vs 50.3 simulated; a ±16-point "location" term).
+- **M24 (High, 2026-10-01):** neutral sites are never recognized (nflverse uses `location`), so the listed home team gets home field at international games and the Super Bowl.
+- **M20/M21:** the Sleeper injury look-ahead, and venues joined by name.
+- **Plan for M22 (owner chose "explicit model, earn each term"):** #208, `docs/superpowers/plans/2026-10-01-phase1b-1-explicit-model.md`. It was dry-run on a throwaway worktree: every replacement anchor matched once, and the five new test files pass at the stated counts. It awaits owner approval and an execution method.
+- **T5–T8:** cross-OS reproducibility.
+
+**Validation sprint** (#205, `reports/2026-09-30/validation-sprint/REPORT.md`):
+- Tune 2018–2022 only; the Holdout stays sealed.
+- No variable beats the close after BH correction.
+- Market-anchored logistic blends match the close (+0.03% [−0.20, +0.28]) and beat boosting on stability and cost. Unanchored XGBoost loses 0.86%. Calibration maps don't help, and isotonic hurts.
+- Nothing beats the close on spreads or totals.
+- The time-zone spread effect (q = 0.15) is pre-registered in the draft v2 protocol (`reports/2026-09-30/backtest-games-v2/PROTOCOL-DRAFT.md`, awaiting the owner's signature).
+
+**Design:** the owner rejected the shipped look. They approved the redesign mockup (real data, dataviz-validated palette; https://claude.ai/artifact/27TfoyhX17gU6hjskbukEM) on 2026-10-01, and it is built in #207.
+
+| PR | Branch | State |
+|---|---|---|
+| #200 | docs/findings-m20-m21 | Draft: audit rows M20–M24 (with M22b) and T5–T8, data-sources addendum, VERIFICATION.md, Lighthouse JSON |
+| #201 | fix/eol-hash-locks | Open, CI green: `.gitattributes` LF |
+| #202 | fix/web-windows-paths | Open, CI green (including web): Windows web scripts |
+| #203 | fix/m19-injury-report-status | Draft: M19 fix; golden-master attribution in CI |
+| #204 | fix/lf-writers | Open: LF evidence writers (golden master: no change) |
+| #205 | feat/validation-sprint-v2 | Draft: validation sprint (screen, blends, calibration, handicapping, tracking) and the v2 protocol draft |
+| #206 | fix/disable-scoresandodds | **Merged** 2026-10-01 (`cb7eaac`); golden master: fit noise only (≤ 4e-9) |
+| #207 | feat/broadcast-redesign | Broadcast Line redesign from the approved mockup (fields, scoreboard, research line labelled unvalidated). Main merged in (CHANGELOG conflict had blocked CI); verified, awaiting the owner's merge |
+| #208 | docs/phase1b-1-plan | Draft: the Phase 1b-1 plan (M22, M22b, M24, M23, M20) with measured evidence; awaiting owner approval |
+
+**Merged 2026-10-01 (owner-approved):** #201, #202, #204, #206. The main checkout was re-checked out with LF endings, so the hash locks pass locally. `run_week.R` is safe to run again: the scraper is off by default.
+
+**Local environment notes:**
+- Postgres 17 cluster on 127.0.0.1:5433 (data dir in the session scratchpad; it stops when the machine restarts).
+- renv is activated by a gitignored `.Rprofile` in each worktree.
+- The worktrees are in `../nfl-worktrees/`.
+
+## State at the end of session 2 (everything merged)
 
 Session 2 covered:
 - the pre-registered game backtest, scored end to end;
@@ -65,10 +110,22 @@ The owner asked (2026-09-30) to merge everything and move the remaining work to 
 
 ## Owner decisions pending
 
-1. **Remaining work** is listed in `docs/handoff/2026-09-29-vscode-prompt.md` Part B (items 1–19); the decisions below are item 19 there.
-2. **M18/M19 fix approval.** Both touch `injury_scalp.R`/`NFLsimulation.R` (a STOP item). The golden master will attribute the change.
-3. **A5 (before any props backtest):** define "pre-kickoff price" (a trade or two-sided quote, vs a spread cap ≤ 0.05 or "traded in the final hour"). The spike's GO verdict depends on it (see the previous HANDOFF text in git history, `8adcc79:HANDOFF.md`).
-4. **A7 (public launch gate):** confirm the policy above, market-only until a candidate passes.
+1. **Remaining work** is listed in `docs/handoff/2026-09-29-vscode-prompt.md` Part B (items 1–19).
+2. **Decided 2026-09-30:**
+   - M18–M21 approved (M19 is in #203; M18 turned out to be M22, see item 3).
+   - A5: a two-sided quote, spread ≤ 0.10, updated ≤ 60 min before kickoff; the mid is the fair price and ask + fee the executable price.
+   - A7: validate by every means (done on Tune; see the sprint report).
+   - Postgres: local cluster.
+3. **Decided 2026-10-01:**
+   - Disable the scraper now and delete it later (#206).
+   - **M22:** explicit model, and each term must earn its place (Phase 1b plan).
+   - Mockup approved and built (#207).
+   - **A7 public policy changed:** the fields show the E1 research line labelled unvalidated; stakes stay private.
+   - Merge #201, #202, #204 (done), and #206 once CI passed (done).
+4. **Still open:**
+   - **Approve the Phase 1b-1 plan (#208)**, and choose subagent-driven or native execution.
+   - **Sign the v2 protocol draft** (#205).
+   - **Merges:** #207 (redesign; main merged in, CI re-running); #203 (M19, golden master attributed); #200 (docs); #205 after the protocol is signed.
 5. **Connectors:** authorize **Vercel** and **Neon** (`/mcp` or the claude.ai connector settings) to deploy #198. Secrets go only into GitHub environment secrets and Vercel env.
 6. **Deletions still pending** (A3): `ensemble_calibration_implementation.R` and its `.rds` (after the M4 calibrator decision), and the 32 `if (!exists())` fallback copies in `NFLsimulation.R` (H1).
 7. **Access:** allow reading `jviola1019/fantasy_football_dashboard` so the ported slopScan/docsTruth can be reconciled with the originals (this session wrote them fresh; reading FF was not permitted here).
@@ -78,11 +135,24 @@ The owner asked (2026-09-30) to merge everything and move the remaining work to 
 
 **Objective.** Make the model's numbers trustworthy and prove them with a pre-registered walk-forward backtest (games, then props including every TD market). Then serve only what the evidence supports through the Next.js "Broadcast Line" site. The baseline to beat is the no-vig close (0.2108 overall; 0.2098 on Confirm 2023–24).
 
-**Done:** audit; forward capture; Phase 0; A2 decisions; backtest v1 (Tune/Confirm scored, holdout sealed); Phase 1a plus the golden master; deletion batches 1–2; contract, DB, ingest and web UI with tests and CI.
+**Done:**
+- audit; forward capture; Phase 0; A2 decisions;
+- backtest v1 (Tune/Confirm scored, holdout sealed);
+- Phase 1a plus the golden master; deletion batches 1–2;
+- contract, DB, ingest and web UI with tests and CI;
+- **session 3:** Part A verification (VERIFICATION.md), Windows fixes, M19, the Tune-window validation sprint, and the v2 protocol draft.
 
 **Next target:**
-1. Run the VS Code prompt: Part A verifies `main`, Part B is the list.
-2. Phase 1b: point-in-time features, `predict_week()` extraction, M4/M5/M6/M8/M9, M18/M19 if approved, and the simulator emitting a weekly bundle through `R/bundle_writer.R` (with `score_distributions`). This makes C3 point-in-time, after which the 2025 holdout is scored once.
+1. Owner answers (the M22 approach, the v2 protocol signature, the mockup), then merge the green PRs.
+2. **Phase 1b** (write the plan first, get it approved). Scope:
+   - point-in-time features;
+   - extract `predict_week()`;
+   - **M22 per the owner's choice** and M23;
+   - M4 (calibration: the sprint says none or Platt, never the leaked spline), M5, M6, M8, M9;
+   - M20/M21;
+   - a weekly bundle from the simulator.
+   Then C3 joins v2 and the 2025 holdout is scored once.
+3. **The redesign** (after mockup approval): rebuild the pages on the validated palette; server-render charts to bring mobile LCP under 2.5 s.
 3. Phase 2 odds layer: load the raw captures into `source_fetches`/`odds_snapshots`/`closing_lines`, add the unmatched-entity queue, redesign the ESPN bias test.
 4. Deploy (after item 5 above).
 5. Phases 4–5 (props, after A5), then the monorepo move and Phase 8 docs.
@@ -123,3 +193,9 @@ The owner asked (2026-09-30) to merge everything and move the remaining work to 
 | 15 | Chart SVG text scaled with the viewBox (6px on phones, 20px on desktop) | Found in the visual review; charts now lay out at measured width |
 | 16 | `recommendations.rec_id` was a global PK, so a second run of the same week collided | Found by the Postgres ingest test; migration 0002 fixed it (drizzle-kit emitted it out of order, so it was ordered by hand) |
 | 17 | The root `.gitignore` `bundles/` also ignored `contracts/fixtures/bundles/` | Caught before the commit; anchored to `/bundles/` |
+| 18 | A session restart stopped the background validation subagent mid-run (its data build was uncommitted) | The worktree kept the files; they were reviewed, tested and committed first (`0a0e1e5`), and the sprint was finished inline |
+| 19 | The first verification of A2 and the web suites on Windows reported failures that were line-ending and path artefacts, not model or app defects | Diagnosed to CRLF writers/checkouts and POSIX path assumptions; fixed in #201/#202/#204 and verified byte for byte |
+| 20 | The first "no contract drift" reading was vacuous (the export never ran on Windows) | Caught from the missing "wrote N files" line; the vitest drift test was the real check |
+| 21 | The first mockup palette failed the dataviz validator (lightness band, contrast on turf, numbers coloured by series) | Re-stepped to the validated palette with a darker turf, and republished |
+| 22 | **A delete without looking first:** a screenshot path passed unconverted made Playwright create `C:\c\Users\…\rd_shots`; I moved the images and ran `rm -rf /c/c` without first checking `C:\c` for other content | It very likely held only that run's output (a top-level `C:\c` is unusual), but this was not verified; disclosed to the owner. Rule: list a directory before any delete |
+| 23 | The ScoresAndOdds scraper ran during the A3 end-to-end step because config still enabled it (S5) | Disclosed; defaults turned off in #206; `run_week.R` not run again |

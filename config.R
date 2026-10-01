@@ -823,16 +823,18 @@ USE_REAL_PROP_ODDS <- TRUE
 
 #' @description Prop odds source ("auto", "odds_api", "scoresandodds", "csv", or "model")
 #' @default "auto"
-#' @note "auto" prefers ScoresAndOdds scraping when allowed, otherwise Odds API
+#' @note "auto" walks PROP_ODDS_SOURCE_ORDER. ScoresAndOdds scraping is off by default
+#'   (audit S5: a private endpoint called with a browser user agent breaks the keyless,
+#'   truthful-user-agent policy); the scraper code is due for deletion.
 PROP_ODDS_SOURCE <- "auto"
 
 #' @description Prop odds source order when PROP_ODDS_SOURCE="auto"
-#' @default c("scoresandodds","odds_api","csv","model")
-PROP_ODDS_SOURCE_ORDER <- c("scoresandodds", "odds_api", "csv", "model")
+#' @default c("odds_api","csv","model")
+PROP_ODDS_SOURCE_ORDER <- c("odds_api", "csv", "model")
 
-#' @description Allow remote HTML/API scraping for prop odds
-#' @default TRUE
-PROP_ODDS_ALLOW_REMOTE_HTML <- TRUE
+#' @description Allow remote HTML/API scraping for prop odds (audit S5: keep FALSE)
+#' @default FALSE
+PROP_ODDS_ALLOW_REMOTE_HTML <- FALSE
 
 #' @description Delay (seconds) between prop odds scrape requests
 #' @default 0.4

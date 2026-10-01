@@ -326,7 +326,7 @@ Where `P(side)` is the model probability for the relevant side (over or under fo
 **Prop odds sources:**
 - `PROP_ODDS_SOURCE = "auto"` iterates sources in `PROP_ODDS_SOURCE_ORDER` (default: ScoresAndOdds → OddsTrader → Covers → The Odds API → CSV → model).
 - `PROP_ODDS_SOURCE = "odds_api"` uses The Odds API (requires `ODDS_API_KEY`).
-- `PROP_ODDS_SOURCE = "scoresandodds"` uses the ScoresAndOdds market-comparison API (requires `PROP_ODDS_ALLOW_REMOTE_HTML = TRUE`).
+- ScoresAndOdds scraping is **off by default** (`PROP_ODDS_ALLOW_REMOTE_HTML = FALSE`, and it is not in `PROP_ODDS_SOURCE_ORDER`). It called a private endpoint with a browser user agent, which breaks the keyless, truthful-user-agent policy (audit S5). The code is due for deletion.
 - `PROP_ODDS_SOURCE = "oddstrader"` attempts OddsTrader HTML scraping; falls back to CSV if the site is client-rendered.
 - `PROP_ODDS_SOURCE = "covers"` attempts Covers HTML scraping; may require CSV if blocked.
 - `PROP_ODDS_SOURCE = "csv"` loads a local CSV from `PROP_ODDS_CSV_PATH`.

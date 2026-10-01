@@ -38,3 +38,21 @@ test_that("OddsTrader and Covers scrapers are retired", {
   expect_false(any(vapply(retired, exists, logical(1), envir = env, inherits = FALSE)))
   expect_false(any(c("oddstrader", "covers") %in% PROP_ODDS_SOURCE_ORDER))
 })
+
+test_that("ScoresAndOdds scraping is off by default (audit S5)", {
+  # config.R and props_config.R defaults: no remote scraping, not in the source order
+  expect_false(isTRUE(PROP_ODDS_ALLOW_REMOTE_HTML))
+  expect_false("scoresandodds" %in% tolower(PROP_ODDS_SOURCE_ORDER))
+  env <- new.env(parent = baseenv())   # props_config.R's own fallbacks, not the global config
+  sys.source(file.path(PROJECT_ROOT, "sports", "nfl", "props", "props_config.R"), envir = env)
+  expect_false(isTRUE(get("PROP_ODDS_ALLOW_REMOTE_HTML", envir = env)))
+  expect_false("scoresandodds" %in% tolower(get("PROP_ODDS_SOURCE_ORDER", envir = env)))
+  # the odds resolver never reaches the scraper unless someone opts in explicitly
+  api <- new.env()
+  sys.source(file.path(PROJECT_ROOT, "R", "prop_odds_api.R"), envir = api)
+  expect_false(formals(api$load_prop_odds_scoresandodds)$allow_remote)
+  api$load_prop_odds_scoresandodds <- function(...) stop("scraper called")
+  api$load_prop_odds <- function(...) NULL
+  api$load_prop_odds_csv <- function(...) NULL
+  expect_no_error(withr::with_options(list(), api$resolve_prop_odds_cache(source_order = NULL, api_key = "")))
+})

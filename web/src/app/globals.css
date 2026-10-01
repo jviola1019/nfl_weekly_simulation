@@ -66,6 +66,65 @@
   color-scheme: dark;
 }
 
+/*
+ * The field (Broadcast Line redesign, owner-approved 2026-10-01). The field is always
+ * night turf, in both themes. The series lines were validated on it with the dataviz
+ * validator (market #4a86ea, model #b08a0e, actual #d9577f): every check passes,
+ * including contrast >= 3:1 against both stripes.
+ */
+:root {
+  --turf-a: #123f25;
+  --turf-b: #0f3520;
+  /* mowed stripes and five-yard ticks as one image, so a field costs a handful of DOM nodes */
+  --turf-stripes: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10' preserveAspectRatio='none'%3E%3Crect width='100' height='10' fill='%23123f25'/%3E%3Cg fill='%230f3520'%3E%3Crect x='10' width='10' height='10'/%3E%3Crect x='30' width='10' height='10'/%3E%3Crect x='50' width='10' height='10'/%3E%3Crect x='70' width='10' height='10'/%3E%3Crect x='90' width='10' height='10'/%3E%3C/g%3E%3Cg fill='white' fill-opacity='0.22'%3E%3Crect x='4.94' width='0.12' height='10'/%3E%3Crect x='14.94' width='0.12' height='10'/%3E%3Crect x='24.94' width='0.12' height='10'/%3E%3Crect x='34.94' width='0.12' height='10'/%3E%3Crect x='44.94' width='0.12' height='10'/%3E%3Crect x='54.94' width='0.12' height='10'/%3E%3Crect x='64.94' width='0.12' height='10'/%3E%3Crect x='74.94' width='0.12' height='10'/%3E%3Crect x='84.94' width='0.12' height='10'/%3E%3Crect x='94.94' width='0.12' height='10'/%3E%3C/g%3E%3C/svg%3E");
+  --turf-line: rgba(255, 255, 255, 0.55);
+  --turf-line-mid: rgba(255, 255, 255, 0.85);
+  --turf-tick: rgba(255, 255, 255, 0.22);
+  --turf-number: rgba(255, 255, 255, 0.78);
+  --turf-edge: rgba(255, 255, 255, 0.75);
+  --field-market: #4a86ea;
+  --field-model: #b08a0e;
+  --field-actual: #d9577f;
+  --field-outline: rgba(3, 12, 7, 0.6);
+  --field-ink: #06110c;
+  --team-default: #3a4a42;
+  --team-default-2: #8a9a92;
+  --team-default-ink: #ffffff;
+  /* Team colours are data (identity), not series colours: primary, accent, end-zone ink */
+  --team-ARI: #97233f; --team-ARI-2: #ffb612; --team-ARI-ink: #ffffff;
+  --team-ATL: #a71930; --team-ATL-2: #000000; --team-ATL-ink: #ffffff;
+  --team-BAL: #241773; --team-BAL-2: #9e7c0c; --team-BAL-ink: #ffffff;
+  --team-BUF: #00338d; --team-BUF-2: #c60c30; --team-BUF-ink: #ffffff;
+  --team-CAR: #0085ca; --team-CAR-2: #101820; --team-CAR-ink: #0b0f0c;
+  --team-CHI: #0b162a; --team-CHI-2: #c83803; --team-CHI-ink: #ffffff;
+  --team-CIN: #fb4f14; --team-CIN-2: #000000; --team-CIN-ink: #0b0f0c;
+  --team-CLE: #311d00; --team-CLE-2: #ff3c00; --team-CLE-ink: #ffffff;
+  --team-DAL: #003594; --team-DAL-2: #869397; --team-DAL-ink: #ffffff;
+  --team-DEN: #fb4f14; --team-DEN-2: #002244; --team-DEN-ink: #0b0f0c;
+  --team-DET: #0076b6; --team-DET-2: #b0b7bc; --team-DET-ink: #ffffff;
+  --team-GB: #203731; --team-GB-2: #ffb612; --team-GB-ink: #ffffff;
+  --team-HOU: #03202f; --team-HOU-2: #a71930; --team-HOU-ink: #ffffff;
+  --team-IND: #002c5f; --team-IND-2: #a2aaad; --team-IND-ink: #ffffff;
+  --team-JAX: #006778; --team-JAX-2: #d7a22a; --team-JAX-ink: #ffffff;
+  --team-KC: #e31837; --team-KC-2: #ffb81c; --team-KC-ink: #ffffff;
+  --team-LV: #000000; --team-LV-2: #a5acaf; --team-LV-ink: #ffffff;
+  --team-LAC: #0080c6; --team-LAC-2: #ffc20e; --team-LAC-ink: #0b0f0c;
+  --team-LA: #003594; --team-LA-2: #ffa300; --team-LA-ink: #ffffff;
+  --team-MIA: #008e97; --team-MIA-2: #fc4c02; --team-MIA-ink: #0b0f0c;
+  --team-MIN: #4f2683; --team-MIN-2: #ffc62f; --team-MIN-ink: #ffffff;
+  --team-NE: #002244; --team-NE-2: #c60c30; --team-NE-ink: #ffffff;
+  --team-NO: #101820; --team-NO-2: #d3bc8d; --team-NO-ink: #ffffff;
+  --team-NYG: #0b2265; --team-NYG-2: #a71930; --team-NYG-ink: #ffffff;
+  --team-NYJ: #125740; --team-NYJ-2: #ffffff; --team-NYJ-ink: #ffffff;
+  --team-PHI: #004c54; --team-PHI-2: #a5acaf; --team-PHI-ink: #ffffff;
+  --team-PIT: #101820; --team-PIT-2: #ffb612; --team-PIT-ink: #ffffff;
+  --team-SF: #aa0000; --team-SF-2: #b3995d; --team-SF-ink: #ffffff;
+  --team-SEA: #002244; --team-SEA-2: #69be28; --team-SEA-ink: #ffffff;
+  --team-TB: #d50a0a; --team-TB-2: #34302b; --team-TB-ink: #ffffff;
+  --team-TEN: #0c2340; --team-TEN-2: #4b92db; --team-TEN-ink: #ffffff;
+  --team-WAS: #5a1414; --team-WAS-2: #ffb612; --team-WAS-ink: #ffffff;
+}
+
 @theme inline {
   --color-surface: var(--surface);
   --color-sunken: var(--surface-sunken);
@@ -83,12 +142,12 @@
 }
 
 html {
-  background: var(--surface);
+  background: var(--surface-sunken);
   color: var(--ink);
 }
 
 body {
-  background: var(--surface);
+  background: var(--surface-sunken);
   color: var(--ink);
   font-family: var(--font-archivo), system-ui, sans-serif;
   font-variation-settings: "wdth" 100;
@@ -106,7 +165,11 @@ body {
   outline-offset: 2px;
 }
 
-a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+/* Base element rules live in the base layer, so Tailwind utilities (in the utilities
+   layer) win over them; an unlayered `a { color }` would override text-* on links. */
+@layer base {
+  a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+}
 
 .skip-link {
   position: absolute;

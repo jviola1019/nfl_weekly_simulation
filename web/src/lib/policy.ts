@@ -16,6 +16,19 @@ export function publicModelCandidates(gates: GateRow[]): string[] {
   return gates.filter((g) => g.brierStatus.startsWith("passes")).map((g) => g.candidate);
 }
 
+/**
+ * The gold line on public fields (owner decision 2026-10-01, with the Broadcast Line
+ * redesign). A candidate that passed its gates is shown as validated. Otherwise one
+ * research line is shown: the Elo + EPA ensemble, labelled unvalidated everywhere it
+ * appears, beside the evidence that it did not beat the market. Stakes stay private.
+ */
+export const RESEARCH_LINE_CANDIDATE = "E1";
+
+export function publicFieldLine(gates: GateRow[]): { candidate: string; validated: boolean } {
+  const passed = publicModelCandidates(gates);
+  return passed.length ? { candidate: passed[0]!, validated: true } : { candidate: RESEARCH_LINE_CANDIDATE, validated: false };
+}
+
 export const MARKET_CANDIDATE = "C0";
 
 /** Short human labels for registered candidates (nfl_games_v1). */
