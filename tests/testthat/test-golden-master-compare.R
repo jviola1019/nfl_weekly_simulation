@@ -76,3 +76,46 @@ test_that("gm_attribute flags input drift between recorded commits", {
   out <- capture.output(gm_attribute(root, c("c1", "c2")))
   expect_true(any(grepl("INPUT DRIFT at c2 vs baseline c1: injury", out, fixed = TRUE)))
 })
+
+# 'C' (0x43) sorts before '_' (0x5F) in C order, but a Windows locale puts "LA_SF" first, so a locale-dependent
+# sort makes Linux CI and a Windows run disagree and report a false INPUT DRIFT. testthat runs tests with
+# LC_COLLATE=C, which would hide that, so these tests also run the code under the machine's own locale ("").
+test_that("gm_flat sorts in C order, so the same game ids flatten identically in any locale", {
+  ids <- c("2024_15_LA_SF", "2024_15_LAC_TB")
+  expect_equal(gm_flat(ids), "2024_15_LAC_TB;2024_15_LA_SF")
+  expect_equal(withr::with_collate("", gm_flat(ids)), "2024_15_LAC_TB;2024_15_LA_SF")
+})
+
+test_that("gm_input_status sorts the game-id vectors in C order too", {
+  withr::defer(reset_data_quality())
+  reset_data_quality()
+  ids <- c("2024_15_LA_SF", "2024_15_LAC_TB")
+  update_weather_quality("partial_fallback", fallback_games = ids)
+  update_market_quality("partial", missing_games = ids)
+  s <- withr::with_collate("", gm_input_status())
+  expect_equal(s$weather_fallback_games, c("2024_15_LAC_TB", "2024_15_LA_SF"))
+  expect_equal(s$market_missing_games, c("2024_15_LAC_TB", "2024_15_LA_SF"))
+})
+
+test_that("gm_drift_lines prints golden and current for every drifted field", {
+  golden <- list(injury = "full", weather = "partial_fallback",
+                 weather_fallback_games = "2024_15_KC_CLE;2024_15_WAS_NO")
+  current <- list(injury = "partial", weather = "partial_fallback",
+                  weather_fallback_games = c("2024_15_WAS_NO", "2024_15_NYJ_JAX"))
+  expect_equal(gm_drift_lines(golden, current), c(
+    "INPUT DRIFT: injury golden=full current=partial",
+    paste0("INPUT DRIFT: weather_fallback_games golden=2024_15_KC_CLE;2024_15_WAS_NO",
+           " current=2024_15_NYJ_JAX;2024_15_WAS_NO")))
+  expect_equal(gm_drift_lines(golden, golden), character())
+  expect_equal(gm_drift_lines(NULL, current), character())   # golden recorded before inputs were kept
+})
+
+test_that("gm_drift_lines names a field that only one side has instead of printing nothing", {
+  dir <- withr::local_tempdir()
+  gm_write_inputs(list(injury = "full", weather = "full"), dir)   # golden recorded before `extra_field` existed
+  golden <- gm_read_inputs(dir)
+  current <- list(injury = "full", weather = "full", extra_field = "x")
+  expect_equal(gm_input_drift(golden, current), "extra_field")
+  expect_equal(gm_drift_lines(golden, current), "INPUT DRIFT: extra_field golden= current=x")
+  expect_equal(gm_drift_lines(current, golden), "INPUT DRIFT: extra_field golden=x current=")
+})

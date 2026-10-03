@@ -15,16 +15,19 @@ GM_COMPARE_TOL <- 1e-6
 # Input statuses change the output without any code change (audit M20: a run that lost the
 # nflverse injury file and fell back to Sleeper differed in 69 columns). Every record keeps
 # them, and compare/attribute flag drift instead of attributing it to code.
+# Game-id vectors are sorted with method = "radix" (C order) here and in gm_flat(): the default sort follows
+# the locale, so Linux CI and a Windows run would order "2024_15_LA_SF" and "2024_15_LAC_TB" differently
+# and report a false INPUT DRIFT.
 gm_input_status <- function() {
   if (!exists("get_data_quality", mode = "function")) stop("golden_master: get_data_quality() is not loaded")
   q <- get_data_quality()
   list(injury = q$injury$status, weather = q$weather$status, market = q$market$status,
        calibration = q$calibration$method,
-       weather_fallback_games = sort(as.character(q$weather$fallback_games)),
-       market_missing_games = sort(as.character(q$market$missing_games)))
+       weather_fallback_games = sort(as.character(q$weather$fallback_games), method = "radix"),
+       market_missing_games = sort(as.character(q$market$missing_games), method = "radix"))
 }
 
-gm_flat <- function(v) paste(sort(as.character(unlist(v))), collapse = ";")
+gm_flat <- function(v) paste(sort(as.character(unlist(v)), method = "radix"), collapse = ";")
 
 # inputs.csv rather than JSON: `attribute` runs under Rscript --vanilla without jsonlite
 gm_write_inputs <- function(inputs, dir) {
@@ -43,6 +46,14 @@ gm_input_drift <- function(a, b) {
   if (is.null(a) || is.null(b)) return(character())
   keys <- union(names(a), names(b))
   keys[vapply(keys, function(k) !identical(gm_flat(a[[k]]), gm_flat(b[[k]])), logical(1))]
+}
+
+# One INPUT DRIFT line per drifted field. Both sides go through gm_flat(), so a field that only one side has
+# prints an empty value there instead of nothing, and compare never exits 1 without saying why.
+gm_drift_lines <- function(golden, current) {
+  vapply(gm_input_drift(golden, current), function(f) {
+    sprintf("INPUT DRIFT: %s golden=%s current=%s", f, gm_flat(golden[[f]]), gm_flat(current[[f]]))
+  }, character(1), USE.NAMES = FALSE)
 }
 
 gm_diff <- function(golden, current, tol = 0) {
@@ -141,9 +152,8 @@ gm_main <- function(args) {
     writeLines(jsonlite::toJSON(meta, auto_unbox = TRUE, pretty = TRUE), file.path(dir, "meta.json"))
     cat("recorded", nrow(run$data), "games to", dir, "\n")
   } else if (mode == "compare") {
-    golden_inputs <- gm_read_inputs(dir)
-    drift <- gm_input_drift(golden_inputs, run$inputs)
-    for (f in drift) cat(sprintf("INPUT DRIFT: %s golden=%s current=%s\n", f, golden_inputs[[f]], gm_flat(run$inputs[[f]])))
+    drift <- gm_drift_lines(gm_read_inputs(dir), run$inputs)
+    writeLines(drift)
     d <- gm_diff(gm_read(dir), run$data, tol = GM_COMPARE_TOL)
     if (nrow(d)) print(d, row.names = FALSE) else cat("golden master: no differences\n")
     if (nrow(d) || length(drift)) quit(status = 1)
