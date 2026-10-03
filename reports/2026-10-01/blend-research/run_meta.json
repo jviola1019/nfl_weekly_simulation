@@ -1,0 +1,140 @@
+{
+  "generated_utc": "2026-10-03T07:57:34Z",
+  "max_season_loaded": 2022,
+  "tune_seasons": [2018, 2019, 2020, 2021, 2022],
+  "n_tune_scored": 1365,
+  "n_candidates_bh": 39,
+  "level0": {
+    "first_season": 2014,
+    "games": 2439,
+    "reproduces_v2_max_abs_diff": 4.99947083731911e-09,
+    "reproduces_v2_max_abs_diff_after_rounding": 1.11022302462516e-16,
+    "wall_seconds": 231.267687082291,
+    "fit_seconds": {
+      "LR_E1": 2.61906766891479,
+      "LR_C1C2": 0.841572523117065,
+      "GLMNET": 252.487415313721,
+      "XGB": 62.421648979187,
+      "XGB_FREE": 165.047327518463,
+      "GBM": 1314.66313052177
+    }
+  },
+  "burn_in": {
+    "meta_learners": "level-0 OOF predictions 2014-2017 (before Tune); no Tune week excluded; burn-in weeks not scored",
+    "meta_min_train": 500,
+    "meta_min_seasons": 3
+  },
+  "o1": {
+    "eta": 0.5,
+    "eta_grid": [0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32, 64],
+    "selected_on": [2014, 2015, 2016, 2017]
+  },
+  "n1_chosen": {
+    "N1": [
+      {
+        "season": 2018,
+        "size": 2,
+        "decay": 10000
+      },
+      {
+        "season": 2019,
+        "size": 1,
+        "decay": 10000
+      },
+      {
+        "season": 2020,
+        "size": 1,
+        "decay": 10000
+      },
+      {
+        "season": 2021,
+        "size": 3,
+        "decay": 10000
+      },
+      {
+        "season": 2022,
+        "size": 3,
+        "decay": 10000
+      }
+    ],
+    "N1_NARROW": [
+      {
+        "season": 2018,
+        "size": 1,
+        "decay": 100
+      },
+      {
+        "season": 2019,
+        "size": 1,
+        "decay": 100
+      },
+      {
+        "season": 2020,
+        "size": 1,
+        "decay": 100
+      },
+      {
+        "season": 2021,
+        "size": 1,
+        "decay": 100
+      },
+      {
+        "season": 2022,
+        "size": 1,
+        "decay": 100
+      }
+    ]
+  },
+  "new_fit_seconds": {
+    "S1": 27.9918065071106,
+    "S1_MIN": 33.1553082466125,
+    "R1": 136.380362510681,
+    "O1": 1.43180298805237,
+    "G2": 272.747875928879,
+    "G2_GAPS": 183.675906896591,
+    "T1": 46.6911656856537,
+    "N1": 572.55676984787,
+    "N1_NARROW": 432.548526287079
+  },
+  "new_wall_seconds": {
+    "S1": 4.62884497642517,
+    "S1_MIN": 5.48064303398132,
+    "R1": 18.2912118434906,
+    "O1": 1.45543313026428,
+    "G2": 37.3874669075012,
+    "G2_GAPS": 25.0595030784607,
+    "T1": 6.29392409324646,
+    "N1": 161.167095184326,
+    "N1_NARROW": 127.022718906403
+  },
+  "workers": 8,
+  "r_version": "R version 4.5.1 (2025-06-13 ucrt)",
+  "packages": {
+    "data.table": "1.17.8",
+    "glmnet": "4.1.10",
+    "xgboost": "3.1.3.1",
+    "gbm": "2.2.3",
+    "mgcv": "1.9.3",
+    "lme4": "1.1.37",
+    "nnet": "7.3.20",
+    "sandwich": "3.1.1"
+  },
+  "control_shuffled_labels": {
+    "all_passed": true,
+    "seed": 20260930,
+    "wall_seconds": 719.445599079132,
+    "new_fit_seconds": {
+      "S1": 97.5145511627197,
+      "S1_MIN": 100.946296691895,
+      "R1": 119.597403764725,
+      "O1": 1.98484897613525,
+      "G2": 266.272026062012,
+      "G2_GAPS": 148.920600175858,
+      "T1": 39.8284568786621,
+      "N1": 639.679058551788,
+      "N1_NARROW": 509.140103816986
+    },
+    "level0_wall_seconds": 302.140336990356
+  },
+  "runtime_sec": 1379.37311196327
+}
