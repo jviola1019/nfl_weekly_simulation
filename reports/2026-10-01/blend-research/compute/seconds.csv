@@ -1,0 +1,29 @@
+family,stage,fit_seconds,wall_seconds
+"LR_E1","level0 (v2 code)",2.619,NA
+"LR_C1C2","level0 (v2 code)",0.8416,NA
+"GLMNET","level0 (v2 code)",252.5,NA
+"XGB","level0 (v2 code)",62.42,NA
+"XGB_FREE","level0 (v2 code)",165,NA
+"GBM","level0 (v2 code)",1315,NA
+"S1","v3 new",27.99,4.629
+"S1_MIN","v3 new",33.16,5.481
+"R1","v3 new",136.4,18.29
+"O1","v3 new",1.432,1.455
+"G2","v3 new",272.7,37.39
+"G2_GAPS","v3 new",183.7,25.06
+"T1","v3 new",46.69,6.294
+"N1","v3 new",572.6,161.2
+"N1_NARROW","v3 new",432.5,127
+"LR_E1","control: level0 refit",0.788,NA
+"GLMNET","control: level0 refit",246.6,NA
+"XGB","control: level0 refit",322.2,NA
+"GBM","control: level0 refit",1784,NA
+"S1","control: v3 new",97.51,13.14
+"S1_MIN","control: v3 new",100.9,13.99
+"R1","control: v3 new",119.6,15.9
+"O1","control: v3 new",1.985,1.999
+"G2","control: v3 new",266.3,36.16
+"G2_GAPS","control: v3 new",148.9,19.42
+"T1","control: v3 new",39.83,5.424
+"N1","control: v3 new",639.7,173.1
+"N1_NARROW","control: v3 new",509.1,135

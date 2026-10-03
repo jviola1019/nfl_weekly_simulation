@@ -4,6 +4,32 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Blend research v3: meshes of XGBoost and logistic regression, and other families (Tune 2018–2022, 2026-10-01 to 10-03)
+
+- **Code:** `backtest/v3/`, one entrypoint: `Rscript backtest/v3/sprint.R --out reports/2026-10-01/blend-research --workers 8`.
+  - The v2 harness and inputs are reused unchanged. A re-run of the v2 stages reproduced all 11 v2 outputs byte for byte (`check_v2_repro.R`).
+  - Level 0 regenerated inside v3 equals v2's committed Tune predictions at their 8-decimal rounding.
+- **New candidates**, all walk-forward and anchored on the close:
+  - S1 (stacked ridge meta-logistic on 7 level-0 logits) and S1_MIN (its `lambda.min` sensitivity variant);
+  - R1 (xgboost boosting the anchored glmnet's out-of-fold residual);
+  - O1 (exponentially weighted online blend, eta chosen on 2014–2017);
+  - G2 and G2_GAPS (shrinkage-smooth GAMs);
+  - T1 (glmer team random intercepts);
+  - N1 and N1_NARROW (anchored nnet).
+- **Result:** nothing beats the no-vig close.
+  - The best is S1 at +0.068% [−0.10, +0.23]. Every BH q across all 39 moneyline candidates is 1.000.
+  - S1 zeroes every level-0 weight, so its edge is a walk-forward home-field intercept on the close.
+  - Only N1_NARROW is significantly different from the close, and it is worse (−1.0%).
+- **Probability quality for every family, new and v2:**
+  - Brier and log-loss skill with week-block CIs, the logistic recalibration slope and intercept, calibration-in-the-large, and ECE;
+  - 10-bin reliability tables with n and Wilson CIs.
+- **Controls and tests:**
+  - The shuffled-label control passes for all 13 refit learners, including GBM for the first time.
+  - `test-backtest-v3-meshes.R`: leak canary and end-to-end nesting for all 9 candidates, determinism, chunk invariance, shuffled-label sanity, and sealed-season guards.
+- **Report:** `reports/2026-10-01/blend-research/REPORT.md` and `TABLES.md`, both rendered from the CSVs by `backtest/v3/report.R`.
+  - It proposes no protocol change beyond an optional "close + walk-forward intercept" swap for X1.
+  - `PROTOCOL-DRAFT.md` is unchanged.
+
 ### Validation sprint v2: can any model beat the close? (Tune 2018–2022, 2026-09-30)
 
 - **Inputs:** `backtest/v2/` with sha-locked context inputs in `backtest/data_v2/` (seasons ≤ 2024, sealed-season guards):
