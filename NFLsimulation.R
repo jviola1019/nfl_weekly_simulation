@@ -5082,20 +5082,11 @@ sd_total_curve <- function(total_mu){
   pmin(pmax(val, 9.5), 17)
 }
 
+# Fitted score SDs (team scoring variability + QB uncertainty). The total-based blend, the
+# NB sizes and rho are computed from the simulated means by score_variance_from_mu() at the
+# compose step (audit M22b); this chain's mu is a diagnostic sum, not the simulated mean.
 games_ready <- games_ready |>
-  dplyr::mutate(
-    total_mu = mu_home + mu_away,
-    sd_goal  = sd_total_curve(total_mu),
-    sd_home  = 0.6 * sd_home + 0.4 * (sd_goal / sqrt(2)),
-    sd_away  = 0.6 * sd_away + 0.4 * (sd_goal / sqrt(2)),
-    sd_home  = pmax(sd_home, 5.0),
-    sd_away  = pmax(sd_away, 5.0)
-  ) |>
-  # Calculate negative binomial size parameters for prediction intervals
-  dplyr::mutate(
-    k_home = purrr::map2_dbl(mu_home, sd_home, nb_size_from_musd),
-    k_away = purrr::map2_dbl(mu_away, sd_away, nb_size_from_musd)
-  )
+  dplyr::mutate(sd_home_fit = sd_home, sd_away_fit = sd_away)
 
 # Game-specific score correlation (rho): higher totals -> more positive correlation; larger mismatch -> less correlation
 # Parameters extracted to config.R for grid search optimization (see Phase 4 plan)
@@ -5124,11 +5115,21 @@ rho_from_game <- function(total_mu, spread_abs, rho_global = RHO_SCORE) {
   pmin(pmax(rho, bound_low), bound_high)
 }
 
-games_ready <- games_ready %>%
-  mutate(
-    spread_est = abs(mu_home - mu_away),
-    rho_game   = rho_from_game(total_mu, spread_est)
-  )
+# Score SDs, NB sizes and the score correlation from the simulated means (audit M22b).
+# sd_*_fit: fitted team scoring SD plus the QB adjustment; sd_*_adj: environment SD shift.
+score_variance_from_mu <- function(games) {
+  games |>
+    dplyr::mutate(
+      total_mu   = mu_home + mu_away,
+      sd_goal    = sd_total_curve(total_mu),
+      sd_home    = pmax(pmax(0.6 * sd_home_fit + 0.4 * (sd_goal / sqrt(2)), 5.0) + sd_home_adj, 5.0),
+      sd_away    = pmax(pmax(0.6 * sd_away_fit + 0.4 * (sd_goal / sqrt(2)), 5.0) + sd_away_adj, 5.0),
+      k_home     = purrr::map2_dbl(mu_home, sd_home, nb_size_from_musd),
+      k_away     = purrr::map2_dbl(mu_away, sd_away, nb_size_from_musd),
+      spread_est = abs(mu_home - mu_away),
+      rho_game   = rho_from_game(total_mu, spread_est)
+    )
+}
 
 
 games_ready <- games_ready %>%
@@ -6126,9 +6127,7 @@ games_ready <- games_ready %>%
     env_total_adj = env_total_auto + env_total_flags,
 
     mu_home = pmax(mu_home + env_total_adj/2 + mu_home_adj + wind_interaction_home + cold_interaction_home, 0),
-    mu_away = pmax(mu_away + env_total_adj/2 + mu_away_adj + wind_interaction_away + cold_interaction_away, 0),
-    sd_home = pmax(sd_home + sd_home_adj, 5.0),
-    sd_away = pmax(sd_away + sd_away_adj, 5.0)
+    mu_away = pmax(mu_away + env_total_adj/2 + mu_away_adj + wind_interaction_away + cold_interaction_away, 0)
   )
 # ------------------------ OVERTIME STATS (data-driven) ------------------------
 # We'll compute:
@@ -6285,6 +6284,7 @@ mu_final <- compose_mu(mu_terms, MU_TERMS_ADMITTED)
 stopifnot(identical(mu_final$game_id, games_ready$game_id))
 games_ready <- games_ready %>%
   mutate(mu_home = mu_final$mu_home, mu_away = mu_final$mu_away)
+games_ready <- score_variance_from_mu(games_ready)
 
 
 results_list <- lapply(seq_len(nrow(games_ready)), function(i) {
