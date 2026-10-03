@@ -131,3 +131,16 @@ test_that("every term matches the legacy chain's formula with distinct non-zero 
   expect_equal(comp$home$weather, g$env_total_adj / 2 + g$mu_home_adj + g$wind_interaction_home + g$cold_interaction_home, tolerance = 1e-12)
   expect_equal(comp$away$weather, g$env_total_adj / 2 + g$mu_away_adj + g$wind_interaction_away + g$cold_interaction_away, tolerance = 1e-12)
 })
+
+test_that("the engine simulates the composed means; the silent rescue is gone (audit M22)", {
+  src <- readLines(file.path(PROJECT_ROOT, "NFLsimulation.R"), warn = FALSE)
+  code <- src[!grepl("^\\s*#", src)]
+  expect_true(any(grepl('source(file.path(base_path, "mu_terms.R"))', code, fixed = TRUE)))
+  expect_equal(sum(grepl("compose_mu(mu_terms, MU_TERMS_ADMITTED)", code, fixed = TRUE)), 1L)
+  expect_false(any(grepl("exp_drives_home * exp_ppd_home + dplyr::coalesce(HFA_pts, 0)", code, fixed = TRUE)))   # the rescue
+  expect_equal(sum(grepl('saveRDS(mu_terms, file.path(log_dir, paste0("mu_terms_", run_id, ".rds")))', code, fixed = TRUE)), 1L)
+})
+
+test_that("config admits only drives x points per drive and home field (audit M22)", {
+  expect_identical(MU_TERMS_ADMITTED, c("base", "hfa"))
+})

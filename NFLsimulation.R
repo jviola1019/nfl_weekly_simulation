@@ -66,6 +66,9 @@ local({
       message(sprintf("Note: Could not source R/playoffs.R: %s", conditionMessage(e)))
     })
   }
+
+  # Required modules (Plan 1b-1): a load failure stops the run
+  source(file.path(base_path, "mu_terms.R"))
 })
 
 load_market_helpers <- local({
@@ -6274,20 +6277,14 @@ if (!exists("safe_sd", mode = "function")) {
   safe_sd  <- function(x) ifelse(is.finite(x) & x >= 5, x, 7)
 }
 
-# If any mu is NA after all adjustments, rebuild it from safe inputs
+# Simulated means: the sum of the admitted terms (audit M22). The chain above still computes
+# every other term; they are logged in mu_terms but not simulated until the walk-forward
+# backtest admits them. compose_mu() stops on a non-finite admitted term.
+mu_terms <- mu_components(games_ready, pressure_pts = PRESSURE_MISMATCH_PTS)
+mu_final <- compose_mu(mu_terms, MU_TERMS_ADMITTED)
+stopifnot(identical(mu_final$game_id, games_ready$game_id))
 games_ready <- games_ready %>%
-  mutate(
-    mu_home = dplyr::if_else(
-      is.finite(mu_home),
-      mu_home,
-      pmax(exp_drives_home * exp_ppd_home + dplyr::coalesce(HFA_pts, 0), 0)
-    ),
-    mu_away = dplyr::if_else(
-      is.finite(mu_away),
-      mu_away,
-      pmax(exp_drives_away * exp_ppd_away, 0)
-    )
-  )
+  mutate(mu_home = mu_final$mu_home, mu_away = mu_final$mu_away)
 
 
 results_list <- lapply(seq_len(nrow(games_ready)), function(i) {
@@ -8466,6 +8463,7 @@ cfg <- list(
 saveRDS(cfg, file.path(log_dir, paste0("config_", run_id, ".rds")))
 saveRDS(final, file.path(log_dir, paste0("final_", run_id, ".rds")))
 saveRDS(games_ready, file.path(log_dir, paste0("games_ready_", run_id, ".rds")))
+saveRDS(mu_terms, file.path(log_dir, paste0("mu_terms_", run_id, ".rds")))
 
 
 
