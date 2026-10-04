@@ -1,8 +1,10 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { pct } from "../src/lib/format";
+import { SCHEMES, WIDTHS } from "./helpers";
 
 /**
  * A published simulator run (A8). CI ingests the committed fixture after the main e2e
@@ -15,6 +17,7 @@ const read = <T,>(name: string) => JSON.parse(readFileSync(join(BUNDLE, `${name}
 type Pred = { game_id: string; candidate: string; p_home_final?: number; p_home_mkt_novig?: number };
 type Game = { game_id: string; home_team_id: string; away_team_id: string };
 type Team = { team_id: string; full_name: string };
+type Dist = { game_id: string; kind: "margin" | "total"; bins: { x: number; p: number }[] };
 
 const preds = read<Pred[]>("game_predictions");
 const games = read<Game[]>("games");
@@ -51,5 +54,34 @@ test.describe("@sim simulator run", () => {
       await expect(page.locator('[data-line="model"]')).toHaveText(pct(sim(g.game_id), 1));
       await expect(page.locator(`article[data-game="${g.game_id}"]`)).toHaveAttribute("aria-label", fieldSummary(g));
     });
+  }
+
+  test("the game page draws margin and total distributions, each with a summary and a full table view", async ({ page }) => {
+    const g = games[0]!;
+    const dists = read<Dist[]>("score_distributions").filter((d) => d.game_id === g.game_id);
+    await page.goto(`/games/${g.game_id}`);
+    for (const [kind, title] of [["margin", "Simulated final margin"], ["total", "Simulated total points"]] as const) {
+      const fig = page.locator("figure").filter({ hasText: title });
+      await expect(fig).toHaveCount(1);
+      await expect(fig.locator("figcaption")).toContainText("median");
+      await fig.getByText("Table view").click();
+      const bins = dists.find((d) => d.kind === kind)!.bins;
+      await expect(fig.locator("tbody tr")).toHaveCount(bins.length + 1);   // every outcome, plus the share outside the range
+    }
+  });
+
+  for (const scheme of SCHEMES) {
+    for (const width of WIDTHS) {
+      test(`distributions at ${width}px ${scheme}: no overflow, no serious axe issue`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await page.emulateMedia({ colorScheme: scheme });
+        await page.goto(`/games/${games[0]!.game_id}`, { waitUntil: "networkidle" });
+        await expect(page.locator("figure")).toHaveCount(2);
+        const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+        expect(overflow).toBeLessThanOrEqual(0);
+        const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
+        expect(axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => v.id)).toEqual([]);
+      });
+    }
   }
 });

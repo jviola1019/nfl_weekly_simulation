@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import { DataUnavailable } from "@/components/DataUnavailable";
 import { Field, FieldKey, gapText } from "@/components/Field";
 import { StatusBadge } from "@/components/StatusBadge";
-import { candidateLines, evidence, publicGame, runCandidates } from "@/lib/data/queries";
+import { ScoreDistributionChart } from "@/components/charts/ScoreDistributionChart";
+import { candidateLines, evidence, gameDistributions, publicGame, runCandidates } from "@/lib/data/queries";
+import { parseBins } from "@/lib/distribution";
 import { kickoff, pct } from "@/lib/format";
 import { candidateLabel, fieldLineShortNote, publicFieldLine } from "@/lib/policy";
 import { teamColors } from "@/lib/teams";
@@ -59,6 +61,8 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
   const lines = line ? await candidateLines(run.runId, [line.candidate], [id]) : [];
   const pm = game.pMarket;
   const pmod = lines[0]?.p ?? null;
+  const dist = await gameDistributions(run.runId, id);
+  const hasDist = dist.margin !== null || dist.total !== null;
   const final = game.homeScore !== null && game.awayScore !== null ? { home: game.homeScore, away: game.awayScore } : null;
   const flagX = (p: number) => `${(1 - p) * 100}%`;
 
@@ -173,8 +177,8 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
         <article className="flex flex-col gap-3 rounded-[6px] border border-rule bg-surface px-5 py-5">
           <h3 className="font-bold">Spread and total</h3>
           <p className="text-sm leading-relaxed text-ink-2">
-            The weekly bundle carries moneyline probabilities only. In the validation sprint (Tune 2018–22) no model beat the
-            devigged closing spread or total price, so none is shown.
+            In the validation sprint (Tune 2018–22) no model beat the devigged closing spread or total price, so no spread or
+            total is offered here.{hasDist ? " The simulator's margin and total distributions below are research output." : ""}
           </p>
         </article>
       </section>
@@ -183,13 +187,30 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
         <h2 id="dist" className="wdth-expanded text-[22px] font-bold">
           Simulated margin and total
         </h2>
-        <div className="mt-3">
-          <DataUnavailable title="No simulator output in this cycle">
-            This week&apos;s bundle comes from the backtest candidates, which predict a win probability only. The score
-            simulator&apos;s margin and total distributions appear here once a simulator bundle is ingested (Phase 1b makes it
-            point-in-time).
-          </DataUnavailable>
-        </div>
+        {hasDist ? (
+          (["margin", "total"] as const).map((kind) => {
+            const bins = parseBins(dist[kind]);
+            return bins ? (
+              <ScoreDistributionChart key={kind} kind={kind} bins={bins} homeId={game.homeTeamId} awayId={game.awayTeamId} nSims={run.nSims}
+                result={final ? (kind === "margin" ? final.home - final.away : final.home + final.away) : null} />
+            ) : (
+              <div key={kind} className="mt-3">
+                <DataUnavailable title={dist[kind] === null ? `No ${kind} distribution in this run` : `The ${kind} distribution is unreadable`}>
+                  {dist[kind] === null
+                    ? `The published run has no simulated ${kind} for this game.`
+                    : `Its bins failed validation (one share per integer outcome, no gaps, shares between 0 and 1), so it is not drawn.`}
+                </DataUnavailable>
+              </div>
+            );
+          })
+        ) : (
+          <div className="mt-3">
+            <DataUnavailable title="No simulator output in this run">
+              The published run predicts win probabilities only. Margin and total distributions appear when the published run
+              comes from the game simulator (run_week.R).
+            </DataUnavailable>
+          </div>
+        )}
       </section>
 
       <section className="mt-10" aria-labelledby="moves">
