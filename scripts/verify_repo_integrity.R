@@ -453,7 +453,6 @@ cat("\n--- Invariant: No Stale Artifacts ---\n")
 
 # Note: "nul" is a reserved device name on Windows, file.exists("nul") always returns TRUE
 # So we check for actual file artifacts, not Windows reserved names
-# Note: NFLvsmarket_report.html is a valid output file, not a stale artifact
 stale_files <- c(".RData")
 for (f in stale_files) {
   if (!file.exists(f)) {
@@ -461,6 +460,32 @@ for (f in stale_files) {
   } else {
     fail("invariant", sprintf("Stale artifact found: %s", f))
   }
+}
+
+# =============================================================================
+# INVARIANT: Legacy HTML report retired (checkpoint A8)
+# =============================================================================
+
+cat("\n--- Invariant: Legacy HTML report retired (A8) ---\n")
+
+# Results are served by the local web app (cd web && npm run local); no R code may
+# bring back the gt report, its exporter or its output file.
+retired_report <- paste(c("export_moneyline_comparison_html", "open_moneyline_report", "moneyline_report\\(",
+                          "validate_moneyline_report_schema", "moneyline_report_schema_contract",
+                          "render_model_status_banner", "NFLvsmarket_report"), collapse = "|")
+report_scan <- setdiff(c(list.files(".", pattern = "\\.R$"), list.files("R", pattern = "\\.R$", full.names = TRUE),
+                         list.files("scripts", pattern = "\\.R$", full.names = TRUE)),
+                       c("scripts/verify_repo_integrity.R", "./scripts/verify_repo_integrity.R"))
+report_hits <- character()
+for (f in report_scan) {
+  src <- readLines(f, warn = FALSE, encoding = "UTF-8")
+  hit <- grep(retired_report, src[!grepl("^\\s*#", src)])
+  if (length(hit)) report_hits <- c(report_hits, f)
+}
+if (!length(report_hits) && !file.exists("R/report_banner.R")) {
+  pass("invariant", sprintf("No legacy HTML report code in %d R files", length(report_scan)))
+} else {
+  fail("invariant", "Legacy HTML report code found", paste(c(report_hits, if (file.exists("R/report_banner.R")) "R/report_banner.R"), collapse = ", "))
 }
 
 # =============================================================================

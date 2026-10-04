@@ -17,3 +17,20 @@ test_that("run_week.R writes the web bundle once, after the simulation, and repo
   # git state is read before the run rewrites the tracked artifacts/*.csv
   expect_lt(grep("run_git <- sb_git_state()", code, fixed = TRUE), grep('source("NFLsimulation.R")', code, fixed = TRUE))
 })
+
+test_that("run_week.R makes no HTML report and opens no browser", {
+  code <- run_week_code()
+  expect_false(any(grepl("export_moneyline_comparison_html|browseURL|NFLvsmarket|baseline_report\\.html|auto_open", code)))
+})
+
+test_that("run_week.R still writes both audit CSVs, and the games table no longer depends on props", {
+  code <- run_week_code()
+  expect_true(any(grepl('"baseline_games.csv"', code, fixed = TRUE)))
+  expect_true(any(grepl('"baseline_props.csv"', code, fixed = TRUE)))
+  build <- grep("last_comparison_tbl <- build_moneyline_comparison_table(", code, fixed = TRUE)
+  expect_length(build, 1L)
+  props_block <- grep("if (exists(\"RUN_PLAYER_PROPS\") && isTRUE(RUN_PLAYER_PROPS)) {", code, fixed = TRUE)
+  props_end <- grep("^  }$", code)
+  props_end <- props_end[props_end > props_block][1]
+  expect_gt(build, props_end)
+})
