@@ -4,7 +4,7 @@ These are the measurements behind the "Measured baseline" table in `docs/superpo
 
 | Script | Reads | Finding |
 |---|---|---|
-| `m22_terms.R` | a `run_logs/games_ready_*.rds` (here `games_ready_20260929_224207.rds`, a local run of 2024 week 15) | **M22, M22b.** The simulated means equal drives × points per drive (+ home field) bit for bit, and the turnover term is non-finite in every game. The 15 named terms decompose the legacy chain's total exactly. The term sizes, and the gap between the legacy total and the simulated total. |
+| `m22_terms.R` | a `run_logs/games_ready_*.rds` (here `games_ready_20260929_224207.rds`, a local run of 2024 week 15) | **M22, M22b.** The simulated means equal drives × points per drive (+ home field) bit for bit, and the turnover term is non-finite in every game. The 13 named terms (every term except turnover and weather, which enter after `total_mu`) decompose the legacy chain's total exactly. The term sizes, and the gap between the legacy total and the simulated total. |
 | `m22b_predict.R` | the same file | **M22b.** Predicted change in score SDs when the SD blend uses the simulated total. |
 | `m23_rest.R` | nflverse schedules 2023, 2024 and 2026 | **M23.** Short-rest counts for 2024 week 15 when rest is measured from the week's first kickoff vs each team's own game; nflverse `home_rest`/`away_rest` vs own-date rest; the rest columns for unplayed 2026 games. |
 | `m24_neutral.R` | nflverse schedules 2015–2024 and 2026 | **M24.** The engine's neutral-site column names are absent while `location` marks 53 neutral games; the predicted change in league and team home-field advantage. |

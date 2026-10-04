@@ -75,7 +75,7 @@ The record was made by `.github/workflows/golden-master.yml` on #210: workflow r
 
 **Determinism:** `b5d1ac4` recorded twice differs only in `sd_home`/`sd_away`/`total_uncertainty` (2.2e-10) and `k_home`/`k_away` (4.0e-9): fit noise. The same noise-only diff appears on several commits that changed no output.
 
-**Live-data drift against the old committed record.** Another agent measured on 2026-10-03 that the golden master committed before this PR (the `84df935` record, `csv_sha256 795e476f…`) no longer matched untouched `main`: nflverse inputs had drifted, and 10 games differed in the blend columns, by up to 0.0094. The attribution below does not depend on the old record.
+**Old record vs CI.** CI's Linux recording of the merge base `4f9aad3` (artifact `gm-4f9aad30a2805bdba39fd79fa5a367e5a1b65650` of run 37186552533) is byte-identical to the record committed before this PR: both have `csv_sha256 795e476f…`, and `gm_diff` at tolerance 1e-6 returns no differences. So there was no live-data drift on Linux. The re-record supersedes the M19 record because the model changed, not because the data did. Differences seen in a local Windows compare are the blend-column effect of audit T8.
 
 | Commit | Fix | Columns changed vs the previous commit | Games | Max abs diff | Verdict vs prediction |
 |---|---|---|---|---|---|

@@ -4,7 +4,7 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 
 ## Plan 1b-1 done - 2026-10-04 (draft PR #210, awaiting owner approval to merge)
 
-Branch `fix/phase1b-1-explicit-model` (7 task commits, head code `3900255`) fixes M22, M22b, M24, M23 and M20. PR: https://github.com/jviola1019/nfl_weekly_simulation/pull/210.
+Branch `fix/phase1b-1-explicit-model` (9 commits for the 7 code tasks, head code `3900255`) fixes M22, M22b, M24, M23 and M20. PR: https://github.com/jviola1019/nfl_weekly_simulation/pull/210.
 - **Gates on the head:** `Rscript scripts/run_tests.R` exit 0: `tests=431 passed=1603 failed=0 errors=0 skipped=1 unapproved_skips=0`. `Rscript scripts/verify_repo_integrity.R` exit 0: `Total: 60 passed, 0 failed`.
 - **Golden master (CI, run 37186552533, `attribute` job 111391373469):** every commit's output change matched the plan's predictions (see `reports/2026-09-29/golden-master/2024-w15/ATTRIBUTION.md#phase-1b-1-210-explicit-model`). Re-recorded from the artifact of `3900255` (`csv_sha256 b7b888a7...`), with the new `inputs.csv`.
 - **Local `run_matrix` (Windows):** 9/10; `golden-master` differs only in the 8 blend columns (T8), with no `INPUT DRIFT`.

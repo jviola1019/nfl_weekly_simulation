@@ -53,7 +53,7 @@ The scripts and their saved outputs are in `reports/2026-10-01/phase1b-1-evidenc
 |---|---|
 | Simulated means vs the rescue formula (`NFLsimulation.R:6271-6284`) | `mu_home` = drives × PPD + `HFA_pts` and `mu_away` = drives × PPD, **bit-identical in 16/16 games**. So composing `base + hfa` reproduces today's output. |
 | Turnover term (`home_to_adj`, `away_to_adj`) | Non-finite in 16/16. nflverse schedules have no turnover columns, which is the M22 root cause. |
-| The 15 named terms summed vs the legacy chain's `total_mu` | max \|difference\| 1.4e-14. No `pmax` clamp bound, so the term table is an exact decomposition. |
+| The 15 named terms summed vs the legacy chain's `total_mu` (erratum: 13 terms; turnover and weather enter after `total_mu`) | max \|difference\| 1.4e-14. No `pmax` clamp bound, so the term table is an exact decomposition. |
 | Legacy term sizes, points per side (min..max, mean \|x\|) | location −16.18..+14.42 (6.98); special teams −5.73..+5.73 (2.43); glmm −2.94..+2.05; hfa −2.04..+3.24; situational −1.36..+1.64; rest −0.85..+1.00; everything else ≤ 1.09 in size. One legacy side mean is 1.11 points. |
 | **M22b:** legacy `total_mu` (sets SDs, NB sizes and rho today) vs simulated total | Gap up to **28.0 points**: CHI @ MIN 22.4 vs 50.3. |
 | M22b prediction (score SDs from the simulated means) | `sd_goal` moves from 9.50–16.84 to 13.02–16.84. `sd_home`/`sd_away` change by −0.31..+1.39 and rise in 10 of 16 games. CHI @ MIN changes most. |
