@@ -45,8 +45,9 @@ export default async function MethodologyPage() {
         <li><span className="font-medium">{candidateLabel("K[E1]")}</span>: the ensemble recalibrated on earlier out-of-fold predictions{sel.k_e1 ? ` (${sel.k_e1.method})` : ""}.</li>
       </ul>
       <p className="mt-3 text-sm text-ink-2">
-        The Monte Carlo score simulator joins as its own candidate in the next protocol version, once its features are
-        point-in-time.
+        The Monte Carlo score simulator ({candidateLabel("C3")}) joins as its own candidate in the next protocol version, once
+        its features are point-in-time. Until then a simulator run is research output: its line is the simulator&apos;s two-way
+        home win probability after its market blend.
       </p>
 
       <h2 className="mt-8 text-lg font-semibold">How candidates are judged</h2>
@@ -66,8 +67,9 @@ export default async function MethodologyPage() {
 
       <h2 className="mt-8 text-lg font-semibold">What is shown publicly</h2>
       <p className="mt-2">
-        A model line appears on public pages only for a candidate that passed its gates. Until then the site shows the
-        market alone and no picks. Stakes are never public; the private desk tracks paper leans only
+        A candidate that passed its gates is shown as validated. Until one does, the fields carry one research line,
+        labelled unvalidated wherever it appears: the {candidateLabel("E1")} when the published run has it, otherwise the
+        game simulator. There are no public picks. Stakes are never public; the private desk tracks paper leans only
         {cfg.paper_edge ? ` (edge of ${cfg.paper_edge * 100} points or more)` : ""}.
       </p>
 

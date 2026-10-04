@@ -3,9 +3,9 @@ import { notFound } from "next/navigation";
 import { DataUnavailable } from "@/components/DataUnavailable";
 import { Field, FieldKey, gapText } from "@/components/Field";
 import { StatusBadge } from "@/components/StatusBadge";
-import { candidateLines, evidence, publicGame } from "@/lib/data/queries";
+import { candidateLines, evidence, publicGame, runCandidates } from "@/lib/data/queries";
 import { kickoff, pct } from "@/lib/format";
-import { candidateLabel, publicFieldLine } from "@/lib/policy";
+import { candidateLabel, fieldLineShortNote, publicFieldLine } from "@/lib/policy";
 import { teamColors } from "@/lib/teams";
 
 export const dynamic = "force-dynamic";
@@ -54,9 +54,9 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
   if (!/^[0-9]{4}_[0-9]{2}_[A-Z]{2,3}_[A-Z]{2,3}$/.test(id)) notFound();
   const [{ run, game }, ev] = await Promise.all([publicGame(id), evidence()]);
   if (!run || !game) notFound();
-  const line = publicFieldLine(ev?.gates ?? []);
-  const label = candidateLabel(line.candidate);
-  const lines = await candidateLines(run.runId, [line.candidate], [id]);
+  const line = publicFieldLine(ev?.gates ?? [], await runCandidates(run.runId));
+  const label = line ? candidateLabel(line.candidate) : "Model";
+  const lines = line ? await candidateLines(run.runId, [line.candidate], [id]) : [];
   const pm = game.pMarket;
   const pmod = lines[0]?.p ?? null;
   const final = game.homeScore !== null && game.awayScore !== null ? { home: game.homeScore, away: game.awayScore } : null;
@@ -98,7 +98,7 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
           <h2 id="prob" className="wdth-expanded text-[22px] font-bold">
             Win probability
           </h2>
-          <FieldKey showModel={pmod !== null} modelLabel={label} validated={line.validated} />
+          <FieldKey showModel={pmod !== null} modelLabel={label} validated={line?.validated ?? false} />
         </div>
         {/* one flag per row, each opening toward the middle of the field, so neither can overflow */}
         <div className="relative mx-[26px] mt-4 sm:mx-[58px]" aria-hidden>
@@ -131,7 +131,7 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
           kickoffUtc={game.kickoffUtc}
           neutral={game.neutral}
           pMarket={pm}
-          model={pmod !== null ? { p: pmod, label, validated: line.validated } : null}
+          model={pmod !== null && line ? { p: pmod, label, validated: line.validated } : null}
         />
         <p className="mt-2.5 text-sm text-muted">
           Each team&apos;s side of the field is its chance to win.
@@ -148,26 +148,27 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-0.5">
               <span className="text-[13px] text-muted">Market</span>
-              <span className="num flex items-center gap-2 text-[30px] font-extrabold">
+              <span className="num flex items-center gap-2 text-[30px] font-extrabold" data-line="market">
                 <span className="inline-block h-[22px] w-1" style={{ background: "var(--field-market)" }} aria-hidden />
                 {pct(pm, 1)}
               </span>
             </div>
             <div className="flex flex-col gap-0.5">
               <span className="text-[13px] text-muted">{label}</span>
-              <span className="num flex items-center gap-2 text-[30px] font-extrabold">
+              <span className="num flex items-center gap-2 text-[30px] font-extrabold" data-line="model">
                 <span className="inline-block h-[22px] w-1" style={{ background: "var(--field-model)" }} aria-hidden />
                 {pct(pmod, 1)}
               </span>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 border-t border-rule pt-3 text-sm text-ink-2">
-            <StatusBadge status={line.validated ? "validated" : "unvalidated"} label={line.validated ? "Validated" : "Unvalidated research model"} />
-            <span>
-              {line.validated ? "Passed its pre-registered gates." : "No model beat the closing market in the pre-registered test."}{" "}
-              <Link href="/evidence">Evidence</Link>
-            </span>
-          </div>
+          {line ? (
+            <div className="flex flex-wrap items-center gap-2 border-t border-rule pt-3 text-sm text-ink-2">
+              <StatusBadge status={line.validated ? "validated" : "unvalidated"} label={line.validated ? "Validated" : "Unvalidated research model"} />
+              <span>
+                {fieldLineShortNote(line)} <Link href="/evidence">Evidence</Link>
+              </span>
+            </div>
+          ) : null}
         </article>
         <article className="flex flex-col gap-3 rounded-[6px] border border-rule bg-surface px-5 py-5">
           <h3 className="font-bold">Spread and total</h3>

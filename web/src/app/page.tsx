@@ -2,9 +2,9 @@ import Link from "next/link";
 import { DataUnavailable } from "@/components/DataUnavailable";
 import { Field, FieldKey } from "@/components/Field";
 import { StatusBadge } from "@/components/StatusBadge";
-import { candidateLines, evidence, publicSlate } from "@/lib/data/queries";
+import { candidateLines, evidence, publicSlate, runCandidates } from "@/lib/data/queries";
 import { age, utcStamp, weekday } from "@/lib/format";
-import { candidateLabel, publicFieldLine } from "@/lib/policy";
+import { candidateLabel, fieldLineNote, fieldLineNoun, publicFieldLine } from "@/lib/policy";
 
 export const dynamic = "force-dynamic";
 
@@ -34,9 +34,9 @@ export default async function ThisWeek({ searchParams }: { searchParams: Promise
     );
   }
 
-  const line = publicFieldLine(ev?.gates ?? []);
-  const label = candidateLabel(line.candidate);
-  const lines = await candidateLines(run.runId, [line.candidate]);
+  const line = publicFieldLine(ev?.gates ?? [], await runCandidates(run.runId));
+  const label = line ? candidateLabel(line.candidate) : "Model";
+  const lines = line ? await candidateLines(run.runId, [line.candidate]) : [];
   const pModel = (gameId: string) => {
     const l = lines.find((x) => x.gameId === gameId && x.p !== null);
     return l ? (l.p as number) : null;
@@ -46,7 +46,7 @@ export default async function ThisWeek({ searchParams }: { searchParams: Promise
     const p = pModel(g.gameId);
     const gap = p !== null && g.pMarket !== null ? Math.abs(p - g.pMarket) : 0;
     const flips = p !== null && g.pMarket !== null ? g.pMarket >= 0.5 !== p >= 0.5 : false;
-    return { g, m: showModel && p !== null ? { p, label, validated: line.validated } : null, gap, flips, hasModel: p !== null && g.pMarket !== null };
+    return { g, m: showModel && line && p !== null ? { p, label, validated: line.validated } : null, gap, flips, hasModel: p !== null && g.pMarket !== null };
   });
   const statRows = rows.filter((r) => r.hasModel);
   const biggest = statRows.length ? statRows.reduce((a, b) => (b.gap > a.gap ? b : a)) : null;
@@ -85,19 +85,19 @@ export default async function ThisWeek({ searchParams }: { searchParams: Promise
           <h1 className="wdth-expanded text-[64px] font-black leading-[0.9] tracking-[-0.02em] sm:text-[104px]">Week {run.week}</h1>
           <p className="mt-2 max-w-[660px] text-[17px] leading-relaxed text-ink-2 [text-wrap:pretty]">
             Every game is a field. The line splits it by win chance, so each team&apos;s side of the field is its probability of winning.
-            Blue is the betting market&apos;s no-vig price; gold is {line.validated ? "a validated model" : "our research model"}.
+            Blue is the betting market&apos;s no-vig price{line ? `; gold is ${fieldLineNoun(line)}` : ""}.
           </p>
         </div>
         <aside aria-label="Model status" className="flex flex-col gap-3 rounded-[6px] border border-rule bg-surface p-5">
           <div className="flex items-center gap-3">
-            <StatusBadge status={line.validated ? "validated" : "unvalidated"} label={line.validated ? "Validated" : "Unvalidated"} />
-            <span className="font-semibold">{label}</span>
+            {line ? (
+              <StatusBadge status={line.validated ? "validated" : "unvalidated"} label={line.validated ? "Validated" : "Unvalidated"} />
+            ) : (
+              <StatusBadge status="unavailable" label="Market only" />
+            )}
+            {line ? <span className="font-semibold">{label}</span> : null}
           </div>
-          <p className="text-sm leading-relaxed text-ink-2 [text-wrap:pretty]">
-            {line.validated
-              ? "This model passed its pre-registered gates. It is still not betting advice."
-              : "In the pre-registered test on 2023–24 (570 games), no model or blend beat the closing market's Brier score. Read the gold line as research output, never as advice."}
-          </p>
+          <p className="text-sm leading-relaxed text-ink-2 [text-wrap:pretty]">{fieldLineNote(line)}</p>
           <Link href="/evidence" className="text-sm font-semibold">
             See the evidence
           </Link>
@@ -122,7 +122,7 @@ export default async function ThisWeek({ searchParams }: { searchParams: Promise
       </section>
 
       <section aria-label="Sort and filter" className="mt-7 flex flex-col gap-4 border-y border-rule py-4 lg:flex-row lg:items-center lg:justify-between">
-        <FieldKey showModel={showModel} modelLabel={label} validated={line.validated} />
+        <FieldKey showModel={showModel && line !== null} modelLabel={label} validated={line?.validated ?? false} />
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="mr-1 text-[13px] text-muted">Sort</span>
@@ -143,13 +143,15 @@ export default async function ThisWeek({ searchParams }: { searchParams: Promise
               </Link>
             ))}
           </div>
-          <Link
-            href={href(sort, day, !showModel)}
-            aria-label={showModel ? "Model line is on. Turn it off" : "Model line is off. Turn it on"}
-            className={chip(showModel)}
-          >
-            Model line {showModel ? "on" : "off"}
-          </Link>
+          {line ? (
+            <Link
+              href={href(sort, day, !showModel)}
+              aria-label={showModel ? "Model line is on. Turn it off" : "Model line is off. Turn it on"}
+              className={chip(showModel)}
+            >
+              Model line {showModel ? "on" : "off"}
+            </Link>
+          ) : null}
         </div>
       </section>
 

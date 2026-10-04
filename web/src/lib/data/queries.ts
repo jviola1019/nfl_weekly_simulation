@@ -71,6 +71,28 @@ export async function candidateLines(runId: string, candidates: string[], gameId
     .where(and(...conds));
 }
 
+/** Candidate ids a run carries (public: ids only), for the field-line policy. */
+export async function runCandidates(runId: string): Promise<string[]> {
+  const rows = await getDb()
+    .selectDistinct({ candidate: s.gamePredictions.candidate })
+    .from(s.gamePredictions)
+    .where(eq(s.gamePredictions.runId, runId))
+    .orderBy(asc(s.gamePredictions.candidate));
+  return rows.map((r) => r.candidate);
+}
+
+/** One game's simulated score distributions in a run (public: outcomes and shares only). */
+export async function gameDistributions(runId: string, gameId: string): Promise<{ margin: unknown; total: unknown }> {
+  const rows = await getDb()
+    .select({ kind: s.scoreDistributions.kind, bins: s.scoreDistributions.bins })
+    .from(s.scoreDistributions)
+    .where(and(eq(s.scoreDistributions.runId, runId), eq(s.scoreDistributions.gameId, gameId)));
+  return {
+    margin: rows.find((r) => r.kind === "margin")?.bins ?? null,
+    total: rows.find((r) => r.kind === "total")?.bins ?? null
+  };
+}
+
 export async function publicGame(gameId: string) {
   const { run, games } = await publicSlate();
   const game = games.find((g) => g.gameId === gameId) ?? null;

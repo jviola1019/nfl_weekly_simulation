@@ -13,6 +13,7 @@ on:
       - "web/**"
       - "contracts/**"
       - "R/bundle_writer.R"
+      - "R/sim_bundle.R"
       - ".github/workflows/ci-web.yml"
 
 permissions:
@@ -103,8 +104,14 @@ jobs:
           for i in $(seq 1 60); do curl -fsS -o /dev/null http://127.0.0.1:3100/login && exit 0; sleep 1; done
           cat next.log; exit 1
 
-      - name: E2E (axe, overflow, headers, desk auth, stakes never public, ID leaks, reduced motion)
-        run: npm run e2e
+      - name: E2E (axe, overflow, headers, desk auth, stakes never public, ID leaks, reduced motion, offline)
+        run: npm run e2e -- --grep-invert @sim
+
+      - name: E2E on a published simulator run (probabilities equal the bundle; distributions)
+        run: |
+          # the simulator fixture becomes the published weekly run (A8: run_week.R's bundle)
+          npm run ingest -- ../contracts/fixtures/bundles/weekly-sim-2024-w15
+          npx playwright test --grep @sim
 
       - name: Server log
         if: failure()
