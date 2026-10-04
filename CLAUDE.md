@@ -343,6 +343,8 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `R/red_zone_data.R` - Red zone efficiency metrics
 - `R/correlated_props.R` - Gaussian copula player props (v2.9.0)
 - `R/bundle_writer.R` - R side of the R -> web data contract (validates against `contracts/schema/`)
+- `R/mu_terms.R` - explicit mean composition: the term table and `compose_mu()` (M22)
+- `R/schedule_context.R` - neutral sites, home-field points and rest days (M24, M23)
 
 ### Props Data Sources
 - `sports/nfl/props/data_sources.R` - Player projections with fallback chain

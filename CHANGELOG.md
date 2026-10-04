@@ -4,6 +4,37 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Explicit game model (audit M22, M22b, M24, M23, M20; Plan 1b-1, #210)
+
+Golden-master changes are CI-attributed in `reports/2026-09-29/golden-master/2024-w15/ATTRIBUTION.md#phase-1b-1-210-explicit-model` (workflow run 37186552533, `attribute` job 111391373469).
+
+- **M22: the engine simulates the composed means.**
+  - Before: a NaN turnover term (nflverse schedules have no turnover columns) forced a rescue that rebuilt `mu` as drives x points per drive plus home field, so every other adjustment was silently dropped (16 of 16 games in 2024 week 15).
+  - Now: `R/mu_terms.R` holds an explicit term table and `compose_mu()`. Only the terms in the new `config.R` setting `MU_TERMS_ADMITTED` (default `base`, `hfa`) are simulated; every other term is computed and logged. A non-finite admitted term stops the run. 13 named terms sum to `total_mu`; turnover and weather enter after `total_mu` is taken.
+  - Test: `tests/testthat/test-mu-terms.R`. Ledger row `C-MU-TERMS`.
+  - CI-attributed output change: none (`130f072` and the term-table commits: no differences).
+- **M22b: SDs, NB sizes and rho come from the simulated means.**
+  - Before: they came from the legacy chain's `total_mu`, which differed from the simulated total by up to 28.0 points (CHI @ MIN 22.4 vs 50.3).
+  - Now: `score_variance_from_mu()`.
+  - Test: `tests/testthat/test-score-variance.R`.
+  - Output change: `mu_*` unchanged; `sd_home`/`sd_away` -0.3117..+1.3865, rising in 10 of 16 games, largest in CHI @ MIN; `k_*`, distribution and probability columns change (model win probability up to 0.0337, blend up to 0.0484).
+- **M24: neutral sites.**
+  - Before: nflverse marks them with `location == "Neutral"`, which the engine never read, so the listed home team got home field and the neutral games stayed in the HFA estimate.
+  - Now: `R/schedule_context.R` finds neutral games, gives them no home field and drops them from the HFA estimate.
+  - Test: `tests/testthat/test-schedule-context.R`.
+  - Output change: `mu_home` -0.3289..+0.2048 (exactly 7 games beyond 0.05); `mu_away` unchanged; model win probability up to 0.0100, blend up to 0.0382.
+- **M23: rest from each team's own game.**
+  - Before: rest was measured from the week's first kickoff, so 24 of 32 teams were scored short rest in 2024 week 15 (4 really were).
+  - Now: both rest tables (the live slate and the calibration-history simulator) use each team's own game.
+  - Test: `tests/testthat/test-schedule-context.R`.
+  - Output change: blend columns only (`home_p_2w_blend` up to 0.0441, `margin_blend` up to 1.95); simulator columns unchanged.
+- **M20: Sleeper fallback only for slates with games to play.**
+  - Before: when nflreadr returned no injury rows, today's Sleeper report was stamped onto a historical week.
+  - Now: the fallback applies only to slates with games still to play.
+  - Test: `tests/testthat/test-sleeper-fallback.R`.
+  - Output change: none (the fallback is not reached for 2024).
+- **Golden master:** re-recorded from the CI artifact of `3900255` (`csv_sha256 b7b888a7...`) and now includes `inputs.csv` (input statuses).
+
 ### M19: read injury game designations, not practice participation (approved 2026-09-30)
 
 - Both injury readers in `NFLsimulation.R` now pick the status column through one shared preference, `INJ_STATUS_CANDIDATES`: `game_status`, `status` (the Sleeper fallback), `report_status`, `player_status`, then `practice_status`. nflverse reports have no `game_status` or `status` column, so the old order took `practice_status`, and Out/Doubtful/Questionable were never read. For the 2024 week-15 slate that meant 83 "Did Not Participate" rows scored 0 and only "Limited" (−0.10) counted.

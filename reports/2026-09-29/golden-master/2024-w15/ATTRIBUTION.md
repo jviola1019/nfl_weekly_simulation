@@ -68,3 +68,27 @@ The record was made by `.github/workflows/golden-master.yml` on #203: workflow r
 - That is also the answer to the M16 contradiction above: M18's "injury points do not reach mu" is a symptom of M22.
 
 **Head vs baseline (`84df935` vs `b5d1ac4`):** the same columns and sizes as above. Nothing between the baseline and `eaa4138` changed the output.
+
+## Phase 1b-1 (#210): explicit model
+
+The record was made by `.github/workflows/golden-master.yml` on #210: workflow run 37186552533, `attribute` job 111391373469. All commits ran in one workflow on the same live data, so each commit is judged against the previous commit. There were no `INPUT DRIFT` lines. The inputs were identical in every record: injury `full`, weather `partial_fallback` (KC @ CLE, NYJ @ JAX, WAS @ NO), market `full`, calibration `spline`.
+
+**Determinism:** `b5d1ac4` recorded twice differs only in `sd_home`/`sd_away`/`total_uncertainty` (2.2e-10) and `k_home`/`k_away` (4.0e-9): fit noise. The same noise-only diff appears on several commits that changed no output.
+
+**Live-data drift against the old committed record.** Another agent measured on 2026-10-03 that the golden master committed before this PR (the `84df935` record, `csv_sha256 795e476f…`) no longer matched untouched `main`: nflverse inputs had drifted, and 10 games differed in the blend columns, by up to 0.0094. The attribution below does not depend on the old record.
+
+| Commit | Fix | Columns changed vs the previous commit | Games | Max abs diff | Verdict vs prediction |
+|---|---|---|---|---|---|
+| `c251436`, `7f86bf3` | Input statuses, drift lines, sort | none | 0 | none | As predicted. |
+| `446a657`, `e3d75fb` | Term table (M22 prep) | none | 0 | none | As predicted. |
+| `130f072` | Simulate the composed means (M22) | none | 0 | none | As predicted. |
+| `cf62424` | SDs, NB sizes, rho from the simulated means (M22b) | `mu_*` unchanged. `sd_home`/`sd_away` change in 16 games. Also `k_*`, rho-driven distribution columns, all probability columns and the blend. | 16 | `sd_home` delta -0.3117..+1.3865, rising in 10 of 16, largest in CHI @ MIN. `home_p_2w_model` 0.0337. `home_p_2w_blend` 0.0484. | As predicted: the range and the 10/16 match (computed from the CI artifacts). |
+| `34702a2` | Neutral sites and HFA estimate (M24) | `mu_home` changes in 16 games. `mu_away` unchanged. SDs, probabilities and the blend follow. | 16 | `mu_home` delta -0.3289..+0.2048; exactly 7 games beyond 0.05 (CIN @ TEN, KC @ CLE, LA @ SF, NE @ ARI, NYJ @ JAX, TB @ LAC, WAS @ NO). `home_p_2w_model` 0.0100. `home_p_2w_blend` 0.0382. | As predicted: the range and the 7 games match. `mu_away` max change 0. |
+| `3c5de87` | Rest from each team's own game (M23) | Blend columns only (`home_p_2w_blend_raw`, `home_p_2w_blend`, `home_win_prob_blend`, `away_win_prob_blend`, `away_p_2w_blend`, `margin_blend`, `home_median_blend`, `away_median_blend`) | 16 | `home_p_2w_blend_raw` 0.0604; `home_p_2w_blend` 0.0441; `margin_blend` 1.95 | As predicted: simulator columns unchanged, blend changes. |
+| `3900255` | Sleeper fallback only for slates with games to play (M20) | none | 0 | none | As predicted. |
+
+The run also records the merge commits already on `main` before this branch. `4f9aad3` vs `367f6e5` shows the M19 change already attributed above; it is not part of this PR.
+
+**Head vs baseline (`3900255` vs `b5d1ac4`)** includes M19 as well: `mu_home` 0.3289 (M24); `sd_home`/`sd_away` 1.3857 and `k_*` up to 36.9 (M19 and M22b); `home_p_2w_model` 0.0332; `home_p_2w_blend` 0.0573; `margin_blend` 2.07.
+
+**Current golden master.** `final_numeric.csv`, `meta.json` and `inputs.csv` here were re-recorded from the CI artifact `gm-3900255…` of workflow run 37186552533, `csv_sha256 b7b888a7f782d0046abff04db9921bbb1cfe747a6a92b93b05ceee6bca1ce670` (checked against the file with sha256). Predicted-vs-measured checks: `mu_home`, `mu_away`, `sd_home` and `home_p_2w_model` at `3900255` equal those at `34702a2` exactly.

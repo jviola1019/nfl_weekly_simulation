@@ -2,6 +2,15 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec. To verify everything and finish the remaining work in a full local environment (VS Code), use `docs/handoff/2026-09-29-vscode-prompt.md`.
 
+## Plan 1b-1 done - 2026-10-04 (draft PR #210, awaiting owner approval to merge)
+
+Branch `fix/phase1b-1-explicit-model` (7 task commits, head code `3900255`) fixes M22, M22b, M24, M23 and M20. PR: https://github.com/jviola1019/nfl_weekly_simulation/pull/210.
+- **Gates on the head:** `Rscript scripts/run_tests.R` exit 0: `tests=431 passed=1603 failed=0 errors=0 skipped=1 unapproved_skips=0`. `Rscript scripts/verify_repo_integrity.R` exit 0: `Total: 60 passed, 0 failed`.
+- **Golden master (CI, run 37186552533, `attribute` job 111391373469):** every commit's output change matched the plan's predictions (see `reports/2026-09-29/golden-master/2024-w15/ATTRIBUTION.md#phase-1b-1-210-explicit-model`). Re-recorded from the artifact of `3900255` (`csv_sha256 b7b888a7...`), with the new `inputs.csv`.
+- **Local `run_matrix` (Windows):** 9/10; `golden-master` differs only in the 8 blend columns (T8), with no `INPUT DRIFT`.
+- **Not merged.** The owner approves the merge.
+- **Next target: Plan 1b-2** (point-in-time `predict_week()` and the C3 candidate; spec M5, M6, M8, M9). Roadmap: `docs/superpowers/plans/2026-10-01-phase1b-1-explicit-model.md`, "Roadmap after Plan 1b-1".
+
 ## Current state — 2026-09-30, session 3 (VS Code verification and validation sprint)
 
 **Part A verification of `main` (`eaa4138`):** `reports/2026-09-30/VERIFICATION.md`.
