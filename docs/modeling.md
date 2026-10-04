@@ -4,9 +4,9 @@ This document is the comprehensive mathematical reference for the NFL prediction
 
 ---
 
-## Report Rendering Authority
+## Where Results Go
 
-HTML/report rendering is intentionally centralized in `NFLmarket.R` (`moneyline_report()` and `export_moneyline_comparison_html()`). `NFLsimulation.R` is limited to simulation/backtest generation and preparing report inputs; it does not own a separate HTML export path.
+The HTML report was retired at checkpoint A8. `run_week.R` writes the run to a weekly web bundle (`R/sim_bundle.R`: the no-vig market as candidate C0, the simulator as C3, margin and total distributions, source status) and the comparison table to `artifacts/baseline_games.csv`. The local web app shows the bundle offline (`cd web && npm run local`).
 
 ---
 

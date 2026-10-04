@@ -193,9 +193,8 @@ Data Loading → Team Stats → Adjustments → Simulation → Calibration → O
    - ROI analysis
 
 5. **Reporting**
-   - `build_moneyline_comparison_table()`: Model vs market table
-   - `export_moneyline_comparison_html()`: HTML report generation
-   - Interactive visualizations
+   - `build_moneyline_comparison_table()`: Model vs market table (written to `artifacts/baseline_games.csv` by `run_week.R`)
+   - The HTML report (`export_moneyline_comparison_html()`) was retired at checkpoint A8; `R/sim_bundle.R` writes the run to a web bundle that the local app shows (`cd web && npm run local`)
 
 ### NFLbrier_logloss.R (1,200+ lines)
 
@@ -871,9 +870,9 @@ trench_avail_pen   # Trench position injury penalty
 Hard rule: probability coherence checks must use fair quantities only (`blend_home_prob_shrunk` ↔ `blend_home_ml`) and must never use vigged moneylines.
 
 
-### Moneyline Report Columns (HTML)
+### Moneyline Report Columns (retired HTML labels)
 
-Key columns and definitions for the game table:
+These were the display labels of the HTML report retired at checkpoint A8. `artifacts/baseline_games.csv` carries the underlying snake_case columns of `build_moneyline_comparison_table()`. Key columns and definitions for the game table:
 
 - `EV Edge (Raw)`: Expected return per unit for the displayed pick: `(Shrunk Prob ? Decimal Odds) - 1` (uncapped).
 - `EV Edge (Displayed, Capped)`: Display-only cap of raw EV at `MAX_EDGE` (10% default); governance uses raw EV.
@@ -886,9 +885,9 @@ Key columns and definitions for the game table:
 - `Blend Home ML (Vigged, +X%)`: `apply_moneyline_vig(blend_home_ml, vig)` (display only).
 - `Blend Away Moneyline (Vigged)`: `apply_moneyline_vig(blend_away_ml, vig)` (display only).
 
-### Player Props Report Columns (HTML)
+### Player Props Report Columns (retired HTML labels)
 
-Key columns and definitions for the player props table:
+These were the display labels of the HTML report retired at checkpoint A8. `artifacts/baseline_props.csv` carries the props table's underlying columns. Key columns and definitions for the player props table:
 
 - `Market DK`: DraftKings line + odds (Over/Under) when available. Anytime TD rows append implied percent to the "Yes" odds.
 - `Market FD`: FanDuel line + odds (Over/Under) when available. Anytime TD rows append implied percent to the "Yes" odds.

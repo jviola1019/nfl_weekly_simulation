@@ -50,13 +50,18 @@ Rscript NFLsimulation.R
 
 ### 4. View Results
 
-The script generates an HTML report with:
-- Game-by-game predictions with win probabilities
-- EV analysis and model picks (paper stakes, not betting advice)
-- Market comparison (model vs Vegas)
-- Paper stake sizes (1/8 Kelly, tracking units; `STAKING_MODE = "paper"`)
+The run writes a web bundle to `bundles/<season>-w<WW>-sim-<UTC stamp>/` and prints its path. View it in the local web app, which runs with no internet connection (the HTML report was retired at checkpoint A8):
 
-Output file: `NFLvsmarket_week15_2024.html` (or similar)
+```bash
+cd web
+npm ci            # once, with a network (Node 20.9+)
+npm run local     # then open http://127.0.0.1:3000
+npm run local:stop
+```
+
+You need PostgreSQL installed (on Windows the default is `C:/Program Files/PostgreSQL/17/bin`; set `PG_BIN` if yours is elsewhere). The app shows, per game, the no-vig market and the simulator's win probability (unvalidated), and the simulated margin and total distributions. For the evidence page, run `Rscript scripts/write_backtest_bundle.R` once.
+
+The run also writes `artifacts/baseline_games.csv` (model vs market, with paper stakes: 1/8 Kelly in tracking units, `STAKING_MODE = "paper"`, not betting advice) and, with player props on, `artifacts/baseline_props.csv`.
 
 ---
 

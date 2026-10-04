@@ -26,7 +26,7 @@ A statistical model for predicting NFL game outcomes using Monte Carlo simulatio
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                     USER INTERFACE                              │
-│  run_week.R (Entry) │ config.R (Params) │ HTML Report          │
+│  run_week.R (Entry) │ config.R (Params) │ Web bundle (bundles/)│
 └───────────────────────────────┬─────────────────────────────────┘
                                 │
 ┌───────────────────────────────▼─────────────────────────────────┐
@@ -80,7 +80,7 @@ R -e "install.packages('renv'); renv::restore()"
 ./scripts/audit_verify.sh
 ```
 
-This fail-fast wrapper validates report schema/governance guards and, when `Rscript` is available, runs full testthat + audit verification.
+This fail-fast wrapper checks the governance pass reasons in `R/utils.R` and, when `Rscript` is available, runs full testthat + audit verification.
 
 
 ### Run Weekly Analysis
@@ -95,14 +95,19 @@ Rscript run_week.R 15        # Week 15, current season
 Rscript run_week.R 15 2024   # Week 15, 2024 season
 ```
 
-The script generates a unified HTML report with:
-- **Report Authority**: `NFLmarket.R::moneyline_report()` is the sole HTML rendering/export path; `NFLsimulation.R` only prepares inputs.
-- **Game Predictions**: Game-by-game predictions with EV analysis
-- **Player Props** (v2.9.0): Correlated with game simulation
-- **Market Comparison**: Blend vs Vegas odds
-- **Vigged Model Lines**: Realistic ~10% juice moneylines
-- **Paper Stakes**: 1/8 Kelly stake sizes in tracking units (`STAKING_MODE = "paper"`), not betting advice
-- **Tabbed Interface**: Switch between Games and Props sections
+The run writes:
+- **Web bundle**: `bundles/<season>-w<WW>-sim-<UTC stamp>/` (`R/sim_bundle.R`): per game the no-vig market (C0) and the simulator (C3, unvalidated) win probabilities, the simulated margin and total distributions, and the run's source status. The console prints the bundle path and its QA result.
+- **Audit tables**: `artifacts/baseline_games.csv` (the model vs market comparison, with paper stakes: 1/8 Kelly in tracking units, `STAKING_MODE = "paper"`, not betting advice) and `artifacts/baseline_props.csv` (player props, when `RUN_PLAYER_PROPS`).
+
+View the results offline in the local web app (the HTML report was retired at checkpoint A8):
+
+```bash
+cd web
+npm ci            # once, with a network
+npm run local     # http://127.0.0.1:3000, no network needed
+```
+
+See [web/README.md](web/README.md) for what `npm run local` does and its settings.
 
 **For detailed setup**: See **[GETTING_STARTED.md](GETTING_STARTED.md)** for IDE setup (RStudio + VS Code) and troubleshooting.
 
@@ -242,7 +247,7 @@ The shell wrapper fails fast (`set -euo pipefail`) and prints a machine-readable
 
 **Additional integrity checks**:
 ```bash
-Rscript scripts/run_matrix.R  # Should show 10/10 passed (golden-master needs network)
+Rscript scripts/run_matrix.R  # Should show 11/11 passed (golden-master needs network)
 ```
 
 ---
@@ -258,8 +263,8 @@ Rscript scripts/run_matrix.R  # Should show 10/10 passed (golden-master needs ne
 ### Core Engine (7,800+ lines each)
 | File | Purpose |
 |------|---------|
-| `NFLsimulation.R` | Monte Carlo simulation engine (~7,800 lines); computes probabilities and report inputs only |
-| `NFLmarket.R` | Market comparison + **sole HTML/report authority** (`moneyline_report`, `export_moneyline_comparison_html`) |
+| `NFLsimulation.R` | Monte Carlo simulation engine; computes probabilities, the comparison inputs and the draws behind the score distributions |
+| `NFLmarket.R` | Market comparison and paper Kelly staking (`build_moneyline_comparison_table`) |
 | `NFLbrier_logloss.R` | Brier score, log loss, calibration metrics (~1,150 lines) |
 | `injury_scalp.R` | Injury data loading with fallback sources |
 
@@ -271,6 +276,8 @@ Rscript scripts/run_matrix.R  # Should show 10/10 passed (golden-master needs ne
 | `R/data_validation.R` | Data quality tracking and validation |
 | `R/playoffs.R` | Playoff round detection and game type handling |
 | `R/date_resolver.R` | Timezone-safe datetime parsing |
+| `R/bundle_writer.R` | Writes and validates R -> web bundles (`contracts/schema/`) |
+| `R/sim_bundle.R` | The simulator's weekly bundle, written by `run_week.R` |
 
 ### Verification Scripts (`scripts/`)
 | File | Purpose |
@@ -394,7 +401,7 @@ INJURY_MODE <- "auto"  # Options: auto, off, last_available, manual, scalp
 
 **Fallback Behavior**:
 - If current season returns 404, automatically uses last available season
-- HTML report shows banner indicating fallback mode used
+- The run's source status records the fallback (the local app's /data-health page shows it)
 - Zero injury impact used only when no data available from any season
 
 ---
