@@ -2776,6 +2776,8 @@ week_slate <- sched %>%
     home_team,
     away_team,
     neutral_site,
+    home_rest,
+    away_rest,
     venue = as.character(venue)   # <-- only the normalized column
   ) %>%
   distinct()
@@ -4078,34 +4080,9 @@ recent_form <- recent_form %>%
 
 
 # ------------------------ REST / BYE EFFECTS ----------------------------------
-# Compute days since last game for each team (before the slate week)
-last_game <- team_games |>
-  group_by(team) |>
-  filter((season < SEASON) | (season == SEASON & week < WEEK_TO_SIM)) |>
-  arrange(desc(game_date)) |>
-  slice_head(n = 1) |>
-  ungroup() |>
-  dplyr::select(team, last_date = game_date, last_season = season, last_week = week)
-
-rest_tbl <- tibble(team = teams_on_slate) |>
-  left_join(last_game, by = "team") |>
-  mutate(
-    # If no prior game this season, guess ~10 days rest (neutral)
-    days_rest = as.numeric(ifelse(is.na(last_date),
-                                  10,
-                                  as.Date(week_slate$game_date[1]) - as.Date(last_date))),
-    short_rest = !is.na(days_rest) & days_rest <= 6,
-    long_rest  = !is.na(days_rest) & days_rest >= 9,
-    bye_prev   = !is.na(last_season) & (last_season == SEASON) &
-      (ifelse(is.na(last_week), FALSE, (WEEK_TO_SIM - last_week) >= 2))
-  ) |>
-  mutate(
-    rest_points = 0 +
-      ifelse(short_rest, REST_SHORT_PENALTY, 0) +
-      ifelse(long_rest & !bye_prev, REST_LONG_BONUS, 0) +
-      ifelse(bye_prev, BYE_BONUS, 0)
-  ) |>
-  dplyr::select(team, days_rest, rest_points)
+# Rest from each team's own game (nflverse home_rest/away_rest), not the week's first
+# kickoff (audit M23)
+rest_tbl <- compute_rest_table(week_slate, team_games, SEASON, WEEK_TO_SIM)
 
 recent_form <- recent_form |>
   left_join(rest_tbl, by = "team") |>
@@ -5221,36 +5198,11 @@ recent_form_at_sim <- function(cut_season, cut_week, teams,
     ) |>
     dplyr::left_join(hfa_tbl, by = "team")
 
-  # rest effects at the cutpoint
-  last_game_cut <- team_games |>
-    dplyr::group_by(team) |>
-    dplyr::filter((.data$season < cut_season) | (.data$season == cut_season & .data$week < cut_week)) |>
-    dplyr::arrange(dplyr::desc(game_date)) |>
-    dplyr::slice_head(n = 1) |>
-    dplyr::ungroup() |>
-    dplyr::select(team, last_date = game_date, last_season = season, last_week = week)
-
-  fake_slate_date <- {
-    d <- sched |>
-      dplyr::filter(.data$season == cut_season, .data$week == cut_week, game_type == "REG") |>
-      dplyr::summarise(day = min(as.Date(game_date), na.rm = TRUE)) |>
-      dplyr::pull(day)
-    if (!is.finite(as.numeric(d))) as.Date(sprintf("%s-09-10", cut_season)) else d
-  }
-
-  rest_tbl_cut <- tibble::tibble(team = teams) |>
-    dplyr::left_join(last_game_cut, by = "team") |>
-    dplyr::mutate(
-      days_rest = dplyr::coalesce(as.numeric(difftime(fake_slate_date, as.Date(last_date), units = "days")), 10),
-      short_rest = days_rest <= 6,
-      long_rest  = days_rest >= 9,
-      bye_prev   = !is.na(last_season) & (last_season == cut_season) &
-        (ifelse(is.na(last_week), FALSE, (cut_week - last_week) >= 2)),
-      rest_points = 0 +
-        ifelse(short_rest, REST_SHORT_PENALTY, 0) +
-        ifelse(long_rest & !bye_prev, REST_LONG_BONUS, 0) +
-        ifelse(bye_prev, BYE_BONUS, 0)
-    ) |>
+  # rest effects at the cutpoint: each team's own game (audit M23)
+  cut_slate <- sched |>
+    dplyr::filter(.data$season == cut_season, .data$week == cut_week, game_type == "REG") |>
+    dplyr::distinct(game_id, home_team, away_team, home_rest, away_rest)
+  rest_tbl_cut <- compute_rest_table(cut_slate, team_games, cut_season, cut_week) |>
     dplyr::select(team, rest_points)
 
   rf |>
