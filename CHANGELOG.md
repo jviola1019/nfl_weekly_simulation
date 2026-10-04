@@ -29,7 +29,7 @@ Golden-master changes are CI-attributed in `reports/2026-09-29/golden-master/202
   - Test: `tests/testthat/test-schedule-context.R`.
   - Output change: blend columns only (`home_p_2w_blend` up to 0.0441, `margin_blend` up to 1.95); simulator columns unchanged.
 - **Calibration cache keys bumped; audit T8 corrected.**
-  - Before: `calib_cache_key` stayed at version 2 and `score_cache_key` had no version, so a machine with a pre-M23/M24 `~/.cache/nfl_sim_calib_cache` silently served the old calibration history. That stale cache, not a platform difference, caused the local blend-column differences filed as T8.
+  - Before: `calib_cache_key` stayed at version 2 and `score_cache_key` had no version, so a machine with a pre-M23/M24 `~/.cache/nfl_sim_calib_cache` silently served the old calibration history. That stale cache, not a platform difference, caused this branch's local blend-column differences, which had been attributed to audit T8. The original 2026-09-29 T8 records predate M23/M24; the same mechanism (a stale cache left by an earlier change) is likely, but they were not re-run.
   - Now: `calib_cache_key` is `version = 3L` and `score_cache_key` has `version = 1L` (bump when the calibration-history code changes). Test: `tests/testthat/test-schedule-context.R`. A Windows compare with the real home cache prints `golden master: no differences` and `run_matrix` is 10/10.
 - **M20: Sleeper fallback only for slates with games to play.**
   - Before: when nflreadr returned no injury rows, today's Sleeper report was stamped onto a historical week.
