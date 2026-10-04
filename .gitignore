@@ -67,3 +67,6 @@ archive/
 
 # Generated data (local bundles at the repo root, never committed; contracts/fixtures/bundles is committed)
 /bundles/
+
+# The offline local app's PostgreSQL cluster (npm run local in web/)
+/.local/

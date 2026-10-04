@@ -4,7 +4,20 @@ The public site and private desk for the NFL model. The web app reads only from 
 
 **Stack:** Next.js 16 (App Router, `src/proxy.ts`), React 19, Tailwind 4, Drizzle ORM on Postgres (postgres.js), next-auth v5 (credentials, JWT sessions), and visx scales for the charts.
 
-## Run it locally
+## Run it offline (the results viewer)
+
+This is how you look at a model run. `Rscript run_week.R <week> <season>` writes a weekly bundle to `bundles/<season>-w<WW>-sim-<UTC stamp>/` (the HTML report was retired at checkpoint A8). Then:
+
+```bash
+cd web
+npm ci                      # once, with a network
+npm run local               # http://127.0.0.1:3000, no network needed
+npm run local:stop          # stops the local database (Ctrl+C stops the web server)
+```
+
+`npm run local` (`scripts/local.ts`) creates a private PostgreSQL cluster in <repo>/.local/pgdata on 127.0.0.1:5434 with a random password, adds `DATABASE_URL` and `AUTH_SECRET` to web/.env.local if they are missing, applies the migrations, ingests every bundle under `bundles/` oldest first (so the newest weekly run is published), builds only when the sources changed, and serves on 127.0.0.1:3000. Secrets are never printed. The evidence page needs the backtest bundle: run `Rscript scripts/write_backtest_bundle.R` once. Settings: `PG_BIN` (PostgreSQL's bin directory; default `C:/Program Files/PostgreSQL/17/bin` on Windows, PATH elsewhere), `NFL_LOCAL_PGDATA`, `NFL_LOCAL_PGPORT`, `NFL_LOCAL_BUNDLES`. The font is committed (`src/app/fonts/archivo-latin.woff2`, SIL OFL), so a build needs no network either.
+
+## Run it locally (development)
 
 You need Node 20.9+ and a Postgres 16+ you can create databases on.
 
@@ -28,7 +41,7 @@ Every page renders on demand from the database (the CSP nonce requires it). A co
 |---|---|
 | `npm run typecheck` | TypeScript, strict |
 | `npm run lint` | ESLint (`eslint-config-next`) |
-| `npm test` | vitest: contract drift, shared row fixtures, CSP, passwords, policy, slop scan, docs truth |
+| `npm test` | vitest: contract drift, shared row fixtures, CSP, passwords, policy, slop scan, docs truth, offline fonts, design language, the local runner's rules, score distributions |
 | `TEST_DATABASE_URL=postgres://…/nfl_test REQUIRE_DB_TESTS=1 npm test` | adds the Postgres suites: ingest idempotency, tamper rejection, the qa_failed pointer, append-only triggers, the tier/stake CHECK, and public queries without stakes. The database name must end in `_test`; the harness drops its schema. |
 | `npm run e2e` | Playwright against a running server (`E2E_BASE_URL`, default `http://127.0.0.1:3100`): axe, overflow, security headers, `/desk` redirect, stakes never public, ID leaks, reduced motion |
 | `npm run contracts:export` | regenerates `contracts/schema/*.json` from the Drizzle schema; CI fails if the committed files differ |
