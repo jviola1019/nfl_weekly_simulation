@@ -2,6 +2,7 @@ import Link from "next/link";
 import { DataUnavailable } from "@/components/DataUnavailable";
 import { Field, FieldKey } from "@/components/Field";
 import { StatusBadge } from "@/components/StatusBadge";
+import { chipClass, PageTitle, StatTile } from "@/components/ui";
 import { candidateLines, evidence, publicSlate, runCandidates } from "@/lib/data/queries";
 import { age, utcStamp, weekday } from "@/lib/format";
 import { candidateLabel, fieldLineNote, fieldLineNoun, publicFieldLine } from "@/lib/policy";
@@ -24,7 +25,7 @@ export default async function ThisWeek({ searchParams }: { searchParams: Promise
   if (!run) {
     return (
       <>
-        <h1 className="text-2xl font-semibold">This week</h1>
+        <PageTitle>This week</PageTitle>
         <div className="mt-6">
           <DataUnavailable title="No published weekly run">
             Nothing has been ingested yet. A weekly bundle from the R engine appears here after <code>ingest-bundle</code>.
@@ -70,8 +71,7 @@ export default async function ThisWeek({ searchParams }: { searchParams: Promise
     if (!m) q.set("model", "off");
     return `/?${q.toString()}`;
   };
-  const chip = (on: boolean) =>
-    `inline-flex h-11 items-center rounded-[3px] border px-3.5 text-[13px] no-underline ${on ? "border-ink bg-ink font-semibold text-surface" : "border-rule text-ink-2 hover:border-ink-2"}`;
+  const chip = chipClass;
   const first = games[0]?.kickoffUtc;
   const last = games[games.length - 1]?.kickoffUtc;
 
@@ -105,20 +105,12 @@ export default async function ThisWeek({ searchParams }: { searchParams: Promise
       </section>
 
       <section aria-label="This week in numbers" className="mt-7 grid gap-4 sm:grid-cols-3">
-        <div className="flex flex-col gap-1.5 rounded-[6px] border border-rule bg-surface px-5 py-4">
-          <span className="num wdth-expanded text-[40px] font-extrabold leading-none">{games.length}</span>
-          <span className="text-sm text-muted">games on the slate</span>
-        </div>
-        <div className="flex flex-col gap-1.5 rounded-[6px] border border-rule bg-surface px-5 py-4">
-          <span className="num wdth-expanded text-[40px] font-extrabold leading-none">
-            {statRows.length ? `${flipCount} of ${statRows.length}` : "–"}
-          </span>
-          <span className="text-sm text-muted">games where the model picks a different favourite</span>
-        </div>
-        <div className="flex flex-col gap-1.5 rounded-[6px] border border-rule bg-surface px-5 py-4">
-          <span className="num wdth-expanded text-[40px] font-extrabold leading-none">{biggest ? `${(biggest.gap * 100).toFixed(1)} pts` : "–"}</span>
-          <span className="text-sm text-muted">largest model–market gap{biggest ? `: ${biggest.g.awayTeamId} at ${biggest.g.homeTeamId}` : ""}</span>
-        </div>
+        <StatTile value={games.length} label="games on the slate" />
+        <StatTile value={statRows.length ? `${flipCount} of ${statRows.length}` : "–"} label="games where the model picks a different favourite" />
+        <StatTile
+          value={biggest ? `${(biggest.gap * 100).toFixed(1)} pts` : "–"}
+          label={`largest model–market gap${biggest ? `: ${biggest.g.awayTeamId} at ${biggest.g.homeTeamId}` : ""}`}
+        />
       </section>
 
       <section aria-label="Sort and filter" className="mt-7 flex flex-col gap-4 border-y border-rule py-4 lg:flex-row lg:items-center lg:justify-between">

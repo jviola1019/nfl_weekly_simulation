@@ -5,7 +5,9 @@ import AxeBuilder from "@axe-core/playwright";
 
 const BASE = process.env.BASE ?? "http://127.0.0.1:3100";
 const OUT = process.env.OUT ?? "e2e/screenshots";
-const PAGES = ["/", "/evidence", "/methodology", "/data-health", "/props", "/games/2026_04_DEN_SF", "/login"];
+// GAME picks the game page (a simulator run's game ids differ from the fixture's)
+const GAME = process.env.GAME ?? "2026_04_DEN_SF";
+const PAGES = ["/", "/evidence", "/methodology", "/data-health", "/props", `/games/${GAME}`, "/login"];
 const WIDTHS = [390, 768, 1440];
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM ?? undefined });
 const report = [];
