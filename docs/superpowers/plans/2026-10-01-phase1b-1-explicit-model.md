@@ -38,6 +38,7 @@
 - **No 2025 data.** Nothing here reads, builds or scores the 2025 season. The golden-master fixture is 2024 week 15.
 - **No file deletions.** The code blocks inside `NFLsimulation.R` that a task replaces are removed in that task; nothing else.
 - **Golden master on Windows (audit T8).** A local `compare` always differs in the 8 blend columns: up to 0.0118 in `home_p_2w_blend_raw` and 0.30 in `margin_blend`, from the invalid step-function calibrator. Locally, only check the simulator columns. CI (Linux) is the authority.
+  - **Erratum (2026-10-04):** the Windows blend-column differences were a stale calibration cache (unbumped `calib_cache_key`), not an operating-system effect. With the v3 key a local compare shows no differences; see `reports/2026-09-29/golden-master/2024-w15/ATTRIBUTION.md`.
 - **Windows.**
   - Write R files with a file-writing tool; bash heredocs collapse `\\`.
   - Pass `C:/...` paths to R.
@@ -1437,6 +1438,7 @@ Copy `final_numeric.csv`, `meta.json` and `inputs.csv` from that folder into `re
 
 - [ ] **Step 6: Run the matrix locally.** Run `Rscript scripts/run_matrix.R`.
   - Expected on Windows: 9/10. `golden-master` fails only on the 8 T8 blend columns, with no `INPUT DRIFT`.
+    - Erratum (2026-10-04): with the v3 cache key the local result is 10/10, and the T8 blend differences do not occur.
   - Expected on Linux: 10/10.
   - Quote the summary.
 - [ ] **Step 7: Update the docs.**
