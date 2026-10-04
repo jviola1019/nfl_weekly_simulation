@@ -55,6 +55,11 @@ message("Running NFLsimulation.R...")
 message("This will run Monte Carlo simulations and generate an HTML report.\n")
 
 tryCatch({
+  # Bundle writer, and the code's git state before this run rewrites artifacts/
+  source("R/bundle_writer.R")
+  source("R/sim_bundle.R")
+  run_git <- sb_git_state()
+
   source("NFLsimulation.R")
 
   # =============================================================================
@@ -242,6 +247,15 @@ tryCatch({
   }, error = function(e) {
     message(sprintf("Audit artifact export failed: %s", e$message))
   })
+
+  # Web bundle: the results the local app shows (replaces the retired HTML report, A8)
+  cat("\n")
+  # draws missing (NFLsimulation.R's export failed) -> every game is a QA failure, not a crash
+  sim_bundle <- write_sim_bundle(
+    final = final, sims = get0("last_simulation_results", ifnotfound = NULL), schedule = sched, quality = get_data_quality(),
+    season = SEASON, week = WEEK_TO_SIM, seed = SEED, n_sims = N_TRIALS, git = run_git
+  )
+  report_sim_bundle(sim_bundle)
 
   cat("\n")
   cat("=================================================================\n")

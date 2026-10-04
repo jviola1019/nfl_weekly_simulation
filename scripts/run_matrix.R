@@ -170,6 +170,14 @@ artifacts <- list(
     timeout_secs = 800
   ),
 
+  # The simulator's web bundle (A8), built offline from committed inputs by the production
+  # builder (R/sim_bundle.R); the script exits 1 when the bundle fails the contract
+  list(
+    name = "sim-bundle",
+    category = "pipeline",
+    command = "system2('Rscript', c('scripts/write_sim_fixture.R', shQuote(tempdir()))) -> st; quit(status = st)"
+  ),
+
   # Test suite
   list(
     name = "testthat",

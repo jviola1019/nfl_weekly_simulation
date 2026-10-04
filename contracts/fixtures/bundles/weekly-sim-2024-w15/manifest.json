@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0.0",
+  "bundle_kind": "weekly",
+  "cycle_id": "weekly-sim-2024-w15",
+  "season": 2024,
+  "week": 15,
+  "model_label": "Game simulator C3 (unvalidated)",
+  "generated_utc": "2026-10-04T08:03:17Z",
+  "data_asof_utc": "2026-10-03T12:00:00Z",
+  "code_git_sha": "7927be409bde656795f6cb119214a22837f5b981",
+  "code_dirty": false,
+  "config_hash": "d8eaab7c5b5d48608efe3f8c649650762ca24f0ab4715bcb2a3b28b2f835d831",
+  "config": {
+    "engine": "NFLsimulation.R (Monte Carlo: negative binomial scores, Gaussian copula)",
+    "candidates": {
+      "C0": "no-vig market",
+      "C3": "simulator two-way home win probability; p_home_final after its market blend"
+    },
+    "market_source": "nflverse consensus close: moneylines devigged proportionally (the spread mapped to a probability where a game has no moneyline)",
+    "calibration_method": "none",
+    "distribution_mass": 0.999
+  },
+  "seed": null,
+  "n_sims": 20000,
+  "renv_lock_sha256": "6f0288babdb084ab5142bb6a00010d71bbd3b2b4333d801f7ed366a8ff41e429",
+  "files": [
+    {
+      "name": "teams.json",
+      "sha256": "225d156d67369e7884f5ee5d94602329d759cb670628ee5f7345883868e29fdc",
+      "rows": 32
+    },
+    {
+      "name": "games.json",
+      "sha256": "9b2b5e11ba2929439e18754629e583b7023ee81946ff9991dfa0c2978171f86b",
+      "rows": 3
+    },
+    {
+      "name": "game_predictions.json",
+      "sha256": "198f91dc709f07efb555c5c7579868b2e044ddcdf0b441d58f2f13f98f592bfe",
+      "rows": 6
+    },
+    {
+      "name": "score_distributions.json",
+      "sha256": "7cbc94b6764ef81ee55d23f4c8073d61055995efc36760695718563020602650",
+      "rows": 6
+    },
+    {
+      "name": "source_status.json",
+      "sha256": "f82b5db859ac76c7aebe18e613c49f4611e6c8a751106f4180cd801c28f1d195",
+      "rows": 4
+    }
+  ],
+  "qa": {
+    "ok": true,
+    "failures": []
+  }
+}

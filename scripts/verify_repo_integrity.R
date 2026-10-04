@@ -58,6 +58,8 @@ required_files <- c(
   "R/playoffs.R",
   "R/date_resolver.R",
   "R/correlated_props.R",
+  "R/bundle_writer.R",
+  "R/sim_bundle.R",
   "DESCRIPTION",
   "README.md",
   "CLAUDE.md"
