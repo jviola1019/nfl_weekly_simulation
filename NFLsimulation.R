@@ -69,6 +69,7 @@ local({
 
   # Required modules (Plan 1b-1): a load failure stops the run
   source(file.path(base_path, "mu_terms.R"))
+  source(file.path(base_path, "schedule_context.R"))
 })
 
 load_market_helpers <- local({
@@ -2702,6 +2703,9 @@ venue_col <- dplyr::case_when(
 sched <- sched |>
   mutate(venue = if (!is.na(venue_col)) as.character(.data[[venue_col]]) else NA_character_)
 
+# Neutral-site flag (audit M24): nflverse marks neutral sites with location == "Neutral"
+sched$neutral_site <- neutral_site_flag(sched)
+
 # --- Load team division/conference data for division game indicators
 team_info <- tryCatch({
   nflreadr::load_teams() %>%
@@ -2771,6 +2775,7 @@ week_slate <- sched %>%
     game_date,
     home_team,
     away_team,
+    neutral_site,
     venue = as.character(venue)   # <-- only the normalized column
   ) %>%
   distinct()
@@ -3571,18 +3576,9 @@ home_pts_col  <- first_col(sched, c("home_score","home_points","score_home","hom
 away_pts_col  <- first_col(sched, c("away_score","away_points","score_away","away_pts"), "away score")
 
 # --- League home-field advantage (points), data-driven over recent seasons ---
-# pick neutral-site flag if present
-neutral_col <- intersect(c("neutral_site","neutral","is_neutral"), names(sched))
-
-# start with REG games in target seasons
+# REG games in the target seasons, without neutral sites (audit M24)
 sched_hfa <- sched |>
-  dplyr::filter(game_type == "REG", season %in% seasons_hfa)
-
-# remove neutral-site games if a flag exists
-if (length(neutral_col)) {
-  sched_hfa <- sched_hfa |>
-    dplyr::filter(!.data[[neutral_col[1]]])
-}
+  dplyr::filter(game_type == "REG", season %in% seasons_hfa, !neutral_site)
 
 # build margins and compute league HFA
 hfa_sample <- sched_hfa |>
@@ -4601,9 +4597,8 @@ games_ready <- games_ready %>%
 
 games_ready <- games_ready %>%
   mutate(
-    HFA_pts = coalesce(home_hfa, league_hfa),  # if you have team-specific, prefer that
-    HFA_pts = HFA_pts * .playoff_hfa_mult,     # Apply playoff multiplier
-    HFA_pts = pmin(pmax(HFA_pts, -6), 6)       # cap at +/-6
+    # team HFA (league when missing) x playoff multiplier, capped at +/-6; 0 at a neutral site (audit M24)
+    HFA_pts = home_field_points(home_hfa, league_hfa, .playoff_hfa_mult, neutral_site)
   ) %>%
   mutate(
     mu_home = pmax(mu_home + HFA_pts, 0)
@@ -5364,7 +5359,7 @@ simulate_game_nb <- function(mu_home, sd_home, mu_away, sd_away,
 week_inputs_and_sim_2w <- function(cut_season, cut_week, n_trials = CALIB_TRIALS) {
   slate <- sched |>
     dplyr::filter(season == cut_season, week == cut_week, game_type == "REG") |>
-    dplyr::select(game_id, game_date, home_team, away_team, home_score, away_score) |>
+    dplyr::select(game_id, game_date, home_team, away_team, home_score, away_score, neutral_site) |>
     dplyr::distinct()
   if (!nrow(slate)) return(tibble::tibble())
 
@@ -5484,7 +5479,7 @@ week_inputs_and_sim_2w <- function(cut_season, cut_week, n_trials = CALIB_TRIALS
       mu_home_base = exp_drives_home * exp_ppd_home,
       mu_away_base = exp_drives_away * exp_ppd_away,
 
-      margin_shift = (home_hfa - away_hfa)/2,
+      margin_shift = dplyr::if_else(neutral_site, 0, (home_hfa - away_hfa)/2),   # audit M24
 
       mu_home = pmax(mu_home_base + home_rest_points + margin_shift/2, 0),
       mu_away = pmax(mu_away_base + away_rest_points - margin_shift/2, 0),
