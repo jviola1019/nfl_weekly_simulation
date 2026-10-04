@@ -66,6 +66,11 @@ local({
       message(sprintf("Note: Could not source R/playoffs.R: %s", conditionMessage(e)))
     })
   }
+
+  # Required modules (Plan 1b-1): a load failure stops the run
+  source(file.path(base_path, "mu_terms.R"))
+  source(file.path(base_path, "schedule_context.R"))
+  source(file.path(base_path, "sleeper_api.R"))
 })
 
 load_market_helpers <- local({
@@ -2336,19 +2341,23 @@ if (!dir.exists(.calib_cache_dir)) dir.create(.calib_cache_dir, recursive = TRUE
 .score_cache_dir <- file.path(path.expand("~"), ".cache", "nfl_sim_scores")
 if (!dir.exists(.score_cache_dir)) dir.create(.score_cache_dir, recursive = TRUE)
 
+# Bump `version` whenever week_inputs_and_sim_2w/score_one_week change: the key cannot see
+# those function bodies (they are defined after it), so a stale cache would be served silently.
 score_cache_key <- function(start_season, end_season, weeks, trials, seed, rho) {
   digest::digest(list(
     tag="score_weeks",
+    version = 1L,  # bump when the calibration-history code changes
     start_season, end_season, weeks = paste0(weeks, collapse=","),
     trials, seed, rho,
     N_RECENT, USE_SOS, SOS_STRENGTH, RECENCY_HALFLIFE
   ))
 }
 
+# Bump `version` when the calibration-history code changes (the key cannot see function bodies).
 calib_cache_key <- function(season, n_years, halflife, use_sos, sos_pow, trials, rho, seed){
   digest::digest(list(
     tag = "calib_sim_df_nb",
-    version = 2L,  # v2: includes playoff games (WC/DIV/CON/SB) in calibration
+    version = 3L,  # v3: neutral sites (M24) and own-game rest (M23) in the calibration history
     season = season,
     n_years = n_years,
     halflife = halflife,
@@ -2699,6 +2708,9 @@ venue_col <- dplyr::case_when(
 sched <- sched |>
   mutate(venue = if (!is.na(venue_col)) as.character(.data[[venue_col]]) else NA_character_)
 
+# Neutral-site flag (audit M24): nflverse marks neutral sites with location == "Neutral"
+sched$neutral_site <- neutral_site_flag(sched)
+
 # --- Load team division/conference data for division game indicators
 team_info <- tryCatch({
   nflreadr::load_teams() %>%
@@ -2768,6 +2780,9 @@ week_slate <- sched %>%
     game_date,
     home_team,
     away_team,
+    neutral_site,
+    home_rest,
+    away_rest,
     venue = as.character(venue)   # <-- only the normalized column
   ) %>%
   distinct()
@@ -3136,7 +3151,8 @@ teams_on_slate <- sort(unique(c(week_slate$home_team, week_slate$away_team)))
 #    https://nflreadr.nflverse.com/reference/load_injuries.html
 # 2. nflfastR::fast_scraper_injuries() - Alternative scraper
 # 3. Returns empty tibble if no data available (model defaults to zero injury impact)
-safe_load_injuries <- function(seasons, prefer_fast = TRUE, ...) {
+safe_load_injuries <- function(seasons, prefer_fast = TRUE, allow_live_fallback = FALSE,
+                               stamp_season = NA_integer_, stamp_week = NA_integer_, ...) {
   seasons <- sort(unique(seasons))
   if (!length(seasons)) {
     message("No seasons specified for injury data; returning empty tibble.")
@@ -3275,52 +3291,33 @@ safe_load_injuries <- function(seasons, prefer_fast = TRUE, ...) {
     }
   }
 
-  # If nflreadr failed, try Sleeper API as fallback
-  if (nrow(injuries) == 0) {
+  # Sleeper serves only today's report: use it only for a slate with games still to play,
+  # stamped with that slate's season and week (audit M20)
+  if (nrow(injuries) == 0 && !isTRUE(allow_live_fallback)) {
+    message("Sleeper injury fallback skipped: the slate's games are complete, so today's report would be look-ahead (audit M20).")
+  }
+  if (nrow(injuries) == 0 && isTRUE(allow_live_fallback)) {
     message("nflreadr returned no injury data, trying Sleeper API fallback...")
+    sleeper_result <- tryCatch({
+      load_injuries_sleeper(use_cache = TRUE, verbose = TRUE)
+    }, error = function(e) {
+      message(sprintf("Sleeper API error: %s", conditionMessage(e)))
+      list(data = tibble::tibble(), success = FALSE)
+    })
 
-    # Source Sleeper API if not already loaded
-    sleeper_path <- if (file.exists("R/sleeper_api.R")) "R/sleeper_api.R" else
-                    file.path(getwd(), "R/sleeper_api.R")
-    if (file.exists(sleeper_path) && !exists("load_injuries_sleeper", mode = "function")) {
-      tryCatch(source(sleeper_path, local = FALSE), error = function(e) NULL)
-    }
-
-    # Try Sleeper API
-    if (exists("load_injuries_sleeper", mode = "function")) {
-      sleeper_result <- tryCatch({
-        load_injuries_sleeper(use_cache = TRUE, verbose = TRUE)
-      }, error = function(e) {
-        message(sprintf("Sleeper API error: %s", conditionMessage(e)))
-        list(data = tibble::tibble(), success = FALSE)
-      })
-
-      if (isTRUE(sleeper_result$success) && nrow(sleeper_result$data) > 0) {
-        # Convert Sleeper format to nflreadr-compatible format
-        injuries <- sleeper_result$data %>%
-          dplyr::transmute(
-            season = as.integer(format(Sys.Date(), "%Y")),
-            week = get0("WEEK_TO_SIM", envir = .GlobalEnv, ifnotfound = 1L),
-            team = team,
-            position = position,
-            status = game_status,  # Map game_status to status
-            report_primary_injury = injury_body_part,
-            full_name = player
-          )
-        message(sprintf("✓ Sleeper API fallback loaded %d injury records", nrow(injuries)))
-
-        # Update quality tracking
-        if (exists("update_injury_quality", mode = "function")) {
-          update_injury_quality("partial", missing_seasons = as.character(seasons))
-        }
+    if (isTRUE(sleeper_result$success) && nrow(sleeper_result$data) > 0) {
+      injuries <- sleeper_as_injury_rows(sleeper_result$data, stamp_season, stamp_week)
+      message(sprintf("✓ Sleeper API fallback loaded %d injury records for %s week %s",
+                      nrow(injuries), stamp_season, stamp_week))
+      if (exists("update_injury_quality", mode = "function")) {
+        update_injury_quality("partial", missing_seasons = as.character(seasons))
       }
     }
   }
 
   if (nrow(injuries) == 0) {
     message("⚠ No injury data loaded. Model will run with zero injury impact for all teams.")
-    message("  Tried: nflreadr (primary) and Sleeper API (fallback)")
-    message("  Tip: Set INJURY_MODE='sleeper' in config.R for real-time Sleeper data")
+    message("  Tried: nflreadr (primary); the Sleeper fallback runs only for a slate with games still to play")
   } else {
     message(sprintf("✓ Successfully loaded %d total injury records", nrow(injuries)))
   }
@@ -3330,6 +3327,9 @@ safe_load_injuries <- function(seasons, prefer_fast = TRUE, ...) {
 
 inj_all <- safe_load_injuries(
   seasons = sort(unique(sched$season)),
+  allow_live_fallback = sleeper_fallback_allowed(week_slate$game_date),
+  stamp_season = SEASON,
+  stamp_week = WEEK_TO_SIM,
   file_type = getOption("nflreadr.prefer", default = "rds")
 )
 
@@ -3568,18 +3568,9 @@ home_pts_col  <- first_col(sched, c("home_score","home_points","score_home","hom
 away_pts_col  <- first_col(sched, c("away_score","away_points","score_away","away_pts"), "away score")
 
 # --- League home-field advantage (points), data-driven over recent seasons ---
-# pick neutral-site flag if present
-neutral_col <- intersect(c("neutral_site","neutral","is_neutral"), names(sched))
-
-# start with REG games in target seasons
+# REG games in the target seasons, without neutral sites (audit M24)
 sched_hfa <- sched |>
-  dplyr::filter(game_type == "REG", season %in% seasons_hfa)
-
-# remove neutral-site games if a flag exists
-if (length(neutral_col)) {
-  sched_hfa <- sched_hfa |>
-    dplyr::filter(!.data[[neutral_col[1]]])
-}
+  dplyr::filter(game_type == "REG", season %in% seasons_hfa, !neutral_site)
 
 # build margins and compute league HFA
 hfa_sample <- sched_hfa |>
@@ -3806,6 +3797,9 @@ if (isTRUE(getOption("live_refresh", FALSE))) {
   pbp_hist <- nflreadr::load_pbp(seasons = seasons_pbp)
   inj_all  <- safe_load_injuries(
     seasons  = SEASON,
+    allow_live_fallback = sleeper_fallback_allowed(week_slate$game_date),
+    stamp_season = SEASON,
+    stamp_week = WEEK_TO_SIM,
     file_type = getOption("nflreadr.prefer", default = "rds")
   )
   options(nflreadr.cache = old_cache)
@@ -4079,34 +4073,9 @@ recent_form <- recent_form %>%
 
 
 # ------------------------ REST / BYE EFFECTS ----------------------------------
-# Compute days since last game for each team (before the slate week)
-last_game <- team_games |>
-  group_by(team) |>
-  filter((season < SEASON) | (season == SEASON & week < WEEK_TO_SIM)) |>
-  arrange(desc(game_date)) |>
-  slice_head(n = 1) |>
-  ungroup() |>
-  dplyr::select(team, last_date = game_date, last_season = season, last_week = week)
-
-rest_tbl <- tibble(team = teams_on_slate) |>
-  left_join(last_game, by = "team") |>
-  mutate(
-    # If no prior game this season, guess ~10 days rest (neutral)
-    days_rest = as.numeric(ifelse(is.na(last_date),
-                                  10,
-                                  as.Date(week_slate$game_date[1]) - as.Date(last_date))),
-    short_rest = !is.na(days_rest) & days_rest <= 6,
-    long_rest  = !is.na(days_rest) & days_rest >= 9,
-    bye_prev   = !is.na(last_season) & (last_season == SEASON) &
-      (ifelse(is.na(last_week), FALSE, (WEEK_TO_SIM - last_week) >= 2))
-  ) |>
-  mutate(
-    rest_points = 0 +
-      ifelse(short_rest, REST_SHORT_PENALTY, 0) +
-      ifelse(long_rest & !bye_prev, REST_LONG_BONUS, 0) +
-      ifelse(bye_prev, BYE_BONUS, 0)
-  ) |>
-  dplyr::select(team, days_rest, rest_points)
+# Rest from each team's own game (nflverse home_rest/away_rest), not the week's first
+# kickoff (audit M23)
+rest_tbl <- compute_rest_table(week_slate, team_games, SEASON, WEEK_TO_SIM)
 
 recent_form <- recent_form |>
   left_join(rest_tbl, by = "team") |>
@@ -4598,9 +4567,8 @@ games_ready <- games_ready %>%
 
 games_ready <- games_ready %>%
   mutate(
-    HFA_pts = coalesce(home_hfa, league_hfa),  # if you have team-specific, prefer that
-    HFA_pts = HFA_pts * .playoff_hfa_mult,     # Apply playoff multiplier
-    HFA_pts = pmin(pmax(HFA_pts, -6), 6)       # cap at +/-6
+    # team HFA (league when missing) x playoff multiplier, capped at +/-6; 0 at a neutral site (audit M24)
+    HFA_pts = home_field_points(home_hfa, league_hfa, .playoff_hfa_mult, neutral_site)
   ) %>%
   mutate(
     mu_home = pmax(mu_home + HFA_pts, 0)
@@ -5079,20 +5047,11 @@ sd_total_curve <- function(total_mu){
   pmin(pmax(val, 9.5), 17)
 }
 
+# Fitted score SDs (team scoring variability + QB uncertainty). The total-based blend, the
+# NB sizes and rho are computed from the simulated means by score_variance_from_mu() at the
+# compose step (audit M22b); this chain's mu is a diagnostic sum, not the simulated mean.
 games_ready <- games_ready |>
-  dplyr::mutate(
-    total_mu = mu_home + mu_away,
-    sd_goal  = sd_total_curve(total_mu),
-    sd_home  = 0.6 * sd_home + 0.4 * (sd_goal / sqrt(2)),
-    sd_away  = 0.6 * sd_away + 0.4 * (sd_goal / sqrt(2)),
-    sd_home  = pmax(sd_home, 5.0),
-    sd_away  = pmax(sd_away, 5.0)
-  ) |>
-  # Calculate negative binomial size parameters for prediction intervals
-  dplyr::mutate(
-    k_home = purrr::map2_dbl(mu_home, sd_home, nb_size_from_musd),
-    k_away = purrr::map2_dbl(mu_away, sd_away, nb_size_from_musd)
-  )
+  dplyr::mutate(sd_home_fit = sd_home, sd_away_fit = sd_away)
 
 # Game-specific score correlation (rho): higher totals -> more positive correlation; larger mismatch -> less correlation
 # Parameters extracted to config.R for grid search optimization (see Phase 4 plan)
@@ -5121,11 +5080,21 @@ rho_from_game <- function(total_mu, spread_abs, rho_global = RHO_SCORE) {
   pmin(pmax(rho, bound_low), bound_high)
 }
 
-games_ready <- games_ready %>%
-  mutate(
-    spread_est = abs(mu_home - mu_away),
-    rho_game   = rho_from_game(total_mu, spread_est)
-  )
+# Score SDs, NB sizes and the score correlation from the simulated means (audit M22b).
+# sd_*_fit: fitted team scoring SD plus the QB adjustment; sd_*_adj: environment SD shift.
+score_variance_from_mu <- function(games) {
+  games |>
+    dplyr::mutate(
+      total_mu   = mu_home + mu_away,
+      sd_goal    = sd_total_curve(total_mu),
+      sd_home    = pmax(pmax(0.6 * sd_home_fit + 0.4 * (sd_goal / sqrt(2)), 5.0) + sd_home_adj, 5.0),
+      sd_away    = pmax(pmax(0.6 * sd_away_fit + 0.4 * (sd_goal / sqrt(2)), 5.0) + sd_away_adj, 5.0),
+      k_home     = purrr::map2_dbl(mu_home, sd_home, nb_size_from_musd),
+      k_away     = purrr::map2_dbl(mu_away, sd_away, nb_size_from_musd),
+      spread_est = abs(mu_home - mu_away),
+      rho_game   = rho_from_game(total_mu, spread_est)
+    )
+}
 
 
 games_ready <- games_ready %>%
@@ -5222,36 +5191,11 @@ recent_form_at_sim <- function(cut_season, cut_week, teams,
     ) |>
     dplyr::left_join(hfa_tbl, by = "team")
 
-  # rest effects at the cutpoint
-  last_game_cut <- team_games |>
-    dplyr::group_by(team) |>
-    dplyr::filter((.data$season < cut_season) | (.data$season == cut_season & .data$week < cut_week)) |>
-    dplyr::arrange(dplyr::desc(game_date)) |>
-    dplyr::slice_head(n = 1) |>
-    dplyr::ungroup() |>
-    dplyr::select(team, last_date = game_date, last_season = season, last_week = week)
-
-  fake_slate_date <- {
-    d <- sched |>
-      dplyr::filter(.data$season == cut_season, .data$week == cut_week, game_type == "REG") |>
-      dplyr::summarise(day = min(as.Date(game_date), na.rm = TRUE)) |>
-      dplyr::pull(day)
-    if (!is.finite(as.numeric(d))) as.Date(sprintf("%s-09-10", cut_season)) else d
-  }
-
-  rest_tbl_cut <- tibble::tibble(team = teams) |>
-    dplyr::left_join(last_game_cut, by = "team") |>
-    dplyr::mutate(
-      days_rest = dplyr::coalesce(as.numeric(difftime(fake_slate_date, as.Date(last_date), units = "days")), 10),
-      short_rest = days_rest <= 6,
-      long_rest  = days_rest >= 9,
-      bye_prev   = !is.na(last_season) & (last_season == cut_season) &
-        (ifelse(is.na(last_week), FALSE, (cut_week - last_week) >= 2)),
-      rest_points = 0 +
-        ifelse(short_rest, REST_SHORT_PENALTY, 0) +
-        ifelse(long_rest & !bye_prev, REST_LONG_BONUS, 0) +
-        ifelse(bye_prev, BYE_BONUS, 0)
-    ) |>
+  # rest effects at the cutpoint: each team's own game (audit M23)
+  cut_slate <- sched |>
+    dplyr::filter(.data$season == cut_season, .data$week == cut_week, game_type == "REG") |>
+    dplyr::distinct(game_id, home_team, away_team, home_rest, away_rest)
+  rest_tbl_cut <- compute_rest_table(cut_slate, team_games, cut_season, cut_week) |>
     dplyr::select(team, rest_points)
 
   rf |>
@@ -5360,7 +5304,7 @@ simulate_game_nb <- function(mu_home, sd_home, mu_away, sd_away,
 week_inputs_and_sim_2w <- function(cut_season, cut_week, n_trials = CALIB_TRIALS) {
   slate <- sched |>
     dplyr::filter(season == cut_season, week == cut_week, game_type == "REG") |>
-    dplyr::select(game_id, game_date, home_team, away_team, home_score, away_score) |>
+    dplyr::select(game_id, game_date, home_team, away_team, home_score, away_score, neutral_site) |>
     dplyr::distinct()
   if (!nrow(slate)) return(tibble::tibble())
 
@@ -5480,7 +5424,7 @@ week_inputs_and_sim_2w <- function(cut_season, cut_week, n_trials = CALIB_TRIALS
       mu_home_base = exp_drives_home * exp_ppd_home,
       mu_away_base = exp_drives_away * exp_ppd_away,
 
-      margin_shift = (home_hfa - away_hfa)/2,
+      margin_shift = dplyr::if_else(neutral_site, 0, (home_hfa - away_hfa)/2),   # audit M24
 
       mu_home = pmax(mu_home_base + home_rest_points + margin_shift/2, 0),
       mu_away = pmax(mu_away_base + away_rest_points - margin_shift/2, 0),
@@ -6123,9 +6067,7 @@ games_ready <- games_ready %>%
     env_total_adj = env_total_auto + env_total_flags,
 
     mu_home = pmax(mu_home + env_total_adj/2 + mu_home_adj + wind_interaction_home + cold_interaction_home, 0),
-    mu_away = pmax(mu_away + env_total_adj/2 + mu_away_adj + wind_interaction_away + cold_interaction_away, 0),
-    sd_home = pmax(sd_home + sd_home_adj, 5.0),
-    sd_away = pmax(sd_away + sd_away_adj, 5.0)
+    mu_away = pmax(mu_away + env_total_adj/2 + mu_away_adj + wind_interaction_away + cold_interaction_away, 0)
   )
 # ------------------------ OVERTIME STATS (data-driven) ------------------------
 # We'll compute:
@@ -6274,20 +6216,15 @@ if (!exists("safe_sd", mode = "function")) {
   safe_sd  <- function(x) ifelse(is.finite(x) & x >= 5, x, 7)
 }
 
-# If any mu is NA after all adjustments, rebuild it from safe inputs
+# Simulated means: the sum of the admitted terms (audit M22). The chain above still computes
+# every other term; they are logged in mu_terms but not simulated until the walk-forward
+# backtest admits them. compose_mu() stops on a non-finite admitted term.
+mu_terms <- mu_components(games_ready, pressure_pts = PRESSURE_MISMATCH_PTS)
+mu_final <- compose_mu(mu_terms, MU_TERMS_ADMITTED)
+stopifnot(identical(mu_final$game_id, games_ready$game_id))
 games_ready <- games_ready %>%
-  mutate(
-    mu_home = dplyr::if_else(
-      is.finite(mu_home),
-      mu_home,
-      pmax(exp_drives_home * exp_ppd_home + dplyr::coalesce(HFA_pts, 0), 0)
-    ),
-    mu_away = dplyr::if_else(
-      is.finite(mu_away),
-      mu_away,
-      pmax(exp_drives_away * exp_ppd_away, 0)
-    )
-  )
+  mutate(mu_home = mu_final$mu_home, mu_away = mu_final$mu_away)
+games_ready <- score_variance_from_mu(games_ready)
 
 
 results_list <- lapply(seq_len(nrow(games_ready)), function(i) {
@@ -8466,6 +8403,7 @@ cfg <- list(
 saveRDS(cfg, file.path(log_dir, paste0("config_", run_id, ".rds")))
 saveRDS(final, file.path(log_dir, paste0("final_", run_id, ".rds")))
 saveRDS(games_ready, file.path(log_dir, paste0("games_ready_", run_id, ".rds")))
+saveRDS(mu_terms, file.path(log_dir, paste0("mu_terms_", run_id, ".rds")))
 
 
 

@@ -2,11 +2,19 @@
   "week": "15",
   "season": "2024",
   "n_games": 16,
-  "git_sha": "84df935f8cad076e9df856f07565c3406574183f",
+  "git_sha": "3900255006f0b94e4757cab92dacda63106d1881",
   "n_trials": 100000,
   "seed": 471,
   "r_version": "R version 4.5.1 (2025-06-13)",
   "nflreadr": "1.5.0",
-  "run_seconds": 318,
-  "csv_sha256": "795e476fcd3e1c206847dac1098ccefe2f9bfa6054f7269363e9249c40837932"
+  "run_seconds": 193,
+  "inputs": {
+    "injury": "full",
+    "weather": "partial_fallback",
+    "market": "full",
+    "calibration": "spline",
+    "weather_fallback_games": ["2024_15_KC_CLE", "2024_15_NYJ_JAX", "2024_15_WAS_NO"],
+    "market_missing_games": []
+  },
+  "csv_sha256": "b7b888a7f782d0046abff04db9921bbb1cfe747a6a92b93b05ceee6bca1ce670"
 }
