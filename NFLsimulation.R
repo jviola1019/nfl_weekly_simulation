@@ -2341,19 +2341,23 @@ if (!dir.exists(.calib_cache_dir)) dir.create(.calib_cache_dir, recursive = TRUE
 .score_cache_dir <- file.path(path.expand("~"), ".cache", "nfl_sim_scores")
 if (!dir.exists(.score_cache_dir)) dir.create(.score_cache_dir, recursive = TRUE)
 
+# Bump `version` whenever week_inputs_and_sim_2w/score_one_week change: the key cannot see
+# those function bodies (they are defined after it), so a stale cache would be served silently.
 score_cache_key <- function(start_season, end_season, weeks, trials, seed, rho) {
   digest::digest(list(
     tag="score_weeks",
+    version = 1L,  # bump when the calibration-history code changes
     start_season, end_season, weeks = paste0(weeks, collapse=","),
     trials, seed, rho,
     N_RECENT, USE_SOS, SOS_STRENGTH, RECENCY_HALFLIFE
   ))
 }
 
+# Bump `version` when the calibration-history code changes (the key cannot see function bodies).
 calib_cache_key <- function(season, n_years, halflife, use_sos, sos_pow, trials, rho, seed){
   digest::digest(list(
     tag = "calib_sim_df_nb",
-    version = 2L,  # v2: includes playoff games (WC/DIV/CON/SB) in calibration
+    version = 3L,  # v3: neutral sites (M24) and own-game rest (M23) in the calibration history
     season = season,
     n_years = n_years,
     halflife = halflife,

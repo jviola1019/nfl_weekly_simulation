@@ -84,3 +84,28 @@ test_that("both rest tables in NFLsimulation.R use compute_rest_table (audit M23
   expect_false(any(grepl("week_slate$game_date[1]", code, fixed = TRUE)))
   expect_false(any(grepl("fake_slate_date", code, fixed = TRUE)))
 })
+
+test_that("calibration and score cache keys carry versions that invalidate pre-M23/M24 caches", {
+  code <- readLines(file.path(PROJECT_ROOT, "NFLsimulation.R"), warn = FALSE)
+  code <- code[!grepl("^\\s*#", code)]
+  expect_true(any(grepl("version = 3L", code, fixed = TRUE)))
+  expect_false(any(grepl("version = 2L", code, fixed = TRUE)))
+  env <- load_script_functions(file.path(PROJECT_ROOT, "NFLsimulation.R"),
+                               c("score_cache_key", "calib_cache_key"))
+  env$N_RECENT <- 1; env$USE_SOS <- TRUE; env$SOS_STRENGTH <- 1; env$RECENCY_HALFLIFE <- 1
+  expect_equal(env$calib_cache_key(2024, 3, 2, TRUE, 1, 100, 0.1, 1),
+               digest::digest(list(tag = "calib_sim_df_nb", version = 3L, season = 2024, n_years = 3,
+                                   halflife = 2, use_sos = TRUE, sos_pow = 1, trials = 100,
+                                   rho = 0.1, seed = 1)))
+  expect_equal(env$score_cache_key(2024, 2024, 15, 100, 1, 0.1),
+               digest::digest(list(tag = "score_weeks", version = 1L, 2024, 2024, weeks = "15",
+                                   100, 1, 0.1, 1, TRUE, 1, 1)))
+})
+
+test_that("the divisional round: a team off a week-18 game gets the bye bonus, a week-19 team does not (audit M5)", {
+  slate <- data.frame(game_id = "g", home_team = "KC", away_team = "BUF", home_rest = 14, away_rest = 6)
+  tg <- data.frame(team = c("KC", "BUF"), season = 2024L, week = c(18L, 19L))
+  r <- rest(slate, tg, season = 2024L, week = 20L)
+  expect_equal(r$rest_points[r$team == "KC"], 1)
+  expect_equal(r$rest_points[r$team == "BUF"], -0.85)
+})
