@@ -17,6 +17,8 @@ npm run local:stop          # stops the local database (Ctrl+C stops the web ser
 
 `npm run local` (`scripts/local.ts`) creates a private PostgreSQL cluster in <repo>/.local/pgdata on 127.0.0.1:5434 with a random password, adds `DATABASE_URL` and `AUTH_SECRET` to web/.env.local if they are missing, applies the migrations, ingests every bundle under `bundles/` oldest first (so the newest weekly run is published), builds only when the sources changed, and serves on 127.0.0.1:3000. Secrets are never printed. The evidence page needs the backtest bundle: run `Rscript scripts/write_backtest_bundle.R` once. Settings: `PG_BIN` (PostgreSQL's bin directory; default `C:/Program Files/PostgreSQL/17/bin` on Windows, PATH elsewhere), `NFL_LOCAL_PGDATA`, `NFL_LOCAL_PGPORT`, `NFL_LOCAL_BUNDLES`. The font is committed (`src/app/fonts/archivo-latin.woff2`, SIL OFL), so a build needs no network either.
 
+Online, the deployed app reads the same bundle: `.github/workflows/weekly-sim.yml` (started by hand with a week and season) runs `run_week.R`, checks the bundle with `npm run check-bundle` (the ingest's own loader, no database), keeps it as an artifact for 90 days, and runs `npm run ingest` against the deployed database only when the `DATABASE_URL` secret exists. Deployment is pending the owner's approval of the hosting connectors.
+
 ## Run it locally (development)
 
 You need Node 20.9+ and a Postgres 16+ you can create databases on.
