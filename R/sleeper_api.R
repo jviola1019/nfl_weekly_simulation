@@ -447,3 +447,31 @@ test_sleeper_api <- function() {
 if (!exists("%||%")) {
   `%||%` <- function(x, y) if (is.null(x) || length(x) == 0 || (length(x) == 1 && is.na(x))) y else x
 }
+
+# =============================================================================
+# FALLBACK FOR THE GAME MODEL (audit M20)
+# =============================================================================
+
+#' May today's Sleeper injury report stand in for a slate?
+#'
+#' Sleeper serves only the current report. That is information about games still to be
+#' played; for a slate whose games are all in the past it would be look-ahead.
+#' @param slate_dates game dates of the slate
+#' @param today the run date
+sleeper_fallback_allowed <- function(slate_dates, today = Sys.Date()) {
+  d <- as.Date(slate_dates)
+  any(!is.na(d)) && max(d, na.rm = TRUE) >= as.Date(today)
+}
+
+#' Sleeper injury rows in nflverse injury columns, stamped with the slate's season and week
+sleeper_as_injury_rows <- function(sleeper_df, season, week) {
+  if (!isTRUE(is.finite(season)) || !isTRUE(is.finite(week))) {
+    stop("sleeper_as_injury_rows: season and week are required", call. = FALSE)
+  }
+  tibble::tibble(
+    season = as.integer(season), week = as.integer(week),
+    team = sleeper_df$team, position = sleeper_df$position,
+    status = sleeper_df$game_status, report_primary_injury = sleeper_df$injury_body_part,
+    full_name = sleeper_df$player
+  )
+}

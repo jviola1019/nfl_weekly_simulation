@@ -70,6 +70,7 @@ local({
   # Required modules (Plan 1b-1): a load failure stops the run
   source(file.path(base_path, "mu_terms.R"))
   source(file.path(base_path, "schedule_context.R"))
+  source(file.path(base_path, "sleeper_api.R"))
 })
 
 load_market_helpers <- local({
@@ -3146,7 +3147,8 @@ teams_on_slate <- sort(unique(c(week_slate$home_team, week_slate$away_team)))
 #    https://nflreadr.nflverse.com/reference/load_injuries.html
 # 2. nflfastR::fast_scraper_injuries() - Alternative scraper
 # 3. Returns empty tibble if no data available (model defaults to zero injury impact)
-safe_load_injuries <- function(seasons, prefer_fast = TRUE, ...) {
+safe_load_injuries <- function(seasons, prefer_fast = TRUE, allow_live_fallback = FALSE,
+                               stamp_season = NA_integer_, stamp_week = NA_integer_, ...) {
   seasons <- sort(unique(seasons))
   if (!length(seasons)) {
     message("No seasons specified for injury data; returning empty tibble.")
@@ -3285,52 +3287,33 @@ safe_load_injuries <- function(seasons, prefer_fast = TRUE, ...) {
     }
   }
 
-  # If nflreadr failed, try Sleeper API as fallback
-  if (nrow(injuries) == 0) {
+  # Sleeper serves only today's report: use it only for a slate with games still to play,
+  # stamped with that slate's season and week (audit M20)
+  if (nrow(injuries) == 0 && !isTRUE(allow_live_fallback)) {
+    message("Sleeper injury fallback skipped: the slate's games are complete, so today's report would be look-ahead (audit M20).")
+  }
+  if (nrow(injuries) == 0 && isTRUE(allow_live_fallback)) {
     message("nflreadr returned no injury data, trying Sleeper API fallback...")
+    sleeper_result <- tryCatch({
+      load_injuries_sleeper(use_cache = TRUE, verbose = TRUE)
+    }, error = function(e) {
+      message(sprintf("Sleeper API error: %s", conditionMessage(e)))
+      list(data = tibble::tibble(), success = FALSE)
+    })
 
-    # Source Sleeper API if not already loaded
-    sleeper_path <- if (file.exists("R/sleeper_api.R")) "R/sleeper_api.R" else
-                    file.path(getwd(), "R/sleeper_api.R")
-    if (file.exists(sleeper_path) && !exists("load_injuries_sleeper", mode = "function")) {
-      tryCatch(source(sleeper_path, local = FALSE), error = function(e) NULL)
-    }
-
-    # Try Sleeper API
-    if (exists("load_injuries_sleeper", mode = "function")) {
-      sleeper_result <- tryCatch({
-        load_injuries_sleeper(use_cache = TRUE, verbose = TRUE)
-      }, error = function(e) {
-        message(sprintf("Sleeper API error: %s", conditionMessage(e)))
-        list(data = tibble::tibble(), success = FALSE)
-      })
-
-      if (isTRUE(sleeper_result$success) && nrow(sleeper_result$data) > 0) {
-        # Convert Sleeper format to nflreadr-compatible format
-        injuries <- sleeper_result$data %>%
-          dplyr::transmute(
-            season = as.integer(format(Sys.Date(), "%Y")),
-            week = get0("WEEK_TO_SIM", envir = .GlobalEnv, ifnotfound = 1L),
-            team = team,
-            position = position,
-            status = game_status,  # Map game_status to status
-            report_primary_injury = injury_body_part,
-            full_name = player
-          )
-        message(sprintf("✓ Sleeper API fallback loaded %d injury records", nrow(injuries)))
-
-        # Update quality tracking
-        if (exists("update_injury_quality", mode = "function")) {
-          update_injury_quality("partial", missing_seasons = as.character(seasons))
-        }
+    if (isTRUE(sleeper_result$success) && nrow(sleeper_result$data) > 0) {
+      injuries <- sleeper_as_injury_rows(sleeper_result$data, stamp_season, stamp_week)
+      message(sprintf("✓ Sleeper API fallback loaded %d injury records for %s week %s",
+                      nrow(injuries), stamp_season, stamp_week))
+      if (exists("update_injury_quality", mode = "function")) {
+        update_injury_quality("partial", missing_seasons = as.character(seasons))
       }
     }
   }
 
   if (nrow(injuries) == 0) {
     message("⚠ No injury data loaded. Model will run with zero injury impact for all teams.")
-    message("  Tried: nflreadr (primary) and Sleeper API (fallback)")
-    message("  Tip: Set INJURY_MODE='sleeper' in config.R for real-time Sleeper data")
+    message("  Tried: nflreadr (primary); the Sleeper fallback runs only for a slate with games still to play")
   } else {
     message(sprintf("✓ Successfully loaded %d total injury records", nrow(injuries)))
   }
@@ -3340,6 +3323,9 @@ safe_load_injuries <- function(seasons, prefer_fast = TRUE, ...) {
 
 inj_all <- safe_load_injuries(
   seasons = sort(unique(sched$season)),
+  allow_live_fallback = sleeper_fallback_allowed(week_slate$game_date),
+  stamp_season = SEASON,
+  stamp_week = WEEK_TO_SIM,
   file_type = getOption("nflreadr.prefer", default = "rds")
 )
 
@@ -3807,6 +3793,9 @@ if (isTRUE(getOption("live_refresh", FALSE))) {
   pbp_hist <- nflreadr::load_pbp(seasons = seasons_pbp)
   inj_all  <- safe_load_injuries(
     seasons  = SEASON,
+    allow_live_fallback = sleeper_fallback_allowed(week_slate$game_date),
+    stamp_season = SEASON,
+    stamp_week = WEEK_TO_SIM,
     file_type = getOption("nflreadr.prefer", default = "rds")
   )
   options(nflreadr.cache = old_cache)
