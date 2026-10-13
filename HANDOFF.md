@@ -2,6 +2,32 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec. To verify everything and finish the remaining work in a full local environment (VS Code), use `docs/handoff/2026-09-29-vscode-prompt.md`.
 
+## Current state — A8 (feat/a8-local-app)
+
+2026-10-13. Branch `feat/a8-local-app` (base `4f9aad3`), draft PR against `main` (never merged by the agent).
+
+**Tasks (commits):** plan `dbe154d`; Task 1 Archivo `0aa21c3`; Task 2 `npm run local` `7927be4`; Task 3 bundle writer `58ea0e2`; Task 4 field `fd96979`; Task 5 game page `a771b7a`; Task 6 pages `269f887`; Task 7 retire the report `d364804`; Task 8 docs `31449f7` + fix `0b6510c`; Task 9 workflow `040a7e1`; Task 10 this close-out commit.
+
+**Gate results (2026-10-13; every R command ran with a fresh HOME):**
+- `Rscript scripts/run_tests.R`: exit 0, `tests=407 passed=1589 failed=0 errors=0 skipped=1 unapproved_skips=0`.
+- `Rscript scripts/verify_repo_integrity.R`: exit 0, `Schema Checks: 19 passed, 0 failed`, `Invariant Checks: 44 passed, 0 failed`, `Total: 63 passed, 0 failed`.
+- `Rscript scripts/run_matrix.R`: first (cold-cache) run 10/11: golden-master `FAIL (800.3s)`, `command ... timed out after 800s` (the matrix's own cap, killed during calibration; I also had Playwright running concurrently). Direct `Rscript scripts/golden_master.R compare 15 2024 reports/2026-09-29/golden-master/2024-w15` with the same fresh HOME and no cap: exit 0, 910 s, `golden master: no differences`. Re-run of `run_matrix.R` with the now-built caches: `Total: 11 artifacts, Passed: 11, Failed: 0`, `[RUN MATRIX: ALL PASSED]` (golden-master 284 s).
+- Merge probe vs 1b-1 `6ee5417`: `git merge-tree` exit 1; only `CLAUDE.md` conflicts (docs); `NFLsimulation.R` auto-merged cleanly.
+- Web: typecheck, lint exit 0; `contracts:export` leaves `contracts/schema` unchanged; vitest `Test Files  15 passed (15)`, `Tests  106 passed (106)`.
+- Playwright (fixtures, :3100): `70 passed`; `@sim` `11 passed`; offline `1 passed`; review-ui 48 rows all overflow 0, errors 0, no serious axe, no leaks.
+- Demo: `run_week.R 15 2024` exit 0: `Web bundle: bundles/2024-w15-sim-20261013T052558Z`, `QA: passed`, `ANALYSIS COMPLETE`; `check-bundle`: `ok weekly 2024-w15-sim-20261013T052558Z (bundle 352660818f39): 116 rows ... QA passed`; `write_backtest_bundle.R`: `bundle 847a2632... -> bundles/backtest-nfl-games-v1-7244a0bc (qa ok: TRUE)`.
+- `npm run local`: first start created the cluster, migrated, `published` both bundles; second start `PostgreSQL already running`, `duplicate` for both. Playwright on :3000: `@sim` `24 passed`, offline `1 passed`; review-ui 48 rows, all clean.
+- Lighthouse 13.5.0 (:3000): evidence desktop a11y 1.00 perf 1.00 CLS 0.000 LCP 0.69 s PASS; evidence mobile 1.00 / 0.82 / 0.000 / 2.80 s FAIL; game desktop 1.00 / 0.99 / 0.000 / 0.75 s PASS; game mobile 1.00 / 0.73 / 0.000 / 3.21 s FAIL; home desktop 1.00 / 1.00 / 0.000 / 0.81 s PASS; home mobile 1.00 / 0.87 / 0.000 / 2.67 s FAIL.
+
+**Open items:**
+- Mobile Lighthouse performance (spec §6 P7): LCP 2.67-3.21 s on this machine; confirm on CI or a reference machine.
+- Windows runs that reuse `~/.cache/nfl_sim_calib_cache` can serve a calibration history built by other code until Plan 1b-1's v3 cache key reaches this branch (merge main after #210); A8's gates and demo ran with a fresh HOME.
+- `run_matrix`'s golden-master has an 800 s cap; a cold cache needs about 910 s here, so the first run on an empty cache fails on the timeout.
+- Final fix wave: home "closest" sort treats a null market as 0.5; interval wording should say "at least 90%"; assert that a no-market game shows "no market line".
+- Owner actions: merge approval and order versus Plan 1b-1; remove `gt`/`scales` from `DESCRIPTION` and `renv.lock`; authorize Vercel/Neon and add the `DATABASE_URL` secret; first manual `weekly-sim.yml` run after merge.
+
+**Context-reset packet:** objective: retire the HTML report, Next.js app the only UI offline and online. Done: Tasks 1-10. Not done: final fix wave, whole-branch review, merge after #210. Confirmed facts: all gates above. Open risks: mobile LCP; golden-master cap. Next target: final fix wave, then merge main after 1b-1 lands.
+
 ## Current state — 2026-09-30, session 3 (VS Code verification and validation sprint)
 
 **Part A verification of `main` (`eaa4138`):** `reports/2026-09-30/VERIFICATION.md`.
