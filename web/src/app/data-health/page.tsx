@@ -1,8 +1,9 @@
+import { Age } from "@/components/Age";
 import { DataUnavailable } from "@/components/DataUnavailable";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, PageTitle, SectionTitle } from "@/components/ui";
 import { dataHealth } from "@/lib/data/queries";
-import { age, shortSha, utcStamp } from "@/lib/format";
+import { shortSha, utcStamp } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Data health" };
@@ -48,7 +49,7 @@ export default async function DataHealthPage() {
                   <tr key={s.source} className="border-t border-rule align-top">
                     <td className="py-2 pr-4">{s.source.replace(/_/g, " ")}</td>
                     <td className="py-2 pr-4"><StatusBadge status={s.status} /></td>
-                    <td className="num py-2 pr-4">{s.lastSuccessUtc ? `${utcStamp(s.lastSuccessUtc)} (${age(s.lastSuccessUtc)})` : "–"}</td>
+                    <td className="num py-2 pr-4">{s.lastSuccessUtc ? <>{utcStamp(s.lastSuccessUtc)} (<Age iso={s.lastSuccessUtc} />)</> : "–"}</td>
                     <td className="py-2 text-ink-2">{s.detail}</td>
                   </tr>
                 ))}

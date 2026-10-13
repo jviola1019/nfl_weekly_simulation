@@ -43,6 +43,7 @@ import {
   runPgTool,
   selectBundleDirs
 } from "./local/config";
+import { discoverBundles } from "./local/discover";
 
 const WEB = fileURLToPath(new URL("..", import.meta.url));
 const cfg = resolveLocalConfig(process.env, process.platform, join(WEB, ".."));
@@ -129,22 +130,17 @@ async function ensureDatabase(password: string) {
   }
 }
 
-function readManifest(dir: string): unknown {
-  try {
-    return JSON.parse(readFileSync(join(dir, "manifest.json"), "utf8"));
-  } catch {
-    return null;
-  }
-}
-
 async function migrateAndIngest(url: string) {
   const client = postgres(url, { max: 1, onnotice: () => {} });
   try {
     await migrate(drizzle(client), { migrationsFolder: join(WEB, "drizzle") });
     console.log("migrations applied");
     const db = drizzle(client, { schema });
-    const dirs = existsSync(cfg.bundlesDir) ? readdirSync(cfg.bundlesDir, { withFileTypes: true }).filter((d) => d.isDirectory()) : [];
-    const { ingest, skipped } = selectBundleDirs(dirs.map((d) => ({ name: d.name, manifest: readManifest(join(cfg.bundlesDir, d.name)) })));
+    const found = discoverBundles(cfg.bundlesDir);
+    if (found.strayManifest) {
+      console.log(`note: ${join(cfg.bundlesDir, "manifest.json")} is a bundle outside a cycle directory and is not ingested; move its files into ${join(cfg.bundlesDir, "<cycle_id>")}`);
+    }
+    const { ingest, skipped } = selectBundleDirs(found.entries);
     for (const name of skipped) console.log(`skipped    ${name}: no readable manifest.json`);
     if (!ingest.length) console.log(`no bundles in ${cfg.bundlesDir}`);
     let rejected = 0;

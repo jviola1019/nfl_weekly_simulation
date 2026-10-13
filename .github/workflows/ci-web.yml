@@ -124,3 +124,102 @@ jobs:
           name: playwright-report
           path: web/playwright-report
           retention-days: 7
+
+  # Offline and online look exactly the same (owner, 2026-10-13). The offline path is the
+  # real local runner (`npm run local`: its own PostgreSQL cluster, bundles ingested by
+  # web/scripts/local.ts, served on :3000); the online path is `next start` on :3100 against
+  # the service database, fed by the same `db:migrate` and `ingest` commands weekly-sim.yml
+  # runs. Both are served from one build, from copies of the same fixture bundles, and
+  # e2e/parity.spec.ts requires zero differing pixels on every public page and /desk at
+  # 390/768/1440 px in both colour schemes. The snapshots live in the runner's temp dir.
+  parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: nfl_parity_online
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ci" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      # a throwaway service database; nothing here is a secret
+      DATABASE_URL: postgres://ci:ci@127.0.0.1:5432/nfl_parity_online
+      PG_BIN: /usr/lib/postgresql/16/bin
+      NEXT_TELEMETRY_DISABLED: "1"
+      DESK_EMAIL: desk@example.test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build once (both paths serve this build)
+        run: npm run build
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Online path - migrate and ingest exactly as weekly-sim.yml does, then next start on :3100
+        run: |
+          pw="$(openssl rand -base64 24)"; echo "::add-mask::$pw"; echo "DESK_PASSWORD=$pw" >> "$GITHUB_ENV"
+          secret="$(openssl rand -base64 32)"; echo "::add-mask::$secret"; echo "AUTH_SECRET=$secret" >> "$GITHUB_ENV"
+          export DESK_PASSWORD="$pw" AUTH_SECRET="$secret"
+          npm run db:migrate
+          # oldest first, the order the local runner ingests them in
+          for d in weekly-2026-w04 backtest-nfl-games-v1 weekly-sim-2024-w15; do
+            npm run ingest -- "../contracts/fixtures/bundles/$d"
+          done
+          npm run seed:user
+          nohup npm run start -- -p 3100 > next-online.log 2>&1 &
+          for i in $(seq 1 60); do curl -fsS -o /dev/null http://127.0.0.1:3100/login && exit 0; sleep 1; done
+          cat next-online.log; exit 1
+
+      - name: Offline path - npm run local on :3000, from copies of the same bundles
+        run: |
+          mkdir -p "$RUNNER_TEMP/offline-bundles"
+          cp -r ../contracts/fixtures/bundles/. "$RUNNER_TEMP/offline-bundles/"
+          export NFL_LOCAL_BUNDLES="$RUNNER_TEMP/offline-bundles" NFL_LOCAL_PGDATA="$RUNNER_TEMP/offline-pgdata"
+          # its own cluster and database; the service database above is the online path
+          unset DATABASE_URL
+          nohup npm run local > local.log 2>&1 &
+          for i in $(seq 1 120); do curl -fsS -o /dev/null http://127.0.0.1:3000/login && break; sleep 1; done
+          curl -fsS -o /dev/null http://127.0.0.1:3000/login || { cat local.log; exit 1; }
+          pgpw="$(node -p "require('$NFL_LOCAL_PGDATA/nfl_local_credentials.json').password")"
+          echo "::add-mask::$pgpw"
+          DATABASE_URL="postgres://nfl_local:$pgpw@127.0.0.1:5434/nfl_local" npm run seed:user
+
+      - name: Pixel parity (offline writes the snapshots, online must match with zero differing pixels)
+        env:
+          E2E_PARITY_SNAPSHOTS: ${{ runner.temp }}/parity
+        run: |
+          E2E_BASE_URL=http://127.0.0.1:3000 npx playwright test --grep @parity --update-snapshots
+          E2E_BASE_URL=http://127.0.0.1:3100 npx playwright test --grep @parity
+
+      - name: Server logs
+        if: failure()
+        run: |
+          cat next-online.log || true
+          cat local.log || true
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-report
+          path: |
+            web/playwright-report
+            web/test-results
+          retention-days: 7

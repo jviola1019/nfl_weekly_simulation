@@ -1,5 +1,7 @@
 # Prompt for Claude Code in VS Code: full verification and the remaining work
 
+> Updated 2026-10-13 for A8: the HTML report is retired, so `run_week.R` now prints `Web bundle: ...` and `QA: passed` and the results are viewed with `cd web && npm run local`; `run_matrix.R` is 11/11 and integrity is 63/63. Steps A1 and A3 below were edited for this; the rest is as written on 2026-09-29.
+
 Paste everything below the line into Claude Code, running in VS Code at the root of a local clone of `jviola1019/nfl_weekly_simulation`. It assumes a full local environment: R 4.5.1 with renv, Node 22, Docker (for Postgres 16) and network access to GitHub, CRAN/RSPM, ESPN and Kalshi. It was written at the end of cloud session 2 (2026-09-29). That session couldn't install gt, nflreadr or randtoolbox, couldn't reach CRAN, ESPN or Kalshi, and had no Vercel/Neon connectors.
 
 ---
@@ -49,9 +51,9 @@ Every PR from sessions 1–2 (#190–#199) is merged into `main`, so run all of 
 ### A1. Phase 0 foundation
 ```bash
 Rscript scripts/run_tests.R            # must exit 0: 0 failed, 0 errors, only allowlisted skips (KNOWN-DEFECT M14/M15/P13, LIVE)
-Rscript scripts/verify_repo_integrity.R   # 60/60
+Rscript scripts/verify_repo_integrity.R   # 63/63
 Rscript scripts/verify_requirements.R     # exit 0
-Rscript scripts/run_matrix.R              # 10/10 (9 + golden master) now that Phase 1a is merged
+Rscript scripts/run_matrix.R              # 11/11 (incl. the golden master and the sim-bundle artifact)
 ```
 Check that `tests/skip_allowlist.txt` matches every skip, and that no test contains `expect_true(TRUE)` or swallows errors into empty tibbles (`test-skip-hygiene.R` enforces this).
 
@@ -72,8 +74,8 @@ Rscript -e 'a <- jsonlite::read_json("/tmp/bt_repro/run_meta.json"); b <- jsonli
 ### A3. Phase 1a wiring fixes (merged from #196)
 ```bash
 Rscript scripts/run_tests.R               # exit 0
-Rscript scripts/verify_repo_integrity.R   # 60/60
-Rscript scripts/run_matrix.R              # 10/10 (adds the golden-master artifact, ~800 s)
+Rscript scripts/verify_repo_integrity.R   # 63/63
+Rscript scripts/run_matrix.R              # 11/11 (the golden-master artifact takes ~910 s on a cold cache)
 Rscript scripts/golden_master.R compare 15 2024 reports/2026-09-29/golden-master/2024-w15
 ```
 - `compare` must print `golden master: no differences`. Anything above tolerance 1e-6 is a change. The fitted SD/NB-size columns carry about 4e-9 of optimizer noise, which is within tolerance.
@@ -83,7 +85,7 @@ Rscript scripts/golden_master.R compare 15 2024 reports/2026-09-29/golden-master
   ```bash
   Rscript run_week.R 16 2024
   ```
-  It must exit 0 and write `NFLvsmarket_report.html` with game and props tabs, plus `run_logs/config_*.rds` and `run_logs/final_*.rds`. Open the HTML and describe what you see.
+  It must exit 0, print `Web bundle: bundles/<season>-w<WW>-sim-<UTC stamp>` and `QA: passed`, and write `run_logs/config_*.rds` and `run_logs/final_*.rds`. View it with `cd web && npm run local` (then open http://127.0.0.1:3000) and describe what you see.
 
 ### A4. Deletion batch 2 (merged from #197)
 - `run_tests.R`, integrity and `run_matrix` pass as in A1.

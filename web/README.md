@@ -19,6 +19,28 @@ npm run local:stop          # stops the local database (Ctrl+C stops the web ser
 
 Online, the deployed app reads the same bundle: `.github/workflows/weekly-sim.yml` (started by hand with a week and season) runs `run_week.R`, checks the bundle with `npm run check-bundle` (the ingest's own loader, no database), keeps it as an artifact for 90 days, and runs `npm run ingest` against the deployed database only when the `DATABASE_URL` secret exists. Deployment is pending the owner's approval of the hosting connectors.
 
+### View the online run's bundle offline (while nothing is deployed)
+
+The workflow keeps its bundle as the `sim-bundle` artifact. `download-artifact` writes the bundle's files (with `manifest.json`) at the root of the directory you give it, which is exactly the layout `npm run local` discovers (a directory under `bundles/` with `manifest.json` at its root):
+
+```bash
+gh run download <run-id> -n sim-bundle -D bundles/<cycle_id>   # <cycle_id> is the "cycle_id" in the downloaded manifest.json
+cd web && npm run local
+```
+
+Or put the directory anywhere and point `NFL_LOCAL_BUNDLES` at its parent. The offline app then shows the same pages from the same code and the same data as the deployed one would. If you download straight into `bundles/` the runner says that a `manifest.json` outside a cycle directory is not ingested.
+
+### Offline and online look the same
+
+Both paths run one `next build`; the only difference is who ingested the bundles (`scripts/local.ts` offline, `npm run db:migrate && npm run ingest -- <dir>` online). `e2e/parity.spec.ts` (`@parity`) proves the pages render the same pixels: build once, serve the offline path (`npm run local` with `NFL_LOCAL_BUNDLES` and `NFL_LOCAL_PGDATA` pointing at scratch copies) on :3000 and the online path (`next start -p 3100` with `DATABASE_URL` at a scratch database that received the same bundles through `db:migrate` and `ingest`, oldest first), then:
+
+```bash
+E2E_BASE_URL=http://127.0.0.1:3000 E2E_PARITY_SNAPSHOTS=<scratch>/parity npx playwright test --grep @parity --update-snapshots
+E2E_BASE_URL=http://127.0.0.1:3100 E2E_PARITY_SNAPSHOTS=<scratch>/parity npx playwright test --grep @parity   # zero differing pixels
+```
+
+It covers every public page (home, two game pages, evidence, methodology, data health, props, login, not found) and `/desk` after login at 390, 768 and 1440 px in light and dark. `E2E_PARITY_GAMES` names the game pages. The one masked element is `[data-age]` ("x min ago" reads the request-time clock). CI runs it in the `parity` job of `ci-web.yml`.
+
 ## Run it locally (development)
 
 You need Node 20.9+ and a Postgres 16+ you can create databases on.
@@ -47,6 +69,7 @@ Every page renders on demand from the database (the CSP nonce requires it). A co
 | `TEST_DATABASE_URL=postgres://…/nfl_test REQUIRE_DB_TESTS=1 npm test` | adds the Postgres suites: ingest idempotency, tamper rejection, the qa_failed pointer, append-only triggers, the tier/stake CHECK, and public queries without stakes. The database name must end in `_test`; the harness drops its schema. |
 | `npm run e2e -- --grep-invert @sim` | Playwright against a running server (`E2E_BASE_URL`, default `http://127.0.0.1:3100`) with the fixture bundles: axe, overflow, security headers, `/desk` redirect, stakes never public, ID leaks, reduced motion, and offline rendering (every request served by this server) |
 | `npx playwright test --grep @sim` | with a simulator run published (the committed `weekly-sim-2024-w15` fixture, or `E2E_SIM_BUNDLE` pointing at a run's bundle): the market and simulator probabilities on the pages equal the bundle's at the displayed precision, and the margin and total distributions render with no axe issue |
+| `E2E_PARITY_SNAPSHOTS=<dir> npx playwright test --grep @parity` | offline versus online pixel parity (see above); skips without the variable |
 | `npm run contracts:export` | regenerates `contracts/schema/*.json` from the Drizzle schema; CI fails if the committed files differ |
 
 `scripts/review-ui.mjs` takes full-page screenshots at 390, 768 and 1440 px in both themes and prints overflow, console and axe results for a visual review (`GAME=<game_id>` picks the game page; default `2026_04_DEN_SF` from the fixture).

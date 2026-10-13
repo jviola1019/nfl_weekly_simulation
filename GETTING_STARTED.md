@@ -59,6 +59,15 @@ npm run local     # then open http://127.0.0.1:3000
 npm run local:stop
 ```
 
+To see a run the online workflow made (`.github/workflows/weekly-sim.yml`) before anything is deployed, download its artifact and view it the same way:
+
+```bash
+gh run download <run-id> -n sim-bundle -D bundles/<cycle_id>   # the cycle id is in the downloaded manifest.json
+cd web && npm run local
+```
+
+(or point `NFL_LOCAL_BUNDLES` at the directory's parent). Offline and online render identically; `web/README.md` describes the pixel-parity check.
+
 You need PostgreSQL installed (on Windows the default is `C:/Program Files/PostgreSQL/17/bin`; set `PG_BIN` if yours is elsewhere). The app shows, per game, the no-vig market and the simulator's win probability (unvalidated), and the simulated margin and total distributions. For the evidence page, run `Rscript scripts/write_backtest_bundle.R` once.
 
 The run also writes `artifacts/baseline_games.csv` (model vs market, with paper stakes: 1/8 Kelly in tracking units, `STAKING_MODE = "paper"`, not betting advice) and, with player props on, `artifacts/baseline_props.csv`.

@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { Age } from "@/components/Age";
 import { DataUnavailable } from "@/components/DataUnavailable";
 import { Field, FieldKey } from "@/components/Field";
 import { StatusBadge } from "@/components/StatusBadge";
 import { chipClass, PageTitle, StatTile } from "@/components/ui";
 import { candidateLines, evidence, publicSlate, runCandidates } from "@/lib/data/queries";
 import { sortSlate } from "@/lib/slateSort";
-import { age, utcStamp, weekday } from "@/lib/format";
+import { utcStamp, weekday } from "@/lib/format";
 import { candidateLabel, fieldLineNote, fieldLineNoun, publicFieldLine } from "@/lib/policy";
 
 export const dynamic = "force-dynamic";
@@ -172,7 +173,7 @@ export default async function ThisWeek({ searchParams }: { searchParams: Promise
       ))}
 
       <p className="mt-6 text-sm text-muted">
-        Market: nflverse consensus moneyline, proportionally devigged, as of {utcStamp(run.dataAsofUtc)} ({age(run.dataAsofUtc)}). It
+        Market: nflverse consensus moneyline, proportionally devigged, as of {utcStamp(run.dataAsofUtc)} (<Age iso={run.dataAsofUtc} />). It
         carries no timestamp or book, so line movement is not shown here.
       </p>
     </>
