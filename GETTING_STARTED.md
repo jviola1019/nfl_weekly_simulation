@@ -43,9 +43,9 @@ Rscript run_week.R 15 2024   # Week 15, 2024 season
 
 **Alternative: Edit config.R first**
 ```bash
-# 1. Edit WEEK_TO_SIM in config.R
-# 2. Run the simulation
-Rscript NFLsimulation.R
+# 1. Edit WEEK_TO_SIM (and SEASON) in config.R
+# 2. Run the week with those defaults (NFLsimulation.R on its own writes no web bundle)
+Rscript run_week.R
 ```
 
 ### 4. View Results

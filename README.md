@@ -361,7 +361,7 @@ Rscript scripts/run_matrix.R  # Should show 11/11 passed (golden-master needs ne
 | Directory | Purpose |
 |-----------|---------|
 | `run_logs/` | Execution logs from run_matrix.R |
-| `reports/` | Generated HTML reports |
+| `bundles/` | Weekly web bundles written by `run_week.R` (`R/sim_bundle.R`); `npm run local` ingests them |
 | `*.rds` | Cached validation results |
 
 ---
