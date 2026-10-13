@@ -20,3 +20,16 @@ export async function signIn(page: Page) {
   await Promise.all([page.waitForURL("**/desk"), page.getByRole("button", { name: /sign in/i }).click()]);
   await expect(page.getByRole("heading", { level: 1, name: "Desk" })).toBeVisible();
 }
+
+/**
+ * The score-distribution plots load as their slots near the viewport (components/charts/
+ * LazyScoreDistributionPlot.tsx). Scroll every slot into view and wait until each has drawn
+ * its SVG, then return to the top, so a screenshot or an axe run sees the finished page.
+ */
+export async function drawLazyCharts(page: Page) {
+  const slots = page.locator("[data-plot-slot]");
+  const n = await slots.count();
+  for (let i = 0; i < n; i += 1) await slots.nth(i).scrollIntoViewIfNeeded();
+  if (n > 0) await expect(page.locator("[data-plot-slot] svg[role=img]")).toHaveCount(n);
+  await page.evaluate(() => window.scrollTo(0, 0));
+}

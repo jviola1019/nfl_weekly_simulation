@@ -16,7 +16,10 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "contracts:export": "tsx scripts/export-contracts.ts",
     "ingest": "tsx scripts/ingest-bundle.ts",
-    "seed:user": "tsx scripts/seed-user.ts"
+    "seed:user": "tsx scripts/seed-user.ts",
+    "local": "tsx scripts/local.ts start",
+    "local:stop": "tsx scripts/local.ts stop",
+    "check-bundle": "tsx scripts/check-bundle.ts"
   },
   "dependencies": {
     "@visx/axis": "4.0.0",

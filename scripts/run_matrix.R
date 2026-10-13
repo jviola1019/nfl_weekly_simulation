@@ -162,12 +162,21 @@ artifacts <- list(
 
   # Offline-capable pipeline run: the game model for a fixture week against the
   # committed golden master (Phase 0 Ruling R14; Phase 1a Task 9). SKIP when the
-  # nflverse host is unreachable. Timeout = 2 x the recorded runtime (379 s in CI).
+  # nflverse host is unreachable. Timeout 1800 s: a cold-cache compare takes about 910 s on
+  # the owner's Windows machine (2026-10-13); CI's recorded runtime is 379 s.
   list(
     name = "golden-master",
     category = "pipeline",
     command = "system2('Rscript', c('scripts/golden_master.R', 'compare', '15', '2024', 'reports/2026-09-29/golden-master/2024-w15')) -> st; quit(status = st)",
-    timeout_secs = 800
+    timeout_secs = 1800
+  ),
+
+  # The simulator's web bundle (A8), built offline from committed inputs by the production
+  # builder (R/sim_bundle.R); the script exits 1 when the bundle fails the contract
+  list(
+    name = "sim-bundle",
+    category = "pipeline",
+    command = "system2('Rscript', c('scripts/write_sim_fixture.R', shQuote(tempdir()))) -> st; quit(status = st)"
   ),
 
   # Test suite

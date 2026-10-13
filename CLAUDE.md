@@ -27,6 +27,7 @@ An NFL game prediction model using Monte Carlo simulation with:
 | `scripts/run_tests.R` | Test suite + skip policy | `Rscript scripts/run_tests.R` |
 | `scripts/verify_repo_integrity.R` | Integrity check | `Rscript scripts/verify_repo_integrity.R` |
 | `scripts/run_matrix.R` | Run all artifacts | `Rscript scripts/run_matrix.R` |
+| `web/scripts/local.ts` | Offline results viewer (the local app) | `cd web && npm run local` |
 
 ### Player Props Module (v2.9.0)
 
@@ -98,14 +99,15 @@ apply_game_context(players, game)
 ### Expected Outputs
 
 When `run_week.R` completes successfully:
-1. **HTML Report**: `NFLvsmarket_report.html` with game predictions AND player props (tabbed)
-2. **Run Logs**: `run_logs/config_*.rds`, `run_logs/final_*.rds`
-3. **Console**: Data quality badge, simulation progress, calibration status
+1. **Web bundle**: `bundles/<season>-w<WW>-sim-<UTC stamp>/` with the market (C0) and simulator (C3) win probabilities, margin and total distributions, and source status (`R/sim_bundle.R`). View it offline with `cd web && npm run local` (http://127.0.0.1:3000). The HTML report was retired at checkpoint A8.
+2. **Audit tables**: `artifacts/baseline_games.csv` and, when `RUN_PLAYER_PROPS`, `artifacts/baseline_props.csv`
+3. **Run Logs**: `run_logs/config_*.rds`, `run_logs/final_*.rds`
+4. **Console**: Data quality badge, simulation progress, calibration status, the bundle path and its QA result
 
 ### What "Correct" Looks Like
 
 - `scripts/verify_repo_integrity.R` exits 0
-- `scripts/run_matrix.R`: 10/10 artifacts pass (the golden-master artifact may SKIP as LIVE when nflverse is unreachable)
+- `scripts/run_matrix.R`: 11/11 artifacts pass (the golden-master artifact may SKIP as LIVE when nflverse is unreachable)
 - `scripts/run_tests.R` exits 0 (skip policy enforced)
 - `run_week.R`: Completes without exit code 1
 
@@ -187,8 +189,8 @@ Rules:
 Re-run all verification:
 1. Rscript scripts/run_tests.R (must exit 0: no failures, no errors, only allowlisted skips)
 2. Rscript scripts/verify_repo_integrity.R (must exit 0)
-3. Rscript scripts/run_matrix.R (must show 10/10 pass, or 9 pass + golden-master LIVE skip offline)
-4. Verify HTML report generates if run_week.R was changed
+3. Rscript scripts/run_matrix.R (must show 11/11 pass, or 10 pass + golden-master LIVE skip offline)
+4. If run_week.R or R/sim_bundle.R changed: run_week.R prints "Web bundle: <dir>" and "QA: passed", and `cd web && npm run local` serves that run
 
 Report: PASS/FAIL with evidence.
 ```
@@ -281,16 +283,17 @@ str(predictions[c("game_id", "season", "week")])
 exclusions: list("renv" = Inf, "run_logs" = Inf)
 ```
 
-### HTML Report Not Generated
+### Web Bundle Not Written or Not Shown
 
-**Symptom**: run_week.R completes but no HTML file
+**Symptom**: run_week.R completes but writes no `bundles/<cycle_id>/`, or `npm run local` shows an older run
 
-**Diagnosis**: Check for earlier errors; report generation is near end of pipeline.
+**Diagnosis**: The end of run_week.R prints `Web bundle: <dir>` and `QA: passed` or `QA: FAILED (n)` with each failure.
 
 **Common Causes**:
-1. gt package not installed
-2. Previous step produced empty results
-3. File write permission issue
+1. An earlier error stopped the run; the bundle step runs after the simulation and props
+2. QA failed: the ingest stores the run as `qa_failed` and the app keeps the last good run (the failures are listed in the console and on /data-health)
+3. PostgreSQL not found by `npm run local`: set `PG_BIN` to its bin directory (Windows default `C:/Program Files/PostgreSQL/17/bin`)
+4. /evidence is empty: no backtest bundle; run `Rscript scripts/write_backtest_bundle.R` once
 
 ### Script Hangs After "Snap-weighted injury impacts enabled"
 
@@ -343,6 +346,7 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `R/red_zone_data.R` - Red zone efficiency metrics
 - `R/correlated_props.R` - Gaussian copula player props (v2.9.0)
 - `R/bundle_writer.R` - R side of the R -> web data contract (validates against `contracts/schema/`)
+- `R/sim_bundle.R` - the simulator's weekly bundle, written by `run_week.R` (replaced the HTML report at A8)
 - `R/mu_terms.R` - explicit mean composition: the term table and `compose_mu()` (M22)
 - `R/schedule_context.R` - neutral sites, home-field points and rest days (M24, M23)
 
@@ -355,6 +359,7 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `scripts/verify_repo_integrity.R` - repository integrity checks; exits 0 when all pass
 - `scripts/verify_requirements.R` - 20-issue audit verification
 - `scripts/run_matrix.R` - Execute all artifacts
+- `scripts/write_sim_fixture.R` - writes the web test fixture `contracts/fixtures/bundles/weekly-sim-2024-w15` (synthetic draws, not model output)
 
 ### Game Backtest
 - `backtest/walk_forward.R` - pre-registered walk-forward shootout; `--stage score` refuses to run unless `reports/<date>/backtest-games-v1/PROTOCOL.md` matches the hash in `backtest/eval_windows/nfl_games_v1.json` and is committed. Never edit a frozen PROTOCOL.md; register a new version instead.
@@ -383,12 +388,15 @@ Rscript scripts/run_tests.R
 # 2. Integrity checks (must exit 0)
 Rscript scripts/verify_repo_integrity.R
 
-# 3. Full artifact matrix (must show 10/10 pass; golden-master needs network)
+# 3. Full artifact matrix (must show 11/11 pass; golden-master needs network)
 Rscript scripts/run_matrix.R
 
 # 4. Run weekly simulation (use valid week!)
 # Edit config.R first: WEEK_TO_SIM <- 16; SEASON <- 2024
 Rscript -e "source('run_week.R')"
+
+# 5. View the run offline (after `npm ci` in web/ once)
+cd web && npm run local
 ```
 
 ---

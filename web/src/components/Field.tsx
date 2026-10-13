@@ -46,11 +46,13 @@ export function Field(props: FieldProps) {
   const home = teamColors(homeId);
   const xMarket = pm === null ? null : (1 - pm) * 100;
   const xModel = pmod === null ? null : (1 - pmod) * 100;
+  // the model's numbers are announced with or without a market line (a simulator run can
+  // have a game the market never priced, audit M11)
   const summary =
-    pm === null
-      ? `${awayName} at ${homeName}: no market line`
-      : `${awayName} at ${homeName}. Market: ${awayName} ${pct(1 - pm)}, ${homeName} ${pct(pm)}.` +
-        (model && pmod !== null ? ` ${model.label}${model.validated ? "" : " (unvalidated)"}: ${awayName} ${pct(1 - pmod)}, ${homeName} ${pct(pmod)}.` : "");
+    (pm === null
+      ? `${awayName} at ${homeName}: no market line.`
+      : `${awayName} at ${homeName}. Market: ${awayName} ${pct(1 - pm)}, ${homeName} ${pct(pm)}.`) +
+    (model && pmod !== null ? ` ${model.label}${model.validated ? "" : " (unvalidated)"}: ${awayName} ${pct(1 - pmod)}, ${homeName} ${pct(pmod)}.` : "");
 
   const title = (
     <span className="flex items-center gap-2.5">

@@ -4,9 +4,9 @@ This document is the comprehensive mathematical reference for the NFL prediction
 
 ---
 
-## Report Rendering Authority
+## Where Results Go
 
-HTML/report rendering is intentionally centralized in `NFLmarket.R` (`moneyline_report()` and `export_moneyline_comparison_html()`). `NFLsimulation.R` is limited to simulation/backtest generation and preparing report inputs; it does not own a separate HTML export path.
+The HTML report was retired at checkpoint A8. `run_week.R` writes the run to a weekly web bundle (`R/sim_bundle.R`: the no-vig market as candidate C0, the simulator as C3, margin and total distributions, source status) and the comparison table to `artifacts/baseline_games.csv`. The local web app shows the bundle offline (`cd web && npm run local`).
 
 ---
 
@@ -342,9 +342,9 @@ Where `P(side)` is the model probability for the relevant side (over or under fo
 
 ## 8. Known Limitations
 
-1. **Shrinkage hides the raw model view.** The displayed probability is the shrunk (blended) probability, not the direct simulation output. Users cannot see the model's "pure" opinion without consulting the raw simulation logs.
+1. **Shrinkage hides the raw model view.** The displayed probability is the shrunk (blended) probability, not the direct simulation output: the web bundle's simulator line (C3 `p_home_final`) is the engine blend shrunk toward the no-vig market with `SHRINKAGE` (games without a market show the unshrunk value), and the raw simulator value is stored beside it as `p_home_raw`. The app displays only the shrunk number.
 
-2. **Prop odds fallback is synthetic only when enabled.** If market odds are unavailable and `PROP_ALLOW_MODEL_ODDS = FALSE` (default), the report shows missing odds and suppresses EV/recommendations. Setting `PROP_ALLOW_MODEL_ODDS = TRUE` allows the pipeline to derive odds from the simulation distribution with `PROP_MARKET_VIG` (model-derived, not sportsbook-specific).
+2. **Prop odds fallback is synthetic only when enabled.** If market odds are unavailable and `PROP_ALLOW_MODEL_ODDS = FALSE` (default), the app shows props as "Not priced" and EV/recommendations are suppressed. Setting `PROP_ALLOW_MODEL_ODDS = TRUE` allows the pipeline to derive odds from the simulation distribution with `PROP_MARKET_VIG` (model-derived, not sportsbook-specific).
 
 3. **TD model uses average scoring TDs as the Negative Binomial mean.** For low-volume players (tight ends, QB rushers), this may underestimate variance because the sample size for their TD rates is small and unstable.
 

@@ -5,7 +5,9 @@ import AxeBuilder from "@axe-core/playwright";
 
 const BASE = process.env.BASE ?? "http://127.0.0.1:3100";
 const OUT = process.env.OUT ?? "e2e/screenshots";
-const PAGES = ["/", "/evidence", "/methodology", "/data-health", "/props", "/games/2026_04_DEN_SF", "/login"];
+// GAME picks the game page (a simulator run's game ids differ from the fixture's)
+const GAME = process.env.GAME ?? "2026_04_DEN_SF";
+const PAGES = ["/", "/evidence", "/methodology", "/data-health", "/props", `/games/${GAME}`, "/login"];
 const WIDTHS = [390, 768, 1440];
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM ?? undefined });
 const report = [];
@@ -15,6 +17,11 @@ async function visit(context, path, width, scheme) {
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   page.on("pageerror", (e) => errors.push(String(e)));
   await page.goto(BASE + path, { waitUntil: "networkidle" });
+  // score-distribution plots load as their slots near the viewport: draw them before looking
+  const slots = await page.locator("[data-plot-slot]").count();
+  for (let i = 0; i < slots; i += 1) await page.locator("[data-plot-slot]").nth(i).scrollIntoViewIfNeeded();
+  if (slots) await page.locator("[data-plot-slot] svg[role=img]").nth(slots - 1).waitFor();
+  await page.evaluate(() => window.scrollTo(0, 0));
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   const name = `${path === "/" ? "home" : path.slice(1).replace(/\//g, "_")}-${width}-${scheme}.png`;
   await page.screenshot({ path: `${OUT}/${name}`, fullPage: true });
