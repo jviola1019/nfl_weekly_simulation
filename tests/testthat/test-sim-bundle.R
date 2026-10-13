@@ -256,6 +256,20 @@ test_that("sb_git_state ignores the tracked run outputs under artifacts/ but not
   })
 })
 
+test_that("a failed git call is unknown, never clean, and fails QA (CI run 38352473576: sh rejected the pathspec)", {
+  failing <- function(args) structure(character(), status = 2L)   # what system2 returns when the command fails
+  s <- sb_git_state(run = failing)
+  expect_true(is.na(s$code_git_sha))
+  expect_true(is.na(s$code_dirty))
+  i <- sb_test_inputs()
+  m <- write_sim_bundle(i$final, i$sims, i$schedule, i$quality, season = 2024, week = 15, seed = 1, n_sims = 6,
+                        out_root = withr::local_tempdir(), git = list(code_git_sha = strrep("a", 40), code_dirty = NA),
+                        teams_csv = sb_teams_csv, contracts_dir = sb_contracts,
+                        renv_lock = file.path(.test_project_root, "renv.lock"))
+  expect_false(m$qa$ok)
+  expect_true(any(grepl("code_dirty unavailable: git status failed", unlist(m$qa$failures), fixed = TRUE)))
+})
+
 test_that("the committed web fixture holds exactly what scripts/write_sim_fixture.R writes", {
   committed <- file.path(.test_project_root, "contracts", "fixtures", "bundles", "weekly-sim-2024-w15")
   env <- new.env()

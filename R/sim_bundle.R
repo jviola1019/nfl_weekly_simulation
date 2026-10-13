@@ -183,14 +183,22 @@ build_sim_bundle_tables <- function(final, sims, schedule, quality,
   )
 }
 
+#' Run git with every argument shell-quoted: on Linux system2 runs the joined command line
+#' through `sh -c`, and an unquoted ":(exclude)artifacts" made sh fail (CI run 38352473576)
+sb_run_git <- function(args) {
+  tryCatch(suppressWarnings(system2("git", shQuote(args), stdout = TRUE, stderr = FALSE)),
+           error = function(e) structure(character(), status = 127L))
+}
+
 #' git provenance for the bundle. run_week.R rewrites the tracked artifacts/*.csv on
-#' every run; they are outputs, not code, so they do not mark the code dirty.
-sb_git_state <- function() {
-  sha <- tryCatch(system2("git", c("rev-parse", "HEAD"), stdout = TRUE, stderr = FALSE), error = function(e) NA_character_)
-  status <- tryCatch(system2("git", c("status", "--porcelain", "--untracked-files=no", "--", ".", ":(exclude)artifacts"),
-                             stdout = TRUE, stderr = FALSE), error = function(e) NULL)
-  list(code_git_sha = if (length(sha)) sha[1] else NA_character_,
-       code_dirty = if (is.null(status)) NA else length(status) > 0)
+#' every run; they are outputs, not code, so they do not mark the code dirty. A failed git
+#' call is unknown (NA), never clean.
+sb_git_state <- function(run = sb_run_git) {
+  ok <- function(x) is.null(attr(x, "status")) || identical(as.integer(attr(x, "status")), 0L)
+  sha <- run(c("rev-parse", "HEAD"))
+  status <- run(c("status", "--porcelain", "--untracked-files=no", "--", ".", ":(exclude)artifacts"))
+  list(code_git_sha = if (ok(sha) && length(sha)) sha[1] else NA_character_,
+       code_dirty = if (ok(status)) length(status) > 0 else NA)
 }
 
 #' Write the simulator's weekly bundle to <out_root>/<cycle_id>/ and return its manifest
@@ -207,6 +215,9 @@ write_sim_bundle <- function(final, sims, schedule, quality, season, week, seed,
   # provenance is part of the contract; a run outside a git checkout must not look clean
   if (length(git$code_git_sha) != 1 || is.na(git$code_git_sha) || !nzchar(git$code_git_sha)) {
     built$qa <- c(built$qa, "manifest: code_git_sha unavailable: run from a git checkout")
+  }
+  if (length(git$code_dirty) != 1 || is.na(git$code_dirty)) {
+    built$qa <- c(built$qa, "manifest: code_dirty unavailable: git status failed")
   }
   meta <- list(
     cycle_id = cycle_id, season = as.integer(season), week = as.integer(week),
