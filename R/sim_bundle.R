@@ -4,7 +4,8 @@
 # Replaces the retired HTML report (checkpoint A8). run_week.R writes this bundle and
 # the local web app (cd web && npm run local) ingests and serves it with no network.
 #   - game_predictions: per game a C0 row (the no-vig market) and a C3 row (the
-#     simulator: p_home_raw = simulator two-way, p_home_final = after its market blend).
+#     simulator: p_home_raw = simulator two-way, p_home_final = the blend shrunk toward the
+#     no-vig market by SHRINKAGE, as in artifacts/baseline_games.csv; unshrunk without a market).
 #   - score_distributions: margin and total, one bin per integer outcome over the
 #     central SB_MASS of the simulated draws; p is the share of ALL draws.
 #   - source_status: the run's data-quality tracker (R/data_validation.R) plus nflverse.
