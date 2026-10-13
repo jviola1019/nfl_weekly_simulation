@@ -254,6 +254,17 @@ DIVISION_GAME_ADJUST <- -0.2
 CONFERENCE_GAME_ADJUST <- 0.0
 
 # =============================================================================
+# SIMULATED MEAN COMPOSITION (audit M22, Plan 1b-1)
+# =============================================================================
+
+#' @description Terms summed into the simulated mean scores. "base" is expected drives x
+#'   points per drive; "hfa" is home-field points for the home team. Every other term in
+#'   R/mu_terms.R MU_TERM_NAMES is computed and logged (run_logs/mu_terms_*.rds) but enters
+#'   the means only after the pre-registered walk-forward backtest admits it (Plan 1b-3).
+#' @default c("base", "hfa")
+MU_TERMS_ADMITTED <- c("base", "hfa")
+
+# =============================================================================
 # PRIMETIME ADJUSTMENTS (REQUIRES VALIDATION)
 # =============================================================================
 # Preliminary analysis shows Thursday games underperform (62.1% accuracy, 0.238 Brier)
@@ -951,6 +962,11 @@ set.seed(SEED)
   # SHRINKAGE validation
   if (!is.numeric(SHRINKAGE) || SHRINKAGE < 0 || SHRINKAGE > 1) {
     errors <- c(errors, sprintf("SHRINKAGE=%s is invalid. Must be 0-1.", SHRINKAGE))
+  }
+
+  # MU_TERMS_ADMITTED validation (audit M22); term names are checked by compose_mu()
+  if (!is.character(MU_TERMS_ADMITTED) || !"base" %in% MU_TERMS_ADMITTED) {
+    errors <- c(errors, "MU_TERMS_ADMITTED must be a character vector that includes \"base\".")
   }
 
   # KELLY_FRACTION validation

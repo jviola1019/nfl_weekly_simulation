@@ -2,12 +2,21 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec. To verify everything and finish the remaining work in a full local environment (VS Code), use `docs/handoff/2026-09-29-vscode-prompt.md`.
 
+## Plan 1b-1 done - 2026-10-04 (draft PR #210, awaiting owner approval to merge)
+
+Branch `fix/phase1b-1-explicit-model` (9 commits for the 7 code tasks, head code `3900255`) fixes M22, M22b, M24, M23 and M20. PR: https://github.com/jviola1019/nfl_weekly_simulation/pull/210.
+- **Gates on the head:** `Rscript scripts/run_tests.R` exit 0: `tests=431 passed=1603 failed=0 errors=0 skipped=1 unapproved_skips=0`. `Rscript scripts/verify_repo_integrity.R` exit 0: `Total: 60 passed, 0 failed`.
+- **Golden master (CI, run 37186552533, `attribute` job 111391373469):** every commit's output change matched the plan's predictions (see `reports/2026-09-29/golden-master/2024-w15/ATTRIBUTION.md#phase-1b-1-210-explicit-model`). Re-recorded from the artifact of `3900255` (`csv_sha256 b7b888a7...`), with the new `inputs.csv`.
+- **Local `run_matrix` (Windows):** 10/10 with the v3 calibration cache key (2026-10-04). The earlier local 9/10 was not a platform difference (audit T8, corrected): a stale `~/.cache/nfl_sim_calib_cache` entry survived the M23/M24 changes because the key was not bumped; `calib_cache_key` is now `version = 3L` and `score_cache_key` has `version = 1L`. `golden_master.R compare 15 2024` prints `golden master: no differences`.
+- **Not merged.** The owner approves the merge.
+- **Next target: Plan 1b-2** (point-in-time `predict_week()` and the C3 candidate; spec M5, M6, M8, M9). Roadmap: `docs/superpowers/plans/2026-10-01-phase1b-1-explicit-model.md`, "Roadmap after Plan 1b-1".
+
 ## Current state — 2026-09-30, session 3 (VS Code verification and validation sprint)
 
 **Part A verification of `main` (`eaa4138`):** `reports/2026-09-30/VERIFICATION.md`.
 - Every gate passes on an LF checkout with the locked renv library, with three exceptions, each diagnosed:
   - Windows line endings (T5, T6) and web paths (T7) are fixed in #201, #204 and #202.
-  - The golden-master blend columns differ across operating systems (T8). Every simulator column matches.
+  - The golden-master blend columns differed locally (T8). Later found to be a stale calibration cache, not an operating-system difference; resolved by #210 (v3 cache key). Every simulator column matched.
 - The A2 backtest reproduces byte for byte on Windows once #204 is in: `result_sha256 7244a0bc…`.
 
 **New defects** (audit addendum, #200):
