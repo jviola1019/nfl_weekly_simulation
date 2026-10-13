@@ -1,5 +1,7 @@
 # A8: Retire the Legacy HTML Report; the Next.js App Is the Only UI, Offline and Online — Implementation Plan
 
+> **Erratum (2026-10-13).** The "live nflverse drift" statements in this plan (about lines 33, 5564, 5691-5692 and 5754) were disproven. CI's Linux recording of `4f9aad3` (run 37186552533) has the same `csv_sha256` as the committed 2026-09-29 record, and `gm_diff` at 1e-6 returns no rows. The local differences came from a stale calibration cache whose key was not bumped (audit T8 corrected; fixed by #210's version 3 key). The rest of the plan is unchanged.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** `run_week.R` stops writing the orange `NFLvsmarket_report.html` and instead writes a weekly web bundle that the Next.js app shows everywhere: offline through `npm run local` (http://127.0.0.1:3000, no internet), online through a workflow that checks the same bundle and ingests it into the deployed database once one exists; every page carries the Broadcast Line redesign, and every gate is run.

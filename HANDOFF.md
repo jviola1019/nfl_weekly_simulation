@@ -4,29 +4,31 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 
 ## Current state — A8 (feat/a8-local-app)
 
-2026-10-13. Branch `feat/a8-local-app` (base `4f9aad3`; `main` at `28e4ed7`, with #210, merged in on 2026-10-13), draft PR #212 against `main` (never merged by the agent). The gate results below were measured before that merge; the final fix wave re-runs them on the merged branch.
+2026-10-13. Branch `feat/a8-local-app` (base `4f9aad3`; `main` at `28e4ed7`, with #210, merged in on 2026-10-13), draft PR #212 against `main` (never merged by the agent). The final whole-branch review returned "with fixes"; the fix wave below applied them and the owner's four decisions, and every gate was re-run on the merged branch.
 
-**Tasks (commits):** plan `dbe154d`; Task 1 Archivo `0aa21c3`; Task 2 `npm run local` `7927be4`; Task 3 bundle writer `58ea0e2`; Task 4 field `fd96979`; Task 5 game page `a771b7a`; Task 6 pages `269f887`; Task 7 retire the report `d364804`; Task 8 docs `31449f7` + fix `0b6510c`; Task 9 workflow `040a7e1`; Task 10 this close-out commit.
+**Tasks (commits):** plan `dbe154d`; Task 1 Archivo `0aa21c3`; Task 2 `npm run local` `7927be4`; Task 3 bundle writer `58ea0e2`; Task 4 field `fd96979`; Task 5 game page `a771b7a`; Task 6 pages `269f887`; Task 7 retire the report `d364804`; Task 8 docs `31449f7` + fix `0b6510c`; Task 9 workflow `040a7e1`; Task 10 close-out `689462e`; merge of main `2c7ee86`; fix wave `844ba3c`, `ddfe2b7`, `250c8c3`, `97e06ea`, `c7d9e1f`, `867b076` and the docs commit after them.
 
-**Gate results (2026-10-13; every R command ran with a fresh HOME):**
-- `Rscript scripts/run_tests.R`: exit 0, `tests=407 passed=1589 failed=0 errors=0 skipped=1 unapproved_skips=0`.
-- `Rscript scripts/verify_repo_integrity.R`: exit 0, `Schema Checks: 19 passed, 0 failed`, `Invariant Checks: 44 passed, 0 failed`, `Total: 63 passed, 0 failed`.
-- `Rscript scripts/run_matrix.R`: first (cold-cache) run 10/11: golden-master `FAIL (800.3s)`, `command ... timed out after 800s` (the matrix's own cap, killed during calibration; I also had Playwright running concurrently). Direct `Rscript scripts/golden_master.R compare 15 2024 reports/2026-09-29/golden-master/2024-w15` with the same fresh HOME and no cap: exit 0, 910 s, `golden master: no differences`. Re-run of `run_matrix.R` with the now-built caches: `Total: 11 artifacts, Passed: 11, Failed: 0`, `[RUN MATRIX: ALL PASSED]` (golden-master 284 s).
-- Merge probe vs 1b-1 `6ee5417`: `git merge-tree` exit 1; only `CLAUDE.md` conflicts (docs); `NFLsimulation.R` auto-merged cleanly.
-- Web: typecheck, lint exit 0; `contracts:export` leaves `contracts/schema` unchanged; vitest `Test Files  15 passed (15)`, `Tests  106 passed (106)`.
-- Playwright (fixtures, :3100): `70 passed`; `@sim` `11 passed`; offline `1 passed`; review-ui 48 rows all overflow 0, errors 0, no serious axe, no leaks.
-- Demo: `run_week.R 15 2024` exit 0: `Web bundle: bundles/2024-w15-sim-20261013T052558Z`, `QA: passed`, `ANALYSIS COMPLETE`; `check-bundle`: `ok weekly 2024-w15-sim-20261013T052558Z (bundle 352660818f39): 116 rows ... QA passed`; `write_backtest_bundle.R`: `bundle 847a2632... -> bundles/backtest-nfl-games-v1-7244a0bc (qa ok: TRUE)`.
-- `npm run local`: first start created the cluster, migrated, `published` both bundles; second start `PostgreSQL already running`, `duplicate` for both. Playwright on :3000: `@sim` `24 passed`, offline `1 passed`; review-ui 48 rows, all clean.
-- Lighthouse 13.5.0 (:3000): evidence desktop a11y 1.00 perf 1.00 CLS 0.000 LCP 0.69 s PASS; evidence mobile 1.00 / 0.82 / 0.000 / 2.80 s FAIL; game desktop 1.00 / 0.99 / 0.000 / 0.75 s PASS; game mobile 1.00 / 0.73 / 0.000 / 3.21 s FAIL; home desktop 1.00 / 1.00 / 0.000 / 0.81 s PASS; home mobile 1.00 / 0.87 / 0.000 / 2.67 s FAIL.
+**Fix wave decisions (owner, 2026-10-13):** C3 shows the production pipeline's shrunk probability (`SHRINKAGE`, 70% market); the dead `library(scales)` line is removed (`scales` stays as a dependency of ggplot2, car and cowplot); mobile LCP measured A/B against main and fixed because A8 caused a regression; offline and online must look exactly the same.
+
+**C3 comparison (controller, exploratory, 2026 weeks 1-5, 78 market games, game-level bootstrap):** Brier C0 0.2289; C3 raw 0.2275; pre-shrink blend 0.2276; shrunk 0.2281. Every difference from the market has a CI that includes 0, and the shrunk value cannot be told from the blend; the choice rests on the protocol evidence and its mean gap to the market (0.97 points against 3.24 for the blend and 9.29 raw). The engine is not point-in-time yet, so this is not a protocol result.
+
+**Gate results (fix wave, 2026-10-13; every R command ran with a fresh HOME):**
+- `run_tests.R`: exit 0, `tests=449 passed=1718 failed=0 errors=0 skipped=1 unapproved_skips=0`.
+- `verify_repo_integrity.R`: exit 0, `Total: 63 passed, 0 failed`.
+- `golden_master.R compare 15 2024 reports/2026-09-29/golden-master/2024-w15`: exit 0, `golden master: no differences` (677 s, cold cache).
+- `run_matrix.R` (cold cache, new 1800 s cap): 11/11 (`Total: 11 artifacts, Passed: 11, Failed: 0`, `[RUN MATRIX: ALL PASSED]`; golden-master passed on the cold cache under the 1800 s cap; the whole matrix ran 05:08 to 05:23)
+- Web: typecheck and lint exit 0; vitest 18 files, 126 tests with `REQUIRE_DB_TESTS=1`; Playwright fixtures 70 passed (60 `@parity` skipped without the variable), `@sim` 11 passed; review-ui 48 rows, overflow 0, errors 0, no serious axe, no leaks.
+- Parity (`@parity`, build once, offline `npm run local` on :3000 against `next start` on :3100 over a database fed by `db:migrate` and `ingest`): fixture bundles: offline writes 60 snapshots (`60 passed`), online compares at maxDiffPixels 0 / threshold 0 (`60 passed`); real 2024 week 15 bundle plus backtest: `66 passed` and `66 passed`; a negative control (a wrong baseline) fails as it should. One mask: `[data-age]`.
+- Lighthouse 13.5.0 mobile A/B (5 runs, medians, same machine and data): game page main 0.82 / LCP 2.51 s, this branch 0.82 / 2.67 s (before the fix: 0.77 / 2.78 s against 0.71 / 3.23 s, and 0.88 / 2.52 s against 0.78 / 2.81 s after the zod split); home main 0.83 / 2.46 s, this branch 0.82 / 2.46 s.
 
 **Open items:**
-- Mobile Lighthouse performance (spec §6 P7): LCP 2.67-3.21 s on this machine; confirm on CI or a reference machine.
-- Plan 1b-1's v3 calibration cache key reached this branch with the 2026-10-13 merge of `main`. Before that, a Windows run reusing `~/.cache/nfl_sim_calib_cache` could serve a calibration history built by other code, so A8's gates and demo ran with a fresh HOME.
-- `run_matrix`'s golden-master has an 800 s cap; a cold cache needs about 910 s here, so the first run on an empty cache fails on the timeout.
-- Final fix wave: home "closest" sort treats a null market as 0.5; interval wording should say "at least 90%"; assert that a no-market game shows "no market line".
-- Owner actions: merge approval and order versus Plan 1b-1; remove `gt`/`scales` from `DESCRIPTION` and `renv.lock`; authorize Vercel/Neon and add the `DATABASE_URL` secret; first manual `weekly-sim.yml` run after merge.
+- Mobile LCP sits at the 2.5 s gate on this machine for main as well as this branch (it was running other work); confirm on CI or a reference machine (spec §6 P7).
+- M6 (spread-mapped C0 needs an engine flag), M13 (engine NA fill of `home_p_2w_blend`) and the remaining Task 2 and Task 5 polish are ledgered, not done.
+- The demo bundle under `bundles/` predates the C3 change (its C3 is unshrunk); run `Rscript run_week.R 15 2024` again for a current one.
+- Owner actions: merge approval; remove `gt` from `DESCRIPTION` and `gt` and `reactable` from `renv.lock` (dependency change; not done here); authorize Vercel/Neon and add the `DATABASE_URL` secret; first manual `weekly-sim.yml` run after merge (`gh workflow run weekly-sim.yml -f week=15 -f season=2024`); view its `sim-bundle` artifact offline with `gh run download <run-id> -n sim-bundle -D bundles/<cycle_id>` then `cd web && npm run local`.
 
-**Context-reset packet:** objective: retire the HTML report, Next.js app the only UI offline and online. Done: Tasks 1-10. Not done: whole-branch review, final fix wave, owner merge (main with #210 is merged in). Confirmed facts: all gates above (pre-merge). Open risks: mobile LCP; golden-master cap. Next target: final review, then the fix wave with gates re-run on the merged branch.
+**Context-reset packet:** objective: retire the HTML report, Next.js app the only UI offline and online. Done: Tasks 1-10, merge of main, final review, fix wave with all gates. Not done: owner merge. Confirmed facts: the gates above. Open risks: mobile LCP on a reference machine; the new `parity` CI job has not run in CI yet. Next target: owner review of PR #212.
+
 ## Plan 1b-1 done - 2026-10-04 (PR #210, merged by the owner 2026-10-13 as `28e4ed7`)
 
 Branch `fix/phase1b-1-explicit-model` (9 commits for the 7 code tasks, head code `3900255`) fixes M22, M22b, M24, M23 and M20. PR: https://github.com/jviola1019/nfl_weekly_simulation/pull/210.
