@@ -95,10 +95,10 @@ graph LR
 |---|---|---|
 | G, game model | L0 → G1 → G2 → G3 | D |
 | D, data | D1 | G |
-| P, props | P1 → P2 → P3 | after L0; P2 waits for G1's `predict_week()` |
+| P, props | P1 → P2 → P3 | G and D (owner, 2026-10-13); P2 waits for G1's `predict_week()` |
 | O, operations | O1, weekly from L0 | everything |
 
-**Concurrency.** At most two implementation tracks run at once, with two reviewers. The API session limit has stopped agents repeatedly, most recently all three research agents for this roadmap on 2026-10-12. Recovery steps are in §5.
+**Concurrency.** G1, D1 and P1 run in parallel (owner, 2026-10-13), with one reviewer per track and no other implementation running alongside them. The API session limit has stopped agents repeatedly, most recently all three research agents for this roadmap on 2026-10-12. Recovery steps are in §5.
 
 ## 4. Phases
 
@@ -286,7 +286,15 @@ graph LR
 - Long runs (the R suite, C3 Tune, Lighthouse) run in the background with logs in the scratchpad.
 - The controller checks the commit and report on disk before trusting an agent's final message.
 
-## 6. Owner decisions (recommendation first)
+## 6. Owner decisions
+
+**Decided by the owner on 2026-10-13:**
+- **Track order:** G1, D1 and P1 run in parallel. This is three implementation tracks; §3's concurrency note is raised to three, with one reviewer each.
+- **The props window:** yes, for props only. A separate `nfl_props_v1` protocol is signed by the owner before any 2025 props data is read. Distribution families are chosen on 2018–2024 outcomes. The sealed 2025 game Holdout is untouched.
+- **C3 compute:** a CI matrix by season, with hashed artifacts.
+- **Planning:** wait until everything the plans need is in place (L0: #210 and A8 merged), then write every task-level plan needed to finish the roadmap: G1, D1 and P1 first (they start together), then G2, G3, P2, P3 and O1. A later plan is written against the interfaces its predecessors' plans define, and is dry-run on top of their dry-run trees.
+
+The options as they were put to the owner (recommendation first):
 
 1. **Track order.** Recommended: run G1 and D1 in parallel once L0 lands, and start P1 after A8 merges (two implementation tracks at a time). The alternative is to run P1 now as a third track; that is faster but reviews are thinner.
 2. **The props evaluation window.** Kalshi priced history starts in 2025, so a props backtest must read 2025 prop prices and outcomes. Recommended:
