@@ -6,14 +6,14 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 
 2026-10-13. Branch `feat/a8-local-app` (base `4f9aad3`; `main` at `28e4ed7`, with #210, merged in on 2026-10-13), draft PR #212 against `main` (never merged by the agent). The final whole-branch review returned "with fixes"; the fix wave below applied them and the owner's four decisions, and every gate was re-run on the merged branch.
 
-**Tasks (commits):** plan `dbe154d`; Task 1 Archivo `0aa21c3`; Task 2 `npm run local` `7927be4`; Task 3 bundle writer `58ea0e2`; Task 4 field `fd96979`; Task 5 game page `a771b7a`; Task 6 pages `269f887`; Task 7 retire the report `d364804`; Task 8 docs `31449f7` + fix `0b6510c`; Task 9 workflow `040a7e1`; Task 10 close-out `689462e`; merge of main `2c7ee86`; fix wave `844ba3c`, `ddfe2b7`, `250c8c3`, `97e06ea`, `c7d9e1f`, `867b076` and the docs commit after them.
+**Tasks (commits):** plan `dbe154d`; Task 1 Archivo `0aa21c3`; Task 2 `npm run local` `7927be4`; Task 3 bundle writer `58ea0e2`; Task 4 field `fd96979`; Task 5 game page `a771b7a`; Task 6 pages `269f887`; Task 7 retire the report `d364804`; Task 8 docs `31449f7` + fix `0b6510c`; Task 9 workflow `040a7e1`; Task 10 close-out `689462e`; merge of main `2c7ee86`; fix wave `844ba3c`, `ddfe2b7`, `250c8c3`, `97e06ea`, `c7d9e1f`, `867b076`, `f849cb8`; Linux git-quoting fix `a30c61c`; comment fix `af8a346`; and the docs commit after them.
 
 **Fix wave decisions (owner, 2026-10-13):** C3 shows the production pipeline's shrunk probability (`SHRINKAGE`, 70% market); the dead `library(scales)` line is removed (`scales` stays as a dependency of ggplot2, car and cowplot); mobile LCP measured A/B against main and fixed because A8 caused a regression; offline and online must look exactly the same.
 
 **C3 comparison (controller, exploratory, 2026 weeks 1-5, 78 market games, game-level bootstrap):** Brier C0 0.2289; C3 raw 0.2275; pre-shrink blend 0.2276; shrunk 0.2281. Every difference from the market has a CI that includes 0, and the shrunk value cannot be told from the blend; the choice rests on the protocol evidence and its mean gap to the market (0.97 points against 3.24 for the blend and 9.29 raw). The engine is not point-in-time yet, so this is not a protocol result.
 
 **Gate results (fix wave, 2026-10-13; every R command ran with a fresh HOME):**
-- `run_tests.R`: exit 0, `tests=449 passed=1718 failed=0 errors=0 skipped=1 unapproved_skips=0`.
+- `run_tests.R`: exit 0, `tests=450 passed=1722 failed=0 errors=0 skipped=1 unapproved_skips=0` (after `a30c61c`).
 - `verify_repo_integrity.R`: exit 0, `Total: 63 passed, 0 failed`.
 - `golden_master.R compare 15 2024 reports/2026-09-29/golden-master/2024-w15`: exit 0, `golden master: no differences` (677 s, cold cache).
 - `run_matrix.R` (cold cache, new 1800 s cap): 11/11 (`Total: 11 artifacts, Passed: 11, Failed: 0`, `[RUN MATRIX: ALL PASSED]`; golden-master passed on the cold cache under the 1800 s cap; the whole matrix ran 05:08 to 05:23)
@@ -24,10 +24,11 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 **Open items:**
 - Mobile LCP sits at the 2.5 s gate on this machine for main as well as this branch (it was running other work); confirm on CI or a reference machine (spec §6 P7).
 - M6 (spread-mapped C0 needs an engine flag), M13 (engine NA fill of `home_p_2w_blend`) and the remaining Task 2 and Task 5 polish are ledgered, not done.
-- The demo bundle under `bundles/` predates the C3 change (its C3 is unshrunk); run `Rscript run_week.R 15 2024` again for a current one.
+- `bw_git_state()` in `R/bundle_writer.R` predates this PR and is used by `scripts/write_backtest_bundle.R` and `backtest/prospective.R`. It still treats a failed git call as clean: `tryCatch` catches only R errors, and `isTRUE(NA)` becomes FALSE at `:145`. Fix it in a follow-up the same way `a30c61c` fixed `sb_git_state()`.
+- The local demo bundle `bundles/2024-w15-sim-20261013T104247Z` (code `af8a346`, clean, QA passed, `check-bundle` 116 rows) carries the shrunk C3. Checked against its run log for all 16 games, the largest difference from `shrink_probability_toward_market(blend, market, 0.70)` is 4.4e-16. `npm run local` publishes it as the newest weekly run.
 - Owner actions: merge approval; remove `gt` from `DESCRIPTION` and `gt` and `reactable` from `renv.lock` (dependency change; not done here); authorize Vercel/Neon and add the `DATABASE_URL` secret; first manual `weekly-sim.yml` run after merge (`gh workflow run weekly-sim.yml -f week=15 -f season=2024`); view its `sim-bundle` artifact offline with `gh run download <run-id> -n sim-bundle -D bundles/<cycle_id>` then `cd web && npm run local`.
 
-**Context-reset packet:** objective: retire the HTML report, Next.js app the only UI offline and online. Done: Tasks 1-10, merge of main, final review, fix wave with all gates. Not done: owner merge. Confirmed facts: the gates above. Open risks: mobile LCP on a reference machine; the new `parity` CI job has not run in CI yet. Next target: owner review of PR #212.
+**Context-reset packet:** objective: retire the HTML report, Next.js app the only UI offline and online. Done: Tasks 1-10, merge of main, final review, fix wave with all gates. Not done: owner merge. Confirmed facts: the gates above. Open risks: mobile LCP on a reference machine. CI on `a30c61c`: R run 38384112037 and web run 38384112202 (including `parity`) pass. Next target: owner review of PR #212.
 
 ## Plan 1b-1 done - 2026-10-04 (PR #210, merged by the owner 2026-10-13 as `28e4ed7`)
 
