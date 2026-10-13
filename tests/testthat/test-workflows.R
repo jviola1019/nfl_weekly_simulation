@@ -31,6 +31,21 @@ test_that("weekly-sim runs on demand with an explicit week and season, and refus
   expect_match(wf_runs(sim), 'Rscript run_week.R "$WEEK" "$SEASON"', fixed = TRUE)
 })
 
+test_that("weekly-sim rejects a malformed week or season before anything else runs (final review M5)", {
+  sim <- wf_read("weekly-sim.yml")$jobs$simulate
+  runs <- vapply(sim$steps, function(s) if (is.null(s$run)) "" else s$run, "")
+  guard <- which(grepl("[0-9]{1,2}", runs, fixed = TRUE) & grepl("[0-9]{4}", runs, fixed = TRUE))
+  sealed <- which(grepl('"$SEASON" = "2025"', runs, fixed = TRUE))
+  expect_length(guard, 1)
+  expect_lt(guard, sealed)   # the input check runs before the 2025 check
+  expect_match(runs[guard], '"$WEEK" =~ ^[0-9]{1,2}$', fixed = TRUE)
+  expect_match(runs[guard], '"$SEASON" =~ ^[0-9]{4}$', fixed = TRUE)
+  expect_match(runs[guard], "::error::", fixed = TRUE)
+  env <- sim$steps[[guard]]$env
+  expect_identical(env$WEEK, "${{ inputs.week }}")      # via env, never interpolated into the script
+  expect_identical(env$SEASON, "${{ inputs.season }}")
+})
+
 test_that("weekly-sim builds the bundle with the same R path as the local app, checks it and keeps it", {
   sim <- wf_read("weekly-sim.yml")$jobs$simulate
   uses <- wf_uses(sim)

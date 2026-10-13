@@ -37,6 +37,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Reject a malformed week or season
+        env:
+          WEEK: ${{ inputs.week }}
+          SEASON: ${{ inputs.season }}
+        run: |
+          if ! [[ "$WEEK" =~ ^[0-9]{1,2}$ ]]; then echo "::error::week must be one or two digits (got '$WEEK')"; exit 1; fi
+          if ! [[ "$SEASON" =~ ^[0-9]{4}$ ]]; then echo "::error::season must be four digits (got '$SEASON')"; exit 1; fi
+
       - name: Refuse the sealed 2025 season
         env:
           SEASON: ${{ inputs.season }}
