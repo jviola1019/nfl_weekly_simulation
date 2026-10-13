@@ -64,10 +64,33 @@ test_that("C0 carries the market and C3 the simulator; a game without a market k
   det0 <- row("2024_15_BUF_DET", "C0"); det3 <- row("2024_15_BUF_DET", "C3")
   expect_equal(c(sf0$p_home_raw, sf0$p_home_final, sf0$p_home_mkt_novig), rep(0.583, 3))
   expect_equal(c(sf3$p_home_raw, sf3$p_home_final, sf3$p_home_mkt_novig, sf3$margin_q50, sf3$total_q50),
-               c(0.48, 0.56, 0.583, -1, 43))
+               c(0.48, shrink_probability_toward_market(0.56, 0.583, SHRINKAGE), 0.583, -1, 43))
   expect_true(all(is.na(c(det0$p_home_raw, det0$p_home_final, det0$p_home_mkt_novig, det3$p_home_mkt_novig))))
   expect_equal(det3$p_home_final, 0.55)
   expect_identical(b$qa, character())
+})
+
+test_that("C3 p_home_final is the production pipeline's shrunk probability; a no-market game stays unshrunk and is named (O1)", {
+  i <- sb_test_inputs()
+  b <- sb_build(i)
+  gp <- b$tables$game_predictions
+  c3 <- gp[gp$candidate == "C3", ]
+  mk <- i$final$market_available
+  want <- shrink_probability_toward_market(i$final$home_p_2w_blend[mk], i$final$home_p_2w_mkt[mk], SHRINKAGE)
+  got <- c3$p_home_final[match(i$final$game_id[mk], c3$game_id)]
+  expect_equal(got, want, tolerance = 1e-12)
+  expect_gt(abs(got - i$final$home_p_2w_blend[mk]), 1e-3)   # the shrink really moved it
+  # raw stays the simulator's own probability
+  expect_equal(c3$p_home_raw, i$final$home_p_2w_model[match(c3$game_id, i$final$game_id)])
+  # no market: nothing to shrink toward, so the blend is kept and the game is named
+  expect_equal(c3$p_home_final[c3$game_id == "2024_15_BUF_DET"], 0.55)
+  expect_match(b$tables$source_status$detail[4], "C3 unshrunk (no market): 2024_15_BUF_DET", fixed = TRUE)
+  # all games have a market: no such line
+  j <- i; j$final$market_available <- TRUE
+  expect_false(grepl("C3 unshrunk", sb_build(j)$tables$source_status$detail[4], fixed = TRUE))
+  # the same number as the comparison table's blend_home_prob_shrunk (NFLmarket.R:2188-2190) is
+  # shrink_probability_toward_market(blend_home_prob, market_home_prob, SHRINKAGE); the table itself
+  # needs the full comparison result and cannot be built from this synthetic final.
 })
 
 test_that("games come from the schedule: UTC kickoff, roof, neutral flag, scores", {
@@ -194,6 +217,22 @@ test_that("report_sim_bundle prints the bundle path, its QA and how to view it o
   out <- capture.output(report_sim_bundle(bad))
   expect_match(out[2], "QA: FAILED (1)", fixed = TRUE)
   expect_identical(out[3], "    - games: not in the schedule: X")
+})
+
+test_that("a missing git sha is a QA failure, so the console says FAILED and not passed (M7)", {
+  i <- sb_test_inputs()
+  out <- withr::local_tempdir()
+  write <- function(sha) write_sim_bundle(i$final, i$sims, i$schedule, i$quality, season = 2024, week = 15, seed = 1,
+                                          n_sims = 6, out_root = out, git = list(code_git_sha = sha, code_dirty = NA),
+                                          teams_csv = sb_teams_csv, contracts_dir = sb_contracts,
+                                          renv_lock = file.path(.test_project_root, "renv.lock"),
+                                          cycle_id = paste0("sha-", length(sha), is.na(sha[1])))
+  for (sha in list(NA_character_, character(0), "")) {
+    m <- write(sha)
+    expect_false(m$qa$ok)
+    expect_true(any(grepl("code_git_sha unavailable: run from a git checkout", unlist(m$qa$failures), fixed = TRUE)))
+    expect_true(any(grepl("QA: FAILED", capture.output(report_sim_bundle(m)), fixed = TRUE)))
+  }
 })
 
 test_that("sb_git_state ignores the tracked run outputs under artifacts/ but not code", {

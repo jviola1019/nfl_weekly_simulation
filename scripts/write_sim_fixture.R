@@ -14,6 +14,8 @@
 # the committed tables equal what this script writes. Exit 1 when QA fails.
 # =============================================================================
 
+source("config.R")   # SHRINKAGE: C3 p_home_final is shrunk toward the market as in production
+source("R/utils.R")  # shrink_probability_toward_market
 source("R/bundle_writer.R")
 source("R/sim_bundle.R")
 

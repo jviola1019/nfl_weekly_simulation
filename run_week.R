@@ -195,7 +195,6 @@ tryCatch({
   cat("  ANALYSIS COMPLETE\n")
   cat("=================================================================\n")
   cat("  Check the run_logs/ folder for output files.\n")
-  cat("  View the results offline: cd web && npm run local\n")
   if (exists("props_results") && !is.null(props_results)) {
     cat("  Player props included in analysis.\n")
   }

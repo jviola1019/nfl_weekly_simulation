@@ -80,13 +80,19 @@ sb_games_table <- function(schedule, game_ids) {
 #' C0 (market) and C3 (simulator) rows per game. The market is used only where the
 #' engine flagged it available: NFLsimulation.R leaves the model probability in
 #' home_p_2w_mkt when a line is missing (attach_market_probs), and that is not a market.
-sb_predictions <- function(final) {
+#' C3 p_home_final is the production pipeline's probability: the engine blend shrunk toward
+#' the no-vig market with `shrinkage` (SHRINKAGE, config.R), the same call
+#' build_moneyline_comparison_table makes for blend_home_prob_shrunk (NFLmarket.R). A game
+#' without a market has nothing to shrink toward and keeps the unshrunk blend.
+sb_predictions <- function(final, shrinkage = SHRINKAGE) {
   f <- as.data.frame(final)
   mkt <- ifelse(f$market_available %in% TRUE, f$home_p_2w_mkt, NA_real_)
+  p_final <- ifelse(is.na(mkt), f$home_p_2w_blend,
+                    shrink_probability_toward_market(f$home_p_2w_blend, mkt, shrinkage = shrinkage))
   c0 <- data.frame(game_id = f$game_id, candidate = "C0", p_home_raw = mkt, p_home_final = mkt,
                    p_home_mkt_novig = mkt, margin_q50 = NA_real_, total_q50 = NA_real_, stringsAsFactors = FALSE)
   c3 <- data.frame(game_id = f$game_id, candidate = "C3", p_home_raw = f$home_p_2w_model,
-                   p_home_final = f$home_p_2w_blend, p_home_mkt_novig = mkt,
+                   p_home_final = p_final, p_home_mkt_novig = mkt,
                    margin_q50 = f$margin_median, total_q50 = f$total_median, stringsAsFactors = FALSE)
   rbind(c0, c3)
 }
@@ -118,8 +124,9 @@ sb_detail <- function(what, status, ids_label, ids) {
 #' source_status rows from get_data_quality(); a status the map does not know
 #' (including "unknown": the run never recorded one) becomes "failed". Games whose
 #' schedule row has no kickoff time are named, because sb_kickoff_utc() shows them at
-#' 1:00 PM ET (as backtest/build_inputs.R does) and that must not pass silently.
-sb_source_status <- function(quality, now = Sys.time(), kickoff_assumed = character()) {
+#' 1:00 PM ET (as backtest/build_inputs.R does) and that must not pass silently. Games in
+#' `unshrunk` have no market, so their C3 p_home_final is the unshrunk blend (sb_predictions).
+sb_source_status <- function(quality, now = Sys.time(), kickoff_assumed = character(), unshrunk = character()) {
   map <- function(kind, s) {
     st <- unname(SB_STATUS[[kind]][s])
     if (length(st) != 1 || is.na(st)) "failed" else st
@@ -136,7 +143,8 @@ sb_source_status <- function(quality, now = Sys.time(), kickoff_assumed = charac
                                                   paste(sort(as.character(kickoff_assumed)), collapse = ", ")) else ""),
       sb_detail("injury reports", quality$injury$status, "seasons missing", quality$injury$missing_seasons),
       sb_detail("game-day weather", quality$weather$status, "fallback weather for", quality$weather$fallback_games),
-      sb_detail("closing moneylines", quality$market$status, "no market line for", quality$market$missing_games)
+      paste0(sb_detail("closing moneylines", quality$market$status, "no market line for", quality$market$missing_games),
+             if (length(unshrunk)) sprintf("; C3 unshrunk (no market): %s", paste(sort(as.character(unshrunk)), collapse = ", ")) else "")
     ),
     stringsAsFactors = FALSE
   )
@@ -145,7 +153,8 @@ sb_source_status <- function(quality, now = Sys.time(), kickoff_assumed = charac
 #' All tables of a simulator bundle plus the QA failures found while building them.
 #' A `final` missing a required column is a programming error and stops.
 build_sim_bundle_tables <- function(final, sims, schedule, quality,
-                                    teams_csv = file.path("data", "reference", "teams.csv"), now = Sys.time()) {
+                                    teams_csv = file.path("data", "reference", "teams.csv"), now = Sys.time(),
+                                    shrinkage = SHRINKAGE) {
   missing <- setdiff(SB_FINAL_COLUMNS, names(final))
   if (length(missing)) stop("build_sim_bundle_tables: final lacks ", paste(missing, collapse = ", "), call. = FALSE)
   ids <- as.character(final$game_id)
@@ -165,9 +174,11 @@ build_sim_bundle_tables <- function(final, sims, schedule, quality,
   unknown <- setdiff(stats::na.omit(c(games$home_team_id, games$away_team_id)), teams$team_id)
   qa <- c(qa, flag(unknown, "games: team ids not in data/reference/teams.csv: %s"))
   dist <- sb_distributions(sims, intersect(ids, names(sims)))
+  unshrunk <- ids[!(final$market_available %in% TRUE)]
   list(
-    tables = list(teams = teams, games = games, game_predictions = sb_predictions(final),
-                  score_distributions = dist$table, source_status = sb_source_status(quality, now, kickoff_assumed)),
+    tables = list(teams = teams, games = games, game_predictions = sb_predictions(final, shrinkage),
+                  score_distributions = dist$table,
+                  source_status = sb_source_status(quality, now, kickoff_assumed, unshrunk)),
     qa = c(qa, dist$qa)
   )
 }
@@ -189,15 +200,23 @@ write_sim_bundle <- function(final, sims, schedule, quality, season, week, seed,
                              cycle_id = sprintf("%d-w%02d-sim-%s", as.integer(season), as.integer(week),
                                                 format(now, "%Y%m%dT%H%M%SZ", tz = "UTC")),
                              teams_csv = file.path("data", "reference", "teams.csv"),
-                             contracts_dir = file.path("contracts", "schema"), renv_lock = "renv.lock") {
-  built <- build_sim_bundle_tables(final, sims, schedule, quality, teams_csv = teams_csv, now = now)
+                             contracts_dir = file.path("contracts", "schema"), renv_lock = "renv.lock",
+                             shrinkage = SHRINKAGE) {
+  built <- build_sim_bundle_tables(final, sims, schedule, quality, teams_csv = teams_csv, now = now,
+                                   shrinkage = shrinkage)
+  # provenance is part of the contract; a run outside a git checkout must not look clean
+  if (length(git$code_git_sha) != 1 || is.na(git$code_git_sha) || !nzchar(git$code_git_sha)) {
+    built$qa <- c(built$qa, "manifest: code_git_sha unavailable: run from a git checkout")
+  }
   meta <- list(
     cycle_id = cycle_id, season = as.integer(season), week = as.integer(week),
     model_label = SB_MODEL_LABEL, data_asof_utc = bw_utc(now),
     code_git_sha = git$code_git_sha, code_dirty = git$code_dirty,
     config = list(
       engine = "NFLsimulation.R (Monte Carlo: negative binomial scores, Gaussian copula)",
-      candidates = list(C0 = "no-vig market", C3 = "simulator two-way home win probability; p_home_final after its market blend"),
+      candidates = list(C0 = "no-vig market",
+                        C3 = "simulator two-way home win probability; p_home_final after the production pipeline's shrinkage toward the no-vig market (unshrunk where a game has no market)"),
+      shrinkage = shrinkage,
       market_source = "nflverse consensus close: moneylines devigged proportionally (the spread mapped to a probability where a game has no moneyline)",
       calibration_method = quality$calibration$method,
       distribution_mass = SB_MASS

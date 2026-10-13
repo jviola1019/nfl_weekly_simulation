@@ -1513,7 +1513,6 @@ suppressPackageStartupMessages({
   library(tidyverse)
   library(lubridate)
   library(nflreadr)
-  library(scales)
   library(digest)
   library(glmmTMB)   # NB GLMM
   library(nnet)      # multinomial calibration
