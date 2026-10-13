@@ -5,7 +5,7 @@ import { Field, FieldKey, gapText } from "@/components/Field";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ScoreDistributionChart } from "@/components/charts/ScoreDistributionChart";
 import { candidateLines, evidence, gameDistributions, publicGame, runCandidates } from "@/lib/data/queries";
-import { parseBins } from "@/lib/distribution";
+import { parseBins } from "@/lib/parseBins";
 import { kickoff, pct } from "@/lib/format";
 import { candidateLabel, fieldLineShortNote, publicFieldLine } from "@/lib/policy";
 import { teamColors } from "@/lib/teams";

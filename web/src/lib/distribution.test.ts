@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   binQuantile,
@@ -6,10 +7,10 @@ import {
   distributionSummary,
   marginLabel,
   outcomeLabel,
-  parseBins,
   stepPaths,
   ticksEvery
 } from "./distribution";
+import { parseBins } from "./parseBins";
 
 const SYM = [
   { x: -1, p: 0.25 },
@@ -80,5 +81,14 @@ describe("geometry", () => {
   it("puts ticks on football-sized steps", () => {
     expect(ticksEvery(-20.5, 14.5, 7)).toEqual([-14, -7, 0, 7, 14]);
     expect(ticksEvery(9.5, 80.5, 10)).toEqual([10, 20, 30, 40, 50, 60, 70, 80]);
+  });
+});
+
+describe("the chart's client bundle (final review I6)", () => {
+  it("imports no zod and no d3 scale: they cost the game page about 90 KiB of script and mobile LCP", () => {
+    for (const f of ["./distribution.ts", "../components/charts/ScoreDistributionChart.tsx", "./linearScale.ts"]) {
+      const src = readFileSync(new URL(f, import.meta.url), "utf8");
+      expect(src, f).not.toMatch(/from\s+["'](zod|@visx\/scale|d3-scale)["']/);
+    }
   });
 });

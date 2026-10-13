@@ -3,28 +3,15 @@
  * per integer outcome, {x, p}, over the central 99.9% of the simulator's draws, with p
  * the share of ALL draws (R/sim_bundle.R). The column is free JSON, so it is parsed and
  * checked here before anything is drawn; an unreadable distribution is reported on the
- * page, never guessed at.
+ * page, never guessed at (parseBins, in ./parseBins, so the zod it uses stays out of the
+ * chart's client bundle: it cost the game page about 90 KiB of script, final review I6).
  */
-import { z } from "zod";
-
 export interface Bin {
   x: number;
   p: number;
 }
 
 export type DistKind = "margin" | "total";
-
-const BinsSchema = z.array(z.object({ x: z.number().int(), p: z.number().min(0).max(1) })).min(1);
-
-/** Sorted bins, or null unless every x is an integer one apart and the shares sum to at most 1. */
-export function parseBins(raw: unknown): Bin[] | null {
-  const r = BinsSchema.safeParse(raw);
-  if (!r.success) return null;
-  const bins = [...r.data].sort((a, b) => a.x - b.x);
-  for (let i = 1; i < bins.length; i++) if (bins[i]!.x !== bins[i - 1]!.x + 1) return null;
-  const mass = coveredMass(bins);
-  return mass > 0 && mass <= 1 + 1e-9 ? bins : null;
-}
 
 /** The share of all simulated games the bins cover. */
 export function coveredMass(bins: Bin[]): number {

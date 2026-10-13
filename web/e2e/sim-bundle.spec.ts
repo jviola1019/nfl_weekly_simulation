@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { pct } from "../src/lib/format";
-import { SCHEMES, WIDTHS } from "./helpers";
+import { drawLazyCharts, SCHEMES, WIDTHS } from "./helpers";
 
 /**
  * A published simulator run (A8). CI ingests the committed fixture after the main e2e
@@ -61,6 +61,7 @@ test.describe("@sim simulator run", () => {
     const g = games[0]!;
     const dists = read<Dist[]>("score_distributions").filter((d) => d.game_id === g.game_id);
     await page.goto(`/games/${g.game_id}`);
+    await drawLazyCharts(page);   // each figure's plot arrives as its slot nears the viewport
     await expect(page.getByText("Regulation ties go to overtime, so an exact tie is rare.")).toHaveCount(1);
     for (const [kind, title] of [["margin", "Simulated final margin"], ["total", "Simulated total points"]] as const) {
       const fig = page.locator("figure").filter({ hasText: title });
@@ -80,6 +81,7 @@ test.describe("@sim simulator run", () => {
         await page.emulateMedia({ colorScheme: scheme });
         await page.goto(`/games/${games[0]!.game_id}`, { waitUntil: "networkidle" });
         await expect(page.locator("figure")).toHaveCount(2);
+        await drawLazyCharts(page);
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
         expect(overflow).toBeLessThanOrEqual(0);
         const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();

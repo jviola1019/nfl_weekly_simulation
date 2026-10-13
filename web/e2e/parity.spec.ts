@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { SCHEMES, signIn, WIDTHS } from "./helpers";
+import { drawLazyCharts, SCHEMES, signIn, WIDTHS } from "./helpers";
 
 /**
  * Offline and online look exactly the same (owner, 2026-10-13). The offline app (`npm run
@@ -29,6 +29,7 @@ const PAGES: { name: string; path: string }[] = [
 ];
 
 async function settle(page: Page) {
+  await drawLazyCharts(page);
   await page.evaluate(() => document.fonts.ready);
   // charts measure their container after hydration; two frames let them draw at the final width
   await page.evaluate(() => new Promise<void>((done) => requestAnimationFrame(() => requestAnimationFrame(() => done()))));
