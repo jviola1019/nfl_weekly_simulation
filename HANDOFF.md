@@ -4,7 +4,7 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 
 ## Current state — A8 (feat/a8-local-app)
 
-2026-10-13. Branch `feat/a8-local-app` (base `4f9aad3`), draft PR against `main` (never merged by the agent).
+2026-10-13. Branch `feat/a8-local-app` (base `4f9aad3`; `main` at `28e4ed7`, with #210, merged in on 2026-10-13), draft PR #212 against `main` (never merged by the agent). The gate results below were measured before that merge; the final fix wave re-runs them on the merged branch.
 
 **Tasks (commits):** plan `dbe154d`; Task 1 Archivo `0aa21c3`; Task 2 `npm run local` `7927be4`; Task 3 bundle writer `58ea0e2`; Task 4 field `fd96979`; Task 5 game page `a771b7a`; Task 6 pages `269f887`; Task 7 retire the report `d364804`; Task 8 docs `31449f7` + fix `0b6510c`; Task 9 workflow `040a7e1`; Task 10 this close-out commit.
 
@@ -21,19 +21,27 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 
 **Open items:**
 - Mobile Lighthouse performance (spec §6 P7): LCP 2.67-3.21 s on this machine; confirm on CI or a reference machine.
-- Windows runs that reuse `~/.cache/nfl_sim_calib_cache` can serve a calibration history built by other code until Plan 1b-1's v3 cache key reaches this branch (merge main after #210); A8's gates and demo ran with a fresh HOME.
+- Plan 1b-1's v3 calibration cache key reached this branch with the 2026-10-13 merge of `main`. Before that, a Windows run reusing `~/.cache/nfl_sim_calib_cache` could serve a calibration history built by other code, so A8's gates and demo ran with a fresh HOME.
 - `run_matrix`'s golden-master has an 800 s cap; a cold cache needs about 910 s here, so the first run on an empty cache fails on the timeout.
 - Final fix wave: home "closest" sort treats a null market as 0.5; interval wording should say "at least 90%"; assert that a no-market game shows "no market line".
 - Owner actions: merge approval and order versus Plan 1b-1; remove `gt`/`scales` from `DESCRIPTION` and `renv.lock`; authorize Vercel/Neon and add the `DATABASE_URL` secret; first manual `weekly-sim.yml` run after merge.
 
-**Context-reset packet:** objective: retire the HTML report, Next.js app the only UI offline and online. Done: Tasks 1-10. Not done: final fix wave, whole-branch review, merge after #210. Confirmed facts: all gates above. Open risks: mobile LCP; golden-master cap. Next target: final fix wave, then merge main after 1b-1 lands.
+**Context-reset packet:** objective: retire the HTML report, Next.js app the only UI offline and online. Done: Tasks 1-10. Not done: whole-branch review, final fix wave, owner merge (main with #210 is merged in). Confirmed facts: all gates above (pre-merge). Open risks: mobile LCP; golden-master cap. Next target: final review, then the fix wave with gates re-run on the merged branch.
+## Plan 1b-1 done - 2026-10-04 (PR #210, merged by the owner 2026-10-13 as `28e4ed7`)
+
+Branch `fix/phase1b-1-explicit-model` (9 commits for the 7 code tasks, head code `3900255`) fixes M22, M22b, M24, M23 and M20. PR: https://github.com/jviola1019/nfl_weekly_simulation/pull/210.
+- **Gates on the head:** `Rscript scripts/run_tests.R` exit 0: `tests=431 passed=1603 failed=0 errors=0 skipped=1 unapproved_skips=0`. `Rscript scripts/verify_repo_integrity.R` exit 0: `Total: 60 passed, 0 failed`.
+- **Golden master (CI, run 37186552533, `attribute` job 111391373469):** every commit's output change matched the plan's predictions (see `reports/2026-09-29/golden-master/2024-w15/ATTRIBUTION.md#phase-1b-1-210-explicit-model`). Re-recorded from the artifact of `3900255` (`csv_sha256 b7b888a7...`), with the new `inputs.csv`.
+- **Local `run_matrix` (Windows):** 10/10 with the v3 calibration cache key (2026-10-04). The earlier local 9/10 was not a platform difference (audit T8, corrected): a stale `~/.cache/nfl_sim_calib_cache` entry survived the M23/M24 changes because the key was not bumped; `calib_cache_key` is now `version = 3L` and `score_cache_key` has `version = 1L`. `golden_master.R compare 15 2024` prints `golden master: no differences`.
+- **Merged** by the owner on 2026-10-13 (`28e4ed7`).
+- **Next target:** the modeling roadmap, draft PR #211 (`docs/superpowers/plans/2026-10-12-modeling-roadmap.md`). It supersedes the "Roadmap after Plan 1b-1" section of the 1b-1 plan. Its task-level plans (G1 = Plan 1b-2, D1, P1 first) are written after A8 merges, per the owner's 2026-10-13 decision.
 
 ## Current state — 2026-09-30, session 3 (VS Code verification and validation sprint)
 
 **Part A verification of `main` (`eaa4138`):** `reports/2026-09-30/VERIFICATION.md`.
 - Every gate passes on an LF checkout with the locked renv library, with three exceptions, each diagnosed:
   - Windows line endings (T5, T6) and web paths (T7) are fixed in #201, #204 and #202.
-  - The golden-master blend columns differ across operating systems (T8). Every simulator column matches.
+  - The golden-master blend columns differed locally (T8). Later found to be a stale calibration cache, not an operating-system difference; resolved by #210 (v3 cache key). Every simulator column matched.
 - The A2 backtest reproduces byte for byte on Windows once #204 is in: `result_sha256 7244a0bc…`.
 
 **New defects** (audit addendum, #200):

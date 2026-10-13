@@ -12,6 +12,39 @@ All notable changes to the NFL Prediction Model are documented in this file.
 - **Removed:** `export_moneyline_comparison_html`, `open_moneyline_report`, `moneyline_report`, the report schema validator, `R/report_banner.R`, the `NFLsimulation.R` fallback exporter and reactable slate table, three test files, and six display-label greps in `scripts/audit_verify.sh`. A call-graph check found no remaining reference; `build_moneyline_comparison_table` and the CSV exports stay. Golden master: A8 against a same-day base recording, "no differences"; against the committed 2026-09-29 recording with a fresh cache (as CI runs), `golden master: no differences` (direct `golden_master.R compare 15 2024`, 910 s; the cold-cache run inside `run_matrix` hit the matrix's 800 s per-artifact cap, and the warm re-run passed in 284 s).
 - **Gates** (2026-10-13, every R command with a fresh HOME): `run_tests.R` 407 tests, 1589 passed, 0 failed, 0 errors, 1 allowlisted skip (KNOWN-DEFECT P13); integrity 63/63; `run_matrix` 11/11 on the warm re-run with a fresh cache (the cold first run: 10/11, golden-master timed out at 800 s); vitest 15 files, 106 tests with the pg suites and `REQUIRE_DB_TESTS=1`; Playwright 70 (fixtures) + 11 (`@sim` fixture) + 24 (`@sim` on the 2024 week-15 run) + offline on both; axe/overflow clean on 48 + 48 page views (390/768/1440, both themes); Lighthouse 13.5.0 desktop pass on home, game and evidence, mobile performance below the gate on the game page (0.73, LCP 3.21 s), home (0.87, LCP 2.67 s) and evidence (0.82, LCP 2.80 s), all LCP above 2.5 s (open P7 item).
 - **For the owner:** removal candidates `gt` and `scales` (`DESCRIPTION` Imports; nothing calls them now), `htmltools` stays as a dependency of other packages; the weekly-sim workflow needs a first manual run, and a `DATABASE_URL` secret once Vercel/Neon are approved.
+### Explicit game model (audit M22, M22b, M24, M23, M20; Plan 1b-1, #210)
+
+Golden-master changes are CI-attributed in `reports/2026-09-29/golden-master/2024-w15/ATTRIBUTION.md#phase-1b-1-210-explicit-model` (workflow run 37186552533, `attribute` job 111391373469).
+
+- **M22: the engine simulates the composed means.**
+  - Before: a NaN turnover term (nflverse schedules have no turnover columns) forced a rescue that rebuilt `mu` as drives x points per drive plus home field, so every other adjustment was silently dropped (16 of 16 games in 2024 week 15).
+  - Now: `R/mu_terms.R` holds an explicit term table and `compose_mu()`. Only the terms in the new `config.R` setting `MU_TERMS_ADMITTED` (default `base`, `hfa`) are simulated; every other term is computed and logged. A non-finite admitted term stops the run. 13 named terms sum to `total_mu`; turnover and weather enter after `total_mu` is taken.
+  - Test: `tests/testthat/test-mu-terms.R`. Ledger row `C-MU-TERMS`.
+  - CI-attributed output change: none (`130f072` and the term-table commits: no differences).
+- **M22b: SDs, NB sizes and rho come from the simulated means.**
+  - Before: they came from the legacy chain's `total_mu`, which differed from the simulated total by up to 28.0 points (CHI @ MIN 22.4 vs 50.3).
+  - Now: `score_variance_from_mu()`.
+  - Test: `tests/testthat/test-score-variance.R`.
+  - Output change: `mu_*` unchanged; `sd_home`/`sd_away` -0.3117..+1.3865, rising in 10 of 16 games, largest in CHI @ MIN; `k_*`, distribution and probability columns change (model win probability up to 0.0337, blend up to 0.0484).
+- **M24: neutral sites.**
+  - Before: nflverse marks them with `location == "Neutral"`, which the engine never read, so the listed home team got home field and the neutral games stayed in the HFA estimate.
+  - Now: `R/schedule_context.R` finds neutral games, gives them no home field and drops them from the HFA estimate.
+  - Test: `tests/testthat/test-schedule-context.R`.
+  - Output change: `mu_home` -0.3289..+0.2048 (exactly 7 games beyond 0.05); `mu_away` unchanged; model win probability up to 0.0100, blend up to 0.0382.
+- **M23: rest from each team's own game.**
+  - Before: rest was measured from the week's first kickoff, so 24 of 32 teams were scored short rest in 2024 week 15 (4 really were).
+  - Now: both rest tables (the live slate and the calibration-history simulator) use each team's own game.
+  - Test: `tests/testthat/test-schedule-context.R`.
+  - Output change: blend columns only (`home_p_2w_blend` up to 0.0441, `margin_blend` up to 1.95); simulator columns unchanged.
+- **Calibration cache keys bumped; audit T8 corrected.**
+  - Before: `calib_cache_key` stayed at version 2 and `score_cache_key` had no version, so a machine with a pre-M23/M24 `~/.cache/nfl_sim_calib_cache` silently served the old calibration history. That stale cache, not a platform difference, caused this branch's local blend-column differences, which had been attributed to audit T8. The original 2026-09-29 T8 records predate M23/M24; the same mechanism (a stale cache left by an earlier change) is likely, but they were not re-run.
+  - Now: `calib_cache_key` is `version = 3L` and `score_cache_key` has `version = 1L` (bump when the calibration-history code changes). Test: `tests/testthat/test-schedule-context.R`. A Windows compare with the real home cache prints `golden master: no differences` and `run_matrix` is 10/10.
+- **M20: Sleeper fallback only for slates with games to play.**
+  - Before: when nflreadr returned no injury rows, today's Sleeper report was stamped onto a historical week.
+  - Now: the fallback applies only to slates with games still to play.
+  - Test: `tests/testthat/test-sleeper-fallback.R`.
+  - Output change: none (the fallback is not reached for 2024).
+- **Golden master:** re-recorded from the CI artifact of `3900255` (`csv_sha256 b7b888a7...`) and now includes `inputs.csv` (input statuses).
 
 ### M19: read injury game designations, not practice participation (approved 2026-09-30)
 
