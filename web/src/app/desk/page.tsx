@@ -6,17 +6,16 @@ import { signOut } from "@/lib/auth";
 import { requireUser } from "@/lib/auth/requireUser";
 import { deskSlate } from "@/lib/data/queries";
 import { pct, pts } from "@/lib/format";
-import { candidateLabel } from "@/lib/policy";
+import { candidateLabel, deskLead, NO_LEANS_SIMULATOR, SIMULATOR_CANDIDATE } from "@/lib/policy";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Desk", robots: { index: false } };
 
-const DESK_MODEL = "C2";
-
 export default async function DeskPage() {
   const user = await requireUser();
   if (!user) redirect("/login");
-  const { run, games, lines, recs } = await deskSlate();
+  const { run, games, candidate, lines, recs } = await deskSlate();
+  const model = candidate ?? "";
   // in kickoff order, like the board below
   const order = new Map(games.map((g, i) => [g.gameId, i]));
   const leans = recs
@@ -30,8 +29,7 @@ export default async function DeskPage() {
           lead={
             <span className="flex flex-wrap items-center gap-2">
               <StatusBadge status="unvalidated" label="Paper only" />
-              Every candidate here failed to beat the closing market (nfl_games_v1). Leans are tracked on paper to test the
-              prospective closing-line-value hypothesis; stakes are zero.
+              {deskLead(candidate)}
             </span>
           }
         >
@@ -46,7 +44,7 @@ export default async function DeskPage() {
       {run ? (
         <>
           <section className="mt-10" aria-labelledby="leans">
-            <SectionTitle id="leans">Paper leans, {candidateLabel(DESK_MODEL)} vs market</SectionTitle>
+            <SectionTitle id="leans">Paper leans, {candidateLabel(model)} vs market</SectionTitle>
             <Card className="mt-3">
               <div tabIndex={0} role="region" aria-label="Scrollable table" className="overflow-x-auto">
                 <table className="num w-full min-w-[720px] text-left text-sm" data-desk="recommendations">
@@ -54,6 +52,13 @@ export default async function DeskPage() {
                     <tr><th className="py-1 pr-4 font-normal">Game</th><th className="pr-4 font-normal">Side</th><th className="pr-4 font-normal">Model</th><th className="pr-4 font-normal">Market</th><th className="pr-4 font-normal">Edge</th><th className="pr-4 font-normal">Price</th><th className="pr-4 font-normal">Stake</th><th className="font-normal">Note</th></tr>
                   </thead>
                   <tbody>
+                    {leans.length === 0 ? (
+                      <tr className="border-t border-rule">
+                        <td colSpan={8} className="py-2 text-ink-2" data-desk="no-leans">
+                          {candidate === SIMULATOR_CANDIDATE ? NO_LEANS_SIMULATOR : "No paper leans in this run."}
+                        </td>
+                      </tr>
+                    ) : null}
                     {leans.map((r) => {
                       const g = games.find((x) => x.gameId === r.gameId);
                       const team = r.side === "home" ? g?.homeTeamId : g?.awayTeamId;
@@ -78,14 +83,14 @@ export default async function DeskPage() {
 
           <section className="mt-10" aria-labelledby="board">
             <SectionTitle id="board">Board</SectionTitle>
-            <div className="mt-3"><FieldKey showModel modelLabel={candidateLabel(DESK_MODEL)} validated={false} /></div>
+            <div className="mt-3"><FieldKey showModel={candidate !== null} modelLabel={candidateLabel(model)} validated={false} /></div>
             <div className="mt-3 grid gap-5 lg:grid-cols-2">
               {games.map((g) => {
-                const l = lines.find((x) => x.gameId === g.gameId && x.candidate === DESK_MODEL && x.p !== null);
+                const l = lines.find((x) => x.gameId === g.gameId && x.candidate === model && x.p !== null);
                 return (
                   <Field key={g.gameId} gameId={g.gameId} awayId={g.awayTeamId} homeId={g.homeTeamId} awayName={g.awayName}
                     homeName={g.homeName} kickoffUtc={g.kickoffUtc} neutral={g.neutral} pMarket={g.pMarket}
-                    model={l ? { p: l.p as number, label: candidateLabel(DESK_MODEL), validated: false } : null} />
+                    model={l ? { p: l.p as number, label: candidateLabel(model), validated: false } : null} />
                 );
               })}
             </div>

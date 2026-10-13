@@ -4,6 +4,7 @@ import { Field, FieldKey } from "@/components/Field";
 import { StatusBadge } from "@/components/StatusBadge";
 import { chipClass, PageTitle, StatTile } from "@/components/ui";
 import { candidateLines, evidence, publicSlate, runCandidates } from "@/lib/data/queries";
+import { sortSlate } from "@/lib/slateSort";
 import { age, utcStamp, weekday } from "@/lib/format";
 import { candidateLabel, fieldLineNote, fieldLineNoun, publicFieldLine } from "@/lib/policy";
 
@@ -56,8 +57,7 @@ export default async function ThisWeek({ searchParams }: { searchParams: Promise
   const days = [...new Set(games.map((g) => weekday(g.kickoffUtc)))];
   const day = sp.day && days.includes(sp.day) ? sp.day : null;
   let list = day ? rows.filter((r) => weekday(r.g.kickoffUtc) === day) : rows;
-  if (sort === "gap") list = [...list].sort((a, b) => b.gap - a.gap);
-  if (sort === "closest") list = [...list].sort((a, b) => Math.abs((a.g.pMarket ?? 0.5) - 0.5) - Math.abs((b.g.pMarket ?? 0.5) - 0.5));
+  list = sortSlate(list, sort);
   const groups =
     sort === "kickoff"
       ? days

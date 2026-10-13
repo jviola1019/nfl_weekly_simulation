@@ -154,7 +154,7 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
               <span className="text-[13px] text-muted">Market</span>
               <span className="num flex items-center gap-2 text-[30px] font-extrabold" data-line="market">
                 <span className="inline-block h-[22px] w-1" style={{ background: "var(--field-market)" }} aria-hidden />
-                {pct(pm, 1)}
+                {pm === null ? <span className="text-[18px] font-bold text-ink-2">No market line</span> : pct(pm, 1)}
               </span>
             </div>
             <div className="flex flex-col gap-0.5">
@@ -191,8 +191,11 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
           (["margin", "total"] as const).map((kind) => {
             const bins = parseBins(dist[kind]);
             return bins ? (
-              <ScoreDistributionChart key={kind} kind={kind} bins={bins} homeId={game.homeTeamId} awayId={game.awayTeamId} nSims={run.nSims}
-                result={final ? (kind === "margin" ? final.home - final.away : final.home + final.away) : null} />
+              <div key={kind}>
+                <ScoreDistributionChart kind={kind} bins={bins} homeId={game.homeTeamId} awayId={game.awayTeamId} nSims={run.nSims}
+                  result={final ? (kind === "margin" ? final.home - final.away : final.home + final.away) : null} />
+                {kind === "margin" ? <p className="mt-2 text-sm text-muted">Regulation ties go to overtime, so an exact tie is rare.</p> : null}
+              </div>
             ) : (
               <div key={kind} className="mt-3">
                 <DataUnavailable title={dist[kind] === null ? `No ${kind} distribution in this run` : `The ${kind} distribution is unreadable`}>

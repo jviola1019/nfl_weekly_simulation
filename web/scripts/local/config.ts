@@ -124,3 +124,34 @@ export function missingPointers(published: readonly string[]): { pointer: string
 export function needsBuild(buildIdMtimeMs: number | null, newestSourceMtimeMs: number): boolean {
   return buildIdMtimeMs === null || newestSourceMtimeMs > buildIdMtimeMs;
 }
+
+export interface PgSpawnResult {
+  status: number | null;
+  error?: Error;
+}
+export type PgSpawn = (file: string, args: string[], opts?: object) => PgSpawnResult;
+
+/**
+ * Run a PostgreSQL tool and return its exit status. A tool that could not be started at
+ * all (spawn error, e.g. ENOENT) is a configuration problem, so it says so, instead of
+ * reaching the caller as "exit null ... Is port 5434 free?" or "not running".
+ */
+export function runPgTool(spawn: PgSpawn, tool: string, file: string, args: string[], opts?: object): number | null {
+  const r = spawn(file, args, opts);
+  if (r.error) throw new Error(`${tool} not found at ${file}; set PG_BIN to your PostgreSQL bin directory`);
+  return r.status;
+}
+
+/** The cluster password from nfl_local_credentials.json; a damaged file names itself and the recovery. */
+export function parseCredentials(text: string, file: string): string {
+  const recovery = `delete ${file} and the cluster directory, or restore the file`;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error(`${file} is not valid JSON; ${recovery}`);
+  }
+  const password = typeof parsed === "object" && parsed !== null ? (parsed as { password?: unknown }).password : undefined;
+  if (typeof password !== "string" || !password) throw new Error(`${file} has no password; ${recovery}`);
+  return password;
+}

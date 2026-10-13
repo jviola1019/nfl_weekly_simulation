@@ -342,9 +342,9 @@ Where `P(side)` is the model probability for the relevant side (over or under fo
 
 ## 8. Known Limitations
 
-1. **Shrinkage hides the raw model view.** The displayed probability is the shrunk (blended) probability, not the direct simulation output. Users cannot see the model's "pure" opinion without consulting the raw simulation logs.
+1. **Shrinkage hides the raw model view.** The displayed probability is the shrunk (blended) probability, not the direct simulation output: the web bundle's simulator line (C3 `p_home_final`) is the engine blend shrunk toward the no-vig market with `SHRINKAGE` (games without a market show the unshrunk value), and the raw simulator value is stored beside it as `p_home_raw`. The app displays only the shrunk number.
 
-2. **Prop odds fallback is synthetic only when enabled.** If market odds are unavailable and `PROP_ALLOW_MODEL_ODDS = FALSE` (default), the report shows missing odds and suppresses EV/recommendations. Setting `PROP_ALLOW_MODEL_ODDS = TRUE` allows the pipeline to derive odds from the simulation distribution with `PROP_MARKET_VIG` (model-derived, not sportsbook-specific).
+2. **Prop odds fallback is synthetic only when enabled.** If market odds are unavailable and `PROP_ALLOW_MODEL_ODDS = FALSE` (default), the app shows props as "Not priced" and EV/recommendations are suppressed. Setting `PROP_ALLOW_MODEL_ODDS = TRUE` allows the pipeline to derive odds from the simulation distribution with `PROP_MARKET_VIG` (model-derived, not sportsbook-specific).
 
 3. **TD model uses average scoring TDs as the Negative Binomial mean.** For low-volume players (tight ends, QB rushers), this may underestimate variance because the sample size for their TD rates is small and unstable.
 

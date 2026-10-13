@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   candidateLabel,
+  deskCandidate,
+  deskLead,
+  NO_LEANS_SIMULATOR,
   fieldLineNote,
   fieldLineNoun,
   fieldLineShortNote,
@@ -65,7 +68,10 @@ describe("public display policy", () => {
     expect(fieldLineNote(e1)).toContain("570 games");
     expect(fieldLineNote(ok)).toContain("passed its pre-registered gates");
     expect(fieldLineNote(null)).toContain("market alone");
-    expect(fieldLineShortNote(sim)).toBe("Not yet in the pre-registered test.");
+    expect(fieldLineShortNote(sim)).toBe(
+      "Simulator (unvalidated): the simulation's win probability after the production pipeline's 70% weight on the no-vig market (SHRINKAGE). Games without a market show the unshrunk value. Not yet in the pre-registered test."
+    );
+    expect(fieldLineNote(sim)).toContain("after the production pipeline's 70% weight on the no-vig market");
     expect(fieldLineShortNote(e1)).toBe("No model beat the closing market in the pre-registered test.");
   });
 
@@ -73,5 +79,26 @@ describe("public display policy", () => {
     expect(candidateLabel("B2[E1]")).toBe("95% market, 5% ensemble");
     expect(candidateLabel("C3")).toBe("Simulator");
     expect(candidateLabel("Z9")).toBe("Z9");
+  });
+});
+
+describe("desk candidate (final review I1)", () => {
+  it("C2 when the run carries it, else the simulator C3, else none", () => {
+    expect(deskCandidate(V1)).toBe("C2");
+    expect(deskCandidate(SIM)).toBe("C3");
+    expect(deskCandidate([...SIM, "C2"])).toBe("C2");
+    expect(deskCandidate(["C0"])).toBeNull();
+    expect(deskCandidate([])).toBeNull();
+  });
+
+  it("the nfl_games_v1 sentence appears only for the v1 candidates", () => {
+    expect(deskLead("C2")).toContain("failed to beat the closing market (nfl_games_v1)");
+    expect(deskLead("C3")).not.toContain("nfl_games_v1");
+    expect(deskLead("C3")).toContain("simulator");
+    expect(deskLead(null)).not.toContain("nfl_games_v1");
+  });
+
+  it("names where paper stakes live when a simulator run has no recommendations", () => {
+    expect(NO_LEANS_SIMULATOR).toBe("No paper leans in a simulator run; paper stakes are in artifacts/baseline_games.csv.");
   });
 });

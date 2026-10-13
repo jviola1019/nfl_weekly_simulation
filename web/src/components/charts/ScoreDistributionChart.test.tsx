@@ -12,7 +12,7 @@ describe("ScoreDistributionChart (server render)", () => {
     expect(html).toContain("Simulated final margin");
     expect(html).toContain("Simulator (unvalidated)");
     expect(html).toContain(
-      "Simulator (unvalidated): median margin Tie. In 90% of the 100,000 simulated games the margin falls between LA by 2 and SF by 3. Final: LA by 2."
+      "Simulator (unvalidated): median margin Tie. In at least 90% of the 100,000 simulated games the margin falls between LA by 2 and SF by 3. Final: LA by 2."
     );
     expect(html).toContain("Median Tie");
     expect(html).toContain("Final LA by 2");

@@ -2,6 +2,8 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   databaseUrl,
+  parseCredentials,
+  runPgTool,
   DEFAULT_WINDOWS_PG_BIN,
   envAdditions,
   missingPointers,
@@ -113,5 +115,52 @@ describe("needsBuild", () => {
     expect(needsBuild(null, 1)).toBe(true);
     expect(needsBuild(2000, 1000)).toBe(false);
     expect(needsBuild(1000, 2000)).toBe(true);
+  });
+});
+
+describe("runPgTool (final review I5)", () => {
+  it("a missing executable says which tool, where, and how to point at PostgreSQL, not a port problem", () => {
+    const enoent = Object.assign(new Error("spawnSync C:/pg/bin/pg_ctl.exe ENOENT"), { code: "ENOENT" });
+    const spawn = () => ({ status: null, error: enoent });
+    expect(() => runPgTool(spawn, "pg_ctl", "C:/pg/bin/pg_ctl.exe", ["status"])).toThrow(
+      "pg_ctl not found at C:/pg/bin/pg_ctl.exe; set PG_BIN to your PostgreSQL bin directory"
+    );
+    let message = "";
+    try {
+      runPgTool(spawn, "initdb", "/usr/bin/initdb", []);
+    } catch (e) {
+      message = (e as Error).message;
+    }
+    expect(message).not.toMatch(/exit null|Is port|not running/);
+  });
+
+  it("returns the exit status when the tool ran, whatever it was", () => {
+    expect(runPgTool(() => ({ status: 3 }), "pg_ctl", "pg_ctl", ["status"])).toBe(3);
+    expect(runPgTool(() => ({ status: 0 }), "pg_ctl", "pg_ctl", ["start"])).toBe(0);
+    expect(runPgTool(() => ({ status: null }), "pg_ctl", "pg_ctl", ["start"])).toBeNull();
+  });
+
+  it("passes the executable, arguments and options through", () => {
+    const calls: unknown[][] = [];
+    runPgTool((...a) => (calls.push(a), { status: 0 }), "pg_ctl", "/bin/pg_ctl", ["stop", "-D", "x"], { stdio: "ignore" });
+    expect(calls).toEqual([["/bin/pg_ctl", ["stop", "-D", "x"], { stdio: "ignore" }]]);
+  });
+});
+
+describe("parseCredentials (final review I5)", () => {
+  const file = join("pgdata", "nfl_local_credentials.json");
+  it("reads the password", () => {
+    expect(parseCredentials('{"user":"nfl_local","password":"pw"}', file)).toBe("pw");
+  });
+
+  it("a file that is not JSON names the file and the recovery", () => {
+    expect(() => parseCredentials("{ truncated", file)).toThrow(
+      `${file} is not valid JSON; delete ${file} and the cluster directory, or restore the file`
+    );
+  });
+
+  it("valid JSON without a password gets the same advice", () => {
+    expect(() => parseCredentials('{"user":"x"}', file)).toThrow(`${file} has no password; delete ${file} and the cluster directory, or restore the file`);
+    expect(() => parseCredentials("null", file)).toThrow("has no password");
   });
 });

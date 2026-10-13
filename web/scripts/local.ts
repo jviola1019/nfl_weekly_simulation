@@ -35,10 +35,12 @@ import {
   envAdditions,
   missingPointers,
   needsBuild,
+  parseCredentials,
   parseEnvFile,
   pgExecutable,
   redactUrl,
   resolveLocalConfig,
+  runPgTool,
   selectBundleDirs
 } from "./local/config";
 
@@ -53,8 +55,11 @@ function run(file: string, args: string[], opts: SpawnSyncOptions = {}): number 
   return r.status ?? 1;
 }
 
+/** Run a PostgreSQL tool; a missing executable is reported as such (runPgTool). */
+const pgTool = (tool: string, args: string[], opts: SpawnSyncOptions) => runPgTool((f, a, o) => spawnSync(f, a, o as SpawnSyncOptions), tool, pg(tool), args, opts);
+
 /** pg_ctl status: 0 = running, 3 = stopped, 4 = no cluster */
-const clusterStatus = () => spawnSync(pg("pg_ctl"), ["status", "-D", cfg.pgData], { stdio: "ignore" }).status;
+const clusterStatus = () => pgTool("pg_ctl", ["status", "-D", cfg.pgData], { stdio: "ignore" });
 
 /** Create the cluster on first use; return its password. */
 function ensureCluster(): string {
@@ -65,7 +70,7 @@ function ensureCluster(): string {
           "Set NFL_LOCAL_PGDATA to another directory, or delete that one: every bundle is ingested again."
       );
     }
-    return (JSON.parse(readFileSync(cfg.credentialsFile, "utf8")) as { password: string }).password;
+    return parseCredentials(readFileSync(cfg.credentialsFile, "utf8"), cfg.credentialsFile);
   }
   mkdirSync(dirname(cfg.pgData), { recursive: true });
   const password = randomBytes(24).toString("base64url");
@@ -73,7 +78,7 @@ function ensureCluster(): string {
   writeFileSync(pwfile, password, { mode: 0o600 });
   try {
     const r = spawnSync(pg("initdb"), ["-D", cfg.pgData, "-U", cfg.dbUser, `--pwfile=${pwfile}`, "--auth=scram-sha-256", "-E", "UTF8", "--no-locale"], { encoding: "utf8" });
-    if (r.error) throw new Error(`initdb not found (${r.error.message}); set PG_BIN to PostgreSQL's bin directory`);
+    runPgTool(() => r, "initdb", pg("initdb"), []);
     if (r.status !== 0) throw new Error(`initdb failed (exit ${r.status}):\n${r.stderr}`);
   } finally {
     rmSync(pwfile, { force: true });
@@ -103,7 +108,7 @@ function ensureEnvLocal(url: string): string {
 function startCluster() {
   if (clusterStatus() === 0) return console.log(`PostgreSQL already running (127.0.0.1:${cfg.pgPort})`);
   // stdio ignored: on Windows an inherited pipe would keep this process waiting on the server
-  const code = spawnSync(pg("pg_ctl"), ["start", "-D", cfg.pgData, "-l", cfg.serverLog, "-w", "-t", "60", "-o", `-p ${cfg.pgPort}`], { stdio: "ignore" }).status;
+  const code = pgTool("pg_ctl", ["start", "-D", cfg.pgData, "-l", cfg.serverLog, "-w", "-t", "60", "-o", `-p ${cfg.pgPort}`], { stdio: "ignore" });
   if (code !== 0) {
     const tail = existsSync(cfg.serverLog) ? readFileSync(cfg.serverLog, "utf8").split(/\r?\n/).slice(-15).join("\n") : "";
     throw new Error(`pg_ctl start failed (exit ${code}). Is port ${cfg.pgPort} free? NFL_LOCAL_PGPORT changes it.\n${tail}`);
@@ -205,7 +210,7 @@ function stop() {
   const status = clusterStatus();
   if (status === 4 || !existsSync(join(cfg.pgData, "PG_VERSION"))) return console.log(`no local cluster in ${cfg.pgData}`);
   if (status !== 0) return console.log("PostgreSQL is not running");
-  const code = spawnSync(pg("pg_ctl"), ["stop", "-D", cfg.pgData, "-m", "fast", "-w"], { stdio: "ignore" }).status;
+  const code = pgTool("pg_ctl", ["stop", "-D", cfg.pgData, "-m", "fast", "-w"], { stdio: "ignore" });
   if (code !== 0) throw new Error(`pg_ctl stop failed (exit ${code})`);
   console.log("PostgreSQL stopped");
 }

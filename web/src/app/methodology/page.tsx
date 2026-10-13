@@ -51,8 +51,9 @@ export default async function MethodologyPage() {
           </ul>
           <p className="mt-4 border-t border-rule pt-3 text-sm text-ink-2">
             The Monte Carlo score simulator ({candidateLabel("C3")}) joins as its own candidate in the next protocol version, once
-            its features are point-in-time. Until then a simulator run is research output: its line is the simulator&apos;s two-way
-            home win probability after its market blend.
+            its features are point-in-time. Until then a simulator run is research output: its line is the simulation&apos;s win
+            probability after the production pipeline&apos;s 70% weight on the no-vig market (<code>SHRINKAGE</code>); games
+            without a market show the unshrunk value.
           </p>
         </Card>
       </section>

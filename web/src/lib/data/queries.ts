@@ -8,6 +8,7 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { getDb } from "../../db";
 import * as s from "../../db/schema";
+import { deskCandidate } from "../policy";
 
 export async function pointerRun(pointer: "weekly" | "backtest_games") {
   const db = getDb();
@@ -145,10 +146,11 @@ export async function dataHealth() {
 
 export async function deskSlate() {
   const { run, games } = await publicSlate();
-  if (!run) return { run, games, lines: [], recs: [] };
-  const lines = await candidateLines(run.runId, ["C1", "C2", "E1", "B1[E1]", "B2[E1]", "K[E1]"]);
+  if (!run) return { run, games, candidate: null as string | null, lines: [], recs: [] };
+  const candidate = deskCandidate(await runCandidates(run.runId));
+  const lines = candidate ? await candidateLines(run.runId, [candidate]) : [];
   const recs = await getDb().select().from(s.recommendations).where(eq(s.recommendations.runId, run.runId));
-  return { run, games, lines, recs };
+  return { run, games, candidate, lines, recs };
 }
 
 function aliasTeams(name: string) {

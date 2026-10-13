@@ -50,7 +50,8 @@ test.describe("@sim simulator run", () => {
   for (const g of games) {
     test(`game ${g.game_id}: market and simulator probabilities equal the bundle at the displayed precision`, async ({ page }) => {
       await page.goto(`/games/${g.game_id}`);
-      await expect(page.locator('[data-line="market"]')).toHaveText(pct(market(g.game_id), 1));
+      // a game the market never priced says so in words where the number would be (audit M11)
+      await expect(page.locator('[data-line="market"]')).toHaveText(market(g.game_id) === null ? "No market line" : pct(market(g.game_id), 1));
       await expect(page.locator('[data-line="model"]')).toHaveText(pct(sim(g.game_id), 1));
       await expect(page.locator(`article[data-game="${g.game_id}"]`)).toHaveAttribute("aria-label", fieldSummary(g));
     });
@@ -60,10 +61,12 @@ test.describe("@sim simulator run", () => {
     const g = games[0]!;
     const dists = read<Dist[]>("score_distributions").filter((d) => d.game_id === g.game_id);
     await page.goto(`/games/${g.game_id}`);
+    await expect(page.getByText("Regulation ties go to overtime, so an exact tie is rare.")).toHaveCount(1);
     for (const [kind, title] of [["margin", "Simulated final margin"], ["total", "Simulated total points"]] as const) {
       const fig = page.locator("figure").filter({ hasText: title });
       await expect(fig).toHaveCount(1);
       await expect(fig.locator("figcaption")).toContainText("median");
+      await expect(fig.locator("figcaption")).toContainText("In at least 90% of");
       await fig.getByText("Table view").click();
       const bins = dists.find((d) => d.kind === kind)!.bins;
       await expect(fig.locator("tbody tr")).toHaveCount(bins.length + 1);   // every outcome, plus the share outside the range

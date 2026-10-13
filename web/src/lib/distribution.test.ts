@@ -55,10 +55,10 @@ describe("quantiles and labels", () => {
 
   it("summarises the median, the central 90% and the result in words", () => {
     expect(distributionSummary("margin", SYM, 100000, "SF", "LA", -6)).toBe(
-      "Simulator (unvalidated): median margin Tie. In 90% of the 100,000 simulated games the margin falls between LA by 1 and SF by 1. Final: LA by 6."
+      "Simulator (unvalidated): median margin Tie. In at least 90% of the 100,000 simulated games the margin falls between LA by 1 and SF by 1. Final: LA by 6."
     );
     expect(distributionSummary("total", [{ x: 40, p: 0.5 }, { x: 41, p: 0.5 }], null, "SF", "LA", null)).toBe(
-      "Simulator (unvalidated): median total 40 points. In 90% of the simulated games the total falls between 40 and 41 points."
+      "Simulator (unvalidated): median total 40 points. In at least 90% of the simulated games the total falls between 40 and 41 points."
     );
   });
 });

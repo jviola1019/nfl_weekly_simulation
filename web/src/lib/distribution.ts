@@ -69,9 +69,9 @@ export function distributionSummary(
   const lo = binQuantile(bins, 0.05);
   const hi = binQuantile(bins, 0.95);
   if (kind === "margin") {
-    return `Simulator (unvalidated): median margin ${label(med)}. In 90% of ${games} the margin falls between ${label(lo)} and ${label(hi)}.${final}`;
+    return `Simulator (unvalidated): median margin ${label(med)}. In at least 90% of ${games} the margin falls between ${label(lo)} and ${label(hi)}.${final}`;
   }
-  return `Simulator (unvalidated): median total ${med} points. In 90% of ${games} the total falls between ${lo} and ${hi} points.${final}`;
+  return `Simulator (unvalidated): median total ${med} points. In at least 90% of ${games} the total falls between ${lo} and ${hi} points.${final}`;
 }
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
