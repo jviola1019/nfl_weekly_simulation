@@ -5,17 +5,18 @@
   "season": 2024,
   "week": 15,
   "model_label": "Game simulator C3 (unvalidated)",
-  "generated_utc": "2026-10-04T08:03:17Z",
+  "generated_utc": "2026-10-13T08:43:50Z",
   "data_asof_utc": "2026-10-03T12:00:00Z",
-  "code_git_sha": "7927be409bde656795f6cb119214a22837f5b981",
+  "code_git_sha": "844ba3c481188a36367edd2fb548deb32669d80e",
   "code_dirty": false,
-  "config_hash": "d8eaab7c5b5d48608efe3f8c649650762ca24f0ab4715bcb2a3b28b2f835d831",
+  "config_hash": "e886739b3883f44ec81d81d95572fb515c06550e33b5e8f7ee4640ca475ced0f",
   "config": {
     "engine": "NFLsimulation.R (Monte Carlo: negative binomial scores, Gaussian copula)",
     "candidates": {
       "C0": "no-vig market",
-      "C3": "simulator two-way home win probability; p_home_final after its market blend"
+      "C3": "simulator two-way home win probability; p_home_final after the production pipeline's shrinkage toward the no-vig market (unshrunk where a game has no market)"
     },
+    "shrinkage": 0.7,
     "market_source": "nflverse consensus close: moneylines devigged proportionally (the spread mapped to a probability where a game has no moneyline)",
     "calibration_method": "none",
     "distribution_mass": 0.999
@@ -36,7 +37,7 @@
     },
     {
       "name": "game_predictions.json",
-      "sha256": "198f91dc709f07efb555c5c7579868b2e044ddcdf0b441d58f2f13f98f592bfe",
+      "sha256": "ed69b648e614f0f5a162317ea2da830c77a8bd210bf8461195a170cbb33f2e32",
       "rows": 6
     },
     {
@@ -46,7 +47,7 @@
     },
     {
       "name": "source_status.json",
-      "sha256": "f82b5db859ac76c7aebe18e613c49f4611e6c8a751106f4180cd801c28f1d195",
+      "sha256": "ca3e915980f2498d3274e63f09be6246520c3b1b5874ffb175dbb97695e8eb67",
       "rows": 4
     }
   ],
