@@ -17,7 +17,7 @@ This document describes the architecture of the NFL prediction model, designed a
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                              USER INTERFACE                                 │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  run_week.R (Entry Point)  │  config.R (Parameters)  │  HTML Report        │
+│  run_week.R (Entry Point)  │  config.R (Parameters)  │  Web bundle         │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
                                       ▼
@@ -38,8 +38,7 @@ This document describes the architecture of the NFL prediction model, designed a
 │  NFLmarket.R                                                                │
 │  ├── build_moneyline_comparison_table()   Market vs model comparison        │
 │  ├── shrink_probability_toward_market()   60% market shrinkage              │
-│  ├── conservative_kelly_stake()           1/8 Kelly with edge caps          │
-│  └── render_moneyline_comparison_html()   Report generation                 │
+│  └── conservative_kelly_stake()           1/8 Kelly with edge caps          │
 └─────────────────────────────────────────────────────────────────────────────┘
                                       │
                                       ▼
@@ -123,7 +122,7 @@ This document describes the architecture of the NFL prediction model, designed a
                           ▼
 ┌─────────────────────────────────────────────────────┐
 │              OUTPUT                                 │
-│  • NFLvsmarket_report.html                          │
+│  • bundles/<cycle_id>/ (web bundle; npm run local)  │
 │  • run_logs/*.rds                                   │
 │  • Console: quality badge, progress                 │
 └─────────────────────────────────────────────────────┘

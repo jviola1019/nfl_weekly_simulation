@@ -10,6 +10,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 0,
+  // @parity (e2e/parity.spec.ts) writes its screenshots to a scratch directory, never the repo
+  ...(process.env.E2E_PARITY_SNAPSHOTS ? { snapshotPathTemplate: `${process.env.E2E_PARITY_SNAPSHOTS}/{arg}{ext}` } : {}),
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://127.0.0.1:3100",

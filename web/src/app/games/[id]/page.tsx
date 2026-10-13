@@ -3,9 +3,11 @@ import { notFound } from "next/navigation";
 import { DataUnavailable } from "@/components/DataUnavailable";
 import { Field, FieldKey, gapText } from "@/components/Field";
 import { StatusBadge } from "@/components/StatusBadge";
-import { candidateLines, evidence, publicGame } from "@/lib/data/queries";
+import { ScoreDistributionChart } from "@/components/charts/ScoreDistributionChart";
+import { candidateLines, evidence, gameDistributions, publicGame, runCandidates } from "@/lib/data/queries";
+import { parseBins } from "@/lib/parseBins";
 import { kickoff, pct } from "@/lib/format";
-import { candidateLabel, publicFieldLine } from "@/lib/policy";
+import { candidateLabel, fieldLineShortNote, publicFieldLine } from "@/lib/policy";
 import { teamColors } from "@/lib/teams";
 
 export const dynamic = "force-dynamic";
@@ -54,11 +56,13 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
   if (!/^[0-9]{4}_[0-9]{2}_[A-Z]{2,3}_[A-Z]{2,3}$/.test(id)) notFound();
   const [{ run, game }, ev] = await Promise.all([publicGame(id), evidence()]);
   if (!run || !game) notFound();
-  const line = publicFieldLine(ev?.gates ?? []);
-  const label = candidateLabel(line.candidate);
-  const lines = await candidateLines(run.runId, [line.candidate], [id]);
+  const line = publicFieldLine(ev?.gates ?? [], await runCandidates(run.runId));
+  const label = line ? candidateLabel(line.candidate) : "Model";
+  const lines = line ? await candidateLines(run.runId, [line.candidate], [id]) : [];
   const pm = game.pMarket;
   const pmod = lines[0]?.p ?? null;
+  const dist = await gameDistributions(run.runId, id);
+  const hasDist = dist.margin !== null || dist.total !== null;
   const final = game.homeScore !== null && game.awayScore !== null ? { home: game.homeScore, away: game.awayScore } : null;
   const flagX = (p: number) => `${(1 - p) * 100}%`;
 
@@ -98,7 +102,7 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
           <h2 id="prob" className="wdth-expanded text-[22px] font-bold">
             Win probability
           </h2>
-          <FieldKey showModel={pmod !== null} modelLabel={label} validated={line.validated} />
+          <FieldKey showModel={pmod !== null} modelLabel={label} validated={line?.validated ?? false} />
         </div>
         {/* one flag per row, each opening toward the middle of the field, so neither can overflow */}
         <div className="relative mx-[26px] mt-4 sm:mx-[58px]" aria-hidden>
@@ -131,7 +135,7 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
           kickoffUtc={game.kickoffUtc}
           neutral={game.neutral}
           pMarket={pm}
-          model={pmod !== null ? { p: pmod, label, validated: line.validated } : null}
+          model={pmod !== null && line ? { p: pmod, label, validated: line.validated } : null}
         />
         <p className="mt-2.5 text-sm text-muted">
           Each team&apos;s side of the field is its chance to win.
@@ -148,32 +152,33 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-0.5">
               <span className="text-[13px] text-muted">Market</span>
-              <span className="num flex items-center gap-2 text-[30px] font-extrabold">
+              <span className="num flex items-center gap-2 text-[30px] font-extrabold" data-line="market">
                 <span className="inline-block h-[22px] w-1" style={{ background: "var(--field-market)" }} aria-hidden />
-                {pct(pm, 1)}
+                {pm === null ? <span className="text-[18px] font-bold text-ink-2">No market line</span> : pct(pm, 1)}
               </span>
             </div>
             <div className="flex flex-col gap-0.5">
               <span className="text-[13px] text-muted">{label}</span>
-              <span className="num flex items-center gap-2 text-[30px] font-extrabold">
+              <span className="num flex items-center gap-2 text-[30px] font-extrabold" data-line="model">
                 <span className="inline-block h-[22px] w-1" style={{ background: "var(--field-model)" }} aria-hidden />
                 {pct(pmod, 1)}
               </span>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 border-t border-rule pt-3 text-sm text-ink-2">
-            <StatusBadge status={line.validated ? "validated" : "unvalidated"} label={line.validated ? "Validated" : "Unvalidated research model"} />
-            <span>
-              {line.validated ? "Passed its pre-registered gates." : "No model beat the closing market in the pre-registered test."}{" "}
-              <Link href="/evidence">Evidence</Link>
-            </span>
-          </div>
+          {line ? (
+            <div className="flex flex-wrap items-center gap-2 border-t border-rule pt-3 text-sm text-ink-2">
+              <StatusBadge status={line.validated ? "validated" : "unvalidated"} label={line.validated ? "Validated" : "Unvalidated research model"} />
+              <span>
+                {fieldLineShortNote(line)} <Link href="/evidence">Evidence</Link>
+              </span>
+            </div>
+          ) : null}
         </article>
         <article className="flex flex-col gap-3 rounded-[6px] border border-rule bg-surface px-5 py-5">
           <h3 className="font-bold">Spread and total</h3>
           <p className="text-sm leading-relaxed text-ink-2">
-            The weekly bundle carries moneyline probabilities only. In the validation sprint (Tune 2018–22) no model beat the
-            devigged closing spread or total price, so none is shown.
+            In the validation sprint (Tune 2018–22) no model beat the devigged closing spread or total price, so no spread or
+            total is offered here.{hasDist ? " The simulator's margin and total distributions below are research output." : ""}
           </p>
         </article>
       </section>
@@ -182,13 +187,33 @@ export default async function GamePage({ params }: { params: Promise<{ id: strin
         <h2 id="dist" className="wdth-expanded text-[22px] font-bold">
           Simulated margin and total
         </h2>
-        <div className="mt-3">
-          <DataUnavailable title="No simulator output in this cycle">
-            This week&apos;s bundle comes from the backtest candidates, which predict a win probability only. The score
-            simulator&apos;s margin and total distributions appear here once a simulator bundle is ingested (Phase 1b makes it
-            point-in-time).
-          </DataUnavailable>
-        </div>
+        {hasDist ? (
+          (["margin", "total"] as const).map((kind) => {
+            const bins = parseBins(dist[kind]);
+            return bins ? (
+              <div key={kind}>
+                <ScoreDistributionChart kind={kind} bins={bins} homeId={game.homeTeamId} awayId={game.awayTeamId} nSims={run.nSims}
+                  result={final ? (kind === "margin" ? final.home - final.away : final.home + final.away) : null} />
+                {kind === "margin" ? <p className="mt-2 text-sm text-muted">Regulation ties go to overtime, so an exact tie is rare.</p> : null}
+              </div>
+            ) : (
+              <div key={kind} className="mt-3">
+                <DataUnavailable title={dist[kind] === null ? `No ${kind} distribution in this run` : `The ${kind} distribution is unreadable`}>
+                  {dist[kind] === null
+                    ? `The published run has no simulated ${kind} for this game.`
+                    : `Its bins failed validation (one share per integer outcome, no gaps, shares between 0 and 1), so it is not drawn.`}
+                </DataUnavailable>
+              </div>
+            );
+          })
+        ) : (
+          <div className="mt-3">
+            <DataUnavailable title="No simulator output in this run">
+              The published run predicts win probabilities only. Margin and total distributions appear when the published run
+              comes from the game simulator (run_week.R).
+            </DataUnavailable>
+          </div>
+        )}
       </section>
 
       <section className="mt-10" aria-labelledby="moves">

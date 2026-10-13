@@ -8,6 +8,7 @@ import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { getDb } from "../../db";
 import * as s from "../../db/schema";
+import { deskCandidate } from "../policy";
 
 export async function pointerRun(pointer: "weekly" | "backtest_games") {
   const db = getDb();
@@ -71,6 +72,28 @@ export async function candidateLines(runId: string, candidates: string[], gameId
     .where(and(...conds));
 }
 
+/** Candidate ids a run carries (public: ids only), for the field-line policy. */
+export async function runCandidates(runId: string): Promise<string[]> {
+  const rows = await getDb()
+    .selectDistinct({ candidate: s.gamePredictions.candidate })
+    .from(s.gamePredictions)
+    .where(eq(s.gamePredictions.runId, runId))
+    .orderBy(asc(s.gamePredictions.candidate));
+  return rows.map((r) => r.candidate);
+}
+
+/** One game's simulated score distributions in a run (public: outcomes and shares only). */
+export async function gameDistributions(runId: string, gameId: string): Promise<{ margin: unknown; total: unknown }> {
+  const rows = await getDb()
+    .select({ kind: s.scoreDistributions.kind, bins: s.scoreDistributions.bins })
+    .from(s.scoreDistributions)
+    .where(and(eq(s.scoreDistributions.runId, runId), eq(s.scoreDistributions.gameId, gameId)));
+  return {
+    margin: rows.find((r) => r.kind === "margin")?.bins ?? null,
+    total: rows.find((r) => r.kind === "total")?.bins ?? null
+  };
+}
+
 export async function publicGame(gameId: string) {
   const { run, games } = await publicSlate();
   const game = games.find((g) => g.gameId === gameId) ?? null;
@@ -123,10 +146,11 @@ export async function dataHealth() {
 
 export async function deskSlate() {
   const { run, games } = await publicSlate();
-  if (!run) return { run, games, lines: [], recs: [] };
-  const lines = await candidateLines(run.runId, ["C1", "C2", "E1", "B1[E1]", "B2[E1]", "K[E1]"]);
+  if (!run) return { run, games, candidate: null as string | null, lines: [], recs: [] };
+  const candidate = deskCandidate(await runCandidates(run.runId));
+  const lines = candidate ? await candidateLines(run.runId, [candidate]) : [];
   const recs = await getDb().select().from(s.recommendations).where(eq(s.recommendations.runId, run.runId));
-  return { run, games, lines, recs };
+  return { run, games, candidate, lines, recs };
 }
 
 function aliasTeams(name: string) {

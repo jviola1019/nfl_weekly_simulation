@@ -86,3 +86,8 @@ test_that("max edge gate forces pass with explicit reason", {
   expect_equal(g$pass_reason, "Edge too large (>10%)")
   expect_equal(g$final_stake_pct, 0)
 })
+
+test_that("config declares paper staking by default", {
+  # moved from test-report-banner.R when the HTML report was retired (A8)
+  expect_identical(STAKING_MODE, "paper")
+})

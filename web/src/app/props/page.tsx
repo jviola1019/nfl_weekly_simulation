@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { DataUnavailable } from "@/components/DataUnavailable";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Card, PageTitle } from "@/components/ui";
 
 export const metadata = { title: "Props" };
 
@@ -13,25 +14,32 @@ const MARKETS = [
 export default function PropsPage() {
   return (
     <>
-      <h1 className="text-2xl font-semibold">Player props</h1>
-      <p className="mt-3 flex flex-wrap items-center gap-2 text-ink-2">
-        <StatusBadge status="unvalidated" label="Props model unvalidated" />
-        <span>No prop is priced here until its market passes a pre-registered backtest.</span>
-      </p>
+      <PageTitle
+        lead={
+          <span className="flex flex-wrap items-center gap-2">
+            <StatusBadge status="unvalidated" label="Props model unvalidated" />
+            <span>No prop is priced here until its market passes a pre-registered backtest.</span>
+          </span>
+        }
+      >
+        Player props
+      </PageTitle>
 
-      <div className="mt-6 grid gap-6 sm:grid-cols-3">
+      <div className="mt-8 grid gap-5 sm:grid-cols-3">
         {MARKETS.map((m) => (
-          <section key={m.group} aria-labelledby={`m-${m.group}`}>
-            <h2 id={`m-${m.group}`} className="font-semibold">{m.group}</h2>
-            <ul className="mt-2 space-y-1 text-sm text-ink-2">
-              {m.items.map((i) => (
-                <li key={i} className="flex items-center justify-between border-b border-rule py-1">
-                  <span>{i}</span>
-                  <StatusBadge status="unvalidated" label="Not priced" />
-                </li>
-              ))}
-            </ul>
-          </section>
+          <Card key={m.group}>
+            <section aria-labelledby={`m-${m.group}`}>
+              <h2 id={`m-${m.group}`} className="font-bold">{m.group}</h2>
+              <ul className="mt-3 text-sm">
+                {m.items.map((i) => (
+                  <li key={i} className="flex items-center justify-between gap-3 border-t border-rule py-2">
+                    <span>{i}</span>
+                    <StatusBadge status="unvalidated" label="Not priced" />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </Card>
         ))}
       </div>
 

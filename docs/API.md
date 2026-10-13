@@ -215,17 +215,17 @@ apply_bet_governance(
 
 ---
 
-### `render_moneyline_comparison_html()`
+### `write_sim_bundle()`
 
-**File**: [NFLmarket.R](../NFLmarket.R#L2800)
+**File**: [R/sim_bundle.R](../R/sim_bundle.R)
 
-Generate HTML report from comparison table.
+Write the simulator's weekly bundle (it replaced the HTML report at checkpoint A8). `run_week.R` calls it after the simulation; the local app (`cd web && npm run local`) ingests and shows it.
 
 ```r
-render_moneyline_comparison_html(
-  moneyline_tbl,    # Output from build_moneyline_comparison_table()
-  output_file = "NFLvsmarket_report.html"
-)
+write_sim_bundle(
+  final, sims = last_simulation_results, schedule = sched, quality = get_data_quality(),
+  season = SEASON, week = WEEK_TO_SIM, seed = SEED, n_sims = N_TRIALS
+)  # writes bundles/<season>-w<WW>-sim-<UTC stamp>/ and returns its manifest (qa$ok, qa$failures)
 ```
 
 ---

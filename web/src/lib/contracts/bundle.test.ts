@@ -49,9 +49,10 @@ describe("shared row fixtures (the R validator runs the same file)", () => {
 describe("manifest", () => {
   const weekly = join(CONTRACTS, "fixtures", "bundles", "weekly-2026-w04");
   const backtest = join(CONTRACTS, "fixtures", "bundles", "backtest-nfl-games-v1");
+  const simulator = join(CONTRACTS, "fixtures", "bundles", "weekly-sim-2024-w15");
 
   it("the committed fixture bundles load and validate end to end", () => {
-    for (const dir of [weekly, backtest]) {
+    for (const dir of [weekly, backtest, simulator]) {
       const b = loadBundle(dir);
       expect(b.manifest.qa.ok).toBe(true);
       expect(b.sha256).toMatch(/^[0-9a-f]{64}$/);

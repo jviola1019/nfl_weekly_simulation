@@ -3,7 +3,7 @@
  *
  * - connect-src 'self': the app makes no client-side external requests; every
  *   data source is read by the R engine or the ingest CLI, never the browser.
- * - font-src 'self': Archivo is self-hosted by next/font at build time.
+ * - font-src 'self': Archivo is committed (src/app/fonts) and served by next/font/local.
  * - img-src 'self' data:: no remote images.
  * - style-src-attr 'unsafe-inline': charts position marks with inline style
  *   attributes; a nonce cannot cover attribute styles. Inline <style> blocks still

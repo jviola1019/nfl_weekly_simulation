@@ -1,12 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo } from "next/font/google";
+import localFont from "next/font/local";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
-// Archivo variable with the width axis: condensed for dense tables, expanded for
-// team codes and scores (spec §4). Self-hosted by next/font at build time.
-const archivo = Archivo({ subsets: ["latin"], axes: ["wdth"], variable: "--font-archivo", display: "swap" });
+// Archivo variable (weight 100–900, width 62–125%): condensed for dense tables, expanded
+// for team codes and scores (spec §4). The latin file is committed with its OFL licence
+// (./fonts), so a build needs no network (A8: the app runs offline from the terminal).
+const archivo = localFont({
+  src: "./fonts/archivo-latin.woff2",
+  weight: "100 900",
+  style: "normal",
+  display: "swap",
+  variable: "--font-archivo",
+  declarations: [{ prop: "font-stretch", value: "62% 125%" }]
+});
 
 export const metadata: Metadata = {
   title: { default: "Broadcast Line", template: "%s · Broadcast Line" },

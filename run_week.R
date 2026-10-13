@@ -12,7 +12,9 @@
 #   Rscript run_week.R 15 2024  # Week 15, 2024 season
 #
 # Output:
-#   HTML report: NFLvsmarket_week{week}_{season}.html
+#   Web bundle:   bundles/<season>-w<WW>-sim-<UTC stamp>/  (view offline: cd web && npm run local)
+#   Audit tables: artifacts/baseline_games.csv, artifacts/baseline_props.csv
+#   Run logs:     run_logs/
 #
 # Debug mode:
 #   options(nfl.ev_debug = TRUE)  # Shows EV calculation trace
@@ -50,11 +52,16 @@ if (length(missing_pkgs) > 0) {
   }
 }
 
-# Run the full simulation which generates the HTML report
+# Run the full simulation; its results go to a web bundle for the local app
 message("Running NFLsimulation.R...")
-message("This will run Monte Carlo simulations and generate an HTML report.\n")
+message("This runs the Monte Carlo simulation and writes a web bundle (view it with: cd web && npm run local).\n")
 
 tryCatch({
+  # Bundle writer, and the code's git state before this run rewrites artifacts/
+  source("R/bundle_writer.R")
+  source("R/sim_bundle.R")
+  run_git <- sb_git_state()
+
   source("NFLsimulation.R")
 
   # =============================================================================
@@ -88,7 +95,7 @@ tryCatch({
         })
 
         if (!is.null(props_results) && nrow(props_results) > 0) {
-          # Export props results for HTML report
+          # Export props results for artifacts/baseline_props.csv
           assign("props_results", props_results, envir = .GlobalEnv)
 
           # Show quick summary
@@ -98,105 +105,36 @@ tryCatch({
 
           cat(sprintf("  Generated %d player props (%d with positive EV)\n",
                       nrow(props_results), positive_ev))
-
-          # Regenerate HTML report to include player props
-          if (exists("export_moneyline_comparison_html", mode = "function") &&
-              exists("moneyline_report_inputs") && !is.null(moneyline_report_inputs)) {
-            cat("  Regenerating HTML report with player props...\n")
-            tryCatch({
-              # Rebuild comparison table if needed
-              if (exists("build_moneyline_comparison_table", mode = "function") &&
-                  !is.null(moneyline_report_inputs$comparison)) {
-                report_tbl <- build_moneyline_comparison_table(
-                  market_comparison_result = moneyline_report_inputs$comparison,
-                  enriched_schedule = if (exists("sched")) sched else NULL,
-                  join_keys = if (!is.null(moneyline_report_inputs$join_keys))
-                                moneyline_report_inputs$join_keys else c("game_id", "season", "week"),
-                  vig = 0.10,
-                  verbose = FALSE
-                )
-                if (nrow(report_tbl) > 0) {
-                  assign("last_comparison_tbl", report_tbl, envir = .GlobalEnv)
-                  export_moneyline_comparison_html(
-                    comparison_tbl = report_tbl,
-                    file = file.path(getwd(), "NFLvsmarket_report.html"),
-                    title = sprintf("NFL Week %d Analysis (Season %d) - With Player Props", WEEK_TO_SIM, SEASON),
-                    verbose = FALSE,
-                    auto_open = TRUE,
-                    props_data = props_results
-                  )
-                  cat("  HTML report updated with player props.\n")
-                  .props_html_opened <- TRUE
-                }
-              }
-            }, error = function(e) {
-              message(sprintf("  Could not regenerate HTML: %s", e$message))
-            })
-          }
         } else {
           message("No player props were generated (possibly missing player data)")
-          # v2.9.2: Generate HTML without props as fallback
-          .props_failed <- TRUE
         }
       } else {
         message("Simulation results not available for props correlation")
-        .props_failed <- TRUE
       }
     } else {
       message("correlated_props.R not found; skipping player props")
-      .props_failed <- TRUE
-    }
-
-    # v2.9.2: Fallback - generate HTML without props if props failed
-    if (exists(".props_failed") && .props_failed && !exists(".props_html_opened")) {
-      if (exists("export_moneyline_comparison_html", mode = "function") &&
-          exists("moneyline_report_inputs") && !is.null(moneyline_report_inputs)) {
-        cat("  Generating HTML report without props (props unavailable)...\n")
-        tryCatch({
-          if (exists("build_moneyline_comparison_table", mode = "function") &&
-              !is.null(moneyline_report_inputs$comparison)) {
-            report_tbl <- build_moneyline_comparison_table(
-              market_comparison_result = moneyline_report_inputs$comparison,
-              enriched_schedule = if (exists("sched")) sched else NULL,
-              join_keys = if (!is.null(moneyline_report_inputs$join_keys))
-                            moneyline_report_inputs$join_keys else c("game_id", "season", "week"),
-              vig = 0.10,
-              verbose = FALSE
-            )
-            if (nrow(report_tbl) > 0) {
-              assign("last_comparison_tbl", report_tbl, envir = .GlobalEnv)
-              export_moneyline_comparison_html(
-                comparison_tbl = report_tbl,
-                file = file.path(getwd(), "NFLvsmarket_report.html"),
-                title = sprintf("NFL Week %d Analysis (Season %d)", WEEK_TO_SIM, SEASON),
-                verbose = FALSE,
-                auto_open = TRUE,
-                props_data = NULL
-              )
-              cat("  HTML report generated (without props).\n")
-              .props_html_opened <- TRUE
-            }
-          }
-        }, error = function(e) {
-          message(sprintf("  Could not generate HTML: %s", e$message))
-        })
-      }
     }
   }
 
-  # Open browser if props didn't trigger auto_open (fallback for no-props case)
-  html_path <- file.path(getwd(), "NFLvsmarket_report.html")
-  if (!exists(".props_html_opened") && file.exists(html_path)) {
-    tryCatch(utils::browseURL(html_path), error = function(e) NULL)
+  # The game comparison table for artifacts/baseline_games.csv (built with or without props)
+  if (exists("moneyline_report_inputs") && !is.null(moneyline_report_inputs) &&
+      !is.null(moneyline_report_inputs$comparison)) {
+    last_comparison_tbl <- build_moneyline_comparison_table(
+      market_comparison_result = moneyline_report_inputs$comparison,
+      enriched_schedule = if (exists("sched")) sched else NULL,
+      join_keys = if (!is.null(moneyline_report_inputs$join_keys))
+                    moneyline_report_inputs$join_keys else c("game_id", "season", "week"),
+      vig = 0.10,
+      verbose = FALSE
+    )
+  } else {
+    message("No moneyline comparison inputs from NFLsimulation.R; artifacts/baseline_games.csv not written.")
   }
 
   # Export audit artifacts (baseline tables + run context)
   tryCatch({
     artifact_dir <- file.path(getwd(), "artifacts")
     if (!dir.exists(artifact_dir)) dir.create(artifact_dir, recursive = TRUE)
-    if (file.exists(html_path)) {
-      file.copy(html_path, file.path(artifact_dir, "baseline_report.html"), overwrite = TRUE)
-    }
     if (exists("last_comparison_tbl") && is.data.frame(last_comparison_tbl)) {
       games_export <- last_comparison_tbl
       list_cols <- vapply(games_export, is.list, logical(1))
@@ -243,12 +181,20 @@ tryCatch({
     message(sprintf("Audit artifact export failed: %s", e$message))
   })
 
+  # Web bundle: the results the local app shows (replaces the retired HTML report, A8)
+  cat("\n")
+  # draws missing (NFLsimulation.R's export failed) -> every game is a QA failure, not a crash
+  sim_bundle <- write_sim_bundle(
+    final = final, sims = get0("last_simulation_results", ifnotfound = NULL), schedule = sched, quality = get_data_quality(),
+    season = SEASON, week = WEEK_TO_SIM, seed = SEED, n_sims = N_TRIALS, git = run_git
+  )
+  report_sim_bundle(sim_bundle)
+
   cat("\n")
   cat("=================================================================\n")
   cat("  ANALYSIS COMPLETE\n")
   cat("=================================================================\n")
   cat("  Check the run_logs/ folder for output files.\n")
-  cat("  HTML report should open automatically if running interactively.\n")
   if (exists("props_results") && !is.null(props_results)) {
     cat("  Player props included in analysis.\n")
   }
@@ -265,4 +211,3 @@ tryCatch({
 })
 
 cat("\nDone.\n")
-

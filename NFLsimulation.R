@@ -66,6 +66,11 @@ local({
       message(sprintf("Note: Could not source R/playoffs.R: %s", conditionMessage(e)))
     })
   }
+
+  # Required modules (Plan 1b-1): a load failure stops the run
+  source(file.path(base_path, "mu_terms.R"))
+  source(file.path(base_path, "schedule_context.R"))
+  source(file.path(base_path, "sleeper_api.R"))
 })
 
 load_market_helpers <- local({
@@ -1365,770 +1370,6 @@ if (!exists("build_moneyline_comparison_table", inherits = FALSE)) {
   
 }
 
-if (!exists("export_moneyline_comparison_html", inherits = FALSE)) {
-  export_moneyline_comparison_html <- function(comparison_tbl,
-                                               file = NULL,
-                                               title = "Blend vs Market Moneylines",
-                                               verbose = TRUE,
-                                               auto_open = TRUE,
-                                               season = NULL,
-                                               week = NULL) {
-    if (missing(file) || is.null(file) || !length(file) || all(is.na(file)) || !nzchar(file[[1L]])) {
-      file <- file.path(getwd(), "NFLvsmarket_report.html")
-      if (verbose) {
-        message(sprintf(
-          "export_moneyline_comparison_html(): using default output path %s",
-          file.path(normalizePath(dirname(file), winslash = "/", mustWork = FALSE), basename(file))
-        ))
-      }
-    } else {
-      file <- file[[1L]]
-    }
-  
-    if (!nzchar(file)) {
-      stop("export_moneyline_comparison_html(): 'file' must resolve to a non-empty path.")
-    }
-  
-    if (!nrow(comparison_tbl)) {
-      if (verbose) message("export_moneyline_comparison_html(): comparison table empty; skipping export.")
-      return(invisible(file))
-    }
-  
-    season_filter <- if (!length(season)) {
-      get0("SEASON", ifnotfound = NULL, inherits = TRUE)
-    } else {
-      season
-    }
-    week_filter <- if (!length(week)) {
-      get0("WEEK_TO_SIM", ifnotfound = NULL, inherits = TRUE)
-    } else {
-      week
-    }
-  
-    filtered_tbl <- comparison_tbl
-    if (!is.null(season_filter) && length(season_filter) && "season" %in% names(filtered_tbl)) {
-      filtered_tbl <- dplyr::filter(filtered_tbl, .data$season %in% season_filter)
-    }
-    if (!is.null(week_filter) && length(week_filter) && "week" %in% names(filtered_tbl)) {
-      filtered_tbl <- dplyr::filter(filtered_tbl, .data$week %in% week_filter)
-    }
-  
-    if (nrow(filtered_tbl)) {
-      comparison_tbl <- filtered_tbl
-    } else if (verbose) {
-      message(
-        "export_moneyline_comparison_html(): no rows matched the requested season/week filter; exporting unfiltered table."
-      )
-    }
-  
-    dir_path <- dirname(file)
-    if (nzchar(dir_path) && dir_path != "." && !dir.exists(dir_path)) {
-      dir.create(dir_path, recursive = TRUE, showWarnings = FALSE)
-    }
-  
-    if (file.exists(file)) {
-      unlink(file, force = TRUE)
-    }
-  
-    moneyline_cols <- c(
-      "Blend Home Moneyline (vig)",
-      "Blend Away Moneyline (vig)"
-    )
-
-    format_signed_spread <- function(x) {
-      num <- suppressWarnings(as.numeric(x))
-      out <- rep("", length(x))
-      mask <- !is.na(num) & is.finite(num)
-      if (any(mask)) {
-        out[mask] <- sprintf("%+.1f", round(num[mask], 1))
-      }
-      out
-    }
-  
-    format_moneyline_strings <- function(x) {
-      num <- suppressWarnings(as.numeric(x))
-      out <- rep("", length(x))
-      mask <- !is.na(num) & is.finite(num)
-      if (any(mask)) {
-        out[mask] <- sprintf("%+d", as.integer(round(num[mask])))
-      }
-      out
-    }
-
-    format_probability_leader <- function(team, prob) {
-      team <- as.character(team)
-      prob <- suppressWarnings(as.numeric(prob))
-      out <- rep(NA_character_, length(prob))
-      valid <- !is.na(prob) & is.finite(prob) & !is.na(team) & nzchar(team)
-      if (any(valid)) {
-        out[valid] <- sprintf("%s %.1f%%", team[valid], round(prob[valid] * 100, 1))
-      }
-      out
-    }
-  
-    intro_html <- paste0(
-      "<section class=\"report-intro\">",
-      "<h2>📊 NFL Blend vs Market Analysis Report</h2>",
-      "<p class=\"report-subtitle\">Comprehensive comparison of blended model predictions against betting market consensus</p>",
-
-      "<div class=\"intro-section\" style=\"background: rgba(22,101,52,0.2); border-left: 4px solid #22c55e;\">",
-      "<h3>✅ CALCULATION ERRORS FIXED</h3>",
-      "<p><strong>Previous Issue:</strong> The table was incorrectly showing probability differences as \"Blend Edge\" instead of true expected value edge.</p>",
-      "<p><strong>Fixed:</strong></p>",
-      "<ul>",
-      "<li>✅ <strong>EV Edge (%)</strong> now correctly calculated as: (Blend Probability × Decimal Odds) - 1</li>",
-      "<li>✅ <strong>Total EV (Units)</strong> now correctly calculated as: Stake × EV Edge</li>",
-      "<li>✅ <strong>Prob Advantage (pp)</strong> added as separate column for reference</li>",
-      "</ul>",
-      "<p style=\"color: #fbbf24; font-weight: 600;\">⚠️ DO NOT use any reports generated before this fix for betting decisions!</p>",
-      "</div>",
-
-      "<div class=\"intro-section\">",
-      "<h3>🎯 Understanding the Blend</h3>",
-      "<p>This report compares a <strong>blended probabilistic model</strong> (combining multiple prediction sources) against the <strong>betting market consensus</strong> (derived from moneylines and spreads). Each row represents one NFL game with detailed analytics.</p>",
-      "</div>",
-
-      "<div class=\"intro-section critical-concept\">",
-      "<h3>⚡ CRITICAL: What Does \"Blend Beat Market?\" Mean?</h3>",
-      "<p class=\"emphasis\">This is <strong>NOT</strong> about which team is favored to win!</p>",
-      "<p>\"Blend Beat Market?\" compares <strong>which assessment is better</strong>, not which team wins. Examples:</p>",
-      "<ul class=\"examples-list\">",
-      "<li><strong>Scenario 1:</strong> Both favor Team A, but Market has Team A at 78% and Blend has 75%<br/>",
-      "→ <span class=\"result-no\">Market beats Blend</span> (market is more confident in the correct side)</li>",
-      "<li><strong>Scenario 2:</strong> Market favors Team A at 60%, Blend favors Team B at 55%, Team B wins<br/>",
-      "→ <span class=\"result-yes\">Blend beats Market</span> (blend picked the actual winner)</li>",
-      "<li><strong>Scenario 3:</strong> Blend has higher EV (+0.15 units) than Market (-0.05 units) on same side<br/>",
-      "→ <span class=\"result-yes\">Blend beats Market</span> (better expected value)</li>",
-      "</ul>",
-      "<p class=\"key-point\">🔑 <strong>Key Point:</strong> A favorite can lose to the market if the market assigns an even <em>higher</em> probability to that same favorite!</p>",
-      "</div>",
-
-      "<div class=\"intro-section\">",
-      "<h3>📈 Key Metrics Explained</h3>",
-      "<ul class=\"metrics-list\">",
-      "<li><span class=\"metric-icon\">💡</span> <strong>Blend Pick:</strong> The team the blended model favors to win.</li>",
-      "<li><span class=\"metric-icon\">🎲</span> <strong>Blend Recommendation:</strong> Suggested betting action based on positive expected value (EV > 0).</li>",
-      "<li><span class=\"metric-icon\">✅</span> <strong>Blend Beat Market?:</strong> Did the blend's assessment outperform the market's?",
-      "<ul class=\"basis-list\">",
-      "<li>For completed games: Compares <em>actual money won/lost</em> by each side's pick</li>",
-      "<li>For upcoming games: Compares <em>expected value, win probability, or pricing</em></li>",
-      "</ul></li>",
-      "<li><span class=\"metric-icon\">📊</span> <strong>Basis:</strong> How we determined the winner:",
-      "<ul class=\"basis-list\">",
-      "<li><strong>Final score</strong> — Most reliable: actual results determine which assessment was better</li>",
-      "<li><strong>Expected value</strong> — Blend has higher EV on its pick vs market's pick</li>",
-      "<li><strong>Win probability</strong> — Blend assigns higher win % to its pick vs market's pick</li>",
-      "<li><strong>Moneyline price</strong> — Blend offers better pricing for the same pick</li>",
-      "</ul></li>",
-      "<li><span class=\"metric-icon\">📈</span> <strong>EV Edge (%):</strong> Expected return per dollar bet, calculated as (Blend Probability × Decimal Odds) - 1. This is the TRUE betting edge. Example: 10% edge means you expect to profit $0.10 for every $1 bet. <em>Color coded: green (positive edge), red (negative edge).</em></li>",
-      "<li><span class=\"metric-icon\">💰</span> <strong>Total EV (Units):</strong> Total expected profit = Stake × EV Edge. This is your actual expected profit in units for the recommended bet size. <em>Color coded: green (profitable), red (unprofitable).</em></li>",
-      "<li><span class=\"metric-icon\">📊</span> <strong>Prob Advantage (pp):</strong> Simple probability difference (in percentage points) between blend and market assessments. <strong>IMPORTANT:</strong> This is NOT the same as EV Edge! Prob Advantage doesn't account for odds/pricing, while EV Edge does. Two games can have similar EV Edge (13.5%) but very different Prob Advantage (4.6% vs 8.0%) because of different odds. Use EV Edge for betting decisions, not Prob Advantage.</li>",
-      "<li><span class=\"metric-icon\">🎯</span> <strong>Probabilities (Blend/Market Home Win %):</strong> Win probability for the home team according to blend model vs market. <em>Color intensity shows confidence level.</em></li>",
-      "<li><span class=\"metric-icon\">🏈</span> <strong>Spreads:</strong> All spreads shown from home team's perspective:",
-      "<ul class=\"basis-list\">",
-      "<li><strong>Market Home Spread</strong> — Betting line from sportsbooks (+ = underdog, − = favorite)</li>",
-      "<li><strong>Blend Median Margin</strong> — Blend's predicted point differential (negative spread equivalent)</li>",
-      "<li><em>Color coded: red (home underdog), green (home favorite)</em></li>",
-      "</ul></li>",
-      "<li><span class=\"metric-icon\">💵</span> <strong>Moneylines:</strong> American odds format (e.g., +150 = win $150 on $100 bet, -150 = bet $150 to win $100).</li>",
-      "</ul>",
-      "</div>",
-
-      "<div class=\"intro-section\">",
-      "<h3>🎨 Color Coding</h3>",
-      "<ul class=\"color-guide\">",
-      "<li><span class=\"color-box\" style=\"background:#166534;\"></span> <strong>Green:</strong> Blend beats market (better assessment)</li>",
-      "<li><span class=\"color-box\" style=\"background:#991B1B;\"></span> <strong>Red:</strong> Market beats blend (market's assessment was better)</li>",
-      "<li><span class=\"color-box\" style=\"background:#1D4ED8;\"></span> <strong>Blue:</strong> Recommended bet action</li>",
-      "<li><span class=\"color-box\" style=\"background:#94a3b8;\"></span> <strong>Gray:</strong> N/A or insufficient data</li>",
-      "</ul>",
-      "</div>",
-      "</section>"
-    )
-
-    # FIX: Override recommendation to Pass if stake < 0.01 to avoid "Bet X" with 0.000 stake
-    # BUT: Keep showing the actual EV value so users understand WHY it's a Pass
-    MIN_STAKE_THRESHOLD <- 0.01
-
-    # === TYPE GUARDS: Ensure probability columns are numeric ===
-    ensure_numeric_prob <- function(x) {
-      if (is.character(x) || !is.numeric(x)) {
-        warning("Column type contamination detected: non-numeric value in probability column")
-        # Try to coerce, replacing non-numeric with NA
-        result <- suppressWarnings(as.numeric(x))
-        return(result)
-      }
-      as.numeric(x)
-    }
-
-    display_tbl <- comparison_tbl %>%
-      dplyr::mutate(
-        # Ensure all probability columns are numeric (guard against contamination)
-        blend_prob_pick_safe = ensure_numeric_prob(blend_prob_pick),
-        market_prob_pick_safe = ensure_numeric_prob(market_prob_pick),
-        blend_home_prob_safe = ensure_numeric_prob(blend_home_prob),
-        market_home_prob_safe = ensure_numeric_prob(market_home_prob),
-
-        # Override: If stake is too small (<0.01), treat as Pass
-        effective_recommendation = dplyr::case_when(
-          blend_recommendation %in% c("Pass", "No Play") ~ blend_recommendation,
-          is.na(blend_confidence) | blend_confidence < MIN_STAKE_THRESHOLD ~ "Pass",
-          TRUE ~ blend_recommendation
-        ),
-        # Zero out stake for Pass recommendations (but NOT EV - we want to see why it's a Pass)
-        effective_stake = dplyr::case_when(
-          effective_recommendation %in% c("Pass", "No Play") ~ 0,
-          is.na(blend_confidence) ~ NA_real_,
-          TRUE ~ blend_confidence
-        )
-        # NOTE: We no longer zero out EV - users want to see negative EV to understand why it's Pass
-      ) %>%
-      dplyr::transmute(
-        Season = season,
-        Week = week,
-        Date = game_date,
-        Matchup = matchup,
-        Winner = dplyr::coalesce(actual_winner, "TBD"),
-        `Blend Pick` = blend_pick,
-        `Blend Recommendation` = effective_recommendation,
-        `Blend Beat Market?` = dplyr::case_when(
-          is.na(blend_beats_market) | effective_recommendation %in% c("Pass", "No Play") ~ "N/A",
-          blend_beats_market ~ "Yes",
-          TRUE ~ "No"
-        ),
-        `Blend Beat Market Basis` = dplyr::if_else(
-          effective_recommendation %in% c("Pass", "No Play"),
-          NA_character_,
-          blend_beats_market_basis
-        ),
-        # Stake: 0 for Pass, actual value for Bet
-        `Blend Stake (Units)` = effective_stake,
-        # EV Edge: ALWAYS show actual value (negative for Pass, positive for Bet)
-        `EV Edge (%)` = blend_ev_units,
-        # Total EV: 0 for Pass (no bet = no EV), stake × EV for Bet
-        `Total EV (Units)` = dplyr::case_when(
-          effective_recommendation %in% c("Pass", "No Play") ~ 0,
-          is.na(effective_stake) | is.na(blend_ev_units) ~ NA_real_,
-          TRUE ~ effective_stake * blend_ev_units
-        ),
-        # Edge Quality: Based on ACTUAL EV (consistent with displayed value)
-        `Edge Quality` = dplyr::case_when(
-          is.na(blend_ev_units) ~ "N/A",
-          blend_ev_units <= 0 ~ "Pass",
-          blend_ev_units <= 0.05 ~ "✓ OK",
-          blend_ev_units <= 0.10 ~ "⚠ High",
-          blend_ev_units <= 0.15 ~ "⚠⚠ Suspicious",
-          TRUE ~ "🚫 Implausible"
-        ),
-        # Pick-side probabilities (using safe numeric values)
-        `Blend Pick Win %` = blend_prob_pick_safe,
-        `Market Pick Win % (Fair)` = market_prob_pick_safe,
-        `Prob Edge on Pick (pp)` = dplyr::case_when(
-          is.na(blend_prob_pick_safe) | is.na(market_prob_pick_safe) ~ NA_real_,
-          TRUE ~ blend_prob_pick_safe - market_prob_pick_safe
-        ),
-        `Blend Home Win %` = blend_home_prob_safe,
-        `Market Home Win % (Fair)` = market_home_prob_safe,
-        `Blend Median Margin` = blend_median_margin,
-        `Market Home Spread` = market_home_spread,
-        `Market Total` = market_total,
-        `Market Home Moneyline` = market_home_ml,
-        `Market Away Moneyline` = market_away_ml
-      )
-
-    # === FINAL TYPE VALIDATION ===
-    prob_cols <- c("Blend Pick Win %", "Market Pick Win % (Fair)", "Prob Edge on Pick (pp)",
-                   "Blend Home Win %", "Market Home Win % (Fair)")
-    for (col in prob_cols) {
-      if (col %in% names(display_tbl)) {
-        if (!is.numeric(display_tbl[[col]])) {
-          warning(sprintf("COLUMN TYPE ERROR: '%s' contains non-numeric values", col))
-          display_tbl[[col]] <- as.numeric(display_tbl[[col]])
-        }
-      }
-    }
-  
-    saved <- FALSE
-
-    if (requireNamespace("gt", quietly = TRUE)) {
-      display_cols <- names(display_tbl)
-
-      gt_apply_if_columns <- function(gt_tbl, columns, fn, ...) {
-        existing <- intersect(columns, display_cols)
-        if (!length(existing)) {
-          return(gt_tbl)
-        }
-        args <- c(list(gt_tbl, columns = dplyr::all_of(existing)), list(...))
-        do.call(fn, args)
-      }
-
-      gt_apply_labels <- function(gt_tbl, label_map) {
-        label_map <- label_map[names(label_map) %in% display_cols]
-        if (!length(label_map)) {
-          return(gt_tbl)
-        }
-        do.call(gt::cols_label, c(list(gt_tbl), as.list(label_map)))
-      }
-
-      gt_tbl <- gt::gt(display_tbl)
-      gt_tbl <- gt_apply_if_columns(
-        gt_tbl,
-        c("EV Edge (%)", "Prob Edge on Pick (pp)"),
-        gt::fmt_percent,
-        decimals = 2
-      )
-      gt_tbl <- gt_apply_if_columns(
-        gt_tbl,
-        c("Blend Home Win %", "Market Home Win % (Fair)",
-          "Blend Pick Win %", "Market Pick Win % (Fair)"),
-        gt::fmt_percent,
-        decimals = 1
-      )
-      gt_tbl <- gt_apply_if_columns(
-        gt_tbl,
-        c("Blend Median Margin", "Market Home Spread"),
-        gt::fmt,
-        fns = function(x) format_signed_spread(x)
-      )
-      gt_tbl <- gt_apply_if_columns(
-        gt_tbl,
-        c("Market Total"),
-        gt::fmt_number,
-        decimals = 1,
-        drop_trailing_zeros = TRUE
-      )
-      # Total EV with high precision (5 decimals), Stake with 4 decimals
-      gt_tbl <- gt_apply_if_columns(
-        gt_tbl,
-        c("Total EV (Units)"),
-        gt::fmt_number,
-        decimals = 5,
-        drop_trailing_zeros = FALSE
-      )
-      gt_tbl <- gt_apply_if_columns(
-        gt_tbl,
-        c("Blend Stake (Units)"),
-        gt::fmt_number,
-        decimals = 4,
-        drop_trailing_zeros = FALSE
-      )
-      gt_tbl <- gt_apply_if_columns(
-        gt_tbl,
-        c("Market Home Moneyline", "Market Away Moneyline"),
-        gt::fmt,
-        fns = function(x) format_moneyline_strings(x)
-      )
-      gt_tbl <- gt_apply_if_columns(
-        gt_tbl,
-        c(
-          "Matchup", "Winner",
-          "Blend Pick", "Blend Recommendation", "Blend Beat Market Basis"
-        ),
-        gt::cols_align,
-        align = "left"
-      )
-      gt_tbl <- gt_apply_if_columns(
-        gt_tbl,
-        c("Season", "Week", "Blend Beat Market?"),
-        gt::cols_align,
-        align = "center"
-      )
-
-      # Helper function to apply color coding safely
-      apply_color <- function(gt_tbl, columns, palette, domain) {
-        cols_exist <- if (length(columns) == 1) {
-          columns %in% display_cols
-        } else {
-          all(columns %in% display_cols)
-        }
-        if (!cols_exist) return(gt_tbl)
-        tryCatch(
-          gt::data_color(gt_tbl, columns = columns,
-            fn = scales::col_numeric(palette = palette, domain = domain, na.color = "#374151")),
-          error = function(e) gt_tbl
-        )
-      }
-
-      # Apply color coding for all metric columns
-      # Home win probabilities (blue scale, expanded domain to handle edge cases)
-      gt_tbl <- apply_color(gt_tbl, c("Blend Home Win %", "Market Home Win % (Fair)"),
-        c("#1e3a8a", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd"), c(0, 1))
-      # Pick win probabilities (same blue scale)
-      gt_tbl <- apply_color(gt_tbl, c("Blend Pick Win %", "Market Pick Win % (Fair)"),
-        c("#1e3a8a", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd"), c(0, 1))
-      # Total EV (expanded domain to avoid clipping warnings)
-      gt_tbl <- apply_color(gt_tbl, "Total EV (Units)",
-        c("#991B1B", "#dc2626", "#1f2937", "#15803d", "#166534"), c(-0.10, 0.10))
-      # EV Edge (expanded domain to avoid clipping warnings)
-      gt_tbl <- apply_color(gt_tbl, "EV Edge (%)",
-        c("#991B1B", "#dc2626", "#1f2937", "#15803d", "#166534"), c(-0.25, 0.25))
-      # Prob Edge on Pick (expanded domain)
-      gt_tbl <- apply_color(gt_tbl, "Prob Edge on Pick (pp)",
-        c("#7f1d1d", "#991b1b", "#1f2937", "#14532d", "#15532d"), c(-0.40, 0.40))
-      gt_tbl <- apply_color(gt_tbl, c("Market Home Spread", "Blend Median Margin"),
-        c("#dc2626", "#f87171", "#1f2937", "#4ade80", "#22c55e"), c(-21, 21))
-      gt_tbl <- gt::tab_header(
-        gt_tbl,
-        title = title,
-        subtitle = "✅ CORRECTED CALCULATIONS • 🎯 Spreads • 📊 Probabilities • 💰 True EV Edge • 📈 Total Expected Value"
-      )
-
-      # Add column spanners for better organization
-      gt_tbl <- tryCatch({
-        if ("tab_spanner" %in% getNamespaceExports("gt")) {
-          gt_tbl <- gt::tab_spanner(gt_tbl, label = "📅 Game Info", columns = c("Season", "Week", "Date", "Matchup"))
-          if ("Winner" %in% display_cols) {
-            gt_tbl <- gt::tab_spanner(gt_tbl, label = "🏆 Result", columns = "Winner")
-          }
-          gt_tbl <- gt::tab_spanner(gt_tbl, label = "🎯 Blend Analysis", columns = dplyr::matches("^(Blend|EV|Total|Prob)"))
-          gt_tbl <- gt::tab_spanner(gt_tbl, label = "📊 Market Data", columns = dplyr::matches("^Market"))
-        }
-        gt_tbl
-      }, error = function(e) gt_tbl)
-
-      gt_tbl <- gt::tab_source_note(
-        gt_tbl,
-        source_note = "✅ FIXED: EV Edge = (Prob × Decimal Odds) - 1 | Total EV = Stake × EV Edge | Prob Advantage shown for reference only"
-      )
-      gt_tbl <- gt::tab_options(
-        gt_tbl,
-        table.font.names = c("Source Sans Pro", "Helvetica Neue", "Arial", "sans-serif"),
-        table.background.color = "#020617",
-        table.font.color = "#e2e8f0",
-        heading.background.color = "#0f172a",
-        column_labels.background.color = "#1e293b",
-        column_labels.font.weight = "bold",
-        column_labels.text_transform = "uppercase",
-        row.striping.background_color = "#111827"
-      )
-      gt_tbl <- gt::tab_style(
-        gt_tbl,
-        style = gt::cell_text(color = "#f8fafc"),
-        locations = gt::cells_title(groups = "title")
-      )
-      gt_tbl <- gt::tab_style(
-        gt_tbl,
-        style = gt::cell_text(color = "#cbd5f5"),
-        locations = gt::cells_title(groups = "subtitle")
-      )
-      gt_tbl <- gt::opt_row_striping(gt_tbl)
-      if ("Blend Beat Market?" %in% display_cols) {
-        gt_tbl <- gt::data_color(
-          gt_tbl,
-          columns = "Blend Beat Market?",
-          fn = scales::col_factor(
-            palette = c("No" = "#1f2937", "Yes" = "#166534", "N/A" = "#374151"),
-            domain = c("No", "Yes", "N/A")
-          )
-        )
-      }
-      # Edge Quality color coding
-      if ("Edge Quality" %in% display_cols) {
-        gt_tbl <- gt::data_color(
-          gt_tbl,
-          columns = "Edge Quality",
-          fn = function(values) {
-            palette <- c(
-              "Pass" = "#4A4640",
-              "✓ OK" = "#059669",
-              "⚠ High" = "#d97706",
-              "⚠⚠ Suspicious" = "#dc2626",
-              "🚫 Implausible" = "#7f1d1d",
-              "N/A" = "#374151"
-            )
-            mapped <- palette[as.character(values)]
-            default <- palette[["N/A"]]
-            mapped[is.na(mapped)] <- default
-            unname(mapped)
-          }
-        )
-      }
-      if ("Blend Recommendation" %in% display_cols) {
-        gt_tbl <- gt::tab_style(
-          gt_tbl,
-          style = list(
-            gt::cell_fill(color = "#1d4ed8"),
-            gt::cell_text(color = "#f8fafc", weight = "bold")
-          ),
-          locations = gt::cells_body(
-            columns = "Blend Recommendation",
-            rows = !is.na(`Blend Recommendation`) & `Blend Recommendation` != "Pass"
-          )
-        )
-      }
-      gt_tbl <- gt::tab_style(
-        gt_tbl,
-        style = list(
-          gt::cell_fill(color = "#1e293b"),
-          gt::cell_text(color = "#f8fafc", weight = "bold")
-        ),
-        locations = gt::cells_column_labels(columns = gt::everything())
-      )
-
-      try({
-        gt::gtsave(gt_tbl, file = file)
-        saved <- TRUE
-      }, silent = TRUE)
-    }
-  
-    if (!saved) {
-      css_block <- paste0(
-        "body {font-family: 'Inter','Source Sans Pro','Helvetica Neue',Arial,sans-serif; background: radial-gradient(circle at top,#172554 0%,#020617 70%); color: #e2e8f0; margin: 0; padding-top: 85px;}\n",
-        ".search-container {position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: linear-gradient(135deg, rgba(2, 6, 23, 0.98), rgba(15, 23, 42, 0.95)); backdrop-filter: blur(10px); border-bottom: 2px solid rgba(59, 130, 246, 0.4); padding: 1.25rem 0; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);}\n",
-        ".search-inner {max-width: 1200px; margin: 0 auto; padding: 0 1.5rem;}\n",
-        ".page-wrapper {max-width: 1200px; margin: 0 auto; padding: 1rem 1.5rem 4rem;}\n",
-        ".table-wrapper {overflow-x: auto; border-radius: 18px;}\n",
-        ".report-intro {max-width: 960px; margin: 0 auto 2rem; background: linear-gradient(135deg,rgba(15,23,42,0.95),rgba(30,41,59,0.95)); padding: 1.5rem 1.75rem; border-radius: 18px; border: 1px solid rgba(148,163,184,0.25); box-shadow: 0 24px 56px rgba(15,23,42,0.55);}\n",
-        ".report-intro h2 {margin: 0 0 0.75rem; font-size: 1.3rem; color: #f8fafc; letter-spacing: 0.02em;}\n",
-        ".report-intro p {margin: 0 0 1rem; color: #cbd5f5; font-size: 0.95rem;}\n",
-        ".report-intro ul {margin: 0; padding-left: 1.25rem; color: #e2e8f0; line-height: 1.5;}\n",
-        ".report-intro li {margin-bottom: 0.4rem;}\n",
-        "#table-search {width: 100%; max-width: 500px; padding: 0.85rem 1.25rem; margin: 0 auto; border-radius: 999px; border: 1px solid rgba(59, 130, 246, 0.4); background-color: rgba(15,23,42,0.9); color: #f8fafc; display: block; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); transition: all 0.2s ease; font-size: 1rem;}\n",
-        "#table-search:focus {outline: none; border-color: #60a5fa; box-shadow: 0 0 0 3px rgba(96,165,250,0.4), 0 8px 20px rgba(59, 130, 246, 0.3); transform: translateY(-1px);}\n",
-        "#table-search::placeholder {color: rgba(148, 163, 184, 0.7);}\n",
-        "table {width: 100%; border-collapse: collapse; background-color: rgba(15,23,42,0.94); color: #e2e8f0; border-radius: 18px;}\n",
-        "thead th {background-color: #1e293b; color: #f8fafc; text-transform: uppercase; letter-spacing: 0.08em; position: sticky; top: 85px; z-index: 100;}\n",
-        "td, th {padding: 10px 12px; border-bottom: 1px solid rgba(30, 41, 59, 0.5); text-align: center;}\n",
-        "td.text-left {text-align: left;}\n",
-        "td.winner-cell {color: #fcd34d; font-weight: 600;}\n",
-        "tr:nth-child(even) {background-color: rgba(15,23,42,0.65);}\n",
-        "tbody tr:hover {background-color: rgba(37,99,235,0.18); transition: background-color 180ms ease;}\n",
-        "tr.blend-win {background-color: rgba(22,101,52,0.75);}\n",
-        "tr.blend-win td {color: #ecfdf5;}\n",
-        "td.blend-reco {background-color: #1d4ed8 !important; color: #f8fafc !important; font-weight: 600;}\n",
-        "caption {caption-side: top; font-size: 1.25rem; font-weight: 600; margin-bottom: 0.75rem; color: #f8fafc;}\n",
-        "@media (max-width: 768px) { body {padding-top: 75px;} thead th {top: 75px;} table {font-size: 0.88rem;} th {font-size: 0.7rem;} .report-intro {padding: 1.25rem;} #table-search {font-size: 0.9rem; padding: 0.75rem 1rem;} }\n"
-      )
-  
-      # Helper to safely format percent columns
-      safe_percent_fmt <- function(x) {
-        if (all(is.na(x))) return(rep("", length(x)))
-        scales::percent(x, accuracy = 0.1)
-      }
-
-      formatted_tbl <- display_tbl %>%
-        dplyr::mutate(
-          `EV Edge (%)` = safe_percent_fmt(`EV Edge (%)`),
-          `Prob Edge on Pick (pp)` = safe_percent_fmt(`Prob Edge on Pick (pp)`),
-          `Market Home Win % (Fair)` = safe_percent_fmt(`Market Home Win % (Fair)`),
-          `Blend Home Win %` = safe_percent_fmt(`Blend Home Win %`),
-          `Blend Pick Win %` = safe_percent_fmt(`Blend Pick Win %`),
-          `Market Pick Win % (Fair)` = safe_percent_fmt(`Market Pick Win % (Fair)`),
-          `Blend Median Margin` = format_signed_spread(`Blend Median Margin`),
-          `Market Home Spread` = format_signed_spread(`Market Home Spread`),
-          `Market Total` = format(round(`Market Total`, 1), nsmall = 1),
-          # Increase precision for Total EV to 5 decimals
-          `Total EV (Units)` = format(round(`Total EV (Units)`, 5), nsmall = 5),
-          `Blend Stake (Units)` = dplyr::if_else(
-            is.na(`Blend Stake (Units)`),
-            "",
-            format(round(`Blend Stake (Units)`, 4), nsmall = 4)
-          ),
-          dplyr::across(
-            c("Market Home Moneyline", "Market Away Moneyline"),
-            format_moneyline_strings
-          ),
-          `Blend Pick` = dplyr::if_else(is.na(`Blend Pick`), "", `Blend Pick`),
-          `Blend Recommendation` = dplyr::if_else(
-            is.na(`Blend Recommendation`),
-            "",
-            `Blend Recommendation`
-          ),
-          Winner = dplyr::coalesce(Winner, "")
-        )
-  
-      table_id <- "simulation-moneyline-table"
-
-      if (requireNamespace("htmltools", quietly = TRUE)) {
-        left_align_cols <- c(
-          "Matchup", "Winner", "Blend Favorite", "Market Favorite",
-          "Blend Prob", "Market Prob", "Blend Recommendation",
-          "Blend Beat Market Basis"
-        )
-        rows <- purrr::map(
-          seq_len(nrow(formatted_tbl)),
-          ~ {
-            row_vals <- formatted_tbl[.x, , drop = FALSE]
-            row_list <- as.list(row_vals)
-            recommendation_val <- row_list[["Blend Recommendation"]]
-            beat_market_val <- row_list[["Blend Beat Market?"]]
-            row_classes <- c()
-            if (!is.null(beat_market_val) && identical(beat_market_val, "Yes")) {
-              row_classes <- c(row_classes, "blend-win")
-            }
-            if (!is.null(recommendation_val) && !identical(recommendation_val, "Pass") && !is.na(recommendation_val)) {
-              row_classes <- c(row_classes, "blend-action")
-            }
-            htmltools::tags$tr(
-              class = paste(row_classes, collapse = " "),
-              purrr::imap(row_list, function(value, col_name) {
-                cell_classes <- character(0)
-                if (identical(col_name, "Blend Recommendation") && !is.null(recommendation_val) &&
-                    !identical(recommendation_val, "Pass") && !is.na(recommendation_val)) {
-                  cell_classes <- c(cell_classes, "blend-reco")
-                }
-                if (col_name %in% left_align_cols) {
-                  cell_classes <- c(cell_classes, "text-left")
-                }
-                if (identical(col_name, "Winner") && !is.na(value) && nzchar(value) && value != "TBD") {
-                  cell_classes <- c(cell_classes, "winner-cell")
-                }
-                cell_value <- ifelse(is.na(value), "", value)
-                display_value <- cell_value
-                if (identical(col_name, "Winner") && nzchar(cell_value) && cell_value != "TBD") {
-                  cell_classes <- c(cell_classes, "winner-cell")
-                }
-                if (length(cell_classes)) {
-                  htmltools::tags$td(class = paste(cell_classes, collapse = " "), display_value)
-                } else {
-                  htmltools::tags$td(display_value)
-                }
-              })
-            )
-          }
-        )
-
-        table_html <- htmltools::tags$table(
-          id = table_id,
-          htmltools::tags$caption(title),
-          htmltools::tags$thead(htmltools::tags$tr(purrr::map(names(formatted_tbl), htmltools::tags$th))),
-          htmltools::tags$tbody(rows)
-        )
-
-        search_box <- htmltools::tags$div(
-          class = "search-container",
-          htmltools::tags$div(
-            class = "search-inner",
-            htmltools::tags$input(
-              id = "table-search",
-              type = "search",
-              class = "table-search",
-              placeholder = "🔍 Search teams, picks, or betting data...",
-              `aria-label` = "Search moneyline table"
-            )
-          )
-        )
-
-        intro_block <- htmltools::HTML(intro_html)
-
-        content_wrapper <- htmltools::tags$div(
-          class = "page-wrapper",
-          intro_block,
-          htmltools::tags$div(
-            class = "table-wrapper",
-            table_html
-          )
-        )
-
-        script_block <- htmltools::tags$script(htmltools::HTML(
-          sprintf(
-            "(function(){var input=document.getElementById('table-search');var table=document.getElementById('%s');if(!input||!table){return;}var rows=table.getElementsByTagName('tbody')[0].rows;input.addEventListener('input',function(){var query=this.value.toLowerCase();Array.prototype.forEach.call(rows,function(row){var text=row.textContent.toLowerCase();row.style.display=text.indexOf(query)>-1?'':'none';});});})();",
-            table_id
-          )
-        ))
-
-        doc <- htmltools::tags$html(
-          htmltools::tags$head(htmltools::tags$style(css_block)),
-          htmltools::tags$body(search_box, content_wrapper, script_block)
-        )
-
-        htmltools::save_html(doc, file = file)
-        saved <- TRUE
-      } else {
-        header <- paste(names(formatted_tbl), collapse = "</th><th>")
-        left_align_cols <- c(
-          "Matchup", "Winner", "Blend Favorite", "Blend Recommendation",
-          "Blend Beat Market Basis"
-        )
-        body <- purrr::map_chr(
-          seq_len(nrow(formatted_tbl)),
-          function(idx) {
-            row_vals <- formatted_tbl[idx, , drop = FALSE]
-            row_list <- as.list(row_vals)
-            recommendation_val <- row_list[["Blend Recommendation"]]
-            beat_market_val <- row_list[["Blend Beat Market?"]]
-            row_classes <- c()
-            if (!is.null(beat_market_val) && identical(beat_market_val, "Yes")) {
-              row_classes <- c(row_classes, "blend-win")
-            }
-            if (!is.null(recommendation_val) && !identical(recommendation_val, "Pass") && !is.na(recommendation_val)) {
-              row_classes <- c(row_classes, "blend-action")
-            }
-            row_class_attr <- if (length(row_classes)) sprintf(" class=\"%s\"", paste(row_classes, collapse = " ")) else ""
-            cells <- purrr::imap_chr(row_list, function(value, col_name) {
-              cell_classes <- character(0)
-              if (identical(col_name, "Blend Recommendation") && !is.null(recommendation_val) &&
-                  !identical(recommendation_val, "Pass") && !is.na(recommendation_val)) {
-                cell_classes <- c(cell_classes, "blend-reco")
-              }
-              if (col_name %in% left_align_cols) {
-                cell_classes <- c(cell_classes, "text-left")
-              }
-              if (identical(col_name, "Winner") && !is.null(value) && !is.na(value) && nzchar(value) && value != "TBD") {
-                cell_classes <- c(cell_classes, "winner-cell")
-              }
-              cell_value <- ifelse(is.na(value), "", value)
-              display_value <- cell_value
-              if (identical(col_name, "Winner") && nzchar(cell_value) && cell_value != "TBD") {
-                cell_classes <- c(cell_classes, "winner-cell")
-              }
-              if (length(cell_classes)) {
-                sprintf("<td class=\"%s\">%s</td>", paste(cell_classes, collapse = " "), display_value)
-              } else {
-                sprintf("<td>%s</td>", display_value)
-              }
-            })
-            sprintf("<tr%s>%s</tr>", row_class_attr, paste(cells, collapse = ""))
-          }
-        )
-        html <- paste0(
-          "<html><head><style>",
-          css_block,
-          "</style></head><body><div class=\"page-wrapper\"><input id=\"table-search\" type=\"search\" placeholder=\"Search teams, winners, or picks...\" aria-label=\"Search moneyline table\"/>",
-          intro_html,
-          "<div class=\"table-wrapper\"><table id=\"",
-          table_id,
-          "\"><caption>",
-          title,
-          "</caption><thead><tr><th>",
-          header,
-          "</th></tr></thead><tbody>",
-          paste(body, collapse = ""),
-          "</tbody></table></div></div><script>(function(){var input=document.getElementById('table-search');var table=document.getElementById('",
-          table_id,
-          "');if(!input||!table){return;}var rows=table.getElementsByTagName('tbody')[0].rows;input.addEventListener('input',function(){var query=this.value.toLowerCase();Array.prototype.forEach.call(rows,function(row){var text=row.textContent.toLowerCase();row.style.display=text.indexOf(query)>-1?'':'none';});});})();</script></body></html>"
-        )
-        writeLines(html, con = file)
-        saved <- TRUE
-      }
-    }
-  
-    normalized_path <- normalizePath(file, winslash = "/", mustWork = FALSE)
-  
-    if (saved && verbose) {
-      message(sprintf("export_moneyline_comparison_html(): wrote HTML report to %s", normalized_path))
-    }
-  
-    if (saved && auto_open) {
-      opened <- FALSE
-      if (exists("open_moneyline_report", inherits = TRUE)) {
-        opened <- isTRUE(tryCatch(
-          open_moneyline_report(normalized_path, prefer_viewer = TRUE, verbose = verbose),
-          error = function(e) FALSE
-        ))
-      }
-  
-      if (!opened) {
-        tryCatch(utils::browseURL(normalized_path), error = function(e) NULL)
-      }
-    }
-  
-    invisible(normalized_path)
-  }
-  open_
-}
-
-
 if (!exists("build_res_blend", inherits = FALSE)) {
   build_res_blend <- function(res,
                               blend_oos,
@@ -2272,7 +1513,6 @@ suppressPackageStartupMessages({
   library(tidyverse)
   library(lubridate)
   library(nflreadr)
-  library(scales)
   library(digest)
   library(glmmTMB)   # NB GLMM
   library(nnet)      # multinomial calibration
@@ -2282,35 +1522,6 @@ suppressPackageStartupMessages({
   options(live_refresh = TRUE)
   library(dplyr, warn.conflicts = FALSE)
 })
-
-xfun_meets_min <- tryCatch({
-  if (!requireNamespace("xfun", quietly = TRUE)) {
-    FALSE
-  } else {
-    isTRUE(utils::packageVersion("xfun") >= "0.52")
-  }
-}, error = function(e) FALSE)
-
-has_namespace <- function(pkg, needs_new_xfun = FALSE) {
-  if (needs_new_xfun && !xfun_meets_min) {
-    return(FALSE)
-  }
-  tryCatch(requireNamespace(pkg, quietly = TRUE), error = function(e) FALSE)
-}
-
-gt_available <- has_namespace("gt", needs_new_xfun = TRUE)
-reactable_available <- has_namespace("reactable")
-
-if (!gt_available) {
-  if (!xfun_meets_min) {
-    message("Package 'gt' skipped because 'xfun' >= 0.52 is unavailable; falling back to simple tables.")
-  } else {
-    message("Package 'gt' is not available; skipping gt-based tables.")
-  }
-}
-if (!reactable_available) {
-  message("Package 'reactable' is not available; interactive slate table will be skipped.")
-}
 
 # Only define if it doesn't already exist
 if (!exists(".get_this_file", inherits = FALSE)) {
@@ -2336,19 +1547,23 @@ if (!dir.exists(.calib_cache_dir)) dir.create(.calib_cache_dir, recursive = TRUE
 .score_cache_dir <- file.path(path.expand("~"), ".cache", "nfl_sim_scores")
 if (!dir.exists(.score_cache_dir)) dir.create(.score_cache_dir, recursive = TRUE)
 
+# Bump `version` whenever week_inputs_and_sim_2w/score_one_week change: the key cannot see
+# those function bodies (they are defined after it), so a stale cache would be served silently.
 score_cache_key <- function(start_season, end_season, weeks, trials, seed, rho) {
   digest::digest(list(
     tag="score_weeks",
+    version = 1L,  # bump when the calibration-history code changes
     start_season, end_season, weeks = paste0(weeks, collapse=","),
     trials, seed, rho,
     N_RECENT, USE_SOS, SOS_STRENGTH, RECENCY_HALFLIFE
   ))
 }
 
+# Bump `version` when the calibration-history code changes (the key cannot see function bodies).
 calib_cache_key <- function(season, n_years, halflife, use_sos, sos_pow, trials, rho, seed){
   digest::digest(list(
     tag = "calib_sim_df_nb",
-    version = 2L,  # v2: includes playoff games (WC/DIV/CON/SB) in calibration
+    version = 3L,  # v3: neutral sites (M24) and own-game rest (M23) in the calibration history
     season = season,
     n_years = n_years,
     halflife = halflife,
@@ -2358,17 +1573,6 @@ calib_cache_key <- function(season, n_years, halflife, use_sos, sos_pow, trials,
     rho = round(rho, 6),
     seed = seed
   ))
-}
-
-# --- Color palettes for cell backgrounds ---
-pal_fav <- function(p) {
-  ifelse(is.na(p), "#ffffff", scales::col_numeric("RdYlGn", domain = c(0,1))(p))
-}
-
-
-pal_total <- function(total) {
-  # Blue scale for totals, 35-55 typical range
-  scales::col_numeric("Blues", domain = c(35,55))(total)
 }
 
 # clamp() is defined in R/utils.R - fallback if not sourced
@@ -2699,6 +1903,9 @@ venue_col <- dplyr::case_when(
 sched <- sched |>
   mutate(venue = if (!is.na(venue_col)) as.character(.data[[venue_col]]) else NA_character_)
 
+# Neutral-site flag (audit M24): nflverse marks neutral sites with location == "Neutral"
+sched$neutral_site <- neutral_site_flag(sched)
+
 # --- Load team division/conference data for division game indicators
 team_info <- tryCatch({
   nflreadr::load_teams() %>%
@@ -2768,6 +1975,9 @@ week_slate <- sched %>%
     game_date,
     home_team,
     away_team,
+    neutral_site,
+    home_rest,
+    away_rest,
     venue = as.character(venue)   # <-- only the normalized column
   ) %>%
   distinct()
@@ -3136,7 +2346,8 @@ teams_on_slate <- sort(unique(c(week_slate$home_team, week_slate$away_team)))
 #    https://nflreadr.nflverse.com/reference/load_injuries.html
 # 2. nflfastR::fast_scraper_injuries() - Alternative scraper
 # 3. Returns empty tibble if no data available (model defaults to zero injury impact)
-safe_load_injuries <- function(seasons, prefer_fast = TRUE, ...) {
+safe_load_injuries <- function(seasons, prefer_fast = TRUE, allow_live_fallback = FALSE,
+                               stamp_season = NA_integer_, stamp_week = NA_integer_, ...) {
   seasons <- sort(unique(seasons))
   if (!length(seasons)) {
     message("No seasons specified for injury data; returning empty tibble.")
@@ -3275,52 +2486,33 @@ safe_load_injuries <- function(seasons, prefer_fast = TRUE, ...) {
     }
   }
 
-  # If nflreadr failed, try Sleeper API as fallback
-  if (nrow(injuries) == 0) {
+  # Sleeper serves only today's report: use it only for a slate with games still to play,
+  # stamped with that slate's season and week (audit M20)
+  if (nrow(injuries) == 0 && !isTRUE(allow_live_fallback)) {
+    message("Sleeper injury fallback skipped: the slate's games are complete, so today's report would be look-ahead (audit M20).")
+  }
+  if (nrow(injuries) == 0 && isTRUE(allow_live_fallback)) {
     message("nflreadr returned no injury data, trying Sleeper API fallback...")
+    sleeper_result <- tryCatch({
+      load_injuries_sleeper(use_cache = TRUE, verbose = TRUE)
+    }, error = function(e) {
+      message(sprintf("Sleeper API error: %s", conditionMessage(e)))
+      list(data = tibble::tibble(), success = FALSE)
+    })
 
-    # Source Sleeper API if not already loaded
-    sleeper_path <- if (file.exists("R/sleeper_api.R")) "R/sleeper_api.R" else
-                    file.path(getwd(), "R/sleeper_api.R")
-    if (file.exists(sleeper_path) && !exists("load_injuries_sleeper", mode = "function")) {
-      tryCatch(source(sleeper_path, local = FALSE), error = function(e) NULL)
-    }
-
-    # Try Sleeper API
-    if (exists("load_injuries_sleeper", mode = "function")) {
-      sleeper_result <- tryCatch({
-        load_injuries_sleeper(use_cache = TRUE, verbose = TRUE)
-      }, error = function(e) {
-        message(sprintf("Sleeper API error: %s", conditionMessage(e)))
-        list(data = tibble::tibble(), success = FALSE)
-      })
-
-      if (isTRUE(sleeper_result$success) && nrow(sleeper_result$data) > 0) {
-        # Convert Sleeper format to nflreadr-compatible format
-        injuries <- sleeper_result$data %>%
-          dplyr::transmute(
-            season = as.integer(format(Sys.Date(), "%Y")),
-            week = get0("WEEK_TO_SIM", envir = .GlobalEnv, ifnotfound = 1L),
-            team = team,
-            position = position,
-            status = game_status,  # Map game_status to status
-            report_primary_injury = injury_body_part,
-            full_name = player
-          )
-        message(sprintf("✓ Sleeper API fallback loaded %d injury records", nrow(injuries)))
-
-        # Update quality tracking
-        if (exists("update_injury_quality", mode = "function")) {
-          update_injury_quality("partial", missing_seasons = as.character(seasons))
-        }
+    if (isTRUE(sleeper_result$success) && nrow(sleeper_result$data) > 0) {
+      injuries <- sleeper_as_injury_rows(sleeper_result$data, stamp_season, stamp_week)
+      message(sprintf("✓ Sleeper API fallback loaded %d injury records for %s week %s",
+                      nrow(injuries), stamp_season, stamp_week))
+      if (exists("update_injury_quality", mode = "function")) {
+        update_injury_quality("partial", missing_seasons = as.character(seasons))
       }
     }
   }
 
   if (nrow(injuries) == 0) {
     message("⚠ No injury data loaded. Model will run with zero injury impact for all teams.")
-    message("  Tried: nflreadr (primary) and Sleeper API (fallback)")
-    message("  Tip: Set INJURY_MODE='sleeper' in config.R for real-time Sleeper data")
+    message("  Tried: nflreadr (primary); the Sleeper fallback runs only for a slate with games still to play")
   } else {
     message(sprintf("✓ Successfully loaded %d total injury records", nrow(injuries)))
   }
@@ -3330,6 +2522,9 @@ safe_load_injuries <- function(seasons, prefer_fast = TRUE, ...) {
 
 inj_all <- safe_load_injuries(
   seasons = sort(unique(sched$season)),
+  allow_live_fallback = sleeper_fallback_allowed(week_slate$game_date),
+  stamp_season = SEASON,
+  stamp_week = WEEK_TO_SIM,
   file_type = getOption("nflreadr.prefer", default = "rds")
 )
 
@@ -3568,18 +2763,9 @@ home_pts_col  <- first_col(sched, c("home_score","home_points","score_home","hom
 away_pts_col  <- first_col(sched, c("away_score","away_points","score_away","away_pts"), "away score")
 
 # --- League home-field advantage (points), data-driven over recent seasons ---
-# pick neutral-site flag if present
-neutral_col <- intersect(c("neutral_site","neutral","is_neutral"), names(sched))
-
-# start with REG games in target seasons
+# REG games in the target seasons, without neutral sites (audit M24)
 sched_hfa <- sched |>
-  dplyr::filter(game_type == "REG", season %in% seasons_hfa)
-
-# remove neutral-site games if a flag exists
-if (length(neutral_col)) {
-  sched_hfa <- sched_hfa |>
-    dplyr::filter(!.data[[neutral_col[1]]])
-}
+  dplyr::filter(game_type == "REG", season %in% seasons_hfa, !neutral_site)
 
 # build margins and compute league HFA
 hfa_sample <- sched_hfa |>
@@ -3806,6 +2992,9 @@ if (isTRUE(getOption("live_refresh", FALSE))) {
   pbp_hist <- nflreadr::load_pbp(seasons = seasons_pbp)
   inj_all  <- safe_load_injuries(
     seasons  = SEASON,
+    allow_live_fallback = sleeper_fallback_allowed(week_slate$game_date),
+    stamp_season = SEASON,
+    stamp_week = WEEK_TO_SIM,
     file_type = getOption("nflreadr.prefer", default = "rds")
   )
   options(nflreadr.cache = old_cache)
@@ -4079,34 +3268,9 @@ recent_form <- recent_form %>%
 
 
 # ------------------------ REST / BYE EFFECTS ----------------------------------
-# Compute days since last game for each team (before the slate week)
-last_game <- team_games |>
-  group_by(team) |>
-  filter((season < SEASON) | (season == SEASON & week < WEEK_TO_SIM)) |>
-  arrange(desc(game_date)) |>
-  slice_head(n = 1) |>
-  ungroup() |>
-  dplyr::select(team, last_date = game_date, last_season = season, last_week = week)
-
-rest_tbl <- tibble(team = teams_on_slate) |>
-  left_join(last_game, by = "team") |>
-  mutate(
-    # If no prior game this season, guess ~10 days rest (neutral)
-    days_rest = as.numeric(ifelse(is.na(last_date),
-                                  10,
-                                  as.Date(week_slate$game_date[1]) - as.Date(last_date))),
-    short_rest = !is.na(days_rest) & days_rest <= 6,
-    long_rest  = !is.na(days_rest) & days_rest >= 9,
-    bye_prev   = !is.na(last_season) & (last_season == SEASON) &
-      (ifelse(is.na(last_week), FALSE, (WEEK_TO_SIM - last_week) >= 2))
-  ) |>
-  mutate(
-    rest_points = 0 +
-      ifelse(short_rest, REST_SHORT_PENALTY, 0) +
-      ifelse(long_rest & !bye_prev, REST_LONG_BONUS, 0) +
-      ifelse(bye_prev, BYE_BONUS, 0)
-  ) |>
-  dplyr::select(team, days_rest, rest_points)
+# Rest from each team's own game (nflverse home_rest/away_rest), not the week's first
+# kickoff (audit M23)
+rest_tbl <- compute_rest_table(week_slate, team_games, SEASON, WEEK_TO_SIM)
 
 recent_form <- recent_form |>
   left_join(rest_tbl, by = "team") |>
@@ -4598,9 +3762,8 @@ games_ready <- games_ready %>%
 
 games_ready <- games_ready %>%
   mutate(
-    HFA_pts = coalesce(home_hfa, league_hfa),  # if you have team-specific, prefer that
-    HFA_pts = HFA_pts * .playoff_hfa_mult,     # Apply playoff multiplier
-    HFA_pts = pmin(pmax(HFA_pts, -6), 6)       # cap at +/-6
+    # team HFA (league when missing) x playoff multiplier, capped at +/-6; 0 at a neutral site (audit M24)
+    HFA_pts = home_field_points(home_hfa, league_hfa, .playoff_hfa_mult, neutral_site)
   ) %>%
   mutate(
     mu_home = pmax(mu_home + HFA_pts, 0)
@@ -5079,20 +4242,11 @@ sd_total_curve <- function(total_mu){
   pmin(pmax(val, 9.5), 17)
 }
 
+# Fitted score SDs (team scoring variability + QB uncertainty). The total-based blend, the
+# NB sizes and rho are computed from the simulated means by score_variance_from_mu() at the
+# compose step (audit M22b); this chain's mu is a diagnostic sum, not the simulated mean.
 games_ready <- games_ready |>
-  dplyr::mutate(
-    total_mu = mu_home + mu_away,
-    sd_goal  = sd_total_curve(total_mu),
-    sd_home  = 0.6 * sd_home + 0.4 * (sd_goal / sqrt(2)),
-    sd_away  = 0.6 * sd_away + 0.4 * (sd_goal / sqrt(2)),
-    sd_home  = pmax(sd_home, 5.0),
-    sd_away  = pmax(sd_away, 5.0)
-  ) |>
-  # Calculate negative binomial size parameters for prediction intervals
-  dplyr::mutate(
-    k_home = purrr::map2_dbl(mu_home, sd_home, nb_size_from_musd),
-    k_away = purrr::map2_dbl(mu_away, sd_away, nb_size_from_musd)
-  )
+  dplyr::mutate(sd_home_fit = sd_home, sd_away_fit = sd_away)
 
 # Game-specific score correlation (rho): higher totals -> more positive correlation; larger mismatch -> less correlation
 # Parameters extracted to config.R for grid search optimization (see Phase 4 plan)
@@ -5121,11 +4275,21 @@ rho_from_game <- function(total_mu, spread_abs, rho_global = RHO_SCORE) {
   pmin(pmax(rho, bound_low), bound_high)
 }
 
-games_ready <- games_ready %>%
-  mutate(
-    spread_est = abs(mu_home - mu_away),
-    rho_game   = rho_from_game(total_mu, spread_est)
-  )
+# Score SDs, NB sizes and the score correlation from the simulated means (audit M22b).
+# sd_*_fit: fitted team scoring SD plus the QB adjustment; sd_*_adj: environment SD shift.
+score_variance_from_mu <- function(games) {
+  games |>
+    dplyr::mutate(
+      total_mu   = mu_home + mu_away,
+      sd_goal    = sd_total_curve(total_mu),
+      sd_home    = pmax(pmax(0.6 * sd_home_fit + 0.4 * (sd_goal / sqrt(2)), 5.0) + sd_home_adj, 5.0),
+      sd_away    = pmax(pmax(0.6 * sd_away_fit + 0.4 * (sd_goal / sqrt(2)), 5.0) + sd_away_adj, 5.0),
+      k_home     = purrr::map2_dbl(mu_home, sd_home, nb_size_from_musd),
+      k_away     = purrr::map2_dbl(mu_away, sd_away, nb_size_from_musd),
+      spread_est = abs(mu_home - mu_away),
+      rho_game   = rho_from_game(total_mu, spread_est)
+    )
+}
 
 
 games_ready <- games_ready %>%
@@ -5222,36 +4386,11 @@ recent_form_at_sim <- function(cut_season, cut_week, teams,
     ) |>
     dplyr::left_join(hfa_tbl, by = "team")
 
-  # rest effects at the cutpoint
-  last_game_cut <- team_games |>
-    dplyr::group_by(team) |>
-    dplyr::filter((.data$season < cut_season) | (.data$season == cut_season & .data$week < cut_week)) |>
-    dplyr::arrange(dplyr::desc(game_date)) |>
-    dplyr::slice_head(n = 1) |>
-    dplyr::ungroup() |>
-    dplyr::select(team, last_date = game_date, last_season = season, last_week = week)
-
-  fake_slate_date <- {
-    d <- sched |>
-      dplyr::filter(.data$season == cut_season, .data$week == cut_week, game_type == "REG") |>
-      dplyr::summarise(day = min(as.Date(game_date), na.rm = TRUE)) |>
-      dplyr::pull(day)
-    if (!is.finite(as.numeric(d))) as.Date(sprintf("%s-09-10", cut_season)) else d
-  }
-
-  rest_tbl_cut <- tibble::tibble(team = teams) |>
-    dplyr::left_join(last_game_cut, by = "team") |>
-    dplyr::mutate(
-      days_rest = dplyr::coalesce(as.numeric(difftime(fake_slate_date, as.Date(last_date), units = "days")), 10),
-      short_rest = days_rest <= 6,
-      long_rest  = days_rest >= 9,
-      bye_prev   = !is.na(last_season) & (last_season == cut_season) &
-        (ifelse(is.na(last_week), FALSE, (cut_week - last_week) >= 2)),
-      rest_points = 0 +
-        ifelse(short_rest, REST_SHORT_PENALTY, 0) +
-        ifelse(long_rest & !bye_prev, REST_LONG_BONUS, 0) +
-        ifelse(bye_prev, BYE_BONUS, 0)
-    ) |>
+  # rest effects at the cutpoint: each team's own game (audit M23)
+  cut_slate <- sched |>
+    dplyr::filter(.data$season == cut_season, .data$week == cut_week, game_type == "REG") |>
+    dplyr::distinct(game_id, home_team, away_team, home_rest, away_rest)
+  rest_tbl_cut <- compute_rest_table(cut_slate, team_games, cut_season, cut_week) |>
     dplyr::select(team, rest_points)
 
   rf |>
@@ -5360,7 +4499,7 @@ simulate_game_nb <- function(mu_home, sd_home, mu_away, sd_away,
 week_inputs_and_sim_2w <- function(cut_season, cut_week, n_trials = CALIB_TRIALS) {
   slate <- sched |>
     dplyr::filter(season == cut_season, week == cut_week, game_type == "REG") |>
-    dplyr::select(game_id, game_date, home_team, away_team, home_score, away_score) |>
+    dplyr::select(game_id, game_date, home_team, away_team, home_score, away_score, neutral_site) |>
     dplyr::distinct()
   if (!nrow(slate)) return(tibble::tibble())
 
@@ -5480,7 +4619,7 @@ week_inputs_and_sim_2w <- function(cut_season, cut_week, n_trials = CALIB_TRIALS
       mu_home_base = exp_drives_home * exp_ppd_home,
       mu_away_base = exp_drives_away * exp_ppd_away,
 
-      margin_shift = (home_hfa - away_hfa)/2,
+      margin_shift = dplyr::if_else(neutral_site, 0, (home_hfa - away_hfa)/2),   # audit M24
 
       mu_home = pmax(mu_home_base + home_rest_points + margin_shift/2, 0),
       mu_away = pmax(mu_away_base + away_rest_points - margin_shift/2, 0),
@@ -6123,9 +5262,7 @@ games_ready <- games_ready %>%
     env_total_adj = env_total_auto + env_total_flags,
 
     mu_home = pmax(mu_home + env_total_adj/2 + mu_home_adj + wind_interaction_home + cold_interaction_home, 0),
-    mu_away = pmax(mu_away + env_total_adj/2 + mu_away_adj + wind_interaction_away + cold_interaction_away, 0),
-    sd_home = pmax(sd_home + sd_home_adj, 5.0),
-    sd_away = pmax(sd_away + sd_away_adj, 5.0)
+    mu_away = pmax(mu_away + env_total_adj/2 + mu_away_adj + wind_interaction_away + cold_interaction_away, 0)
   )
 # ------------------------ OVERTIME STATS (data-driven) ------------------------
 # We'll compute:
@@ -6274,20 +5411,15 @@ if (!exists("safe_sd", mode = "function")) {
   safe_sd  <- function(x) ifelse(is.finite(x) & x >= 5, x, 7)
 }
 
-# If any mu is NA after all adjustments, rebuild it from safe inputs
+# Simulated means: the sum of the admitted terms (audit M22). The chain above still computes
+# every other term; they are logged in mu_terms but not simulated until the walk-forward
+# backtest admits them. compose_mu() stops on a non-finite admitted term.
+mu_terms <- mu_components(games_ready, pressure_pts = PRESSURE_MISMATCH_PTS)
+mu_final <- compose_mu(mu_terms, MU_TERMS_ADMITTED)
+stopifnot(identical(mu_final$game_id, games_ready$game_id))
 games_ready <- games_ready %>%
-  mutate(
-    mu_home = dplyr::if_else(
-      is.finite(mu_home),
-      mu_home,
-      pmax(exp_drives_home * exp_ppd_home + dplyr::coalesce(HFA_pts, 0), 0)
-    ),
-    mu_away = dplyr::if_else(
-      is.finite(mu_away),
-      mu_away,
-      pmax(exp_drives_away * exp_ppd_away, 0)
-    )
-  )
+  mutate(mu_home = mu_final$mu_home, mu_away = mu_final$mu_away)
+games_ready <- score_variance_from_mu(games_ready)
 
 
 results_list <- lapply(seq_len(nrow(games_ready)), function(i) {
@@ -8152,11 +7284,10 @@ if (nrow(final) > 0) {
 }
 # ---- END deployment ridge+isotonic block ----
 
-# Prepare snapshot for the current slate's moneyline report before kicking off
-# any backtesting so the HTML export can rely on the same sequentially derived
-# probabilities the simulation just produced.
+# Current-slate comparison inputs for run_week.R's artifacts/baseline_games.csv,
+# prepared before any backtesting so they use the probabilities the simulation
+# just produced.
 moneyline_report_inputs <- NULL
-primary_report_tbl <- NULL
 
 join_keys_html <- if (exists("PREDICTION_JOIN_KEYS", inherits = TRUE)) {
   PREDICTION_JOIN_KEYS
@@ -8187,7 +7318,6 @@ if (nrow(upcoming_snapshot)) {
       join_keys = join_keys_html,
       preview = preview_tbl
     )
-    primary_report_tbl <- preview_tbl
     message(sprintf(
       "Prepared current-week moneyline snapshot for %d games.",
       nrow(preview_tbl)
@@ -8249,145 +7379,15 @@ if (exists("cmp_blend") && !is.null(cmp_blend)) {
 }
 
 
-# Only initialize if not already set by upcoming snapshot (preserves current-week data)
-if (!exists("moneyline_report_inputs", inherits = FALSE) || is.null(moneyline_report_inputs)) {
-  moneyline_report_inputs <- NULL
-}
-
-if (exists("cmp_blend") && !is.null(cmp_blend)) {
-  join_keys_html <- if (exists("PREDICTION_JOIN_KEYS", inherits = TRUE)) PREDICTION_JOIN_KEYS else c("game_id", "season", "week")
-
-  # Determine seasons needed for backtest from cmp_blend
-  backtest_seasons <- tryCatch({
-    if (!is.null(cmp_blend$comp) && "season" %in% names(cmp_blend$comp)) {
-      unique(cmp_blend$comp$season)
-    } else if (!is.null(cmp_blend$per_game) && "season" %in% names(cmp_blend$per_game)) {
-      unique(cmp_blend$per_game$season)
-    } else {
-      (SEASON - 8):(SEASON - 1)
-    }
-  }, error = function(e) (SEASON - 8):(SEASON - 1))
-
-  # Check if sched has the needed seasons
-  sched_has_seasons <- all(backtest_seasons %in% unique(sched$season))
-
-  # If sched doesn't have backtest seasons, load them
-  sched_for_backtest <- if (!sched_has_seasons && length(backtest_seasons) > 0) {
-    message(sprintf("Loading schedule for backtest seasons: %s",
-                    paste(range(backtest_seasons), collapse = "-")))
-    tryCatch({
-      backtest_sched <- nflreadr::load_schedules(seasons = backtest_seasons)
-      if (exists("standardize_join_keys", mode = "function")) {
-        backtest_sched <- standardize_join_keys(backtest_sched)
-      }
-      backtest_sched
-    }, error = function(e) {
-      message(sprintf("  Could not load backtest schedule: %s", e$message))
-      sched
-    })
-  } else {
-    sched
-  }
-
-  report_tbl <- build_moneyline_comparison_table(
-    market_comparison_result = cmp_blend,
-    enriched_schedule = sched_for_backtest,
-    join_keys = join_keys_html,
-    vig = 0.10,
-    verbose = TRUE
+# Without a current-week snapshot, run_week.R's baseline_games.csv falls back to the
+# blended backtest comparison (the retired report's fallback, now logged).
+if (is.null(moneyline_report_inputs) && exists("cmp_blend") && !is.null(cmp_blend)) {
+  message("No current-week moneyline snapshot; baseline_games.csv will hold the blended backtest comparison.")
+  moneyline_report_inputs <- list(
+    comparison = cmp_blend,
+    join_keys = if (exists("PREDICTION_JOIN_KEYS", inherits = TRUE)) PREDICTION_JOIN_KEYS else c("game_id", "season", "week")
   )
-
-  if (is.null(moneyline_report_inputs)) {
-    moneyline_report_inputs <- list(
-      comparison = cmp_blend,
-      join_keys = join_keys_html
-    )
-  } else {
-    moneyline_report_inputs$backtest <- cmp_blend
-    if (is.null(moneyline_report_inputs$join_keys)) {
-      moneyline_report_inputs$join_keys <- join_keys_html
-    }
-  }
-
-  if (nrow(report_tbl)) {
-    if (is.null(primary_report_tbl) || !nrow(primary_report_tbl)) {
-      primary_report_tbl <- report_tbl
-    }
-  } else {
-    message("Market comparison HTML snapshot from backtest was empty.")
-  }
 }
-
-# HTML rendering authority is centralized in NFLmarket.R::moneyline_report().
-if (is.null(primary_report_tbl) || !nrow(primary_report_tbl)) {
-  message("Moneyline comparison preview table unavailable; final moneyline_report() call may skip HTML output.")
-} else {
-  message("Moneyline comparison preview prepared; deferring HTML export to moneyline_report().")
-}
-
-# ============================== INTERACTIVE SLATE TABLE (reactable) =============================
-pretty_df <- final |>
-  tidyr::separate(matchup, into = c("away_team","home_team"), sep = " @ ", remove = FALSE) |>
-  dplyr::left_join(
-    games_ready |>
-      dplyr::select(game_id, game_date, home_team, away_team, venue, dome, windy, cold, precip),
-    by = c("home_team","away_team", "date" = "game_date")
-  ) |>
-  dplyr::mutate(
-    dow      = lubridate::wday(date, label = TRUE, abbr = TRUE),
-
-    # Model-only favorite and probabilities (calibrated 3-way)
-    fav_team_model = dplyr::if_else(home_win_prob_cal >= away_win_prob_cal, home_team, away_team),
-    fav_prob_model = pmax(home_win_prob_cal, away_win_prob_cal),
-    win_tier_model = dplyr::case_when(
-      fav_prob_model < 0.55 ~ "Coin flip (<55%)",
-      fav_prob_model < 0.65 ~ "Lean (55-65%)",
-      fav_prob_model < 0.75 ~ "Strong (65-75%)",
-      TRUE                  ~ "Heavy (75%+)"
-    ),
-
-    # Blended (model vs market) favorite/probabilities for comparison
-    fav_team_blend = dplyr::if_else(home_win_prob_blend >= away_win_prob_blend, home_team, away_team),
-    fav_prob_blend = pmax(home_win_prob_blend, away_win_prob_blend),
-    win_tier_blend = dplyr::case_when(
-      fav_prob_blend < 0.55 ~ "Coin flip (<55%)",
-      fav_prob_blend < 0.65 ~ "Lean (55-65%)",
-      fav_prob_blend < 0.75 ~ "Strong (65-75%)",
-      TRUE                  ~ "Heavy (75%+)"
-    ),
-
-    # Preserve legacy names for downstream usage (now explicitly model-based)
-    fav_team = fav_team_model,
-    fav_prob = fav_prob_model,
-    win_tier = win_tier_model,
-    total_bucket = dplyr::case_when(
-      total_mean >= 50 ~ "Shootout (50+)",
-      total_mean <= 41 ~ "Grinder (<=41)",
-      total_mean >= 46 ~ "High (46-49.5)",
-      TRUE             ~ "Average (41.5-45.5)"
-    ),
-    env = paste0(
-      dplyr::if_else(dplyr::coalesce(dome, FALSE), "Dome", "Outdoor"),
-      dplyr::if_else(dplyr::coalesce(windy, FALSE),  " + Wind",  ""),
-      dplyr::if_else(dplyr::coalesce(cold,  FALSE),  " + Cold",  ""),
-      dplyr::if_else(dplyr::coalesce(precip,FALSE),  " + Precip","")
-    ),
-    Category = paste(win_tier, "-", total_bucket, "-", env)
-  ) |>
-  dplyr::arrange(date, dplyr::desc(fav_prob_blend))
-rt_df <- pretty_df %>%
-  transmute(
-    Day = as.character(dow),
-    Date = format(date, "%b %d"),
-    Matchup = matchup,
-    `Home% (Blend 3-way)` = home_win_prob_blend,
-    `Away% (Blend 3-way)` = away_win_prob_blend,
-    `Home% (Blend 2-way)` = home_p_2w_blend,
-    `Away% (Blend 2-way)` = 1 - home_p_2w_blend,
-    `Home Median (Blend)` = home_median_blend,
-    `Away Median (Blend)` = away_median_blend,
-    `Total Median (Blend)` = total_median_blend
-  )
 
 # spot-check a few probabilities
 print(
@@ -8396,61 +7396,6 @@ print(
                   home_p_2w_cal, away_p_2w_cal) %>%
     slice_head(n = 5)
 )
-
-
-if (reactable_available) {
-  # Render reactable
-  reactable::reactable(
-    rt_df,
-    searchable = TRUE,
-    pagination = TRUE,
-    defaultPageSize = 25,
-    striped = TRUE,
-    highlight = TRUE,
-    defaultSorted = list("Date" = "asc", "Home% (Blend 3-way)" = "desc"),
-    groupBy = "Day",
-    columns = list(
-      `Home% (Blend 3-way)` = reactable::colDef(
-        format = reactable::colFormat(percent = TRUE, digits = 1),
-        align = "center",
-        style = function(value) list(
-          background = pal_fav(value),
-          color = if (is.na(value) || value < 0.72) "black" else "white"
-        )
-      ),
-      `Away% (Blend 3-way)` = reactable::colDef(format = reactable::colFormat(percent = TRUE, digits = 1), align = "center"),
-      `Home% (Blend 2-way)` = reactable::colDef(format = reactable::colFormat(percent = TRUE, digits = 1), align = "center"),
-      `Away% (Blend 2-way)` = reactable::colDef(format = reactable::colFormat(percent = TRUE, digits = 1), align = "center"),
-      `Home Median (Blend)` = reactable::colDef(
-        format = reactable::colFormat(digits = 1),
-        align = "center"
-      ),
-      `Away Median (Blend)` = reactable::colDef(
-        format = reactable::colFormat(digits = 1),
-        align = "center"
-      ),
-      `Total Median (Blend)` = reactable::colDef(
-        format = reactable::colFormat(digits = 1),
-        align = "center",
-        style = function(value) list(
-          background = pal_total(value),
-          color = if (is.na(value) || value < 46) "black" else "white"
-        )
-      ),
-      Date        = reactable::colDef(align = "center"),
-      Day         = reactable::colDef(align = "center")
-    ),
-    theme = reactable::reactableTheme(
-      borderColor = "#e5e7eb",
-      stripedColor = "#f9fafb",
-      highlightColor = "#eef2ff",
-      cellPadding = "8px 10px",
-      tableStyle = list(fontFamily = "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif")
-    )
-  )
-} else {
-  message("Interactive slate table skipped because 'reactable' is not available.")
-}
 
 log_dir <- file.path(getwd(), "run_logs")
 if (!dir.exists(log_dir)) dir.create(log_dir, recursive = TRUE)
@@ -8466,62 +7411,9 @@ cfg <- list(
 saveRDS(cfg, file.path(log_dir, paste0("config_", run_id, ".rds")))
 saveRDS(final, file.path(log_dir, paste0("final_", run_id, ".rds")))
 saveRDS(games_ready, file.path(log_dir, paste0("games_ready_", run_id, ".rds")))
+saveRDS(mu_terms, file.path(log_dir, paste0("mu_terms_", run_id, ".rds")))
 
 
-
-if (!is.null(moneyline_report_inputs) && exists("moneyline_report", inherits = TRUE)) {
-  report_schedule <- tryCatch({
-    base_sched <- sched
-    if (exists("final")) {
-      medians_tbl <- final %>%
-        dplyr::select(
-          game_id,
-          season,
-          week,
-          blend_home_median = home_median_blend,
-          blend_away_median = away_median_blend,
-          blend_total_median = total_median_blend
-        )
-      base_sched <- base_sched %>%
-        dplyr::left_join(medians_tbl, by = c("game_id", "season", "week"))
-    }
-
-    base_sched %>%
-      dplyr::filter(season == SEASON, week == WEEK_TO_SIM)
-  }, error = function(e) {
-    message(sprintf("Unable to prepare schedule context for moneyline report: %s", conditionMessage(e)))
-    NULL
-  })
-
-  if (!is.null(report_schedule)) {
-    report_title <- sprintf("Blend vs Market Moneylines - Week %s, %s", WEEK_TO_SIM, SEASON)
-    comparison_payload <- moneyline_report_inputs$comparison
-    if (is.null(comparison_payload) && !is.null(moneyline_report_inputs$backtest)) {
-      comparison_payload <- moneyline_report_inputs$backtest
-    }
-    report_path <- tryCatch(
-      moneyline_report(
-        market_comparison_result = comparison_payload,
-        schedule = report_schedule,
-        join_keys = moneyline_report_inputs$join_keys,
-        vig = 0.10,
-        title = report_title,
-        verbose = TRUE,
-        auto_open = TRUE
-      ),
-      error = function(e) {
-        message(sprintf("Moneyline report generation failed: %s", conditionMessage(e)))
-        NULL
-      }
-    )
-
-    if (!is.null(report_path)) {
-      message(sprintf("Moneyline report written to %s", report_path))
-    }
-  }
-} else if (!exists("moneyline_report", inherits = TRUE)) {
-  message("moneyline_report() is unavailable; HTML export skipped.")
-}
 
 # =============================================================================
 # EXPORT SIMULATION RESULTS FOR PLAYER PROPS
