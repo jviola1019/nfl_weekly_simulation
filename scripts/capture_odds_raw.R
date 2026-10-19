@@ -32,6 +32,7 @@ cfg <- list(
   max_tries = cfg_env$CAPTURE_MAX_TRIES,
   min_interval_sec = cfg_env$CAPTURE_MIN_INTERVAL_SEC,
   horizon_hours = cfg_env$CAPTURE_HORIZON_HOURS,
+  game_horizon_hours = cfg_env$CAPTURE_ESPN_GAME_HORIZON_HOURS,
   espn_prop_providers = cfg_env$CAPTURE_ESPN_PROP_PROVIDERS
 )
 root <- arg_value("root", cfg_env$CAPTURE_ROOT)
