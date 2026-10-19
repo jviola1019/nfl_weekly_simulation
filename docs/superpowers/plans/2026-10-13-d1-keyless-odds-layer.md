@@ -4562,3 +4562,17 @@ Not run in the dry run: the web gates (`web/` is untouched), CI on Linux (the pl
 - **Placeholders:** none; every code step holds complete code that was run. The only generated content is Task 9's data, with the commands and the expected output.
 - **Type consistency:** `odds_fetch` records feed `odds_fetch_row`; `odds_result` is the return of every provider method; `games` tables come from `odds_games_from_schedule()`; `on_raw(key, body, rec)` is the same in Tasks 5 and 8.
 - **Known limits, stated:** ESPN open/close rows are untimed; Kalshi spread/total are unsupported (counted); player aliases are deferred; the terms texts are not reviewed; the 2023 openers exist for 71.9% of games.
+
+---
+
+## Amendment, 2026-10-19 (binding; it overrides the plan above where they differ)
+
+The A0 capture fixes (owner, 2026-10-19; PR `fix/capture-a0`) land on `main` before D1 is executed. They change three things D1's Tasks 1 and 7 assume:
+
+1. **`CAPTURE_MIN_INTERVAL_SEC` is now `1`** in `config.R`, so CP3 is resolved. The 1 s floor in `odds_http_config()` stays. The note in `capture_odds_raw.R` about a value below the floor no longer fires, and Task 7's test of that note must pass the 0.5 value in its own `cfg` (which it already does).
+2. **ESPN game odds and prop lists use two horizons.**
+   - `R/capture_raw.R` now has `capture_targets(events, now, game_horizon_hours, prop_horizon_hours)`. Game odds use `CAPTURE_ESPN_GAME_HORIZON_HOURS` (216 h), and prop lists use `CAPTURE_HORIZON_HOURS` (36 h).
+   - `run_capture()` stops if `cfg$game_horizon_hours` is missing, and `scripts/capture_odds_raw.R` passes it.
+   - **Task 7** moves `run_capture()` into `R/odds/capture.R`. It must keep `capture_targets()` and the two-horizon loop, which fetches game odds for every `game` target and prop lists only for `props` targets. It must also carry over the A0 tests in `tests/testthat/test-capture-raw.R` (the `capture_targets` test).
+   - The executor rebases Task 7's code blocks on `main` after A0 merges, re-runs the RED and GREEN steps, and records the diff in the task report.
+3. **`odds-capture.yml` has new crons, and `capture-archive.yml` is new.** D1 still leaves `odds-capture.yml` unchanged. Task 10's new `odds-live-smoke.yml` must keep top-level `permissions: contents: read`; `test-workflows.R` now also checks that no workflow except `capture-archive.yml` grants `contents: write`.
