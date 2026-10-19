@@ -148,3 +148,90 @@ test_that("the realm of a URL is its registrable domain", {
   expect_equal(odds_url_realm("https://api.elections.kalshi.com/trade-api/v2"), "kalshi.com")
   expect_equal(odds_url_realm("https://example.test/x"), "example.test")
 })
+
+# -----------------------------------------------------------------------------
+# Fix round 1 (task review): the real odds_http_get() under httr2 mocks.
+# httr2::with_mocked_responses() answers each request below, so nothing leaves the
+# process; each test counts the mock's calls to prove it. odds_http_get() refuses to
+# run while NFL_ODDS_FORBID_LIVE=1 (helper-odds.R sets it), so each test lifts the
+# guard with withr::local_envvar(), which restores it when the test ends.
+# -----------------------------------------------------------------------------
+
+test_that("an empty-bodied success (200, 204, 304) is a record with an empty body, not an error", {
+  local_odds_state()
+  withr::local_envvar(NFL_ODDS_FORBID_LIVE = NA)
+  clock <- odds_fake_clock()
+  log_path <- file.path(withr::local_tempdir(), "logs", "fetch_log.ndjson")
+  cfg <- odds_http_config()
+  empty_sha <- digest::digest(raw(0), algo = "sha256", serialize = FALSE)
+  statuses <- c(200L, 204L, 304L)
+  for (status in statuses) {
+    hits <- 0L
+    mock <- function(req) {
+      hits <<- hits + 1L
+      httr2::response(status_code = status)
+    }
+    direct <- httr2::with_mocked_responses(mock, odds_http_get("https://example.test/empty", cfg))
+    expect_identical(direct$body, raw(0))
+    expect_equal(direct$status, status)
+    expect_true(is.na(direct$error))
+    rec <- httr2::with_mocked_responses(mock, odds_fetch("https://example.test/empty", cfg,
+      fetch_fn = odds_http_get, log_path = log_path, source = "unit",
+      now_fn = clock$now, sleep_fn = clock$sleep))
+    expect_identical(rec$body, raw(0))
+    expect_equal(rec$sha256, empty_sha)
+    expect_equal(rec$bytes, 0L)
+    expect_equal(hits, 2L)                                   # both requests were answered by the mock
+  }
+  lines <- readLines(log_path)
+  expect_length(lines, length(statuses))
+  for (i in seq_along(lines)) {
+    entry <- jsonlite::fromJSON(lines[[i]])
+    expect_equal(entry$raw_sha256, empty_sha)                # the sha256 of zero bytes
+    expect_equal(entry$http_status, statuses[[i]])
+  }
+})
+
+test_that("a 403 keeps its status and error, and drops the body", {
+  local_odds_state()
+  withr::local_envvar(NFL_ODDS_FORBID_LIVE = NA)
+  hits <- 0L
+  res <- httr2::with_mocked_responses(function(req) {
+    hits <<- hits + 1L
+    httr2::response(status_code = 403L, body = charToRaw('{"error":"denied"}'))
+  }, odds_http_get("https://example.test/denied", odds_http_config()))
+  expect_equal(hits, 1L)
+  expect_equal(res$status, 403L)
+  expect_null(res$body)
+  expect_equal(res$error, "HTTP 403")
+})
+
+test_that("a 429 keeps its Retry-After header as a number", {
+  local_odds_state()
+  withr::local_envvar(NFL_ODDS_FORBID_LIVE = NA)
+  hits <- 0L
+  res <- httr2::with_mocked_responses(function(req) {
+    hits <<- hits + 1L
+    httr2::response(status_code = 429L, headers = list("Retry-After" = "7"))
+  }, odds_http_get("https://example.test/busy", odds_http_config()))
+  expect_equal(hits, 1L)
+  expect_equal(res$status, 429L)
+  expect_equal(res$retry_after, 7)
+  expect_null(res$body)
+  expect_equal(res$error, "HTTP 429")
+})
+
+test_that("a transport error comes back as a record with no status, not as an exception", {
+  local_odds_state()
+  withr::local_envvar(NFL_ODDS_FORBID_LIVE = NA)
+  hits <- 0L
+  res <- httr2::with_mocked_responses(function(req) {
+    hits <<- hits + 1L
+    stop("connection reset by peer")
+  }, odds_http_get("https://example.test/down", odds_http_config()))
+  expect_equal(hits, 1L)
+  expect_true(is.na(res$status))
+  expect_null(res$body)
+  expect_match(res$error, "connection reset by peer", fixed = TRUE)
+  expect_true(is.na(res$retry_after))
+})

@@ -7,8 +7,10 @@
 #   - bounded retry with backoff on HTTP 429/5xx and on network errors
 #   - a 401/403, or a 429 that survives the retries, is never worked around: the
 #     result is flagged `blocked`, and later calls to that domain make no request
-#   - every response's raw sha256 is returned, and appended to a fetch log when
-#     `log_path` is given (the columns follow the source_fetches table)
+#   - a successful response (status below 400) is hashed: its raw sha256 is returned,
+#     and appended to a fetch log when `log_path` is given (the columns follow the
+#     source_fetches table). An error response (400 and above) is recorded by status
+#     and error text, without a body or a hash
 #
 # The network call itself is `fetch_fn(url, cfg)`, an injectable seam. Tests pass
 # a fake that reads recorded JSON fixtures, so the default suite makes no request.
@@ -109,9 +111,11 @@ odds_http_get <- function(url, cfg) {
   }
   status <- httr2::resp_status(resp)
   retry_after <- suppressWarnings(as.numeric(httr2::resp_header(resp, "Retry-After", default = NA_character_)))
+  # httr2 refuses to read an empty body ("Can't retrieve empty body."), so a successful
+  # empty response (200, 204, 304) is raw(0): a record, not an error
   list(
     status = status,
-    body = if (status < 400) httr2::resp_body_raw(resp) else NULL,
+    body = if (status < 400) { if (httr2::resp_has_body(resp)) httr2::resp_body_raw(resp) else raw(0) } else NULL,
     error = if (status >= 400) sprintf("HTTP %d", status) else NA_character_,
     retry_after = retry_after
   )
