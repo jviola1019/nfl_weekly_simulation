@@ -4,6 +4,16 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Bundle provenance: a failed git call is unknown, never clean (2026-10-19)
+
+- **Before:** `bw_git_state()` in `R/bundle_writer.R` caught only R errors. A git call that failed through the shell returned no output, and `isTRUE(NA)` turned "unknown" into `code_dirty = false`. Backtest bundles (`scripts/write_backtest_bundle.R`) and prospective bundles (`backtest/prospective.R`) could therefore claim a clean checkout. It is the same defect `a30c61c` fixed in `sb_git_state()`.
+- **Now:**
+  - `bw_run_git()` shell-quotes every argument.
+  - A non-zero git status gives NA provenance.
+  - `bw_write_bundle()` records a QA failure for an unavailable `code_git_sha` or `code_dirty`, so every bundle kind fails loudly. The messages match the simulator bundle's and are de-duplicated.
+- **Test:** `tests/testthat/test-bundle-writer.R`, with two new tests: RED was the unused argument `run`, and QA passing on unknown provenance.
+- **Gates** (fresh HOME): `run_tests.R` `tests=452 passed=1730 failed=0 errors=0 skipped=1 unapproved_skips=0`; integrity 63/63.
+
 ### A8: the HTML report is retired; the Next.js app is the only UI, offline and online (owner decisions 2026-10-01, 2026-10-03, 2026-10-04)
 
 - **Offline:** `run_week.R` writes a weekly bundle (`R/sim_bundle.R`: C0 market and C3 simulator win probabilities, margin and total distributions over the central 99.9% of draws, source status; every problem is a QA failure, a game without a market keeps NA market fields). `cd web && npm run local` creates a private loopback PostgreSQL, ingests every bundle and serves the app on 127.0.0.1:3000 with no network; Archivo is committed (`next/font/local`), so a build needs no network either.

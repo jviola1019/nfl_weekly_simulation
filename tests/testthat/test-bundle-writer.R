@@ -102,3 +102,28 @@ test_that("an unknown bundle kind is refused", {
   expect_error(bw_write_bundle(withr::local_tempdir(), "props", bundle_meta, bundle_inputs(), contracts_dir = contracts_dir),
                "unknown bundle kind")
 })
+
+test_that("a failed git call is unknown, never clean (the sb_git_state fix of a30c61c, for every bundle)", {
+  failing <- function(args) structure(character(), status = 2L)   # what system2 returns when the command fails
+  s <- bw_git_state(run = failing)
+  expect_true(is.na(s$code_git_sha))
+  expect_true(is.na(s$code_dirty))
+  clean <- function(args) if (identical(args[1], "rev-parse")) strrep("b", 40) else character()
+  s <- bw_git_state(run = clean)
+  expect_identical(s$code_git_sha, strrep("b", 40))
+  expect_false(s$code_dirty)
+})
+
+test_that("unknown provenance fails QA in every bundle, so a backtest bundle never looks clean by accident", {
+  out <- withr::local_tempdir()
+  for (case in list(list(code_git_sha = NA_character_, code_dirty = FALSE, msg = "code_git_sha unavailable"),
+                    list(code_git_sha = "0123456789abcdef", code_dirty = NA, msg = "code_dirty unavailable"))) {
+    meta <- utils::modifyList(bundle_meta, list(cycle_id = paste0("prov-", case$msg)))
+    meta$code_git_sha <- case$code_git_sha
+    meta$code_dirty <- case$code_dirty
+    m <- bw_write_bundle(out, "weekly", meta, bundle_inputs(), contracts_dir = contracts_dir,
+                         renv_lock = file.path(.test_project_root, "renv.lock"))
+    expect_false(m$qa$ok, info = case$msg)
+    expect_true(any(grepl(case$msg, unlist(m$qa$failures), fixed = TRUE)), info = case$msg)
+  }
+})

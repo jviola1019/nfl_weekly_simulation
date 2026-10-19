@@ -120,6 +120,13 @@ bw_write_bundle <- function(out_root, kind, meta, tables, extra_qa_failures = ch
   fails <- as.character(extra_qa_failures)
   for (nm in setdiff(spec$required, names(tables))) fails <- c(fails, sprintf("bundle: required table '%s' missing", nm))
   for (nm in setdiff(names(tables), allowed)) stop("bw_write_bundle: table '", nm, "' is not allowed in a ", kind, " bundle", call. = FALSE)
+  # provenance is part of the contract: unknown provenance must never look clean
+  if (length(meta$code_git_sha) != 1 || is.na(meta$code_git_sha) || !nzchar(meta$code_git_sha)) {
+    fails <- c(fails, "manifest: code_git_sha unavailable: run from a git checkout")
+  }
+  if (length(meta$code_dirty) != 1 || is.na(meta$code_dirty)) {
+    fails <- c(fails, "manifest: code_dirty unavailable: git status failed")
+  }
 
   dir <- file.path(out_root, meta$cycle_id)
   dir.create(dir, recursive = TRUE, showWarnings = FALSE)
@@ -159,10 +166,19 @@ bw_write_bundle <- function(out_root, kind, meta, tables, extra_qa_failures = ch
   invisible(manifest)
 }
 
-#' Current git commit and whether tracked files differ from it
-bw_git_state <- function() {
-  sha <- tryCatch(system2("git", c("rev-parse", "HEAD"), stdout = TRUE, stderr = FALSE), error = function(e) NA_character_)
-  dirty <- tryCatch(length(system2("git", c("status", "--porcelain", "--untracked-files=no"), stdout = TRUE, stderr = FALSE)) > 0,
-                    error = function(e) NA)
-  list(code_git_sha = sha[1], code_dirty = dirty)
+#' Run git with every argument shell-quoted: on Linux system2 joins the arguments into
+#' one `sh -c` command line (CI run 38352473576; the same fix as sb_run_git, a30c61c)
+bw_run_git <- function(args) {
+  tryCatch(suppressWarnings(system2("git", shQuote(args), stdout = TRUE, stderr = FALSE)),
+           error = function(e) structure(character(), status = 127L))
+}
+
+#' Current git commit and whether tracked files differ from it. A failed git call is
+#' unknown (NA), never clean; bw_write_bundle turns unknown provenance into a QA failure.
+bw_git_state <- function(run = bw_run_git) {
+  ok <- function(x) is.null(attr(x, "status")) || identical(as.integer(attr(x, "status")), 0L)
+  sha <- run(c("rev-parse", "HEAD"))
+  status <- run(c("status", "--porcelain", "--untracked-files=no"))
+  list(code_git_sha = if (ok(sha) && length(sha)) sha[1] else NA_character_,
+       code_dirty = if (ok(status)) length(status) > 0 else NA)
 }
