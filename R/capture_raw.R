@@ -162,9 +162,23 @@ capture_http_get <- function(url, user_agent, timeout_sec, max_tries, min_interv
   list(status = status, body = httr2::resp_body_raw(resp), error = NA_character_)
 }
 
+#' Which ESPN events to capture: game odds on the long horizon (every upcoming game's
+#' line, so a Tuesday run sees Sunday's games), prop lists on the short one (they are
+#' posted close to kickoff). Owner A0, 2026-10-19.
+#' @return list(game = event ids, props = event ids); props is a subset of game
+capture_targets <- function(events, now, game_horizon_hours, prop_horizon_hours) {
+  if (prop_horizon_hours > game_horizon_hours) {
+    stop(sprintf("capture_targets: the prop horizon (%sh) exceeds the game horizon (%sh)",
+                 prop_horizon_hours, game_horizon_hours), call. = FALSE)
+  }
+  list(game = select_capture_events(events, now, game_horizon_hours)$event_id,
+       props = select_capture_events(events, now, prop_horizon_hours)$event_id)
+}
+
 #' One capture pass over ESPN and Kalshi. Returns a summary data.frame.
 #' @param cfg list with user_agent, timeout_sec, max_tries, min_interval_sec,
-#'   horizon_hours, espn_prop_providers (integer vector)
+#'   horizon_hours (props), game_horizon_hours (ESPN game odds), espn_prop_providers
+#'   (integer vector)
 run_capture <- function(root, cfg, now = Sys.time(), sources = c("espn", "kalshi")) {
   now <- as.POSIXct(format(now, tz = "UTC"), tz = "UTC")
   log <- list()
@@ -183,10 +197,17 @@ run_capture <- function(root, cfg, now = Sys.time(), sources = c("espn", "kalshi
   if ("espn" %in% sources) {
     sb_text <- fetch("espn_scoreboard", "scoreboard", espn_scoreboard_url())
     if (!is.null(sb_text)) {
-      targets <- select_capture_events(parse_espn_scoreboard(sb_text), now, cfg$horizon_hours)
-      message(sprintf("ESPN: %d game(s) kick off within %dh", nrow(targets), cfg$horizon_hours))
-      for (event_id in targets$event_id) {
+      if (is.null(cfg$game_horizon_hours)) {
+        stop("run_capture: cfg$game_horizon_hours is missing (config.R CAPTURE_ESPN_GAME_HORIZON_HOURS)", call. = FALSE)
+      }
+      targets <- capture_targets(parse_espn_scoreboard(sb_text), now,
+                                 cfg$game_horizon_hours, cfg$horizon_hours)
+      message(sprintf("ESPN: %d game(s) within %sh (game odds), %d within %sh (props)",
+                      length(targets$game), cfg$game_horizon_hours,
+                      length(targets$props), cfg$horizon_hours))
+      for (event_id in targets$game) {
         fetch("espn_game_odds", event_id, espn_game_odds_url(event_id))
+        if (!event_id %in% targets$props) next
         for (provider_id in cfg$espn_prop_providers) {
           first <- fetch("espn_propbets", sprintf("%s_%s_p1", event_id, provider_id),
                          espn_prop_bets_url(event_id, provider_id, 1))

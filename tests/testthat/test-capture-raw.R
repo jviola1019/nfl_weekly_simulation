@@ -44,6 +44,27 @@ test_that("select_capture_events keeps only unstarted games inside the horizon",
   expect_equal(nrow(late), 0)
 })
 
+test_that("capture_targets: game odds use the long horizon, props the short one (owner A0, 2026-10-19)", {
+  now <- as.POSIXct("2026-10-20 18:00:00", tz = "UTC")   # a Tuesday capture run
+  events <- data.frame(
+    event_id = c("tnf", "sun_early", "mnf_next", "too_far", "started"),
+    kickoff_utc = now + c(30, 115, 175, 230, -1) * 3600,
+    status = c(rep("STATUS_SCHEDULED", 4), "STATUS_IN_PROGRESS"),
+    stringsAsFactors = FALSE
+  )
+  attr(events$kickoff_utc, "tzone") <- "UTC"
+  t <- capture_targets(events, now = now, game_horizon_hours = 216, prop_horizon_hours = 36)
+  # The Tuesday run now captures every upcoming game's line, including Sunday and Monday
+  expect_identical(t$game, c("tnf", "sun_early", "mnf_next"))
+  # Prop lists stay on the short horizon (they are posted close to kickoff)
+  expect_identical(t$props, "tnf")
+  # A prop target is always also a game target
+  expect_true(all(t$props %in% t$game))
+  # A prop horizon longer than the game horizon is a configuration error, not a silent clamp
+  expect_error(capture_targets(events, now, game_horizon_hours = 24, prop_horizon_hours = 36),
+               "prop horizon .* exceeds the game horizon")
+})
+
 test_that("ESPN URLs are built exactly", {
   expect_equal(
     espn_game_odds_url("401872963"),

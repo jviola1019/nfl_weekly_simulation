@@ -2,20 +2,25 @@ name: Odds capture
 
 # Keyless forward capture of ESPN + Kalshi odds before each kickoff window.
 # Prop markets disappear at kickoff, so a missed run is data lost for good.
-# Times are UTC and target ~45 min before kickoff during EDT; after the switch
-# to EST (early November) kickoffs move 1h later, so every run stays pre-kickoff.
-# GitHub may start scheduled runs late; the targets leave room for that.
+# ESPN game odds are captured for every game within CAPTURE_ESPN_GAME_HORIZON_HOURS
+# (9 days), so the Tue/Thu/Sat runs record each upcoming game's line; prop lists use
+# the 36 h CAPTURE_HORIZON_HOURS.
+# GitHub starts scheduled runs late (about 2.2 h on 2026-10-18), so the game-day runs
+# are set about 3 h 45 min before kickoff (owner A0, 2026-10-19). Exact pre-kickoff
+# prices come from Kalshi hourly candles and ESPN's labelled close. Times are UTC;
+# after the switch to EST (early November) kickoffs move 1 h later.
+# The artifacts expire after 90 days: capture-archive.yml packs them into releases.
 
 on:
   schedule:
-    - cron: "0 18 * * 2"    # Tue: early-week openers
+    - cron: "0 18 * * 2"    # Tue: early-week lines for every upcoming game
     - cron: "0 18 * * 4"    # Thu: midweek snapshot
-    - cron: "30 23 * * 4"   # Thu: TNF (00:15Z Fri)
+    - cron: "30 20 * * 4"   # Thu: TNF (00:15Z Fri)
     - cron: "0 18 * * 6"    # Sat: pre-Sunday snapshot
-    - cron: "15 16 * * 0"   # Sun: early games (17:00Z)
-    - cron: "20 19 * * 0"   # Sun: late games (20:05Z / 20:25Z)
-    - cron: "35 23 * * 0"   # Sun: SNF (00:20Z Mon)
-    - cron: "30 23 * * 1"   # Mon: MNF (00:15Z Tue)
+    - cron: "15 13 * * 0"   # Sun: early games (17:00Z)
+    - cron: "20 16 * * 0"   # Sun: late games (20:05Z / 20:25Z)
+    - cron: "35 20 * * 0"   # Sun: SNF (00:20Z Mon)
+    - cron: "30 20 * * 1"   # Mon: MNF (00:15Z Tue)
   workflow_dispatch:
 
 permissions:

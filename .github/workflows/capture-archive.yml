@@ -1,0 +1,85 @@
+name: Capture archive
+
+# Packs odds-capture.yml's raw artifacts into a GitHub release asset once a week, with
+# SHA256SUMS, because workflow artifacts expire after 90 days (owner A0, 2026-10-19).
+# Release assets are kept until deleted. Prop markets vanish at kickoff, so a capture
+# that expires is lost for good; the first run must happen before 2026-12-28, when the
+# 2026-09-29 artifacts expire.
+# Only this job can write (creating a release needs contents: write); every other
+# workflow is read-only. tests/testthat/test-workflows.R pins the permissions, the
+# schedule, the look-back guard and the steps.
+
+on:
+  schedule:
+    - cron: "0 12 * * 3"    # Wed 12:00Z: the Thu-Mon game week is finished
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Look back this many days (1-90; use 90 once to backfill)"
+        required: false
+        default: "8"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: capture-archive
+  cancel-in-progress: false
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DAYS: ${{ inputs.days || '8' }}
+    steps:
+      - name: Validate the look-back
+        run: |
+          if [[ ! "$DAYS" =~ ^[0-9]{1,2}$ ]] || [ "$DAYS" -lt 1 ] || [ "$DAYS" -gt 90 ]; then
+            echo "::error::days must be a whole number from 1 to 90 (got '$DAYS')"; exit 1
+          fi
+
+      - name: Download the capture artifacts
+        run: |
+          since="$(date -u -d "-${DAYS} days" +%Y-%m-%d)"
+          mkdir -p archive
+          gh run list --repo "$GITHUB_REPOSITORY" --workflow odds-capture.yml --created ">=${since}" \
+            --limit 300 --json databaseId,conclusion \
+            --jq '.[] | select(.conclusion == "success") | .databaseId' > runs.txt
+          n=0
+          while read -r id; do
+            if gh run download "$id" --repo "$GITHUB_REPOSITORY" --dir "archive/run-${id}"; then
+              n=$((n + 1))
+            else
+              echo "::warning::odds-capture run ${id}: no downloadable artifact (expired or missing)"
+            fi
+          done < runs.txt
+          echo "downloaded ${n} run(s) captured since ${since}"
+          if [ "$n" -eq 0 ]; then echo "::error::no capture artifacts found since ${since}"; exit 1; fi
+
+      - name: Pack with checksums
+        id: pack
+        run: |
+          name="odds-capture-$(date -u +%G-W%V)"
+          (cd archive && find . -type f -print0 | sort -z | xargs -0 sha256sum) > SHA256SUMS
+          tar -czf "${name}.tar.gz" archive SHA256SUMS
+          sha256sum "${name}.tar.gz" > "${name}.tar.gz.sha256"
+          echo "name=${name}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the release asset
+        env:
+          NAME: ${{ steps.pack.outputs.name }}
+        run: |
+          files=("${NAME}.tar.gz" "${NAME}.tar.gz.sha256" SHA256SUMS)
+          if gh release view "$NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$NAME" "${files[@]}" --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$NAME" "${files[@]}" --repo "$GITHUB_REPOSITORY" --latest=false \
+              --title "Odds capture ${NAME#odds-capture-}" \
+              --notes "Raw keyless ESPN and Kalshi captures (odds-capture.yml artifacts) with SHA256SUMS. A data archive, not a software release."
+          fi

@@ -4,6 +4,22 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### A0: the odds capture sees every game before the close, on time, and is kept (owner, 2026-10-19)
+
+- **Every upcoming game's line is captured mid-week.**
+  - Before: one 36 h horizon chose the games for both ESPN game odds and prop lists, so the Tuesday and Thursday runs skipped every Sunday game.
+  - Now: `capture_targets()` (`R/capture_raw.R`) uses the new `CAPTURE_ESPN_GAME_HORIZON_HOURS` (216 h, 9 days) for game odds, and keeps `CAPTURE_HORIZON_HOURS` (36 h) for prop lists. A prop horizon longer than the game horizon is refused.
+- **Game-day runs start before kickoff.**
+  - Before: GitHub started the scheduled runs about 2.2 h late. On 2026-10-18, runs set for 16:15, 19:20 and 23:35Z started at 18:38, 21:34 and 01:33Z, after the early kickoffs.
+  - Now: the TNF, Sunday, SNF and MNF crons in `odds-capture.yml` are about 3 h 45 min before kickoff. Exact pre-kickoff prices still come from Kalshi hourly candles and ESPN's labelled close.
+- **Captures are kept.** The 90-day artifacts now go into a release.
+  - New `capture-archive.yml` runs weekly (Wed 12:00Z). It downloads that week's `odds-capture.yml` artifacts, writes SHA256SUMS, and publishes them as a release asset `odds-capture-<ISO week>`.
+  - Only this job can write: `contents: write` and `actions: read`, both job-level. A manual run accepts `days` (1–90) for a backfill. It must run before 2026-12-28, when the 2026-09-29 artifacts expire.
+- **Rate.** `CAPTURE_MIN_INTERVAL_SEC` is now 1 s (was 0.5), matching the 1 request/second rule.
+- **Tests:**
+  - `test-capture-raw.R`: the two-horizon split, including a Tuesday run that now selects Sunday and Monday games.
+  - `test-workflows.R`: the new crons, which fail against main's schedule, plus the archive job's permissions, look-back guard and steps, and a check that no other workflow can write.
+
 ### A8: the HTML report is retired; the Next.js app is the only UI, offline and online (owner decisions 2026-10-01, 2026-10-03, 2026-10-04)
 
 - **Offline:** `run_week.R` writes a weekly bundle (`R/sim_bundle.R`: C0 market and C3 simulator win probabilities, margin and total distributions over the central 99.9% of draws, source status; every problem is a QA failure, a game without a market keeps NA market fields). `cd web && npm run local` creates a private loopback PostgreSQL, ingests every bundle and serves the app on 127.0.0.1:3000 with no network; Archivo is committed (`next/font/local`), so a build needs no network either.

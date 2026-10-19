@@ -912,11 +912,17 @@ CAPTURE_TIMEOUT_SEC <- 20
 #' @description Attempts per request (retries only on 429/5xx)
 CAPTURE_MAX_TRIES <- 3
 
-#' @description Minimum seconds between requests (politeness throttle)
-CAPTURE_MIN_INTERVAL_SEC <- 0.5
+#' @description Minimum seconds between requests (politeness throttle). Owner,
+#' 2026-10-19: 1 s, so the constant matches the 1 request/second rule (was 0.5).
+CAPTURE_MIN_INTERVAL_SEC <- 1
 
-#' @description Capture games kicking off within this many hours
+#' @description Capture ESPN prop lists for games kicking off within this many hours
 CAPTURE_HORIZON_HOURS <- 36
+
+#' @description Capture ESPN game odds for games kicking off within this many hours.
+#' Owner, 2026-10-19 (A0): 216 h (9 days), so the Tuesday and Thursday runs record
+#' every upcoming game's line; with 36 h they skipped all Sunday games.
+CAPTURE_ESPN_GAME_HORIZON_HOURS <- 216
 
 #' @description ESPN propBets provider ids to capture (100 = DraftKings)
 CAPTURE_ESPN_PROP_PROVIDERS <- c(100L)

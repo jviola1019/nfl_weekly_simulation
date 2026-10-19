@@ -80,3 +80,31 @@ test_that("weekly-sim ingests only after the bundle is built and only when the D
   # the secret reaches only the gate and the ingest step, never the simulation
   expect_false(grepl("secrets.", paste(unlist(jobs$simulate), collapse = " "), fixed = TRUE))
 })
+
+test_that("odds-capture's game-day runs start about 3 h 45 min before kickoff (owner A0, 2026-10-19)", {
+  crons <- vapply(wf_on(wf_read("odds-capture.yml"))$schedule, `[[`, "", "cron")
+  expect_identical(crons, c("0 18 * * 2", "0 18 * * 4", "30 20 * * 4", "0 18 * * 6",
+                            "15 13 * * 0", "20 16 * * 0", "35 20 * * 0", "30 20 * * 1"))
+})
+
+test_that("capture-archive keeps the raw captures past their 90-day artifact life, and only it can write", {
+  w <- wf_read("capture-archive.yml")
+  on <- wf_on(w)
+  expect_setequal(names(on), c("schedule", "workflow_dispatch"))
+  job <- w$jobs$archive
+  # the write grant is job-level and as narrow as releases allow; the top level stays read-only
+  expect_identical(job$permissions, list(contents = "write", actions = "read"))
+  runs <- wf_runs(job)
+  expect_match(runs, "--workflow odds-capture.yml", fixed = TRUE)
+  expect_match(runs, "gh run download", fixed = TRUE)
+  expect_match(runs, "sha256sum", fixed = TRUE)
+  expect_match(runs, "gh release create", fixed = TRUE)
+  # a hand-started backfill is bounded to the artifacts' 90-day life and validated first
+  expect_match(runs, '[[ ! "$DAYS" =~ ^[0-9]{1,2}$ ]]', fixed = TRUE)
+  expect_match(runs, '"$DAYS" -gt 90', fixed = TRUE)
+  # no other workflow is granted write access
+  others <- setdiff(list.files(wf_dir, pattern = "\\.ya?ml$"), "capture-archive.yml")
+  for (f in others) {
+    for (j in wf_read(f)$jobs) expect_false(identical(j$permissions$contents, "write"), info = f)
+  }
+})
