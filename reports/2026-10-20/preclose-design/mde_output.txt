@@ -1,0 +1,5 @@
+2024 ESPN BET openers: n = 284, mean p(1-p) = 0.2202
+n = 205: MDE per SD (log-odds) single test 0.417 | 36 features (Bonferroni) 0.601
+n = 284: MDE per SD (log-odds) single test 0.354 | 36 features (Bonferroni) 0.511
+n = 489: MDE per SD (log-odds) single test 0.270 | 36 features (Bonferroni) 0.389
+At p = 0.5, 0.25 log-odds = 6.2 probability points
