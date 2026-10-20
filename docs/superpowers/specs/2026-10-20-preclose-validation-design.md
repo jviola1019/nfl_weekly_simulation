@@ -1,6 +1,6 @@
 # Design: beating the market before the close (pre-close validation, `nfl_preclose_v1`)
 
-**Status:** design for owner review (2026-10-20). Nothing in it is scored. It specifies master-plan steps A3 (variable ledger plus validation framework) and A4–A5 (the pre-close protocol), in `docs/superpowers/plans/2026-10-19-preclose-and-app-master-plan.md`. Task-level plans are written from it with `superpowers:writing-plans` and dry-run before execution.
+**Status:** **approved by the owner on 2026-10-20.** The answers were "Approve as designed": few confirmatory candidates, and the 36-feature opener screen kept exploratory with its MDE; and "Port builder + inputs": v2's feature builder, input builder and `backtest/data_v2/` go into `backtest/vvf/`. Nothing in it is scored yet. It specifies master-plan steps A3 (variable ledger plus validation framework) and A4–A5 (the pre-close protocol), in `docs/superpowers/plans/2026-10-19-preclose-and-app-master-plan.md`. Task-level plans are written from it with `superpowers:writing-plans` and dry-run before execution.
 
 **Owner requests** (2026-10-19, verbatim): "attempt to defeat market prior to close time. Use full testing, model architecture, variable fixing, ANOVA/statistical validations for variables … If cannot pass, still show modeling on HTML but note largely at top." Decision time: "Opener + live snapshots".
 
