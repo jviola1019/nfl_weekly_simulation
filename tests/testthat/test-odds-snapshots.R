@@ -85,3 +85,105 @@ test_that("bind_odds_snapshots stacks results and skips empty ones", {
   expect_equal(nrow(all), 2)
   expect_equal(nrow(bind_odds_snapshots(list())), 0)
 })
+
+# -----------------------------------------------------------------------------
+# Review fixes (Task 2, fix round 1): lossless times and prices, side by market,
+# lineage, and a total american_to_int
+# -----------------------------------------------------------------------------
+
+# The rows a problem names: "side: ... (rows 2, 3)" gives c(2, 3). Empty when none does.
+problem_rows <- function(problems, pattern) {
+  hit <- problems[grepl(pattern, problems)]
+  if (!length(hit)) return(integer())
+  as.integer(strsplit(sub(".*\\(rows ([0-9, ]+)\\).*", "\\1", hit[1]), ",[[:space:]]*")[[1]])
+}
+
+# Each row is completed on its own, so rows built with different columns still bind
+snap_rows <- function(...) do.call(rbind, lapply(list(...), complete_odds_snapshots))
+
+test_that("american_to_int is total: a non-finite or out-of-range input is NA, never an error", {
+  expect_warning(out <- american_to_int(c("-110", "Inf", "-Inf", "INFINITY", "1e400", "3000000000")), NA)
+  expect_identical(out, c(-110L, NA, NA, NA, NA, NA))
+  expect_identical(american_to_int(-Inf), NA_integer_)
+  expect_identical(american_to_int("-2147483647"), -2147483647L)
+  expect_identical(american_to_int("-2147483648"), NA_integer_)
+})
+
+test_that("captured_at keeps the time of day of an ISO string, fractional seconds included", {
+  whole <- complete_odds_snapshots(snap_row(snapshot_kind = "observed", captured_at = "2026-10-12T19:45:30Z"))
+  expect_equal(format(whole$captured_at, "%H:%M:%S", tz = "UTC"), "19:45:30")
+  frac <- complete_odds_snapshots(snap_row(snapshot_kind = "observed", captured_at = "2026-10-12T19:45:30.5Z"))
+  expect_equal(as.numeric(frac$captured_at) - as.numeric(whole$captured_at), 0.5)
+  spaced <- complete_odds_snapshots(snap_row(snapshot_kind = "observed", captured_at = "2026-10-12 19:45:30"))
+  expect_equal(as.numeric(spaced$captured_at), as.numeric(whole$captured_at))
+})
+
+test_that("an unreadable captured_at stops complete_odds_snapshots and names its row", {
+  rows <- rbind(snap_row(snapshot_kind = "observed", captured_at = "2026-10-12T19:45:30Z"),
+                snap_row(snapshot_kind = "observed", captured_at = "not a time"))
+  expect_error(complete_odds_snapshots(rows), "rows 2")
+})
+
+test_that("POSIXct and epoch-second times round-trip; a POSIXct in another zone keeps its instant", {
+  t <- as.POSIXct("2026-10-12 19:45:30", tz = "UTC")
+  p <- complete_odds_snapshots(snap_row(snapshot_kind = "observed", captured_at = t))
+  expect_equal(as.numeric(p$captured_at), as.numeric(t))
+  expect_equal(attr(p$captured_at, "tzone"), "UTC")
+  n <- complete_odds_snapshots(snap_row(snapshot_kind = "observed", captured_at = as.numeric(t)))
+  expect_equal(as.numeric(n$captured_at), as.numeric(t))
+  expect_equal(attr(n$captured_at, "tzone"), "UTC")
+  ny <- t
+  attr(ny, "tzone") <- "America/New_York"
+  z <- complete_odds_snapshots(snap_row(snapshot_kind = "observed", captured_at = ny))
+  expect_equal(as.numeric(z$captured_at), as.numeric(t))
+  expect_equal(attr(z$captured_at, "tzone"), "UTC")
+})
+
+test_that("a fractional or out-of-range price stops complete_odds_snapshots with its rows; whole prices pass", {
+  expect_error(complete_odds_snapshots(snap_row(price_american = -275.5)), "rows 1")
+  expect_error(complete_odds_snapshots(rbind(snap_row(), snap_row(price_american = 3e9))), "rows 2")
+  expect_identical(complete_odds_snapshots(snap_row(price_american = 225))$price_american, 225L)
+  expect_identical(complete_odds_snapshots(snap_row(price_american = -110))$price_american, -110L)
+})
+
+test_that("validation flags a fractional price on a table built by hand", {
+  df <- complete_odds_snapshots(snap_row())
+  df$price_american <- -275.5
+  expect_true(any(grepl("price_american", validate_odds_snapshots(df))))
+  df$price_american <- 225
+  expect_equal(validate_odds_snapshots(df), character())
+})
+
+test_that("the side must fit the market (home/away, over/under, yes/line)", {
+  problems <- validate_odds_snapshots(snap_rows(
+    snap_row(),                                                               # 1 moneyline/home: fine
+    snap_row(side = "over"),                                                  # 2 moneyline/over
+    snap_row(market_id = "total", side = "home"),                             # 3 total/home
+    snap_row(market_id = "anytime_td", side = "home", player_key = "espn:1"), # 4 anytime_td/home
+    snap_row(market_id = "total", side = "under")                             # 5 total/under: fine
+  ))
+  expect_equal(problem_rows(problems, "^side: not allowed"), c(2L, 3L, 4L))
+})
+
+test_that("raw_sha256 is required: an empty or missing digest is flagged with its row", {
+  problems <- validate_odds_snapshots(snap_rows(
+    snap_row(), snap_row(raw_sha256 = ""), snap_row(raw_sha256 = NA_character_)
+  ))
+  expect_equal(problem_rows(problems, "^raw_sha256"), c(2L, 3L))
+})
+
+test_that("valid rows pass: a price-only spread or total, an open row that carries a time, a player line", {
+  valid <- snap_rows(
+    snap_row(market_id = "spread", side = "home", line = -6.5),
+    snap_row(market_id = "spread", side = "away", line = 6.5, price_american = NA_integer_),
+    snap_row(market_id = "total", side = "over", price_american = -110L),
+    snap_row(snapshot_kind = "open", captured_at = as.POSIXct("2026-10-01 12:00", tz = "UTC")),
+    snap_row(market_id = "receptions", side = "line", player_key = "espn:1", line = 4.5,
+             snapshot_kind = "observed", captured_at = as.POSIXct("2026-10-01 12:00", tz = "UTC"))
+  )
+  expect_equal(validate_odds_snapshots(valid), character())
+})
+
+test_that("the side table covers exactly the catalog's markets", {
+  expect_setequal(names(ODDS_MARKET_SIDES), odds_markets_catalog()$market_id)
+})
