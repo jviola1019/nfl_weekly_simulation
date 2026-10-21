@@ -5,20 +5,24 @@ name: Weekly simulation
 # own loader checks it (hashes, schema, every row), it is kept as an artifact, and it is
 # ingested into the deployed database only when the DATABASE_URL secret exists. Deployment
 # (Vercel, Neon) waits for the owner; until then the ingest job is skipped and says why.
-# Manual only: config.R's default is 2025 week 22, and 2025 data stays sealed, so a schedule
-# comes with deployment, once a week can be chosen without that default.
+# It runs at the two decision points (C1, 2026-10-20): Tuesday 18:00Z and Friday 21:00Z, for the
+# upcoming week from the nflverse schedule (scripts/resolve_week.R). A manual run may name a week
+# and season; the sealed 2025 is refused whichever way the season was chosen.
 # tests/testthat/test-workflows.R pins the job graph, the permissions and the secret gate.
 
 on:
+  schedule:
+    - cron: "0 18 * * 2"   # Tuesday 18:00Z, the primary decision point
+    - cron: "0 21 * * 5"   # Friday 21:00Z, after the injury report
   workflow_dispatch:
     inputs:
       week:
-        description: "NFL week (1-22; 19-22 are the playoffs)"
-        required: true
+        description: "NFL week (1-22; 19-22 are the playoffs). Empty: the upcoming week from the schedule"
+        required: false
         type: string
       season:
-        description: "Season (2011-2030, except the sealed 2025)"
-        required: true
+        description: "Season (2011-2030, except the sealed 2025). Empty: the season in progress"
+        required: false
         type: string
 
 permissions:
@@ -42,14 +46,9 @@ jobs:
           WEEK: ${{ inputs.week }}
           SEASON: ${{ inputs.season }}
         run: |
-          if ! [[ "$WEEK" =~ ^[0-9]{1,2}$ ]]; then echo "::error::week must be one or two digits (got '$WEEK')"; exit 1; fi
-          if ! [[ "$SEASON" =~ ^[0-9]{4}$ ]]; then echo "::error::season must be four digits (got '$SEASON')"; exit 1; fi
-
-      - name: Refuse the sealed 2025 season
-        env:
-          SEASON: ${{ inputs.season }}
-        run: |
-          if [ "$SEASON" = "2025" ]; then echo "::error::2025 data stays sealed (owner rule; the 2025 holdout is scored once, A2)"; exit 1; fi
+          if [ -n "$WEEK" ] && ! [[ "$WEEK" =~ ^[0-9]{1,2}$ ]]; then echo "::error::week must be one or two digits (got '$WEEK')"; exit 1; fi
+          if [ -n "$SEASON" ] && ! [[ "$SEASON" =~ ^[0-9]{4}$ ]]; then echo "::error::season must be four digits (got '$SEASON')"; exit 1; fi
+          if [ -z "$WEEK" ] && [ -n "$SEASON" ]; then echo "::error::a season needs a week (leave both empty for the upcoming week)"; exit 1; fi
 
       - uses: r-lib/actions/setup-r@v2
         with:
@@ -63,10 +62,23 @@ jobs:
 
       - uses: r-lib/actions/setup-renv@v2
 
-      - name: Run the weekly simulation (writes bundles/<season>-w<WW>-sim-<UTC stamp>/)
+      - name: Resolve the week (empty inputs mean the upcoming week from the nflverse schedule)
+        id: target
         env:
           WEEK: ${{ inputs.week }}
           SEASON: ${{ inputs.season }}
+        run: Rscript scripts/resolve_week.R "$WEEK" "$SEASON" >> "$GITHUB_OUTPUT"
+
+      - name: Refuse the sealed 2025 season
+        env:
+          SEASON: ${{ steps.target.outputs.season }}
+        run: |
+          if [ "$SEASON" = "2025" ]; then echo "::error::2025 data stays sealed (owner rule; the 2025 holdout is scored once, A2)"; exit 1; fi
+
+      - name: Run the weekly simulation (writes bundles/<season>-w<WW>-sim-<UTC stamp>/)
+        env:
+          WEEK: ${{ steps.target.outputs.week }}
+          SEASON: ${{ steps.target.outputs.season }}
         run: Rscript run_week.R "$WEEK" "$SEASON"
 
       - uses: actions/setup-node@v4

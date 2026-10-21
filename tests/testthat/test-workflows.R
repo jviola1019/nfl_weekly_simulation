@@ -21,14 +21,36 @@ test_that("every workflow parses as YAML and grants read-only contents permissio
   }
 })
 
-test_that("weekly-sim runs on demand with an explicit week and season, and refuses the sealed 2025", {
+test_that("weekly-sim runs at the two decision points and on demand, and refuses the sealed 2025 (C1)", {
   w <- wf_read("weekly-sim.yml")
   on <- wf_on(w)
-  expect_identical(names(on), "workflow_dispatch")
-  expect_true(isTRUE(on$workflow_dispatch$inputs$week$required) && isTRUE(on$workflow_dispatch$inputs$season$required))
+  expect_setequal(names(on), c("schedule", "workflow_dispatch"))
+  # Tuesday 18:00Z (the primary decision point) and Friday 21:00Z (after the injury report)
+  expect_identical(vapply(on$schedule, function(s) s$cron, ""), c("0 18 * * 2", "0 21 * * 5"))
+  # empty inputs mean the upcoming week from the nflverse schedule (scripts/resolve_week.R)
+  expect_false(isTRUE(on$workflow_dispatch$inputs$week$required))
+  expect_false(isTRUE(on$workflow_dispatch$inputs$season$required))
   sim <- w$jobs$simulate
   expect_match(wf_runs(sim), 'if [ "$SEASON" = "2025" ]; then', fixed = TRUE)
   expect_match(wf_runs(sim), 'Rscript run_week.R "$WEEK" "$SEASON"', fixed = TRUE)
+})
+
+test_that("weekly-sim resolves the week before the 2025 check, and later steps use the resolved values (C1)", {
+  sim <- wf_read("weekly-sim.yml")$jobs$simulate
+  ids <- vapply(sim$steps, function(s) if (is.null(s$id)) "" else s$id, "")
+  runs <- vapply(sim$steps, function(s) if (is.null(s$run)) "" else s$run, "")
+  target <- which(ids == "target")
+  sealed <- which(grepl('"$SEASON" = "2025"', runs, fixed = TRUE))
+  simulate <- which(grepl('Rscript run_week.R "$WEEK" "$SEASON"', runs, fixed = TRUE))
+  expect_length(target, 1)
+  expect_match(runs[target], 'Rscript scripts/resolve_week.R "$WEEK" "$SEASON" >> "$GITHUB_OUTPUT"', fixed = TRUE)
+  expect_identical(sim$steps[[target]]$env$WEEK, "${{ inputs.week }}")
+  expect_lt(target, sealed)
+  expect_lt(sealed, simulate)
+  for (i in c(sealed, simulate)) {
+    expect_identical(sim$steps[[i]]$env$SEASON, "${{ steps.target.outputs.season }}")
+  }
+  expect_identical(sim$steps[[simulate]]$env$WEEK, "${{ steps.target.outputs.week }}")
 })
 
 test_that("weekly-sim rejects a malformed week or season before anything else runs (final review M5)", {
@@ -40,6 +62,9 @@ test_that("weekly-sim rejects a malformed week or season before anything else ru
   expect_lt(guard, sealed)   # the input check runs before the 2025 check
   expect_match(runs[guard], '"$WEEK" =~ ^[0-9]{1,2}$', fixed = TRUE)
   expect_match(runs[guard], '"$SEASON" =~ ^[0-9]{4}$', fixed = TRUE)
+  # an input is checked only when it is given; a season without a week is refused
+  expect_match(runs[guard], '[ -n "$WEEK" ] && ! [[ "$WEEK" =~', fixed = TRUE)
+  expect_match(runs[guard], "a season needs a week", fixed = TRUE)
   expect_match(runs[guard], "::error::", fixed = TRUE)
   env <- sim$steps[[guard]]$env
   expect_identical(env$WEEK, "${{ inputs.week }}")      # via env, never interpolated into the script
