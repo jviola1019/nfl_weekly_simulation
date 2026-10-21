@@ -4,6 +4,25 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### P13: opponent-defense multipliers apply ("Defense rankings unavailable", owner 2026-10-20)
+
+- **Before:**
+  - `load_defense_rankings()` in `R/correlated_props.R` errored on every call: `dplyr::if_else` was given a scalar condition and 32-row branches.
+  - The error was caught, the run printed "Defense rankings unavailable", and every prop's opponent-defense multiplier was 1.0.
+  - A second definition in `sports/nfl/props/data_sources.R` had other columns, and which one ran depended on source order.
+  - The 2026 week 7 run on main still printed the error for every game.
+- **Now:**
+  - There is one definition, a pure `compute_defense_multipliers(pbp, weeks)` plus `load_defense_rankings(season, weeks = NULL, pbp = NULL)`.
+  - `apply_defense_adjustments(..., weeks = NULL, defense_ranks = NULL)` prints "Defense adjustments NEUTRAL" when it has no rankings, rather than staying silent.
+  - The duplicate and its two helpers (`scale_defense_rank`, `get_default_defense_rankings`) are removed. They are three functions; no file is deleted.
+- **Scope:**
+  - A current-week run reads only games already played, so it sees no later weeks.
+  - A re-run of a past week still passes no `weeks` until P1 Task 3 threads point-in-time weeks through `run_game_props()`.
+- **Tests:**
+  - New `tests/testthat/test-props-defense.R` (27 expectations): 32 distinct multipliers inside their bounds; the `weeks` argument leaves out later games; an injected table is applied to the right team; the neutral message; one definition across `R/` and `sports/nfl/props/`; source order cannot change the function.
+  - The `KNOWN-DEFECT P13` skip is removed, so the live test runs.
+- **Gates (fresh HOME):** `run_tests.R` gives tests=462, passed=1787, failed=0, errors=0, skipped=0, exit 0. Integrity is 63 passed, 0 failed.
+
 ### A0: the odds capture sees every game before the close, on time, and is kept (owner, 2026-10-19)
 
 - **Every upcoming game's line is captured mid-week.**
