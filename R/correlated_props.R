@@ -1368,6 +1368,105 @@ run_game_props <- function(game_sim, home_team, away_team, season,
 }
 
 # =============================================================================
+# GOVERNANCE: SIDE, TIER AND STAKE TOGETHER (audit P1, P2, P3; rule M11)
+# =============================================================================
+
+#' Decide every prop row once: side, tier and stake together
+#'
+#' The side is the one with the larger EV among sides that have a market price; its probability and
+#' price feed apply_bet_governance(). A row is a bet exactly when its final stake is above zero. A row
+#' that is not priced from the market (`priced = FALSE`) has no EV, no side and no bet; its pass reason
+#' is `unpriced_reason`, or "Market odds missing/placeholder" when none was recorded.
+#'
+#' @param ev_over,ev_under Model EV per unit staked on each side (NA allowed)
+#' @param p_over,p_under Model probability of each side
+#' @param over_odds,under_odds American prices of each side (effective prices, net of fees)
+#' @param priced TRUE where the prices come from the market
+#' @param unpriced_reason Why a row is unpriced ("" otherwise)
+#' @param one_sided TRUE for Yes-only markets (anytime TD); the Under is never taken
+#' @param model_error TRUE where the row failed its validity checks
+#' @param min_stake,kelly_fraction,max_stake,max_edge Passed to apply_bet_governance(); min_stake must be > 0
+#' @return Tibble: side, tier, recommendation, edge_quality, ev_over, ev_under, raw_kelly_pct,
+#'   capped_stake_pct, final_stake_pct, pass_reason
+govern_prop_rows <- function(ev_over, ev_under, p_over, p_under, over_odds, under_odds,
+                             priced = TRUE, unpriced_reason = "", one_sided = FALSE,
+                             model_error = FALSE,
+                             min_stake = 0.01, kelly_fraction = 0.125, max_stake = 0.02, max_edge = 0.10) {
+  if (!is.finite(min_stake) || min_stake <= 0) {
+    stop("govern_prop_rows: min_stake must be > 0 (a stake above zero is what makes a row a bet)", call. = FALSE)
+  }
+  n <- length(ev_over)
+  num <- function(x) rep_len(suppressWarnings(as.numeric(x)), n)
+  lgl <- function(x) {
+    x <- rep_len(as.logical(x), n)
+    x[is.na(x)] <- FALSE
+    x
+  }
+  ev_o <- num(ev_over)
+  ev_u <- num(ev_under)
+  p_o <- num(p_over)
+  p_u <- num(p_under)
+  odds_o <- num(over_odds)
+  odds_u <- num(under_odds)
+  priced <- lgl(priced)
+  one_sided <- lgl(one_sided)
+  model_error <- lgl(model_error)
+  reason_in <- rep_len(as.character(unpriced_reason), n)
+  reason_in[is.na(reason_in)] <- ""
+
+  # M11: no market price, no EV
+  ev_o[!priced] <- NA_real_
+  ev_u[!priced] <- NA_real_
+  ev_u[one_sided] <- NA_real_
+
+  has_o <- is.finite(ev_o) & is.finite(odds_o)
+  has_u <- is.finite(ev_u) & is.finite(odds_u)
+  take_u <- has_u & (!has_o | ev_u > ev_o)
+  take_o <- has_o & !take_u
+  side <- ifelse(take_u, "UNDER", ifelse(take_o, ifelse(one_sided, "YES", "OVER"), "NONE"))
+  ev <- ifelse(take_u, ev_u, ifelse(take_o, ev_o, NA_real_))
+  prob <- ifelse(take_u, p_u, ifelse(take_o, p_o, NA_real_))
+  odds <- ifelse(take_u, odds_u, ifelse(take_o, odds_o, NA_real_))
+
+  gov <- apply_bet_governance(
+    ev = ev, prob = prob, odds = odds,
+    min_stake = min_stake, kelly_fraction = kelly_fraction, max_stake = max_stake, max_edge = max_edge
+  )
+
+  pass_reason <- gov$pass_reason
+  pass_reason[!priced] <- ifelse(nzchar(reason_in[!priced]), reason_in[!priced],
+                                 "Market odds missing/placeholder")
+  pass_reason[model_error] <- "Model error"
+
+  final_stake <- ifelse(pass_reason == "", gov$capped_stake_pct, 0)
+  tier <- ifelse(model_error, "model_error",
+                 ifelse(pass_reason == "", "bet",
+                        ifelse(grepl("^Edge too large", pass_reason), "review", "pass")))
+  recommendation <- ifelse(tier == "bet", ifelse(side == "YES", "BET", side),
+                           ifelse(tier == "review", "REVIEW",
+                                  ifelse(tier == "model_error", "MODEL ERROR", "PASS")))
+  edge_quality <- ifelse(
+    recommendation == "PASS", "Pass",
+    ifelse(recommendation == "REVIEW", "Review",
+           ifelse(recommendation == "MODEL ERROR", "MODEL ERROR",
+                  classify_prop_edge_quality(ev_o, ev_u, recommendation)))
+  )
+
+  tibble::tibble(
+    side = side,
+    tier = tier,
+    recommendation = recommendation,
+    edge_quality = edge_quality,
+    ev_over = ev_o,
+    ev_under = ev_u,
+    raw_kelly_pct = gov$raw_kelly_pct,
+    capped_stake_pct = gov$capped_stake_pct,
+    final_stake_pct = final_stake,
+    pass_reason = pass_reason
+  )
+}
+
+# =============================================================================
 # MAIN PIPELINE FUNCTION
 # =============================================================================
 
@@ -1505,59 +1604,35 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
     results <- dplyr::bind_rows(all_props)
     message(sprintf("\nGenerated %d player prop recommendations", nrow(results)))
 
-    # Add edge quality classification
-    # Note: TD props naturally have higher EV variance due to long odds, so use different thresholds
-    # For TD props, ev_over contains the ev_anytime value (set at line 836)
+
+    # One decision per row: side, tier and stake together (audit P1, P2, P3). A row without a market
+    # price keeps NA EV and the reason Task 3 recorded (rule M11). TD props are Yes-only.
+    gov <- govern_prop_rows(
+      ev_over = results$ev_over, ev_under = results$ev_under,
+      p_over = results$p_over, p_under = results$p_under,
+      over_odds = results$over_odds, under_odds = results$under_odds,
+      priced = results$odds_source == "market",
+      unpriced_reason = if ("unpriced_reason" %in% names(results)) results$unpriced_reason else "",
+      one_sided = results$prop_type == "anytime_td",
+      model_error = results$recommendation == "MODEL ERROR",
+      kelly_fraction = get0("KELLY_FRACTION", ifnotfound = 0.125, inherits = TRUE),
+      max_stake = get0("MAX_STAKE", ifnotfound = 0.02, inherits = TRUE),
+      max_edge = get0("MAX_EDGE", ifnotfound = 0.10, inherits = TRUE)
+    )
     results <- results %>%
       dplyr::mutate(
-        governance_ev = dplyr::case_when(
-          recommendation == "OVER" ~ ev_over,
-          recommendation == "UNDER" ~ ev_under,
-          recommendation == "BET" ~ ev_over,
-          TRUE ~ dplyr::coalesce(ev_over, ev_under)
-        ),
-        governance_prob = dplyr::case_when(
-          recommendation == "OVER" ~ p_over,
-          recommendation == "UNDER" ~ p_under,
-          recommendation == "BET" ~ p_over,
-          TRUE ~ p_over
-        ),
-        governance_odds = dplyr::case_when(
-          recommendation == "OVER" ~ over_odds,
-          recommendation == "UNDER" ~ under_odds,
-          recommendation == "BET" ~ over_odds,
-          TRUE ~ over_odds
-        ),
-        governance = purrr::pmap(
-          list(
-            ev = governance_ev,
-            prob = governance_prob,
-            odds = governance_odds,
-            is_placeholder_odds = is.na(governance_odds) | governance_odds == 0
-          ),
-          ~ apply_bet_governance(
-            ev = ..1,
-            prob = ..2,
-            odds = ..3,
-            min_stake = 0.01,
-            kelly_fraction = 0.125,
-            max_stake = 0.02,
-            max_edge = get0("MAX_EDGE", ifnotfound = 0.10, inherits = TRUE),
-            is_placeholder_odds = ..4
-          )
-        ),
-        `Raw Kelly (%)` = purrr::map_dbl(governance, ~ .x$raw_kelly_pct[[1]]),
-        `Capped Stake (%)` = purrr::map_dbl(governance, ~ .x$capped_stake_pct[[1]]),
-        `Final Stake (%)` = purrr::map_dbl(governance, ~ .x$final_stake_pct[[1]]),
-        `Pass Reason` = purrr::map_chr(governance, ~ .x$pass_reason[[1]]),
+        ev_over = gov$ev_over,
+        ev_under = gov$ev_under,
+        recommendation = gov$recommendation,
+        side = gov$side,
+        tier = gov$tier,
+        `Raw Kelly (%)` = gov$raw_kelly_pct,
+        `Capped Stake (%)` = gov$capped_stake_pct,
+        `Final Stake (%)` = gov$final_stake_pct,
+        `Pass Reason` = gov$pass_reason,
+        edge_quality = gov$edge_quality,
         # Get the relevant EV for classification (ev_over for both yard props and TDs)
         .ev_for_quality = dplyr::coalesce(pmax(ev_over, ev_under, na.rm = TRUE), ev_over),
-        edge_quality = dplyr::case_when(
-          recommendation == "PASS" ~ "Pass",
-          recommendation == "REVIEW" ~ "Review",
-          recommendation == "MODEL ERROR" ~ "MODEL ERROR",
-          TRUE ~ classify_prop_edge_quality(ev_over, ev_under, recommendation)
-        ),
         # Document why positive EV can still show PASS (2% minimum edge threshold)
         edge_note = dplyr::case_when(
           recommendation == "PASS" & !is.na(.ev_for_quality) & .ev_for_quality > 0 & .ev_for_quality <= PROP_MIN_BET_EDGE ~ "Edge < 2%",
@@ -1567,7 +1642,7 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
           TRUE ~ ""
         )
       ) %>%
-      dplyr::select(-.ev_for_quality, -governance_ev, -governance_prob, -governance_odds, -governance)  # Remove helper columns
+      dplyr::select(-.ev_for_quality)
 
     require_market_odds <- isTRUE(if (exists("PROP_REQUIRE_MARKET_ODDS")) PROP_REQUIRE_MARKET_ODDS else FALSE)
     if (require_market_odds) {
