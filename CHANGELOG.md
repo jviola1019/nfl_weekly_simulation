@@ -4,6 +4,16 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### A0 follow-up: the Tuesday capture reads the coming week (2026-10-21)
+
+- **Before:** the capture read only ESPN's default scoreboard. ESPN keeps that on the week just played until it rolls the week over. The Tuesday 2026-10-20 21:23Z run (39499941009) saw week 6, with all 14 games final, so it fetched zero ESPN game odds; the 216 h horizon had nothing to select.
+- **Now:** `run_capture()` also asks for the next week by number:
+  - `parse_espn_scoreboard_week()` and `espn_next_week()` read the week from the scoreboard and step it forward. The regular season runs 1–18; the postseason runs 1–5 and ends after the Super Bowl.
+  - The request is `espn_scoreboard_url(week)`, which gives `?seasontype=&week=&dates=`.
+  - ESPN refuses a `dates=YYYYMMDD-YYYYMMDD` range with HTTP 400 (probed 2026-10-21).
+- **Live check:** at 2026-10-21 05:09Z, an ESPN-only capture into a scratch folder made 17 of 17 requests at 200. It read 2 scoreboards and fetched game odds for 15 games inside 216 h (week 7's 14, plus week 8's Thursday game).
+- **Test:** `test-capture-raw.R`, with a Tuesday run on a stubbed fetch. The default scoreboard lists week 6 final; the capture now requests week 7 and that week's two games, and never the finished game.
+
 ### A0: the odds capture sees every game before the close, on time, and is kept (owner, 2026-10-19)
 
 - **Every upcoming game's line is captured mid-week.**
