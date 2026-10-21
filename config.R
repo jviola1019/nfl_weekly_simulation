@@ -3,8 +3,8 @@
 # =============================================================================
 #
 # This file contains all configuration parameters for the NFL prediction model.
-# Change the SEASON and WEEK_TO_SIM values here to run predictions for different
-# weeks. All scripts will automatically use these settings.
+# The week and season come from run_week.R (Rscript run_week.R [week] [season]); with no
+# arguments it is the upcoming week from the nflverse schedule (R/run_config.R).
 #
 # =============================================================================
 
@@ -27,17 +27,30 @@ if (getRversion() < "4.0.0") {
 # PRIMARY CONFIGURATION - CHANGE THESE TO RUN DIFFERENT WEEKS
 # =============================================================================
 
-#' @description Current NFL season to simulate
-#' @default Current year (auto-detected from system date)
-#' @examples 2024, 2025
-SEASON <- as.integer(getOption("nfl.season", 2025L))  # CLI: Rscript run_week.R <week> <season> (audit M1)
+# The week and season come from run_week.R (C1, 2026-10-20): its arguments, or with none the
+# upcoming week from the nflverse schedule (R/run_config.R). Sourced on its own, config.R falls
+# back to the calendar estimate and says so; there is no fixed default week.
+if (is.null(getOption("nfl.season")) || is.null(getOption("nfl.week"))) {
+  if (!exists("nfl_calendar_week", mode = "function")) {
+    if (!file.exists(file.path("R", "run_config.R"))) {
+      stop("config.R: set options(nfl.week = <week>, nfl.season = <season>), or source config.R from the repository root",
+           call. = FALSE)
+    }
+    source(file.path("R", "run_config.R"), local = TRUE)
+  }
+  .calendar_week <- nfl_calendar_week(Sys.time())
+  message(sprintf("config.R: no week set by run_week.R; using the calendar estimate %d week %d (run_week.R resolves it from the schedule)",
+                  .calendar_week$season, .calendar_week$week))
+}
 
-#' @description Week number to simulate
-#' @important **CHANGE THIS VALUE** to run predictions for different weeks
+#' @description NFL season to simulate (set by run_week.R; see above)
+#' @examples 2024, 2026
+SEASON <- as.integer(if (is.null(getOption("nfl.season"))) .calendar_week$season else getOption("nfl.season"))
+
+#' @description Week to simulate (set by run_week.R; see above)
 #' @note Regular season: 1-18, Playoffs: 19=Wild Card, 20=Divisional, 21=Conference, 22=Super Bowl
-#' @default 18
-#' @examples 1, 2, 3, ..., 18 (regular season), 19, 20, 21, 22 (playoffs)
-WEEK_TO_SIM <- as.integer(getOption("nfl.week", 22L))  # <-- **CHANGE THE DEFAULT (22L) TO RUN A DIFFERENT WEEK [19 = WILD CARD, 20 = DIVISIONAL, 21 = CONFERENCE, 22 = SUPER BOWL]**; CLI overrides via options
+#' @examples Rscript run_week.R 7 2026 (week 7 of 2026); Rscript run_week.R (the upcoming week)
+WEEK_TO_SIM <- as.integer(if (is.null(getOption("nfl.week"))) .calendar_week$week else getOption("nfl.week"))
 
 # =============================================================================
 # SIMULATION PARAMETERS
@@ -689,30 +702,6 @@ PLAYOFF_BYE_BONUS <- 1.50
 PLAYOFF_INJURY_VARIANCE <- 1.15
 
 # =============================================================================
-# DATE RESOLVER CONFIGURATION
-# =============================================================================
-
-#' @description Enable automatic week resolution from current date
-#' @default FALSE (use explicit WEEK_TO_SIM setting)
-AUTO_RESOLVE_WEEK <- FALSE
-
-#' @description Target datetime for week resolution (NULL = Sys.time())
-#' @default NULL
-TARGET_DATETIME <- NULL
-
-#' @description Timezone for date comparisons
-#' @default "America/New_York" (NFL standard Eastern Time)
-TIMEZONE <- "America/New_York"
-
-#' @description Days before earliest kickoff to include in week window
-#' @default 4
-WEEK_BUFFER_PRE <- 4
-
-#' @description Days after latest kickoff to include in week window
-#' @default 2
-WEEK_BUFFER_POST <- 2
-
-# =============================================================================
 # BETTING / MARKET PARAMETERS
 # =============================================================================
 # These parameters control how model predictions are blended with market odds
@@ -1011,7 +1000,7 @@ if (interactive() || getOption("nfl_sim.show_config", default = FALSE)) {
   cat("╚════════════════════════════════════════════════════════════════════╝\n")
   cat("\n")
   cat(sprintf("  Season:           %d\n", SEASON))
-  cat(sprintf("  Week:             %d  ◄── CHANGE THIS TO RUN A DIFFERENT WEEK\n", WEEK_TO_SIM))
+  cat(sprintf("  Week:             %d  (from run_week.R: its arguments, or the schedule)\n", WEEK_TO_SIM))
   cat(sprintf("  Phase:            %s\n", PHASE))
   if (PHASE == "playoffs" && !is.na(PLAYOFF_ROUND)) {
     # Convert playoff round to display name
@@ -1141,12 +1130,6 @@ list2env(
     PLAYOFF_HFA_MULTIPLIER = PLAYOFF_HFA_MULTIPLIER,
     PLAYOFF_BYE_BONUS = PLAYOFF_BYE_BONUS,
     PLAYOFF_INJURY_VARIANCE = PLAYOFF_INJURY_VARIANCE,
-    # Date resolver configuration
-    AUTO_RESOLVE_WEEK = AUTO_RESOLVE_WEEK,
-    TARGET_DATETIME = TARGET_DATETIME,
-    TIMEZONE = TIMEZONE,
-    WEEK_BUFFER_PRE = WEEK_BUFFER_PRE,
-    WEEK_BUFFER_POST = WEEK_BUFFER_POST,
     # Betting/market parameters
     SHRINKAGE = SHRINKAGE,
     SPREAD_MARGIN_SD = SPREAD_MARGIN_SD,

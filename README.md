@@ -193,11 +193,9 @@ Raw model probabilities are adjusted using isotonic regression to ensure they ma
 
 ## Configuration
 
-Edit `config.R` to change settings:
+`Rscript run_week.R` simulates the upcoming week from the nflverse schedule; `Rscript run_week.R <week> <season>` names one. Edit `config.R` to change the model's settings, for example:
 
 ```r
-SEASON <- 2025              # Current season
-WEEK_TO_SIM <- 12          # Week to predict (1-18)
 N_TRIALS <- 100000         # Simulation count
 ```
 

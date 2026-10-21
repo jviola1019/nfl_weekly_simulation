@@ -7,8 +7,8 @@
 #   Rscript run_week.R [week] [season]
 #
 # Examples:
-#   Rscript run_week.R          # Uses defaults from config.R
-#   Rscript run_week.R 15       # Week 15, current season
+#   Rscript run_week.R          # The upcoming week, from the nflverse schedule
+#   Rscript run_week.R 15       # Week 15 of the season in progress
 #   Rscript run_week.R 15 2024  # Week 15, 2024 season
 #
 # Output:
@@ -24,7 +24,8 @@
 # Parse command line arguments and publish them before config.R is sourced (audit M1:
 # NFLsimulation.R re-sources config.R, so overrides must live in options, not globals)
 source("R/run_config.R")
-set_run_options(parse_run_args(commandArgs(trailingOnly = TRUE)))
+# With no week, the upcoming week comes from the nflverse schedule (C1); it never defaults
+set_run_options(resolve_run_target(parse_run_args(commandArgs(trailingOnly = TRUE))))
 source("config.R")
 
 # Print run info
