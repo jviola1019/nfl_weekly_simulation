@@ -147,14 +147,14 @@ Small type keeps Tailwind's `text-xs`, `text-sm`, `text-base`, `text-lg` and `te
 | `row`, `cell` | 8, 16 px | table rows and columns |
 | `endzone`, `endzone-hero`, `turf-hero` | 26 (46 from `sm`), 58, 58 + 1 px | the field: the flag row is inset by exactly the hero end zone plus the strip's border |
 
-Radii: `card` 6, `field` 4, `control` 3, `tick` 2 px. Measures: `page` 1440, `measure` 672 (running text), `aside` 420, `table` 640 and `table-wide` 720 px. Two names are deliberately not used: Tailwind reads a spacing token named `inline` or `block` as an `inline-size` or `block-size` utility, so `inline-block` would silently get a width (a first draft did exactly that); the roles are `snug` and `stack`. The theme block is `static`, so every token is always emitted: plain CSS (the tables, the print rules) reads some of them without a utility.
+Radii: `card` 6, `field` 4, `control` 3, `tick` 2 px. Measures: `page` 1440, `measure` 672 (running text), `aside` 420, `tabular` 640 and `tabular-wide` 720 px (not `table`: Tailwind would read `inline-table` as an inline size, B2 Task 1 review). Two names are deliberately not used: Tailwind reads a spacing token named `inline` or `block` as an `inline-size` or `block-size` utility, so `inline-block` would silently get a width (a first draft did exactly that); the roles are `snug` and `stack`. The theme block is `static`, so every token is always emitted: plain CSS (the tables, the print rules) reads some of them without a utility.
 
 **Files:**
 - Create: `web/src/test/tokens.test.ts`, `web/src/test/tokenCeilings.json`
 - Modify: `web/src/app/globals.css` (insert the tokens between the colour mapping and `html {`)
 
 **Interfaces:**
-- Produces, for every later task: the utilities `text-heading|figure|stat|title-sm|title|score|hero`; `p-card`, `p-card-sm`, `gap-stack`, `gap-snug`, `gap-control`, `gap-tight`, `mt-section`, `gap-section`, `px-gutter`, `pt-page-top`, `pb-page-top`, `w-endzone`, `w-endzone-hero`, `mx-turf-hero`; `rounded-card|field|control|tick`; `max-w-page`, `max-w-measure`, `w-aside`, `min-w-table`, `min-w-table-wide`; `tracking-code`; `border-turf-edge`. And `tokenCeilings.json`, whose per-file numbers must equal the real counts (`tokens.test.ts` fails in both directions).
+- Produces, for every later task: the utilities `text-heading|figure|stat|title-sm|title|score|hero`; `p-card`, `p-card-sm`, `gap-stack`, `gap-snug`, `gap-control`, `gap-tight`, `mt-section`, `gap-section`, `px-gutter`, `pt-page-top`, `pb-page-top`, `w-endzone`, `w-endzone-hero`, `mx-turf-hero`; `rounded-card|field|control|tick`; `max-w-page`, `max-w-measure`, `w-aside`, `min-w-tabular`, `min-w-tabular-wide`; `tracking-code`; `border-turf-edge`. And `tokenCeilings.json`, whose per-file numbers must equal the real counts (`tokens.test.ts` fails in both directions).
 
 - [ ] **Step 1: Write the failing tests** (the ratchet, at today's numbers, and the token check)
 
@@ -241,7 +241,7 @@ describe("token ratchet", () => {
       "--spacing-section", "--spacing-page-top", "--spacing-gutter", "--spacing-row", "--spacing-cell",
       "--spacing-endzone", "--spacing-endzone-hero", "--spacing-turf-hero",
       "--radius-card", "--radius-field", "--radius-control", "--radius-tick",
-      "--container-page", "--container-measure", "--container-aside", "--container-table", "--container-table-wide"
+      "--container-page", "--container-measure", "--container-aside", "--container-tabular", "--container-tabular-wide"
     ];
     const missing = roles.filter((r) => !new RegExp(`${r}:\\s*[^;]+;`).test(CSS));
     expect(missing).toEqual([]);
@@ -367,8 +367,8 @@ html {
   --container-page: 90rem;
   --container-measure: 42rem;
   --container-aside: 26.25rem;
-  --container-table: 40rem;
-  --container-table-wide: 45rem;
+  --container-tabular: 40rem;
+  --container-tabular-wide: 45rem;
 
   --tracking-code: 0.14em;
 }
@@ -660,7 +660,7 @@ describe("DataTable", () => {
   it("can show its caption, scroll below a minimum width, and say so when it has no rows", () => {
     const out = html(<DataTable caption="Leans" showCaption columns={columns} rows={[]} empty={<span>No paper leans</span>} minWidth="table-wide" numeric topAligned dense />);
     expect(out).toContain('<caption class="data-table-caption">Leans</caption>');
-    expect(out).toContain("min-w-table-wide");
+    expect(out).toContain("min-w-tabular-wide");
     expect(out).toContain("data-table num data-table-dense data-table-top");
     expect(out).toContain('<td colSpan="2" class="text-ink-2"><span>No paper leans</span></td>');
   });
@@ -1085,7 +1085,7 @@ export function DataTable({
   numeric?: boolean;
   topAligned?: boolean;
 } & Omit<ComponentPropsWithoutRef<"table">, "children" | "className">) {
-  const cls = ["data-table", numeric ? "num" : "", dense ? "data-table-dense" : "", topAligned ? "data-table-top" : "", minWidth === "table" ? "min-w-table" : "", minWidth === "table-wide" ? "min-w-table-wide" : ""]
+  const cls = ["data-table", numeric ? "num" : "", dense ? "data-table-dense" : "", topAligned ? "data-table-top" : "", minWidth === "table" ? "min-w-tabular" : "", minWidth === "table-wide" ? "min-w-tabular-wide" : ""]
     .filter(Boolean)
     .join(" ");
   return (
