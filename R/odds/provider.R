@@ -45,7 +45,7 @@ validate_odds_provider <- function(p) {
 #' One row of fetch lineage from an odds_fetch() record
 odds_fetch_row <- function(rec, key) {
   data.frame(
-    source = rec$source %||% NA_character_, key = key, url = rec$url, http_status = rec$status,
+    source = rec$source %||% NA_character_, key = key, url = odds_redact_url(rec$url), http_status = rec$status,
     raw_sha256 = rec$sha256, bytes = rec$bytes, tries = rec$tries, blocked = rec$blocked,
     fetched_at = rec$fetched_at, stringsAsFactors = FALSE
   )
