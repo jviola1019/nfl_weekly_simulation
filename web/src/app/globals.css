@@ -193,8 +193,8 @@
   --container-page: 90rem;
   --container-measure: 42rem;
   --container-aside: 26.25rem;
-  --container-table: 40rem;
-  --container-table-wide: 45rem;
+  --container-tabular: 40rem;
+  --container-tabular-wide: 45rem;
 
   --tracking-code: 0.14em;
 }
