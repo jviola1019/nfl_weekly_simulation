@@ -236,3 +236,9 @@ The owner asked (2026-09-30) to merge everything and move the remaining work to 
 | 21 | The first mockup palette failed the dataviz validator (lightness band, contrast on turf, numbers coloured by series) | Re-stepped to the validated palette with a darker turf, and republished |
 | 22 | **A delete without looking first:** a screenshot path passed unconverted made Playwright create `C:\c\Users\…\rd_shots`; I moved the images and ran `rm -rf /c/c` without first checking `C:\c` for other content | It very likely held only that run's output (a top-level `C:\c` is unusual), but this was not verified; disclosed to the owner. Rule: list a directory before any delete |
 | 23 | The ScoresAndOdds scraper ran during the A3 end-to-end step because config still enabled it (S5) | Disclosed; defaults turned off in #206; `run_week.R` not run again |
+
+## P1 (props correctness) close-out note
+
+- Done on the P1 branch (see CHANGELOG "P1"): P13, P14, P1, P2, P3, P9, P12, P4, P5; P10 was already done.
+- Not done, owner decisions: the `KALSHI_TAKER_FEE_COEF` value must be checked against kalshi.com/docs/kalshi-fee-schedule.pdf (HTTP 429 on 2026-10-13); `PROP_REQUIRE_MARKET_ODDS` (default TRUE) drops unpriced rows from the output when any priced row exists, which hides their pass reasons; `team_tz` in `NFLsimulation.R` has `LAR` where schedules use `LA`; the ScoresAndOdds scraper (S5) and the duplicate `load_red_zone_efficiency` remain.
+- Next: P2 (props model v2) needs G1's `predict_week()`; P3 needs the signed `nfl_props_v1` protocol; D1's Kalshi provider must write the quote schema in the P1 plan, Tasks 3 and 4.

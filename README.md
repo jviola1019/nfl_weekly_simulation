@@ -278,6 +278,8 @@ Rscript scripts/run_matrix.R  # Should show 11/11 passed (golden-master needs ne
 | `R/date_resolver.R` | Timezone-safe datetime parsing |
 | `R/bundle_writer.R` | Writes and validates R -> web bundles (`contracts/schema/`) |
 | `R/sim_bundle.R` | The simulator's weekly bundle, written by `run_week.R` |
+| `R/prop_keys.R` | Canonical team abbreviations and exact player-id resolution for prop quotes |
+| `R/prop_pricing.R` | Devig per venue, Kalshi taker fee, EV at the best fresh quote |
 
 ### Verification Scripts (`scripts/`)
 | File | Purpose |
