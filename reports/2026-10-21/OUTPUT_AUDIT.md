@@ -34,7 +34,24 @@ Every figure below comes from that run's console log, its bundle files, the nflv
 | F11 | "There were 50 or more warnings", and none were shown. | run log | hygiene | V4: re-run with `options(warn = 1)` and triage |
 | F12 | The calibrator marked invalid (audit M4) is still loaded ("Ensemble calibrator loaded (invalid …)", "Using SPLINE calibration"). The data-quality summary says "spline (DIAGNOSTIC ONLY)", and `home_win_prob_cal` equals `home_win_prob` in every printed row. | run log | dead path | Track X: prove the path is diagnostic only, then remove `ensemble_calibration_*` with that evidence |
 
+## App check (2026-10-21)
+
+**Method.** Main `4c1c377` was built from the audit worktree. Its own database (`nfl_audit`) holds this run's bundle plus the backtest bundle. It was served on 127.0.0.1:3200 and captured with the Playwright CLI at 390 and 1440 px.
+
+- **Home.**
+  - "Week 7", "2026 season · Thu, Oct 22 – Mon, Oct 26", with all 14 games, their ET kickoffs, and the market and simulator probabilities.
+  - Stat tiles: 14 games, "0 of 14" model favourites that differ from the market, and a largest gap of 1.7 pts (DAL at PHI).
+  - The market note reads "nflverse consensus moneyline, proportionally devigged, as of 2026-10-21 04:56 UTC (13 h ago)".
+- **Game (NE at CHI).**
+  - The breadcrumb reads Week 7, 2026. Kickoff is Thu, Oct 22, 8:15 PM ET. Market 58.3%, simulator 57.5%.
+  - The margin and total distributions render once scrolled into view: 100 and 104 bar paths, with no browser console error. A full-page capture without scrolling shows only their lazy placeholders.
+- **Data health.** All four sources show a last success (13 h ago). Weather is stale, and the three fallback games are named.
+- **Props.** Nothing is priced, and the page says why.
+
+**New and confirmed findings:**
+- **F8 reaches the UI.** The game page's moneyline card says "nflverse consensus close", and data health says "closing moneylines", for a line taken one to five days before kickoff.
+- **F13.** The props page says "the props engine has known defects … (audit P1–P13) … Phase 4 fixes them". That text becomes stale once P1 merges (#216 and the P1 PR). Update the copy with P1's close-out.
+
 ## Not yet checked
 
-- The app's pages for this run: ingest it, then take screenshots. This comes after B2.
 - The warnings in F11.
