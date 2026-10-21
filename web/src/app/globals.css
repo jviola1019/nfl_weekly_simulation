@@ -141,6 +141,95 @@
   --font-sans: var(--font-archivo), system-ui, sans-serif;
 }
 
+/*
+ * Tokens beyond colour (Track B2): type, spacing, radius and measure come from named
+ * roles, so a page never invents a size. The unit is 4px (Tailwind's --spacing, 0.25rem);
+ * every role is a multiple of it, except the field geometry. Tailwind's xs, sm, base, lg
+ * and xl stay the small type scale (12 to 20px); the roles below are the display sizes.
+ * Roles that grow with the screen are overridden on :root by the breakpoint rules below.
+ * The block is static: every token is always emitted, because plain CSS (the tables, the print
+ * rules) reads some of them without a utility.
+ * tokens.test.ts holds the line: no new arbitrary utility, no text-[Npx] outside the
+ * components that draw numbers.
+ */
+@theme static {
+  --text-heading: 1.5rem;
+  --text-heading--line-height: 2rem;
+  --text-figure: 1.75rem;
+  --text-figure--line-height: 1;
+  --text-stat: 2.5rem;
+  --text-stat--line-height: 1;
+  --text-title-sm: 2rem;
+  --text-title-sm--line-height: 0.95;
+  --text-title: 2.5rem;
+  --text-title--line-height: 0.95;
+  --text-title--letter-spacing: -0.01em;
+  --text-score: 3.5rem;
+  --text-score--line-height: 0.9;
+  --text-hero: 4rem;
+  --text-hero--line-height: 0.9;
+  --text-hero--letter-spacing: -0.02em;
+
+  --spacing-tight: 0.25rem;
+  --spacing-snug: 0.5rem;
+  --spacing-control: 0.75rem;
+  --spacing-stack: 1.25rem;
+  --spacing-card: 1.25rem;
+  --spacing-card-sm: 1rem;
+  --spacing-section: 2.5rem;
+  --spacing-page-top: 3rem;
+  --spacing-gutter: 1rem;
+  --spacing-row: 0.5rem;
+  --spacing-cell: 1rem;
+  --spacing-endzone: 1.625rem;
+  --spacing-endzone-hero: 3.625rem;
+  --spacing-turf-hero: calc(3.625rem + 1px);
+
+  --radius-card: 6px;
+  --radius-field: 4px;
+  --radius-control: 3px;
+  --radius-tick: 2px;
+
+  --container-page: 90rem;
+  --container-measure: 42rem;
+  --container-aside: 26.25rem;
+  --container-table: 40rem;
+  --container-table-wide: 45rem;
+
+  --tracking-code: 0.14em;
+}
+
+@theme inline {
+  --color-turf-edge: var(--turf-edge);
+}
+
+/* What each role is for (the values are above):
+   tight 4: a label above its value. snug 8: a swatch or icon beside text, chip gaps.
+   control 12: a title above its content, control groups. stack 20: cards and tiles in a grid.
+   (Not "inline" or "block": Tailwind reads those names as inline-size and block-size utilities,
+   and inline-block would pick up a width.)
+   card 20 and card-sm 16: card padding (sm for a game strip or an empty state).
+   section 40: between the sections of a page. page-top 48: the header to the first block.
+   gutter: page side padding, 16 on a phone, 32 from sm, 64 from xl. row 8 and cell 16: tables.
+   endzone: the strip's end zones (26 on a phone, 46 from sm); endzone-hero 58; turf-hero is the
+   hero end zone plus the strip's 1px border, the inset of the flag row above it. */
+@media (min-width: 40rem) {
+  :root {
+    --text-title-sm: 2.5rem;
+    --text-title: 3.5rem;
+    --text-score: 5.5rem;
+    --text-hero: 6.5rem;
+    --spacing-gutter: 2rem;
+    --spacing-endzone: 2.875rem;
+  }
+}
+
+@media (min-width: 80rem) {
+  :root {
+    --spacing-gutter: 4rem;
+  }
+}
+
 html {
   background: var(--surface-sunken);
   color: var(--ink);

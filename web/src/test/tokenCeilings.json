@@ -1,0 +1,28 @@
+{
+  "arbitrary": {
+    "app/data-health/page.tsx": 1,
+    "app/desk/page.tsx": 1,
+    "app/evidence/page.tsx": 5,
+    "app/games/[id]/page.tsx": 29,
+    "app/layout.tsx": 1,
+    "app/methodology/page.tsx": 1,
+    "app/page.tsx": 11,
+    "components/DataUnavailable.tsx": 1,
+    "components/Field.tsx": 31,
+    "components/NavLinks.tsx": 1,
+    "components/SiteFooter.tsx": 1,
+    "components/SiteHeader.tsx": 7,
+    "components/ThemeToggle.tsx": 1,
+    "components/charts/ChartFigure.tsx": 1,
+    "components/charts/ChartTooltip.tsx": 1,
+    "components/charts/LazyScoreDistributionPlot.tsx": 2,
+    "components/charts/ScoreDistributionChart.tsx": 1,
+    "components/charts/ScoreDistributionPlot.tsx": 1,
+    "components/ui.tsx": 17
+  },
+  "textPx": {
+    "app/evidence/page.tsx": 2,
+    "app/games/[id]/page.tsx": 15,
+    "app/page.tsx": 6
+  }
+}
