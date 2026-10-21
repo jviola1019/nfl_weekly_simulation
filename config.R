@@ -27,17 +27,30 @@ if (getRversion() < "4.0.0") {
 # PRIMARY CONFIGURATION - CHANGE THESE TO RUN DIFFERENT WEEKS
 # =============================================================================
 
-#' @description Current NFL season to simulate
-#' @default Current year (auto-detected from system date)
-#' @examples 2024, 2025
-SEASON <- as.integer(getOption("nfl.season", 2025L))  # CLI: Rscript run_week.R <week> <season> (audit M1)
+# The week and season come from run_week.R (C1, 2026-10-20): its arguments, or with none the
+# upcoming week from the nflverse schedule (R/run_config.R). Sourced on its own, config.R falls
+# back to the calendar estimate and says so; there is no fixed default week.
+if (is.null(getOption("nfl.season")) || is.null(getOption("nfl.week"))) {
+  if (!exists("nfl_calendar_week", mode = "function")) {
+    if (!file.exists(file.path("R", "run_config.R"))) {
+      stop("config.R: set options(nfl.week = <week>, nfl.season = <season>), or source config.R from the repository root",
+           call. = FALSE)
+    }
+    source(file.path("R", "run_config.R"), local = TRUE)
+  }
+  .calendar_week <- nfl_calendar_week(Sys.time())
+  message(sprintf("config.R: no week set by run_week.R; using the calendar estimate %d week %d (run_week.R resolves it from the schedule)",
+                  .calendar_week$season, .calendar_week$week))
+}
 
-#' @description Week number to simulate
-#' @important **CHANGE THIS VALUE** to run predictions for different weeks
+#' @description NFL season to simulate (set by run_week.R; see above)
+#' @examples 2024, 2026
+SEASON <- as.integer(if (is.null(getOption("nfl.season"))) .calendar_week$season else getOption("nfl.season"))
+
+#' @description Week to simulate (set by run_week.R; see above)
 #' @note Regular season: 1-18, Playoffs: 19=Wild Card, 20=Divisional, 21=Conference, 22=Super Bowl
-#' @default 18
-#' @examples 1, 2, 3, ..., 18 (regular season), 19, 20, 21, 22 (playoffs)
-WEEK_TO_SIM <- as.integer(getOption("nfl.week", 22L))  # <-- **CHANGE THE DEFAULT (22L) TO RUN A DIFFERENT WEEK [19 = WILD CARD, 20 = DIVISIONAL, 21 = CONFERENCE, 22 = SUPER BOWL]**; CLI overrides via options
+#' @examples Rscript run_week.R 7 2026 (week 7 of 2026); Rscript run_week.R (the upcoming week)
+WEEK_TO_SIM <- as.integer(if (is.null(getOption("nfl.week"))) .calendar_week$week else getOption("nfl.week"))
 
 # =============================================================================
 # SIMULATION PARAMETERS
