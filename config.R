@@ -3,8 +3,8 @@
 # =============================================================================
 #
 # This file contains all configuration parameters for the NFL prediction model.
-# Change the SEASON and WEEK_TO_SIM values here to run predictions for different
-# weeks. All scripts will automatically use these settings.
+# The week and season come from run_week.R (Rscript run_week.R [week] [season]); with no
+# arguments it is the upcoming week from the nflverse schedule (R/run_config.R).
 #
 # =============================================================================
 
@@ -702,30 +702,6 @@ PLAYOFF_BYE_BONUS <- 1.50
 PLAYOFF_INJURY_VARIANCE <- 1.15
 
 # =============================================================================
-# DATE RESOLVER CONFIGURATION
-# =============================================================================
-
-#' @description Enable automatic week resolution from current date
-#' @default FALSE (use explicit WEEK_TO_SIM setting)
-AUTO_RESOLVE_WEEK <- FALSE
-
-#' @description Target datetime for week resolution (NULL = Sys.time())
-#' @default NULL
-TARGET_DATETIME <- NULL
-
-#' @description Timezone for date comparisons
-#' @default "America/New_York" (NFL standard Eastern Time)
-TIMEZONE <- "America/New_York"
-
-#' @description Days before earliest kickoff to include in week window
-#' @default 4
-WEEK_BUFFER_PRE <- 4
-
-#' @description Days after latest kickoff to include in week window
-#' @default 2
-WEEK_BUFFER_POST <- 2
-
-# =============================================================================
 # BETTING / MARKET PARAMETERS
 # =============================================================================
 # These parameters control how model predictions are blended with market odds
@@ -1024,7 +1000,7 @@ if (interactive() || getOption("nfl_sim.show_config", default = FALSE)) {
   cat("╚════════════════════════════════════════════════════════════════════╝\n")
   cat("\n")
   cat(sprintf("  Season:           %d\n", SEASON))
-  cat(sprintf("  Week:             %d  ◄── CHANGE THIS TO RUN A DIFFERENT WEEK\n", WEEK_TO_SIM))
+  cat(sprintf("  Week:             %d  (from run_week.R: its arguments, or the schedule)\n", WEEK_TO_SIM))
   cat(sprintf("  Phase:            %s\n", PHASE))
   if (PHASE == "playoffs" && !is.na(PLAYOFF_ROUND)) {
     # Convert playoff round to display name
@@ -1154,12 +1130,6 @@ list2env(
     PLAYOFF_HFA_MULTIPLIER = PLAYOFF_HFA_MULTIPLIER,
     PLAYOFF_BYE_BONUS = PLAYOFF_BYE_BONUS,
     PLAYOFF_INJURY_VARIANCE = PLAYOFF_INJURY_VARIANCE,
-    # Date resolver configuration
-    AUTO_RESOLVE_WEEK = AUTO_RESOLVE_WEEK,
-    TARGET_DATETIME = TARGET_DATETIME,
-    TIMEZONE = TIMEZONE,
-    WEEK_BUFFER_PRE = WEEK_BUFFER_PRE,
-    WEEK_BUFFER_POST = WEEK_BUFFER_POST,
     # Betting/market parameters
     SHRINKAGE = SHRINKAGE,
     SPREAD_MARGIN_SD = SPREAD_MARGIN_SD,
