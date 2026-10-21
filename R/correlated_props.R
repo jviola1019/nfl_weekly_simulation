@@ -496,8 +496,6 @@ run_game_props <- function(game_sim, home_team, away_team, season,
     prop_odds_cache <- tryCatch({
       if (exists("resolve_prop_odds_cache", mode = "function")) {
         resolve_prop_odds_cache()
-      } else if (exists("load_prop_odds", mode = "function")) {
-        load_prop_odds()
       } else {
         NULL
       }
@@ -1543,8 +1541,6 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
     prop_odds_cache <- tryCatch({
       if (exists("resolve_prop_odds_cache", mode = "function")) {
         resolve_prop_odds_cache()
-      } else if (exists("load_prop_odds", mode = "function")) {
-        load_prop_odds()
       } else {
         NULL
       }

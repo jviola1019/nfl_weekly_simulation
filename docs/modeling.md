@@ -324,8 +324,8 @@ Where `P(side)` is the model probability for the relevant side (over or under fo
 - Props below the 2% threshold receive no directional recommendation.
 
 **Prop odds sources:**
-- `PROP_ODDS_SOURCE = "auto"` iterates sources in `PROP_ODDS_SOURCE_ORDER` (default: ScoresAndOdds → OddsTrader → Covers → The Odds API → CSV → model).
-- `PROP_ODDS_SOURCE = "odds_api"` uses The Odds API (requires `ODDS_API_KEY`).
+- `PROP_ODDS_SOURCE = "auto"` iterates sources in `PROP_ODDS_SOURCE_ORDER` (default: CSV → model). The keyed The Odds API client was retired (audit P4, P5; keyless data only).
+- A prop quote needs `game_id`, `captured_at` and a player id to be used (`R/prop_odds_api.R`, `get_market_prop_quotes`); a quote captured after the game's kickoff is never used, and a prop with no usable quote stays unpriced with a pass reason (audit P14, rule M11).
 - ScoresAndOdds scraping is **off by default** (`PROP_ODDS_ALLOW_REMOTE_HTML = FALSE`, and it is not in `PROP_ODDS_SOURCE_ORDER`). It called a private endpoint with a browser user agent, which breaks the keyless, truthful-user-agent policy (audit S5). The code is due for deletion.
 - `PROP_ODDS_SOURCE = "oddstrader"` attempts OddsTrader HTML scraping; falls back to CSV if the site is client-rendered.
 - `PROP_ODDS_SOURCE = "covers"` attempts Covers HTML scraping; may require CSV if blocked.

@@ -75,7 +75,7 @@ tryCatch({
   source("sports/nfl/props/props_config.R")  # Contains DEFAULT_YARD_PROP_ODDS
 
   log_check("P-CHECK-1: Config variables exist", {
-    exists("ODDS_API_KEY") && exists("USE_REAL_PROP_ODDS")
+    exists("USE_REAL_PROP_ODDS")
   })
 }, error = function(e) {
   log_check("P-CHECK-1: Source files loadable", FALSE, e$message)
@@ -84,8 +84,8 @@ tryCatch({
 # =============================================================================
 # P-CHECK-2: Prop odds API functions defined
 # =============================================================================
-log_check("P-CHECK-2: load_prop_odds() exists",
-          exists("load_prop_odds", mode = "function"))
+log_check("P-CHECK-2: resolve_prop_odds_cache() exists",
+          exists("resolve_prop_odds_cache", mode = "function"))
 
 log_check("P-CHECK-2b: get_market_prop_line() exists",
           exists("get_market_prop_line", mode = "function"))
@@ -267,7 +267,7 @@ log_check("I-CHECK-1: R/prop_odds_api.R exists",
           file.exists("R/prop_odds_api.R"))
 
 log_check("I-CHECK-2: Config variables in config.R",
-          exists("ODDS_API_KEY") && exists("USE_REAL_PROP_ODDS") && exists("DEFAULT_TD_ODDS"))
+          exists("USE_REAL_PROP_ODDS") && exists("DEFAULT_TD_ODDS"))
 
 log_check("I-CHECK-3: Props config has TD odds",
           exists("ANYTIME_TD_ODDS_QB") || exists("DEFAULT_TD_ODDS"))

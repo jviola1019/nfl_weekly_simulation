@@ -25,21 +25,8 @@ test_that("refs_to_symbols finds code, strings and comments, and not the file na
   expect_equal(nrow(refs_to_symbols(character(), root = root)), 0)
 })
 
-# file::symbol pairs that still exist at the end of Task 5; Task 7 empties this list
-KNOWN_ODDS_API_REFS <- c(
-  "config.R::ODDS_API_KEY",
-  "config.R::odds_api",
-  "R/correlated_props.R::load_prop_odds",
-  "R/prop_odds_api.R::ODDS_API_KEY",
-  "R/prop_odds_api.R::load_prop_odds",
-  "R/prop_odds_api.R::odds_api",
-  "R/prop_odds_api.R::oddsapi",
-  "scripts/audit_verify.R::ODDS_API_KEY",
-  "scripts/audit_verify.R::load_prop_odds",
-  "sports/nfl/props/props_config.R::ODDS_API_KEY",
-  "sports/nfl/props/props_config.R::odds_api",
-  "tests/testthat/test-repo-hygiene.R::load_prop_odds"
-)
+# The keyed Odds API path is retired (P4, P5): nothing may refer to it
+KNOWN_ODDS_API_REFS <- character()
 
 test_that("the keyed Odds API path has no new caller, and the allowlist only shrinks", {
   refs <- refs_to_symbols(repo_r_files(PROJECT_ROOT), root = PROJECT_ROOT)

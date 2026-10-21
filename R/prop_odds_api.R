@@ -1,228 +1,11 @@
 # =============================================================================
-# PROP ODDS API INTEGRATION
+# PROP ODDS: point-in-time quote cache, CSV loader, ScoresAndOdds parser (off by default)
 # =============================================================================
 # File: R/prop_odds_api.R
-# Purpose: Load real player prop odds from The Odds API or fallback to defaults
-# Version: 2.9.2
-#
-# API Documentation: https://the-odds-api.com/liveapi/guides/v4/
-# Free tier: 500 requests/month
+# Purpose: Load prop quotes from keyless sources and look them up by game and player id.
+# The keyed The Odds API client was retired (audit P4, P5; keyless data only).
 # =============================================================================
 
-#' Load player prop odds from The Odds API
-#'
-#' Fetches real-time prop betting lines from multiple sportsbooks.
-#' Returns NULL if API key not set (caller falls back to model-derived odds).
-#'
-#' @param sport Sport key (default: "americanfootball_nfl")
-#' @param event_ids Optional vector of event IDs to filter
-#' @param markets Markets to fetch (default: player props)
-#' @param api_key API key (from ODDS_API_KEY env var)
-#' @param bookmakers Bookmakers to include (default: major US books)
-#'
-#' @return tibble with columns: player, prop_type, line, over_odds, under_odds,
-#'         book, event_id, commence_time. Returns NULL if API unavailable.
-#'
-#' @examples
-#' \dontrun{
-#'   # Set API key first
-#'   Sys.setenv(ODDS_API_KEY = "your_api_key_here")
-#'
-#'   # Load all NFL prop odds
-#'   props <- load_prop_odds()
-#'
-#'   # Get specific player's line
-#'   mahomes_pass <- get_market_prop_line("Patrick Mahomes", "passing_yards", props)
-#' }
-#'
-#' @export
-load_prop_odds <- function(
-    sport = "americanfootball_nfl",
-    event_ids = NULL,
-    markets = c("player_pass_yds", "player_rush_yds",
-                "player_reception_yds", "player_anytime_td"),
-    api_key = Sys.getenv("ODDS_API_KEY"),
-    bookmakers = c("draftkings", "fanduel", "betmgm", "caesars", "bovada")
-) {
-
-  # Check for API key
-  if (is.null(api_key) || api_key == "") {
-    message("INFO: ODDS_API_KEY not set - skipping odds API")
-    message("  Set ODDS_API_KEY for real market data or enable PROP_ALLOW_MODEL_ODDS for synthetic odds")
-    return(NULL)
-  }
-
-  # Check for httr package
-  if (!requireNamespace("httr", quietly = TRUE)) {
-    warning("httr package required for API calls - using defaults")
-    return(NULL)
-  }
-
-  if (!requireNamespace("jsonlite", quietly = TRUE)) {
-    warning("jsonlite package required for API calls - using defaults")
-    return(NULL)
-  }
-
-  base_url <- "https://api.the-odds-api.com/v4/sports"
-
-  # Map internal prop types to API market keys
-  market_map <- c(
-    "passing_yards" = "player_pass_yds",
-    "rushing_yards" = "player_rush_yds",
-    "receiving_yards" = "player_reception_yds",
-    "anytime_td" = "player_anytime_td"
-  )
-
-  all_props <- tibble::tibble()
-
-  for (market in markets) {
-    # Build URL
-    url <- sprintf(
-      "%s/%s/odds/?apiKey=%s&regions=us&markets=%s&oddsFormat=american&bookmakers=%s",
-      base_url, sport, api_key, market,
-      paste(bookmakers, collapse = ",")
-    )
-
-    # Make API request
-    resp <- tryCatch({
-      httr::GET(url, httr::timeout(10))
-    }, error = function(e) {
-      message(sprintf("  API request failed for %s: %s", market, e$message))
-      return(NULL)
-    })
-
-    if (is.null(resp)) next
-
-    # Check response status
-    if (httr::status_code(resp) != 200) {
-      status <- httr::status_code(resp)
-      if (status == 401) {
-        message("  API key invalid or expired")
-      } else if (status == 429) {
-        message("  API rate limit exceeded")
-      } else {
-        message(sprintf("  API returned status %d for %s", status, market))
-      }
-      next
-    }
-
-    # Parse response
-    content <- tryCatch({
-      jsonlite::fromJSON(httr::content(resp, "text", encoding = "UTF-8"))
-    }, error = function(e) {
-      message(sprintf("  Failed to parse response for %s: %s", market, e$message))
-      return(NULL)
-    })
-
-    if (is.null(content) || length(content) == 0) next
-
-    # Extract prop lines from each event
-    for (event in content) {
-      if (is.null(event$bookmakers)) next
-
-      event_id <- event$id
-      commence_time <- event$commence_time
-      home_team <- event$home_team
-      away_team <- event$away_team
-
-      for (book in event$bookmakers) {
-        book_name <- book$key
-
-        if (is.null(book$markets)) next
-
-        for (mkt in book$markets) {
-          if (is.null(mkt$outcomes)) next
-
-          # Parse outcomes (Over/Under or Yes/No for TD)
-          outcomes <- mkt$outcomes
-
-          if (market == "player_anytime_td") {
-            # Anytime TD is Yes/No format
-            for (outcome in outcomes) {
-              if (!is.null(outcome$description)) {
-                player_name <- outcome$description
-                yes_odds <- if (outcome$name == "Yes") outcome$price else NA_real_
-                no_odds <- if (outcome$name == "No") outcome$price else NA_real_
-
-                if (!is.na(yes_odds)) {
-                  prop_row <- tibble::tibble(
-                    player = player_name,
-                    prop_type = "anytime_td",
-                    line = NA_real_,
-                    over_odds = yes_odds,
-                    under_odds = no_odds,
-                    book = book_name,
-                    event_id = event_id,
-                    home_team = home_team,
-                    away_team = away_team,
-                    commence_time = commence_time,
-                    source = "odds_api"
-                  )
-                  all_props <- dplyr::bind_rows(all_props, prop_row)
-                }
-              }
-            }
-          } else {
-            # Yard props are Over/Under format
-            # Group by player description
-            player_outcomes <- list()
-
-            for (outcome in outcomes) {
-              if (!is.null(outcome$description)) {
-                player_name <- outcome$description
-                if (is.null(player_outcomes[[player_name]])) {
-                  player_outcomes[[player_name]] <- list(
-                    line = outcome$point,
-                    over_odds = NA_real_,
-                    under_odds = NA_real_
-                  )
-                }
-
-                if (outcome$name == "Over") {
-                  player_outcomes[[player_name]]$over_odds <- outcome$price
-                  player_outcomes[[player_name]]$line <- outcome$point
-                } else if (outcome$name == "Under") {
-                  player_outcomes[[player_name]]$under_odds <- outcome$price
-                }
-              }
-            }
-
-            # Convert internal prop type
-            internal_type <- names(market_map)[market_map == market]
-            if (length(internal_type) == 0) internal_type <- market
-
-            for (player_name in names(player_outcomes)) {
-              po <- player_outcomes[[player_name]]
-              prop_row <- tibble::tibble(
-                player = player_name,
-                prop_type = internal_type,
-                line = po$line,
-                over_odds = po$over_odds,
-                under_odds = po$under_odds,
-                book = book_name,
-                event_id = event_id,
-                home_team = home_team,
-                away_team = away_team,
-                commence_time = commence_time,
-                source = "odds_api"
-              )
-              all_props <- dplyr::bind_rows(all_props, prop_row)
-            }
-          }
-        }
-      }
-    }
-  }
-
-  if (nrow(all_props) > 0) {
-    message(sprintf("✓ Loaded %d prop lines from %d bookmakers",
-                    nrow(all_props), length(unique(all_props$book))))
-  } else {
-    message("ℹ No prop lines found from API")
-  }
-
-  all_props
-}
 
 # =============================================================================
 # SCORESANDODDS MARKET-COMPARISON SCRAPER
@@ -762,7 +545,6 @@ load_prop_odds_csv <- function(path = NULL) {
 
 resolve_prop_odds_cache <- function(source = NULL,
                                     csv_path = NULL,
-                                    api_key = Sys.getenv("ODDS_API_KEY"),
                                     source_order = NULL,
                                     xwalk = NULL) {
   if (is.null(source) && exists("PROP_ODDS_SOURCE")) source <- PROP_ODDS_SOURCE
@@ -773,7 +555,7 @@ resolve_prop_odds_cache <- function(source = NULL,
 
   source <- tolower(source %||% "auto")
   if (is.null(source_order) || !length(source_order)) {
-    source_order <- c("odds_api", "csv", "model")
+    source_order <- c("csv", "model")
   }
   source_order <- tolower(source_order)
   cache <- NULL
@@ -798,13 +580,6 @@ resolve_prop_odds_cache <- function(source = NULL,
       }
     }
 
-    if (src %in% c("odds_api", "oddsapi", "api")) {
-      cache <- load_prop_odds(api_key = api_key)
-      if (!is.null(cache) && nrow(cache) > 0) {
-        cache_source <- "odds_api"
-        break
-      }
-    }
 
     if (src %in% c("csv", "file", "local")) {
       cache <- load_prop_odds_csv(csv_path)

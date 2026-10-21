@@ -821,18 +821,12 @@ MODEL_VIG_PCT <- 0.10
 # PROP ODDS DATA SOURCE (v2.9.2)
 # -----------------------------------------------------------------------------
 
-#' @description API key for The Odds API (prop lines)
-#' @default Empty string (uses position-based defaults)
-#' @note Get free API key at https://the-odds-api.com/
-#' @usage Set via environment variable: Sys.setenv(ODDS_API_KEY = "your_key")
-ODDS_API_KEY <- Sys.getenv("ODDS_API_KEY", unset = "")
-
 #' @description Enable real market prop odds loading
 #' @default TRUE (attempts API, falls back to defaults if unavailable)
 #' @note Set FALSE to always use position-based default odds
 USE_REAL_PROP_ODDS <- TRUE
 
-#' @description Prop odds source ("auto", "odds_api", "scoresandodds", "csv", or "model")
+#' @description Prop odds source ("auto", "scoresandodds", "csv", or "model"; keyless sources only)
 #' @default "auto"
 #' @note "auto" walks PROP_ODDS_SOURCE_ORDER. ScoresAndOdds scraping is off by default
 #'   (audit S5: a private endpoint called with a browser user agent breaks the keyless,
@@ -840,8 +834,8 @@ USE_REAL_PROP_ODDS <- TRUE
 PROP_ODDS_SOURCE <- "auto"
 
 #' @description Prop odds source order when PROP_ODDS_SOURCE="auto"
-#' @default c("odds_api","csv","model")
-PROP_ODDS_SOURCE_ORDER <- c("odds_api", "csv", "model")
+#' @default c("csv","model")
+PROP_ODDS_SOURCE_ORDER <- c("csv", "model")
 
 #' @description Allow remote HTML/API scraping for prop odds (audit S5: keep FALSE)
 #' @default FALSE

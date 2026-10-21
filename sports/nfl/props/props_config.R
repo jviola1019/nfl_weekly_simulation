@@ -119,8 +119,7 @@ DEFAULT_YARD_PROP_ODDS <- -110     # Standard -110 both sides
 # =============================================================================
 
 # Source selection for prop odds:
-#  - "auto": Prefer ScoresAndOdds scraping when available; otherwise Odds API
-#  - "odds_api": The Odds API (requires ODDS_API_KEY)
+#  - "auto": walk PROP_ODDS_SOURCE_ORDER (keyless sources only)
 #  - "scoresandodds": ScoresAndOdds market-comparison API
 #  - "csv": Local CSV file (see PROP_ODDS_CSV_PATH)
 #  - "model": Synthetic market derived from simulation distribution
@@ -128,7 +127,7 @@ if (!exists("PROP_ODDS_SOURCE")) PROP_ODDS_SOURCE <- "auto"
 
 # Source order when PROP_ODDS_SOURCE = "auto"
 if (!exists("PROP_ODDS_SOURCE_ORDER")) {
-  PROP_ODDS_SOURCE_ORDER <- c("odds_api", "csv", "model")
+  PROP_ODDS_SOURCE_ORDER <- c("csv", "model")
 }
 
 # Remote HTML/API scraping (ScoresAndOdds) is off by default (audit S5)
