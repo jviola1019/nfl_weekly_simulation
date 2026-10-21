@@ -41,6 +41,12 @@ test_that("odds_result carries snapshots, a source_status row and the fetch line
   expect_equal(both$source_status$source, c("demo", "other"))
 })
 
+test_that("a stale result carries the success timestamp, as ok does", {
+  r <- odds_result(source = "demo", status = "stale", detail = "partial",
+                   now = as.POSIXct(1e9, origin = "1970-01-01", tz = "UTC"))
+  expect_equal(r$source_status$last_success_utc, "2001-09-09T01:46:40Z")
+})
+
 test_that("odds_games_from_schedule converts the Eastern kickoff to UTC and never guesses a missing time", {
   sched <- data.frame(
     game_id = c("a", "b"), season = 2024L, week = 1L, game_type = "REG",
@@ -137,6 +143,20 @@ test_that("nflreadr warnings are captured into detail, not lost", {
   expect_match(res$source_status$detail, "download failed for schedules", fixed = TRUE)
 })
 
+test_that("warning and error text is collapsed to one line in detail", {
+  warn_multiline <- provider_nflverse(load_schedules_fn = function(seasons) {
+    warning("download\nfailed   for\n schedules")
+    data.frame(roof = character())
+  })
+  res <- warn_multiline$game_snapshots(games_of("2024_01_BAL_KC"))
+  expect_false(grepl("\n", res$source_status$detail, fixed = TRUE))
+  expect_match(res$source_status$detail, "download failed for schedules", fixed = TRUE)
+  err_multiline <- provider_nflverse(load_schedules_fn = function(seasons) stop("unreachable\nhost   down"))
+  res2 <- err_multiline$game_snapshots(games_of("2024_01_BAL_KC"))
+  expect_false(grepl("\n", res2$source_status$detail, fixed = TRUE))
+  expect_match(res2$source_status$detail, "unreachable host down", fixed = TRUE)
+})
+
 test_that("a spread with a price but no line is dropped and counted, never stored line-less", {
   s <- sched_full_fixture()
   s$spread_line[s$game_id == "2024_01_BAL_KC"] <- NA
@@ -180,6 +200,35 @@ test_that("a game with no prices or lines at all is unavailable, not ok", {
   expect_equal(nrow(res$snapshots), 0)
 })
 
+test_that("a requested game with no market rows makes the result stale, and the game is counted", {
+  s <- sched_full_fixture()
+  bal <- s$game_id == "2024_01_BAL_KC"
+  for (nm in c("home_moneyline", "away_moneyline", "spread_line", "home_spread_odds", "away_spread_odds",
+               "total_line", "over_odds", "under_odds")) {
+    s[[nm]][bal] <- NA
+  }
+  p <- provider_nflverse(load_schedules_fn = function(seasons) s)
+  res <- p$game_snapshots(games_of("2024_01_BAL_KC", "2024_01_GB_PHI"))
+  expect_equal(res$source_status$status, "stale")
+  expect_match(res$source_status$detail, "1 requested game(s) in the schedule with no market rows", fixed = TRUE)
+  expect_false("2024_01_BAL_KC" %in% res$snapshots$game_id)
+  expect_true("2024_01_GB_PHI" %in% res$snapshots$game_id)
+})
+
+test_that("a requested game with a moneyline and spread but no total is counted as missing a market", {
+  s <- sched_full_fixture()
+  bal <- s$game_id == "2024_01_BAL_KC"
+  s$total_line[bal] <- NA
+  s$over_odds[bal] <- NA
+  s$under_odds[bal] <- NA
+  p <- provider_nflverse(load_schedules_fn = function(seasons) s)
+  res <- p$game_snapshots(games_of("2024_01_BAL_KC", "2024_01_GB_PHI"))
+  expect_equal(res$source_status$status, "stale")
+  expect_match(res$source_status$detail, "1 requested game(s) missing a moneyline, spread or total", fixed = TRUE)
+  bal_markets <- res$snapshots$market_id[res$snapshots$game_id == "2024_01_BAL_KC"]
+  expect_true(all(c("moneyline", "spread") %in% bal_markets))
+})
+
 test_that("raw_sha256 is the same whether one game or two is requested", {
   p <- provider_nflverse(load_schedules_fn = function(seasons) sched_full_fixture())
   one <- p$game_snapshots(games_of("2024_01_BAL_KC"))
@@ -216,13 +265,12 @@ test_that("the lineage holds: one fetch row, and every snapshot carries its hash
   expect_equal(res$fetches$raw_sha256, res$snapshots$raw_sha256[1])
 })
 
-test_that("an unreadable price (a moneyline of 0) is counted in detail and not stored", {
+test_that("an unreadable moneyline price drops the whole pair, counted in detail", {
   s <- sched_full_fixture()
   s$home_moneyline[s$game_id == "2024_01_BAL_KC"] <- 0L
   p <- provider_nflverse(load_schedules_fn = function(seasons) s)
   res <- p$game_snapshots(games_of("2024_01_BAL_KC"))
-  ml <- res$snapshots[res$snapshots$market_id == "moneyline", ]
-  expect_equal(ml$side, "away")
+  expect_false("moneyline" %in% res$snapshots$market_id)
   expect_match(res$source_status$detail, "1 unreadable price", fixed = TRUE)
   expect_equal(res$source_status$status, "stale")
 })

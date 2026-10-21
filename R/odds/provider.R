@@ -69,7 +69,7 @@ odds_result <- function(snapshots = odds_snapshots_empty(), source, status = "ok
     snapshots = snapshots,
     source_status = data.frame(
       source = source, status = status,
-      last_success_utc = if (status %in% c("ok", "complete")) odds_iso(now) else NA_character_,
+      last_success_utc = if (status %in% c("ok", "complete", "stale")) odds_iso(now) else NA_character_,
       detail = detail, stringsAsFactors = FALSE
     ),
     fetches = fetches
