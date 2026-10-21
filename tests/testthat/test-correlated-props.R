@@ -341,7 +341,6 @@ test_that("run_correlated_props processes valid simulation results", {
 })
 
 test_that("load_defense_rankings returns per-team multipliers", {
-  skip("KNOWN-DEFECT P13: load_defense_rankings() always errors (dplyr::if_else with a scalar condition and 32-row branches), so defense adjustments are always neutral")
   skip_if_not(exists("load_defense_rankings"), "load_defense_rankings not loaded")
   skip_live("github.com")
 
