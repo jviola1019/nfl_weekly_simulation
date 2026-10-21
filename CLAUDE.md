@@ -391,9 +391,9 @@ Rscript scripts/verify_repo_integrity.R
 # 3. Full artifact matrix (must show 11/11 pass; golden-master needs network)
 Rscript scripts/run_matrix.R
 
-# 4. Run weekly simulation (use valid week!)
-# Edit config.R first: WEEK_TO_SIM <- 16; SEASON <- 2024
-Rscript -e "source('run_week.R')"
+# 4. Run weekly simulation: the upcoming week from the nflverse schedule, or name one
+Rscript run_week.R            # prints "Auto-resolved <season> week <w> (...)"
+Rscript run_week.R 16 2024    # a named week and season
 
 # 5. View the run offline (after `npm ci` in web/ once)
 cd web && npm run local

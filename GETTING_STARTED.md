@@ -33,20 +33,15 @@ install.packages(c("tidyverse", "nflreadr", "gt", "glmnet", "zoo", "lubridate", 
 
 **Recommended method (command line):**
 ```bash
-# Run for current week (uses config.R defaults)
+# The upcoming week, from the nflverse schedule
 Rscript run_week.R
 
-# Specify week and season
-Rscript run_week.R 15        # Week 15, current season
+# Name a week and season
+Rscript run_week.R 15        # Week 15 of the season in progress
 Rscript run_week.R 15 2024   # Week 15, 2024 season
 ```
 
-**Alternative: Edit config.R first**
-```bash
-# 1. Edit WEEK_TO_SIM (and SEASON) in config.R
-# 2. Run the week with those defaults (NFLsimulation.R on its own writes no web bundle)
-Rscript run_week.R
-```
+With no arguments, `run_week.R` picks the earliest week that still has a game to kick off and prints `Auto-resolved <season> week <w> (<n> games, first kickoff ...)`. If the schedule cannot load, it stops and names the command to use; there is no fixed default week. `NFLsimulation.R` on its own writes no web bundle.
 
 ### 4. View Results
 
