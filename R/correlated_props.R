@@ -29,6 +29,12 @@ local({
   if (file.exists(config_path)) source(config_path, local = FALSE)
 })
 
+# Source the team and player key helpers (the quote cache is joined by id, audit P9)
+local({
+  keys_path <- file.path(getwd(), "R", "prop_keys.R")
+  if (file.exists(keys_path)) source(keys_path, local = FALSE)
+})
+
 # Source prop odds API if available
 local({
   api_path <- file.path(getwd(), "R", "prop_odds_api.R")
@@ -460,7 +466,9 @@ simulate_correlated_prop <- function(baseline, sd, z_game, rho,
 #' @export
 run_game_props <- function(game_sim, home_team, away_team, season,
                            prop_types = c("passing", "rushing", "receiving", "receptions", "td"),
-                           prop_odds_cache = NULL) {
+                           prop_odds_cache = NULL,
+                           game_id = NULL, kickoff = NULL, week = NULL,
+                           players = NULL, defense_ranks = NULL, now = Sys.time()) {
 
   # Extract game totals from simulation
   if (is.list(game_sim) && "total" %in% names(game_sim)) {
@@ -493,8 +501,8 @@ run_game_props <- function(game_sim, home_team, away_team, season,
     })
   }
 
-  # Load player data
-  players <- load_game_players(home_team, away_team, season)
+  # Load player data (`players` is a test seam)
+  if (is.null(players)) players <- load_game_players(home_team, away_team, season)
 
   if (nrow(players) == 0) {
     message(sprintf("  No player data for %s @ %s", away_team, home_team))
@@ -503,7 +511,12 @@ run_game_props <- function(game_sim, home_team, away_team, season,
 
   # Apply defense adjustments based on opponent strength (skip if fails)
   players <- tryCatch({
-    adjusted <- apply_defense_adjustments(players, home_team, away_team, season)
+    # only games played before this one count (week 1: none, so the adjustment is neutral and says so)
+    adjusted <- apply_defense_adjustments(
+      players, home_team, away_team, season,
+      weeks = if (!is.null(week)) seq_len(week - 1L) else NULL,
+      defense_ranks = defense_ranks
+    )
     if (!is.null(adjusted) && nrow(adjusted) > 0) adjusted else players
   }, error = function(e) {
     message(sprintf("  Defense adjustments skipped: %s", e$message))
@@ -550,15 +563,29 @@ run_game_props <- function(game_sim, home_team, away_team, season,
     fallback
   }
 
+  # Why a prop has no market price, by "player|market" (audit P14, rule M11)
+  unpriced_log <- list()
+
   get_market_line_for_books <- function(player_name, prop_type, books = NULL) {
-    if (is.null(prop_odds_cache) || !exists("get_market_prop_line", mode = "function")) return(NULL)
+    note <- function(reason) unpriced_log[[paste(player_name, prop_type, sep = "|")]] <<- reason
+    if (is.null(prop_odds_cache)) {
+      note("No prop lines loaded")
+      return(NULL)
+    }
+    ids <- unique(players$player_id[players$player_name == player_name])
+    if (length(ids) != 1) {
+      note("Player id unresolved")
+      return(NULL)
+    }
     get_market_prop_line(
-      player_name,
+      ids,
       prop_type,
       prop_odds_cache,
-      home_team = home_team,
-      away_team = away_team,
-      preferred_books = books
+      game_id = game_id,
+      kickoff = kickoff,
+      now = now,
+      preferred_books = books,
+      on_unpriced = note
     )
   }
 
@@ -1300,7 +1327,14 @@ run_game_props <- function(game_sim, home_team, away_team, season,
   }
 
   if (length(results_list) > 0) {
-    dplyr::bind_rows(results_list)
+    res <- dplyr::bind_rows(results_list)
+    reason <- vapply(paste(res$player, res$prop_type, sep = "|"), function(k) {
+      if (is.null(unpriced_log[[k]])) "" else unpriced_log[[k]]
+    }, character(1), USE.NAMES = FALSE)
+    reason[res$odds_source == "market"] <- ""
+    reason[res$odds_source != "market" & !nzchar(reason)] <- "Market odds missing"
+    res$unpriced_reason <- reason
+    res
   } else {
     tibble::tibble()
   }
@@ -1335,7 +1369,8 @@ run_game_props <- function(game_sim, home_team, away_team, season,
 #' @export
 run_correlated_props <- function(game_sim_results, schedule_data = NULL,
                                   prop_types = c("passing", "rushing", "receiving", "receptions", "td"),
-                                  season = NULL) {
+                                  season = NULL, prop_odds_cache = NULL, players = NULL,
+                                  now = Sys.time()) {
 
   message("\n=== Running Correlated Player Props ===")
 
@@ -1353,7 +1388,10 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
       dplyr::select(
         game_id = dplyr::any_of(c("game_id", "gameId")),
         home_team = dplyr::any_of(c("home_team", "homeTeam")),
-        away_team = dplyr::any_of(c("away_team", "awayTeam"))
+        away_team = dplyr::any_of(c("away_team", "awayTeam")),
+        week = dplyr::any_of("week"),
+        gameday = dplyr::any_of("gameday"),
+        gametime = dplyr::any_of("gametime")
       ) %>%
       dplyr::distinct()
   } else if (!is.null(game_sim_results) && length(game_sim_results) > 0) {
@@ -1370,9 +1408,8 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
 
   message(sprintf("Processing %d games for player props...", nrow(games)))
 
-  # Load prop odds once (if enabled)
-  prop_odds_cache <- NULL
-  use_prop_odds <- TRUE
+  # Load prop odds once (if enabled and not supplied)
+  use_prop_odds <- is.null(prop_odds_cache)
   if (exists("USE_REAL_PROP_ODDS") && !isTRUE(USE_REAL_PROP_ODDS)) {
     use_prop_odds <- FALSE
   }
@@ -1408,6 +1445,7 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
 
     message(sprintf("  [%d/%d] %s @ %s", i, nrow(games), game$away_team, game$home_team))
 
+    game_week <- if ("week" %in% names(game)) game$week else if (!is.null(game_sim$week)) game_sim$week else NA
     game_props <- tryCatch({
       run_game_props(
         game_sim = game_sim,
@@ -1415,7 +1453,15 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
         away_team = game$away_team,
         season = season,
         prop_types = prop_types,
-        prop_odds_cache = prop_odds_cache
+        prop_odds_cache = prop_odds_cache,
+        game_id = game$game_id,
+        kickoff = prop_kickoff_utc(
+          if ("gameday" %in% names(game)) game$gameday else NA,
+          if ("gametime" %in% names(game)) game$gametime else NA
+        ),
+        week = if (is.na(game_week)) NULL else as.integer(game_week),
+        players = if (is.null(players)) NULL else players[players$recent_team %in% c(game$home_team, game$away_team), , drop = FALSE],
+        now = now
       )
     }, error = function(e) {
       warning(sprintf("Failed to generate props for %s: %s", game$game_id, e$message))

@@ -879,6 +879,13 @@ PROP_REQUIRE_MARKET_ODDS <- TRUE
 #' @default 0.50 (median)
 PROP_FALLBACK_LINE_QUANTILE <- 0.50
 
+#' @description A prop quote older than this many minutes before the decision time is stale
+#'   (a live run decides at now; a historical run at the game's kickoff). The prop then
+#'   stays unpriced with a pass reason.
+#' @default 120
+#' @note Policy value, not measured. Owner-visible default (P1 plan, Task 3).
+PROP_QUOTE_MAX_AGE_MIN <- 120
+
 #' @description Position-based default anytime TD odds (American format)
 #' @note Used when API unavailable; based on typical market ranges
 DEFAULT_TD_ODDS <- list(

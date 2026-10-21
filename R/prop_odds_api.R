@@ -397,123 +397,123 @@ load_prop_odds_scoresandodds <- function(prop_types = NULL,
   dplyr::bind_rows(all_rows)
 }
 
-#' Get consensus prop line for a player (median across books)
+
+# =============================================================================
+# POINT-IN-TIME PROP QUOTES (audit P14 and P9)
+# =============================================================================
+# The quote cache has one row per (player, market, book, capture); see the table in the
+# P1 plan, Task 3. A quote is used for a game only when it was captured at or before that
+# game's kickoff and before now, and only when it is fresh. Players are matched by id,
+# never by name. Anything else leaves the prop unpriced with a reason (rule M11).
+
+PROP_CACHE_REQUIRED <- c("player_id", "prop_type", "game_id", "captured_at", "book")
+
+#' Kickoff instant (UTC) from nflverse gameday and gametime (US Eastern)
 #'
-#' @param player_name Player name to search for
-#' @param prop_type Prop type ("passing_yards", "rushing_yards", etc.)
-#' @param prop_odds_data Data from load_prop_odds()
-#' @param fuzzy_match Use fuzzy matching for player names (default TRUE)
+#' NA when either input is missing or blank: no default kickoff time is invented.
+prop_kickoff_utc <- function(gameday, gametime) {
+  gameday <- as.character(gameday)
+  gametime <- as.character(gametime)
+  ok <- !is.na(gameday) & nzchar(gameday) & !is.na(gametime) & nzchar(gametime)
+  secs <- rep(NA_real_, length(gameday))
+  if (any(ok)) {
+    secs[ok] <- as.numeric(as.POSIXct(paste(gameday[ok], gametime[ok]),
+                                      format = "%Y-%m-%d %H:%M", tz = "America/New_York"))
+  }
+  as.POSIXct(secs, origin = "1970-01-01", tz = "UTC")
+}
+
+#' Quotes usable for one player's prop in one game at the decision time
 #'
-#' @param preferred_books Optional vector of book keys to prioritize (e.g., c("draftkings","fanduel"))
+#' @param prop_odds_data Quote cache (see PROP_CACHE_REQUIRED)
+#' @param player_id gsis id
+#' @param prop_type Market, e.g. "passing_yards"
+#' @param game_id nflverse game id
+#' @param kickoff POSIXct kickoff of that game
+#' @param now POSIXct of the run; the decision time is min(kickoff, now)
+#' @param max_age_min A quote older than this many minutes at the decision time is stale
+#' @return list(quotes = tibble or NULL, reason = chr). quotes holds the latest capture per
+#'   (venue, book) captured at or before the decision time; reason is "" when quotes is set.
+get_market_prop_quotes <- function(prop_odds_data, player_id, prop_type, game_id, kickoff,
+                                   now = Sys.time(),
+                                   max_age_min = get0("PROP_QUOTE_MAX_AGE_MIN", ifnotfound = NULL)) {
+  if (is.null(max_age_min) || length(max_age_min) != 1 || !is.finite(max_age_min)) {
+    stop("get_market_prop_quotes: PROP_QUOTE_MAX_AGE_MIN is not set (config.R)", call. = FALSE)
+  }
+  none <- function(reason) list(quotes = NULL, reason = reason)
+
+  if (is.null(prop_odds_data) || nrow(prop_odds_data) == 0) return(none("No prop lines loaded"))
+  absent <- setdiff(PROP_CACHE_REQUIRED, names(prop_odds_data))
+  if (length(absent)) {
+    return(none(sprintf("Prop lines lack %s (cannot be placed in time)", paste(absent, collapse = ", "))))
+  }
+  if (!inherits(prop_odds_data$captured_at, "POSIXct")) return(none("captured_at is not a timestamp"))
+  player_id <- as.character(player_id)
+  if (length(player_id) != 1 || is.na(player_id) || !nzchar(player_id)) return(none("Player id unresolved"))
+  game_id <- as.character(game_id)
+  if (length(game_id) != 1 || is.na(game_id) || !nzchar(game_id)) return(none("Game id missing"))
+  if (length(kickoff) != 1 || is.na(kickoff)) return(none("Kickoff unknown"))
+
+  q <- prop_odds_data[prop_odds_data$prop_type %in% prop_type &
+                        prop_odds_data$game_id %in% game_id &
+                        prop_odds_data$player_id %in% player_id, , drop = FALSE]
+  if (nrow(q) == 0) return(none("No line for this player and game"))
+
+  asof <- min(kickoff, as.POSIXct(now))
+  q <- q[!is.na(q$captured_at) & q$captured_at <= asof, , drop = FALSE]
+  if (nrow(q) == 0) return(none("No line captured before kickoff"))
+
+  q$venue <- if ("venue" %in% names(q)) ifelse(is.na(q$venue), "book", q$venue) else "book"
+  q <- q[order(q$captured_at, decreasing = TRUE), , drop = FALSE]
+  q <- q[!duplicated(paste(q$venue, q$book)), , drop = FALSE]
+
+  age_min <- as.numeric(difftime(asof, q$captured_at, units = "mins"))
+  fresh <- age_min <= max_age_min
+  if (!any(fresh)) {
+    return(none(sprintf("Newest line is stale (%.0f min before the decision time, limit %.0f)",
+                        min(age_min), max_age_min)))
+  }
+  list(quotes = q[fresh, , drop = FALSE], reason = "")
+}
+
+#' Best sportsbook quote for a player's prop in a game at the decision time
 #'
-#' @return List with line, line_over, line_under, over_odds, under_odds, book, books; NULL if not found
+#' Replaces the name-keyed lookup (audit P14, P9). Returns NULL, after calling
+#' `on_unpriced(reason)`, when nothing usable exists.
 #'
+#' @param player_id gsis id
+#' @param prop_type Market, e.g. "passing_yards"
+#' @param prop_odds_data Quote cache
+#' @param game_id nflverse game id
+#' @param kickoff POSIXct kickoff
+#' @param now POSIXct of the run
+#' @param preferred_books Optional books to prefer (used only if any of them has a quote)
+#' @param on_unpriced Optional function(reason) called when the prop stays unpriced
+#' @return list(player, prop_type, line, line_over, line_under, over_odds, under_odds, book,
+#'   books, n_books, captured_at, venue) or NULL
 #' @export
-get_market_prop_line <- function(player_name, prop_type, prop_odds_data,
-                                  fuzzy_match = TRUE,
-                                  home_team = NULL,
-                                  away_team = NULL,
-                                  event_id = NULL,
-                                  preferred_books = NULL) {
-
-  if (is.null(prop_odds_data) || nrow(prop_odds_data) == 0) {
-    return(NULL)
+get_market_prop_line <- function(player_id, prop_type, prop_odds_data, game_id, kickoff,
+                                 now = Sys.time(), preferred_books = NULL, on_unpriced = NULL) {
+  unpriced <- function(reason) {
+    if (is.function(on_unpriced)) on_unpriced(reason)
+    NULL
   }
 
-  player_name <- as.character(player_name %||% "")
-  if (!nzchar(player_name) || !grepl("[A-Za-z]", player_name)) {
-    return(NULL)
-  }
-
-  # Filter by prop type
-  matches <- prop_odds_data %>%
-    dplyr::filter(prop_type == !!prop_type)
-
-  if (nrow(matches) == 0) return(NULL)
-
-  # Optional: Filter by event or teams when available
-  if (!is.null(event_id) && "event_id" %in% names(matches)) {
-    matches <- matches %>% dplyr::filter(event_id == !!event_id)
-  }
-
-  if (!is.null(home_team) && !is.null(away_team) &&
-      all(c("home_team", "away_team") %in% names(matches))) {
-    normalize_team <- function(x) {
-      tolower(gsub("[^a-z]", "", x %||% ""))
-    }
-    map_team <- function(abbr) {
-      abbr <- toupper(abbr %||% "")
-      mapped <- TEAM_ABBR_TO_NAME[abbr]
-      mapped[is.na(mapped)] <- abbr[is.na(mapped)]
-      as.character(mapped)
-    }
-    target_home <- normalize_team(map_team(home_team))
-    target_away <- normalize_team(map_team(away_team))
-
-    matches <- matches %>%
-      dplyr::mutate(
-        home_norm = normalize_team(map_team(.data$home_team)),
-        away_norm = normalize_team(map_team(.data$away_team))
-      ) %>%
-      dplyr::filter(
-        (home_norm == target_home & away_norm == target_away) |
-        (home_norm == target_away & away_norm == target_home)
-      ) %>%
-      dplyr::select(-home_norm, -away_norm)
-  }
-
-  # Match player name
-  if (fuzzy_match) {
-    # Normalize names for matching
-    normalize_name <- function(x) {
-      x %>%
-        tolower() %>%
-        stringr::str_replace_all("[^a-z ]", "") %>%
-        stringr::str_squish()
-    }
-    normalize_name_spaced <- function(x) {
-      x %>%
-        tolower() %>%
-        stringr::str_replace_all("[^a-z ]", " ") %>%
-        stringr::str_squish()
-    }
-
-    target_norm <- normalize_name(player_name)
-    if (is.na(target_norm) || !nzchar(target_norm)) return(NULL)
-    target_spaced <- normalize_name_spaced(player_name)
-    target_parts <- strsplit(target_spaced, " ")[[1]]
-    target_initial <- if (length(target_parts) >= 1) substr(target_parts[1], 1, 1) else ""
-    target_last <- if (length(target_parts) >= 2) target_parts[length(target_parts)] else ""
-
-    matches <- matches %>%
-      dplyr::mutate(
-        name_norm = normalize_name(player),
-        name_spaced = normalize_name_spaced(player),
-        last_name = stringr::word(name_spaced, -1),
-        first_initial = substr(stringr::word(name_spaced, 1), 1, 1)
-      ) %>%
-      dplyr::filter(
-        name_norm == target_norm |
-        stringr::str_detect(name_norm, stringr::fixed(target_norm)) |
-        stringr::str_detect(target_norm, name_norm) |
-        (nzchar(target_last) & last_name == target_last & first_initial == target_initial)
-      )
-  } else {
-    matches <- matches %>%
-      dplyr::filter(tolower(player) == tolower(player_name))
-  }
-
-  if (nrow(matches) == 0) return(NULL)
+  res <- get_market_prop_quotes(prop_odds_data, player_id, prop_type, game_id, kickoff, now)
+  if (is.null(res$quotes)) return(unpriced(res$reason))
+  matches <- res$quotes
 
   # Apply preferred book filter if available
   if (!is.null(preferred_books)) {
     preferred_books <- tolower(preferred_books)
     matches$book <- tolower(matches$book)
-    preferred_matches <- matches %>% dplyr::filter(book %in% preferred_books)
-    if (nrow(preferred_matches) > 0) {
-      matches <- preferred_matches
-    }
+    preferred_matches <- matches[matches$book %in% preferred_books, , drop = FALSE]
+    if (nrow(preferred_matches) > 0) matches <- preferred_matches
   }
+
+  priced <- matches[is.finite(suppressWarnings(as.numeric(matches$over_odds))), , drop = FALSE]
+  if (nrow(priced) == 0) return(unpriced("Market odds missing"))
+  matches <- priced
 
   # Choose best book row (min vig for two-way, max price for one-way)
   is_one_way <- all(is.na(matches$under_odds) | !is.finite(matches$under_odds))
@@ -557,7 +557,7 @@ get_market_prop_line <- function(player_name, prop_type, prop_odds_data,
   }
 
   list(
-    player = best_row$player[1],
+    player = player_id,
     prop_type = prop_type,
     line = as_scalar_num(line_value),
     line_over = line_over,
@@ -566,8 +566,28 @@ get_market_prop_line <- function(player_name, prop_type, prop_odds_data,
     under_odds = as_scalar_num(best_row$under_odds),
     book = best_row$book[1],
     books = unique(matches$book),
-    n_books = length(unique(matches$book))
+    n_books = length(unique(matches$book)),
+    captured_at = best_row$captured_at[1],
+    venue = best_row$venue[1]
   )
+}
+
+#' Fill missing player ids in a quote cache, exactly (Task 2 resolver)
+#'
+#' Rows that already carry a player_id keep it. Others are resolved from `player` and `team`;
+#' what cannot be resolved stays NA and can never match a player (the count is logged).
+attach_player_ids <- function(cache, xwalk) {
+  if (is.null(cache) || nrow(cache) == 0) return(cache)
+  if (!"player_id" %in% names(cache)) cache$player_id <- NA_character_
+  cache$player_id <- as.character(cache$player_id)
+  need <- is.na(cache$player_id) | !nzchar(cache$player_id)
+  if (any(need)) {
+    nm <- if ("player" %in% names(cache)) cache$player else rep(NA_character_, nrow(cache))
+    tm <- if ("team" %in% names(cache)) cache$team else rep(NA_character_, nrow(cache))
+    resolved <- resolve_player_ids(nm[need], tm[need], xwalk)
+    cache$player_id[need] <- resolved$player_id
+  }
+  cache
 }
 
 # =============================================================================
@@ -721,13 +741,17 @@ load_prop_odds_csv <- function(path = NULL) {
   raw$over_odds <- suppressWarnings(as.numeric(raw$over_odds))
   if ("under_odds" %in% names(raw)) raw$under_odds <- suppressWarnings(as.numeric(raw$under_odds))
   if (!"source" %in% names(raw)) raw$source <- "csv"
+  if ("captured_at" %in% names(raw) && !inherits(raw$captured_at, "POSIXct")) {
+    raw$captured_at <- as.POSIXct(sub("Z$", "", sub("T", " ", as.character(raw$captured_at))), tz = "UTC")
+  }
   raw
 }
 
 resolve_prop_odds_cache <- function(source = NULL,
                                     csv_path = NULL,
                                     api_key = Sys.getenv("ODDS_API_KEY"),
-                                    source_order = NULL) {
+                                    source_order = NULL,
+                                    xwalk = NULL) {
   if (is.null(source) && exists("PROP_ODDS_SOURCE")) source <- PROP_ODDS_SOURCE
   if (is.null(csv_path) && exists("PROP_ODDS_CSV_PATH")) csv_path <- PROP_ODDS_CSV_PATH
   if (is.null(source_order) && exists("PROP_ODDS_SOURCE_ORDER")) {
@@ -784,6 +808,21 @@ resolve_prop_odds_cache <- function(source = NULL,
   }
 
   if (!is.null(cache)) {
+    needs_ids <- !"player_id" %in% names(cache) || anyNA(cache$player_id) || any(!nzchar(cache$player_id))
+    if (needs_ids) {
+      if (is.null(xwalk)) {
+        xwalk <- tryCatch(build_player_xwalk(), error = function(e) {
+          message(sprintf("  Player id crosswalk unavailable (%s): no quote can be matched to a player", e$message))
+          NULL
+        })
+      }
+      cache <- if (is.null(xwalk)) {
+        if (!"player_id" %in% names(cache)) cache$player_id <- NA_character_
+        cache
+      } else {
+        attach_player_ids(cache, xwalk)
+      }
+    }
     attr(cache, "source") <- cache_source
   }
   cache
