@@ -306,7 +306,8 @@ compare_to_market <- function(res,
                               B = 1000L,
                               seed = 123,
                               rolling_window_sizes = c(8, 17),
-                              rolling_B = NULL) {
+                              rolling_B = NULL,
+                              sealed_seasons = SEALED_SEASONS) {
   stopifnot(is.list(res), is.data.frame(sched))
   if (!is.null(conf_level)) {
     stopifnot(length(conf_level) == 1, is.numeric(conf_level), conf_level > 0, conf_level < 1)
@@ -777,6 +778,15 @@ compare_to_market <- function(res,
       ll_model = -(y2 * log(p_model) + (1 - y2) * log(1 - p_model)),
       ll_mkt   = -(y2 * log(p_mkt)   + (1 - y2) * log(1 - p_mkt))
     )
+
+  # Sealed seasons (config.R SEALED_SEASONS; owner, 2026-10-21): production may calibrate on
+  # them, but no diagnostic below (pooled, by season, bins, rolling windows) may use them.
+  sealed_here <- sort(intersect(unique(comp$season), as.integer(sealed_seasons)))
+  if (length(sealed_here)) {
+    comp <- comp[!comp$season %in% sealed_here, , drop = FALSE]
+    message(sprintf("compare_to_market(): sealed season(s) %s omitted from these diagnostics (holdout not yet scored)",
+                    paste(sealed_here, collapse = ", ")))
+  }
 
   if (!nrow(comp)) {
     message("compare_to_market(): no overlapping games between predictions and market data; returning empty summary.")

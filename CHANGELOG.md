@@ -4,6 +4,14 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Sealed seasons stay out of the market comparison's diagnostics (owner, 2026-10-21; output audit F3)
+
+- **Before:** 2026 production runs calibrate on 2021–2025 and printed 2025 model-against-market results: a by-season row (Brier, log-loss) and rolling windows ending at 2025 week 18. This exposed the sealed holdout season on every run. It also happened in the 2026-10-13 C3 retest runs, and it is disclosed for `nfl_preclose_v1` and `nfl_games_v2`.
+- **Now:** `compare_to_market()` (`NFLbrier_logloss.R`) drops `SEALED_SEASONS` (new in `config.R`, 2025) before computing any diagnostic: the pooled deltas, the by-season table, the reliability bins and the rolling windows. It prints `sealed season(s) 2025 omitted from these diagnostics (holdout not yet scored)`.
+- **Unchanged:** production still calibrates on 2025, as the owner chose ("keep 2025 in calibration, hide its printout, disclose").
+- **Remaining:** the engine's own pooled calibration summary (`NFLsimulation.R`) still mixes 2025 in as one of five seasons. It shows no per-season figures.
+- **Test:** `tests/testthat/test-compare-to-market-seal.R`. RED was the unused `sealed_seasons` argument and the missing `SEALED_SEASONS`. GREEN checks that sealed rows leave `comp`, `by_season`, `overall` and `rolling`; that with no sealed season every season is kept; and that the default comes from config.
+
 ### A0: the odds capture sees every game before the close, on time, and is kept (owner, 2026-10-19)
 
 - **Every upcoming game's line is captured mid-week.**

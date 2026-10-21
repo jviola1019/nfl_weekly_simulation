@@ -212,6 +212,12 @@ VALIDATION_SCHEMA <- list(
   test  = list(start_season = 2023L, end_season = SEASON)
 )
 
+#' @description Seasons sealed for a pre-registered holdout. Production may calibrate on them,
+#'   but no market comparison printed or returned by compare_to_market() uses them until the
+#'   holdout is scored (owner, 2026-10-21; output audit F3).
+#' @default 2025L (the shared 2025 holdout of nfl_games_v2 and nfl_preclose_v1)
+SEALED_SEASONS <- 2025L
+
 #' @description Number of Monte Carlo trials for backtesting/tuning
 #' @default 40000
 #' @note Lower than live simulation trials for faster hyperparameter search
