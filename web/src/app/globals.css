@@ -272,6 +272,54 @@ body {
 }
 .skip-link:focus { transform: none; }
 
+/* The definition a term link lands on is marked, so a reader sees which entry they came for. */
+[id^="term-"]:target { background: var(--surface-sunken); outline: 2px solid var(--rule); outline-offset: 4px; }
+
+/* A card whose whole surface is its link (a game strip): the title link stretches over the card, and
+   the card, not the title text, shows the focus ring. Unlayered, so it outranks the global focus rule. */
+.card-link:hover { border-color: var(--ink-2); }
+.card-link:has(a:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.card-link a:focus-visible { outline: none; }
+
+/* Component rules. Tailwind utilities (the utilities layer) still win over them. */
+@layer components {
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  .data-table th,
+  .data-table td {
+    padding: var(--spacing-row) var(--spacing-cell) var(--spacing-row) 0;
+    text-align: left;
+    font-weight: 400;
+  }
+  .data-table th:last-child,
+  .data-table td:last-child {
+    padding-right: 0;
+  }
+  .data-table thead th {
+    padding-top: 0;
+    color: var(--ink-2);
+  }
+  .data-table-dense th,
+  .data-table-dense td {
+    padding-top: calc(var(--spacing-row) / 2);
+    padding-bottom: calc(var(--spacing-row) / 2);
+  }
+  .data-table-top th,
+  .data-table-top td {
+    vertical-align: top;
+  }
+  .data-table-caption {
+    padding-bottom: var(--spacing-snug);
+    text-align: left;
+    font-weight: 500;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }

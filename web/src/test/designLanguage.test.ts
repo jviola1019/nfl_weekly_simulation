@@ -39,7 +39,7 @@ describe("design language", () => {
   it("every page titles itself in the wide Archivo face", () => {
     const plain = PAGES.filter((f) => {
       const src = readFileSync(f, "utf8");
-      const titled = /import \{[^}]*\bPageTitle\b[^}]*\} from "@\/components\/ui"/.test(src) && src.includes("<PageTitle");
+      const titled = /import \{[^}]*\b(?:PageTitle|PageHeader)\b[^}]*\} from "@\/components\/ui"/.test(src) && (src.includes("<PageTitle") || src.includes("<PageHeader"));
       const hero = /<h1 className="(?:wdth-expanded [^"]*|sr-only)"/.test(src);
       return !titled && !hero;
     });
