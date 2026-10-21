@@ -886,6 +886,14 @@ PROP_FALLBACK_LINE_QUANTILE <- 0.50
 #' @note Policy value, not measured. Owner-visible default (P1 plan, Task 3).
 PROP_QUOTE_MAX_AGE_MIN <- 120
 
+#' @description Kalshi taker fee per contract = KALSHI_TAKER_FEE_COEF * P * (1 - P), P the
+#'   contract price in dollars. EV on a Kalshi quote is computed after this fee.
+#' @default 0.07
+#' @note UNVERIFIED against the primary source: kalshi.com/docs/kalshi-fee-schedule.pdf
+#'   answered HTTP 429 on 2026-10-13; 0.07 is from third-party pages that quote the
+#'   schedule (P1 plan, Task 4). Some Kalshi markets carry other fees. Owner-visible default.
+KALSHI_TAKER_FEE_COEF <- 0.07
+
 #' @description Position-based default anytime TD odds (American format)
 #' @note Used when API unavailable; based on typical market ranges
 DEFAULT_TD_ODDS <- list(

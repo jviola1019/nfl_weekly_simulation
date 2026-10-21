@@ -488,12 +488,16 @@ get_market_prop_quotes <- function(prop_odds_data, player_id, prop_type, game_id
 #' @param kickoff POSIXct kickoff
 #' @param now POSIXct of the run
 #' @param preferred_books Optional books to prefer (used only if any of them has a quote)
+#' @param sim_values Simulated stat values: pick the best-EV quote across books and Kalshi
+#'   (see select_best_quote) instead of the lowest-vig book
+#' @param p_yes Model probability of Yes for a one-way market (anytime TD); same selection
 #' @param on_unpriced Optional function(reason) called when the prop stays unpriced
 #' @return list(player, prop_type, line, line_over, line_under, over_odds, under_odds, book,
 #'   books, n_books, captured_at, venue) or NULL
 #' @export
 get_market_prop_line <- function(player_id, prop_type, prop_odds_data, game_id, kickoff,
-                                 now = Sys.time(), preferred_books = NULL, on_unpriced = NULL) {
+                                 now = Sys.time(), preferred_books = NULL, on_unpriced = NULL,
+                                 sim_values = NULL, p_yes = NULL) {
   unpriced <- function(reason) {
     if (is.function(on_unpriced)) on_unpriced(reason)
     NULL
@@ -502,6 +506,15 @@ get_market_prop_line <- function(player_id, prop_type, prop_odds_data, game_id, 
   res <- get_market_prop_quotes(prop_odds_data, player_id, prop_type, game_id, kickoff, now)
   if (is.null(res$quotes)) return(unpriced(res$reason))
   matches <- res$quotes
+
+  # With the model's distribution: EV at the best fresh price for the side the model likes (P12)
+  if (!is.null(sim_values) || !is.null(p_yes)) {
+    best <- select_best_quote(matches, sim_values = sim_values, p_yes = p_yes)
+    if (is.null(best)) return(unpriced("Market odds missing"))
+    best$player <- player_id
+    best$prop_type <- prop_type
+    return(best)
+  }
 
   # Apply preferred book filter if available
   if (!is.null(preferred_books)) {

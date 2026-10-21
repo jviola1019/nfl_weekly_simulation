@@ -35,6 +35,12 @@ local({
   if (file.exists(keys_path)) source(keys_path, local = FALSE)
 })
 
+# Source the pricing arithmetic (devig, Kalshi fee, best-EV quote; audit P12)
+local({
+  pricing_path <- file.path(getwd(), "R", "prop_pricing.R")
+  if (file.exists(pricing_path)) source(pricing_path, local = FALSE)
+})
+
 # Source prop odds API if available
 local({
   api_path <- file.path(getwd(), "R", "prop_odds_api.R")
@@ -565,9 +571,14 @@ run_game_props <- function(game_sim, home_team, away_team, season,
 
   # Why a prop has no market price, by "player|market" (audit P14, rule M11)
   unpriced_log <- list()
+  quote_log <- list()   # what the price came from, by "player|market"
 
-  get_market_line_for_books <- function(player_name, prop_type, books = NULL) {
-    note <- function(reason) unpriced_log[[paste(player_name, prop_type, sep = "|")]] <<- reason
+  # `sim_values` or `p_yes` given: the best-EV quote across books and Kalshi, fee included (P12).
+  # Neither: the display lookups for one named book.
+  get_market_line_for_books <- function(player_name, prop_type, books = NULL,
+                                        sim_values = NULL, p_yes = NULL) {
+    key <- paste(player_name, prop_type, sep = "|")
+    note <- function(reason) unpriced_log[[key]] <<- reason
     if (is.null(prop_odds_cache)) {
       note("No prop lines loaded")
       return(NULL)
@@ -577,7 +588,7 @@ run_game_props <- function(game_sim, home_team, away_team, season,
       note("Player id unresolved")
       return(NULL)
     }
-    get_market_prop_line(
+    found <- get_market_prop_line(
       ids,
       prop_type,
       prop_odds_cache,
@@ -585,8 +596,15 @@ run_game_props <- function(game_sim, home_team, away_team, season,
       kickoff = kickoff,
       now = now,
       preferred_books = books,
-      on_unpriced = note
+      on_unpriced = note,
+      sim_values = sim_values,
+      p_yes = p_yes
     )
+    if (!is.null(found) && (!is.null(sim_values) || !is.null(p_yes))) {
+      quote_log[[key]] <<- list(venue = found$venue, fair_over = found$fair_over,
+                                captured_at = found$captured_at)
+    }
+    found
   }
 
   resolve_two_way_market <- function(sim_values, market_line) {
@@ -717,7 +735,7 @@ run_game_props <- function(game_sim, home_team, away_team, season,
             projection <- round(median(sim_values), 1)
 
             # Get market line from API when available; otherwise derive from simulation
-            market_line <- get_market_line_for_books(qb_name, "passing_yards", books = book_priority)
+            market_line <- get_market_line_for_books(qb_name, "passing_yards", sim_values = sim_values)
             market_line_dk <- get_market_line_for_books(qb_name, "passing_yards", books = "draftkings")
             market_line_fd <- get_market_line_for_books(qb_name, "passing_yards", books = "fanduel")
 
@@ -845,7 +863,7 @@ run_game_props <- function(game_sim, home_team, away_team, season,
             projection <- round(median(sim_values), 1)
 
             # Get market line from API when available; otherwise derive from simulation
-            market_line <- get_market_line_for_books(pl_name, "rushing_yards", books = book_priority)
+            market_line <- get_market_line_for_books(pl_name, "rushing_yards", sim_values = sim_values)
             market_line_dk <- get_market_line_for_books(pl_name, "rushing_yards", books = "draftkings")
             market_line_fd <- get_market_line_for_books(pl_name, "rushing_yards", books = "fanduel")
 
@@ -972,7 +990,7 @@ run_game_props <- function(game_sim, home_team, away_team, season,
             projection <- round(median(sim_values), 1)
 
             # Get market line from API when available; otherwise derive from simulation
-            market_line <- get_market_line_for_books(pl_name, "receiving_yards", books = book_priority)
+            market_line <- get_market_line_for_books(pl_name, "receiving_yards", sim_values = sim_values)
             market_line_dk <- get_market_line_for_books(pl_name, "receiving_yards", books = "draftkings")
             market_line_fd <- get_market_line_for_books(pl_name, "receiving_yards", books = "fanduel")
 
@@ -1096,7 +1114,7 @@ run_game_props <- function(game_sim, home_team, away_team, season,
 
             projection <- round(median(sim_values), 2)
 
-            market_line <- get_market_line_for_books(pl_name, "receptions", books = book_priority)
+            market_line <- get_market_line_for_books(pl_name, "receptions", sim_values = sim_values)
             market_line_dk <- get_market_line_for_books(pl_name, "receptions", books = "draftkings")
             market_line_fd <- get_market_line_for_books(pl_name, "receptions", books = "fanduel")
 
@@ -1235,7 +1253,7 @@ run_game_props <- function(game_sim, home_team, away_team, season,
             p_anytime <- mean(sim_values >= 1)
 
             # Get market odds for anytime TD from API
-            market_td <- get_market_line_for_books(pl_name, "anytime_td", books = book_priority)
+            market_td <- get_market_line_for_books(pl_name, "anytime_td", p_yes = p_anytime)
             market_td_dk <- get_market_line_for_books(pl_name, "anytime_td", books = "draftkings")
             market_td_fd <- get_market_line_for_books(pl_name, "anytime_td", books = "fanduel")
 
@@ -1334,6 +1352,15 @@ run_game_props <- function(game_sim, home_team, away_team, season,
     reason[res$odds_source == "market"] <- ""
     reason[res$odds_source != "market" & !nzchar(reason)] <- "Market odds missing"
     res$unpriced_reason <- reason
+    from_quote <- function(field, empty) {
+      vapply(paste(res$player, res$prop_type, sep = "|"), function(k) {
+        v <- quote_log[[k]][[field]]
+        if (is.null(v) || length(v) != 1 || is.na(v)) empty else v
+      }, empty, USE.NAMES = FALSE)
+    }
+    res$mkt_fair_over <- from_quote("fair_over", NA_real_)
+    res$price_venue <- from_quote("venue", NA_character_)
+    res$quote_captured_at <- as.POSIXct(from_quote("captured_at", NA_real_), origin = "1970-01-01", tz = "UTC")
     res
   } else {
     tibble::tibble()
