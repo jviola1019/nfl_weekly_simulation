@@ -1,10 +1,8 @@
 {
   "arbitrary": {
-    "app/data-health/page.tsx": 1,
     "app/desk/page.tsx": 1,
     "app/evidence/page.tsx": 1,
     "app/games/[id]/page.tsx": 1,
-    "app/methodology/page.tsx": 1,
     "components/Field.tsx": 1
   },
   "textPx": {}
