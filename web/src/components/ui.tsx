@@ -170,16 +170,14 @@ export function Card({
  * A headline number with what it counts (the label, unit included) and where it comes from (the
  * source line). A term the label uses is linked to its definition on /methodology with <Term>.
  */
-export function StatTile({ value, label, source }: { value: ReactNode; label: ReactNode; source?: ReactNode }) {
+export function StatTile({ value, label, source }: { value: ReactNode; label: ReactNode; source: ReactNode }) {
   return (
     <Card data-stat className="flex flex-col gap-tight">
       <span className="num wdth-expanded text-stat font-extrabold">{value}</span>
       <span className="text-sm text-ink-2">{label}</span>
-      {source ? (
-        <span data-source className="text-sm text-muted">
-          {source}
-        </span>
-      ) : null}
+      <span data-source className="text-sm text-muted">
+        {source}
+      </span>
     </Card>
   );
 }
@@ -315,8 +313,3 @@ export const BUTTON_CLASS = "inline-flex h-11 items-center rounded-control borde
 export const QUIET_BUTTON_CLASS = "inline-flex h-11 items-center rounded-control border border-rule px-4 text-sm text-ink";
 
 export const INPUT_CLASS = "mt-tight block h-11 w-full rounded-control border border-rule bg-surface px-4 text-ink";
-
-/** @deprecated The previous page title; pages move to PageHeader and this goes in the last task of Track B2. */
-export function PageTitle({ children, lead, compact = false }: { children: ReactNode; lead?: ReactNode; compact?: boolean }) {
-  return <PageHeader title={children} lead={lead} size={compact ? "compact" : "page"} />;
-}
