@@ -182,3 +182,12 @@ test_that("run_game_props reports the venue, the devigged market and the capture
   expect_lt(abs(res$ev_over - (res$p_over / (0.52 + 0.07 * 0.52 * 0.48) - 1)), 5e-4)
   expect_identical(res$unpriced_reason, "")
 })
+
+test_that("the market's fair probability is read at the chosen line, never averaged across lines (final review I3)", {
+  # p_over is 0.60 at 242.5 and 0.30 at 299.5; Kalshi at 299.5 (mid 0.21) is the best quote
+  sim <- c(rep(350, 30), rep(260, 30), rep(200, 40))
+  cache <- bind(mk_book("draftkings", 242.5, -110, -110), mk_kalshi(0.20, 0.22, line = 299.5))
+  best <- select_best_quote(cache, sim_values = sim, coef = COEF)
+  expect_equal(best$line, 299.5)
+  expect_equal(best$fair_over, 0.21)      # not (0.50 + 0.21) / 2 = 0.355
+})

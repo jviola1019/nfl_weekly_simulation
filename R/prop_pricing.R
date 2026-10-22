@@ -154,7 +154,13 @@ select_best_quote <- function(quotes, sim_values = NULL, p_yes = NULL,
     n_books = length(unique(sides$book)),
     captured_at = r$captured_at,
     venue = r$venue,
-    fair_over = if (all(is.na(sides$fair_over))) NA_real_ else mean(sides$fair_over, na.rm = TRUE),
+    # the market's fair probability at the chosen quote's own line: quotes at other lines
+    # describe other events (final review I3)
+    fair_over = {
+      at_line <- !is.na(sides$line_over) & !is.na(r$line_over) & sides$line_over == r$line_over
+      f <- sides$fair_over[at_line]
+      if (!length(f) || all(is.na(f))) NA_real_ else mean(f, na.rm = TRUE)
+    },
     ev_over = ev_over[i],
     ev_under = ev_under[i],
     fee_included = identical(r$venue, "kalshi")

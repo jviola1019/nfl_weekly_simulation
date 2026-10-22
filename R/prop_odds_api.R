@@ -241,14 +241,21 @@ get_market_prop_quotes <- function(prop_odds_data, player_id, prop_type, game_id
                         prop_odds_data$game_id %in% game_id &
                         prop_odds_data$player_id %in% player_id, , drop = FALSE]
   if (nrow(q) == 0) return(none("No line for this player and game"))
+  if (all(is.na(q$captured_at))) return(none("Line capture time missing or without a time zone"))
 
   asof <- min(kickoff, as.POSIXct(now))
   q <- q[!is.na(q$captured_at) & q$captured_at <= asof, , drop = FALSE]
   if (nrow(q) == 0) return(none("No line captured before kickoff"))
 
+  # Each book's latest capture, with every line it offered then: a Kalshi strike ladder or a
+  # book's alternate lines are separate quotes, and a line the book has since moved is
+  # superseded (final review I2)
   q$venue <- if ("venue" %in% names(q)) ifelse(is.na(q$venue), "book", q$venue) else "book"
-  q <- q[order(q$captured_at, decreasing = TRUE), , drop = FALSE]
-  q <- q[!duplicated(paste(q$venue, q$book)), , drop = FALSE]
+  book_key <- paste(q$venue, q$book)
+  latest <- stats::ave(as.numeric(q$captured_at), book_key, FUN = max)
+  q <- q[as.numeric(q$captured_at) == latest, , drop = FALSE]
+  line_col <- function(nm) if (nm %in% names(q)) q[[nm]] else rep(NA_real_, nrow(q))
+  q <- q[!duplicated(paste(q$venue, q$book, line_col("line_over"), line_col("line_under"))), , drop = FALSE]
 
   age_min <- as.numeric(difftime(asof, q$captured_at, units = "mins"))
   fresh <- age_min <= max_age_min
@@ -517,28 +524,54 @@ derive_prop_market_from_sim <- function(sim_values,
   )
 }
 
+#' Parse ISO 8601 instants that state their zone: a trailing Z or an offset (+HH:MM, +HHMM).
+#' A time without a zone is NA, never assumed UTC (final review C2: a quote seen at 16:30
+#' Eastern, written without a zone, was read as 16:30 UTC and priced an 18:00 UTC kickoff).
+parse_utc_instant <- function(x) {
+  s <- sub("T", " ", trimws(as.character(x)), fixed = TRUE)
+  s <- sub("Z$", "+0000", s)
+  s <- sub("([+-][0-9]{2}):([0-9]{2})$", "\\1\\2", s)
+  s <- sub("^([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2})([+-][0-9]{4})$", "\\1:00\\2", s)
+  s <- sub("(:[0-9]{2})[.][0-9]+([+-][0-9]{4})$", "\\1\\2", s)
+  ok <- !is.na(s) & grepl("^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}[+-][0-9]{4}$", s)
+  out <- as.POSIXct(rep(NA_real_, length(s)), origin = "1970-01-01", tz = "UTC")
+  out[ok] <- as.POSIXct(s[ok], format = "%Y-%m-%d %H:%M:%S%z", tz = "UTC")
+  out
+}
+
 load_prop_odds_csv <- function(path = NULL) {
   if (is.null(path) || !nzchar(path) || !file.exists(path)) return(NULL)
   if (!requireNamespace("readr", quietly = TRUE)) {
     warning("readr package required to load prop odds CSV")
     return(NULL)
   }
-  raw <- tryCatch(readr::read_csv(path, show_col_types = FALSE), error = function(e) NULL)
+  # Every column is read as text: the prices are converted below, and captured_at is parsed
+  # strictly (readr's guess would take a time without a zone as UTC)
+  raw <- tryCatch(readr::read_csv(path, show_col_types = FALSE,
+                                  col_types = readr::cols(.default = readr::col_character())),
+                  error = function(e) NULL)
   if (is.null(raw) || nrow(raw) == 0) return(NULL)
 
-  required_cols <- c("player", "prop_type", "over_odds")
-  if (!all(required_cols %in% names(raw))) {
-    warning("Prop odds CSV missing required columns: player, prop_type, over_odds")
+  # The cache contract (P1 Task 3): a prop type, a player by gsis id or by name, and a price,
+  # as American odds (books) or a bid and an ask (Kalshi). Legacy files without game_id or
+  # captured_at still load, so every prop can say why it stays unpriced.
+  has_player <- "player_id" %in% names(raw) || "player" %in% names(raw)
+  has_price <- "over_odds" %in% names(raw) || all(c("yes_bid", "yes_ask") %in% names(raw))
+  if (!"prop_type" %in% names(raw) || !has_player || !has_price) {
+    warning("Prop odds CSV needs prop_type, a player (player_id or player) and a price (over_odds, or yes_bid and yes_ask): ", path)
     return(NULL)
   }
-  if ("line" %in% names(raw)) raw$line <- suppressWarnings(as.numeric(raw$line))
-  if ("line_over" %in% names(raw)) raw$line_over <- suppressWarnings(as.numeric(raw$line_over))
-  if ("line_under" %in% names(raw)) raw$line_under <- suppressWarnings(as.numeric(raw$line_under))
-  raw$over_odds <- suppressWarnings(as.numeric(raw$over_odds))
-  if ("under_odds" %in% names(raw)) raw$under_odds <- suppressWarnings(as.numeric(raw$under_odds))
+  num_cols <- intersect(c("line", "line_over", "line_under", "over_odds", "under_odds", "yes_bid", "yes_ask"), names(raw))
+  for (cc in num_cols) raw[[cc]] <- suppressWarnings(as.numeric(raw[[cc]]))
   if (!"source" %in% names(raw)) raw$source <- "csv"
-  if ("captured_at" %in% names(raw) && !inherits(raw$captured_at, "POSIXct")) {
-    raw$captured_at <- as.POSIXct(sub("Z$", "", sub("T", " ", as.character(raw$captured_at))), tz = "UTC")
+  if ("captured_at" %in% names(raw)) {
+    text <- raw$captured_at
+    raw$captured_at <- parse_utc_instant(text)
+    no_zone <- !is.na(text) & nzchar(trimws(text)) & is.na(raw$captured_at)
+    if (any(no_zone)) {
+      message(sprintf("  %d prop line(s) in %s have a captured_at with no time zone; they are not used (write ISO 8601 with Z or an offset)",
+                      sum(no_zone), basename(path)))
+    }
   }
   raw
 }

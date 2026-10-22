@@ -109,3 +109,11 @@ test_that("the live ffverse table maps to canonical teams", {
   expect_gt(nrow(x), 1000)
   expect_true(all(x$team %in% CANONICAL_TEAMS))
 })
+
+test_that("accents and curly apostrophes give the same key in every locale (final review M1)", {
+  names <- c("Ja’Marr Chase", "José Ramírez", "D'Andre Swift")
+  want <- c("jamarr chase", "jose ramirez", "dandre swift")
+  expect_identical(normalize_person_name(names), want)
+  # Linux CI runs in a C or C.UTF-8 locale, where iconv's ASCII//TRANSLIT can give "?"
+  expect_identical(withr::with_locale(c(LC_CTYPE = "C"), normalize_person_name(names)), want)
+})

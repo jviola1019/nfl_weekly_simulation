@@ -253,3 +253,52 @@ test_that("run_game_props with no cache says why every prop is unpriced", {
   expect_identical(res$unpriced_reason, "No prop lines loaded")
   expect_true(is.na(res$ev_over))
 })
+
+test_that("a CSV capture time without a time zone is never read as UTC (final review C2)", {
+  path <- withr::local_tempfile(fileext = ".csv")
+  rows <- data.frame(
+    player_id = "00-JA", prop_type = "passing_yards", game_id = "2024_16_NE_BUF", book = "draftkings",
+    line = 242.5, line_over = 242.5, line_under = 242.5, over_odds = -110, under_odds = -110,
+    captured_at = c("2024-12-22T21:30:00Z", "2024-12-22T16:30:00-05:00", "2024-12-22 16:30:00",
+                    "2024-12-22 16:30:00 EST", "2024-12-22T17:10:00Z"),
+    stringsAsFactors = FALSE
+  )
+  utils::write.csv(rows, path, row.names = FALSE)
+  expect_message(cache <- load_prop_odds_csv(path), "have a captured_at with no time zone", fixed = TRUE)
+  expect_equal(format(cache$captured_at, "%Y-%m-%d %H:%M", tz = "UTC"),
+               c("2024-12-22 21:30", "2024-12-22 21:30", NA, NA, "2024-12-22 17:10"))
+  q <- quotes_for(cache)$quotes   # kickoff 18:00 UTC: only the 17:10Z capture comes before it
+  expect_equal(nrow(q), 1)
+  expect_equal(format(q$captured_at, "%H:%M", tz = "UTC"), "17:10")
+  expect_identical(quotes_for(cache[3:4, ])$reason, "Line capture time missing or without a time zone")
+})
+
+test_that("a book's latest capture keeps every line it offered: a strike ladder, alternate lines (final review I2)", {
+  ladder <- rbind(mk_quote("2024-12-22 17:00:00", line = 199.5, book = "kalshi"),
+                  mk_quote("2024-12-22 17:00:00", line = 249.5, book = "kalshi"),
+                  mk_quote("2024-12-22 17:00:00", line = 299.5, book = "kalshi"))
+  expect_setequal(quotes_for(ladder)$quotes$line_over, c(199.5, 249.5, 299.5))
+  expect_setequal(quotes_for(ladder[3:1, ])$quotes$line_over, c(199.5, 249.5, 299.5))
+  alt <- rbind(mk_quote("2024-12-22 17:00:00", line = 274.5, over = 150, under = -190),
+               mk_quote("2024-12-22 17:00:00", line = 242.5))
+  expect_setequal(quotes_for(alt)$quotes$line_over, c(274.5, 242.5))
+  # a line the book has since moved is superseded by its newer capture
+  moved <- rbind(mk_quote("2024-12-22 16:00:00", line = 241.5), mk_quote("2024-12-22 17:00:00", line = 242.5))
+  expect_equal(quotes_for(moved)$quotes$line_over, 242.5)
+})
+
+test_that("the CSV loader takes P1's own schema: an id for the player, Kalshi bid and ask (final review I7)", {
+  by_id <- withr::local_tempfile(fileext = ".csv")
+  utils::write.csv(data.frame(player_id = "00-JA", prop_type = "passing_yards", game_id = "2024_16_NE_BUF",
+                              book = "draftkings", line = 242.5, over_odds = -110, under_odds = -110,
+                              captured_at = "2024-12-22T17:10:00Z"), by_id, row.names = FALSE)
+  expect_equal(nrow(load_prop_odds_csv(by_id)), 1)
+  kalshi <- withr::local_tempfile(fileext = ".csv")
+  utils::write.csv(data.frame(player_id = "00-JA", prop_type = "passing_yards", game_id = "2024_16_NE_BUF",
+                              book = "kalshi", venue = "kalshi", line = 249.5, yes_bid = 0.4, yes_ask = 0.42,
+                              captured_at = "2024-12-22T17:10:00Z"), kalshi, row.names = FALSE)
+  expect_equal(nrow(load_prop_odds_csv(kalshi)), 1)
+  no_price <- withr::local_tempfile(fileext = ".csv")
+  utils::write.csv(data.frame(player_id = "00-JA", prop_type = "passing_yards", line = 249.5), no_price, row.names = FALSE)
+  expect_warning(expect_null(load_prop_odds_csv(no_price)), "price")
+})

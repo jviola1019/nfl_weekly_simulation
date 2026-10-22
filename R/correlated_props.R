@@ -1390,12 +1390,15 @@ run_game_props <- function(game_sim, home_team, away_team, season,
 #' @param one_sided TRUE for Yes-only markets (anytime TD); the Under is never taken
 #' @param model_error TRUE where the row failed its validity checks
 #' @param min_stake,kelly_fraction,max_stake,max_edge Passed to apply_bet_governance(); min_stake must be > 0
+#' @param min_edge A priced row whose chosen side's EV is at or below this is a pass, "Edge
+#'   below minimum", whatever Kelly would stake (props_config.R PROP_MIN_BET_EDGE; final review I4)
 #' @return Tibble: side, tier, recommendation, edge_quality, ev_over, ev_under, raw_kelly_pct,
 #'   capped_stake_pct, final_stake_pct, pass_reason
 govern_prop_rows <- function(ev_over, ev_under, p_over, p_under, over_odds, under_odds,
                              priced = TRUE, unpriced_reason = "", one_sided = FALSE,
                              model_error = FALSE,
-                             min_stake = 0.01, kelly_fraction = 0.125, max_stake = 0.02, max_edge = 0.10) {
+                             min_stake = 0.01, kelly_fraction = 0.125, max_stake = 0.02, max_edge = 0.10,
+                             min_edge = 0.02) {
   if (!is.finite(min_stake) || min_stake <= 0) {
     stop("govern_prop_rows: min_stake must be > 0 (a stake above zero is what makes a row a bet)", call. = FALSE)
   }
@@ -1438,6 +1441,10 @@ govern_prop_rows <- function(ev_over, ev_under, p_over, p_under, over_odds, unde
   )
 
   pass_reason <- gov$pass_reason
+  # The minimum edge comes before the stake: a short price can make Kelly stake on 1.9% EV
+  below_edge <- priced & is.finite(ev) & ev > 0 & ev <= min_edge &
+    (pass_reason == "" | grepl("^Stake below", pass_reason))
+  pass_reason[below_edge] <- "Edge below minimum"
   pass_reason[!priced] <- ifelse(nzchar(reason_in[!priced]), reason_in[!priced],
                                  "Market odds missing/placeholder")
   pass_reason[model_error] <- "Model error"
@@ -1521,7 +1528,10 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
         away_team = dplyr::any_of(c("away_team", "awayTeam")),
         week = dplyr::any_of("week"),
         gameday = dplyr::any_of("gameday"),
-        gametime = dplyr::any_of("gametime")
+        gametime = dplyr::any_of("gametime"),
+        # run_week.R passes games_ready, which has the Eastern date and time under these names
+        game_date = dplyr::any_of("game_date"),
+        kickoff_time_raw = dplyr::any_of("kickoff_time_raw")
       ) %>%
       dplyr::distinct()
   } else if (!is.null(game_sim_results) && length(game_sim_results) > 0) {
@@ -1583,9 +1593,14 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
         prop_types = prop_types,
         prop_odds_cache = prop_odds_cache,
         game_id = game$game_id,
+        # nflverse's gameday/gametime, else games_ready's game_date/kickoff_time_raw (both
+        # Eastern; final review C1). games_ready$kickoff_utc is not used: it holds the Eastern
+        # wall-clock time labelled UTC (an engine bug, output audit F14).
         kickoff = prop_kickoff_utc(
-          if ("gameday" %in% names(game)) game$gameday else NA,
-          if ("gametime" %in% names(game)) game$gametime else NA
+          if ("gameday" %in% names(game) && !is.na(game$gameday)) game$gameday
+          else if ("game_date" %in% names(game)) format(as.Date(game$game_date), "%Y-%m-%d") else NA,
+          if ("gametime" %in% names(game) && !is.na(game$gametime)) game$gametime
+          else if ("kickoff_time_raw" %in% names(game)) game$kickoff_time_raw else NA
         ),
         week = if (is.na(game_week)) NULL else as.integer(game_week),
         players = if (is.null(players)) NULL else players[players$recent_team %in% c(game$home_team, game$away_team), , drop = FALSE],
@@ -1619,7 +1634,8 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
       model_error = results$recommendation == "MODEL ERROR",
       kelly_fraction = get0("KELLY_FRACTION", ifnotfound = 0.125, inherits = TRUE),
       max_stake = get0("MAX_STAKE", ifnotfound = 0.02, inherits = TRUE),
-      max_edge = get0("MAX_EDGE", ifnotfound = 0.10, inherits = TRUE)
+      max_edge = get0("MAX_EDGE", ifnotfound = 0.10, inherits = TRUE),
+      min_edge = get0("PROP_MIN_BET_EDGE", ifnotfound = 0.02, inherits = TRUE)
     )
     results <- results %>%
       dplyr::mutate(

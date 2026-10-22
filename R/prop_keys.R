@@ -52,7 +52,9 @@ normalize_team_abbr <- function(x) {
 #' Lower-case ASCII; periods and apostrophes removed; other punctuation becomes a space;
 #' a trailing generational suffix (jr, sr, ii, iii, iv, v) is dropped.
 normalize_person_name <- function(x) {
-  out <- iconv(as.character(x), to = "ASCII//TRANSLIT")
+  # ICU transliteration gives the same ASCII on every platform; iconv's ASCII//TRANSLIT depends
+  # on the locale and can give "?" on Linux, where CI and O1 run (final review M1)
+  out <- stringi::stri_trans_general(as.character(x), "Latin-ASCII")
   out <- tolower(out)
   out <- gsub("[.']", "", out)
   out <- gsub("[^a-z ]", " ", out)

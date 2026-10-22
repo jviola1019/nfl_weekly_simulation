@@ -178,3 +178,44 @@ test_that("run_correlated_props applies the governance: tiers agree with stakes,
   expect_identical(allen$odds_source, "market")
   expect_false(allen$recommendation %in% c("OVER", "UNDER") && allen$`Final Stake (%)` == 0)
 })
+
+test_that("run_week.R's schedule (game_date, kickoff_time_raw) gives every game its kickoff (final review C1)", {
+  set.seed(5)
+  utc <- function(x) as.POSIXct(x, tz = "UTC")
+  players <- tibble::tibble(
+    player_id = "00-JA", player_name = "Josh Allen", position = "QB", recent_team = "BUF",
+    avg_passing_yards = 300, avg_rushing_yards = 40, avg_receiving_yards = 0, avg_touchdowns = 0.5,
+    is_projection = FALSE, is_baseline = FALSE
+  )
+  cache <- tibble::tibble(
+    player_id = "00-JA", prop_type = "passing_yards", game_id = "2024_16_NE_BUF",
+    captured_at = utc("2024-12-22 17:10:00"), book = "draftkings", line = 242.5, line_over = 242.5,
+    line_under = 242.5, over_odds = -108, under_odds = -112, venue = "book"
+  )
+  # games_ready, as run_week.R passes it: no gameday or gametime, but game_date and the Eastern time
+  schedule <- tibble::tibble(game_id = "2024_16_NE_BUF", home_team = "BUF", away_team = "NE", week = 16L,
+                             game_date = as.Date("2024-12-22"), kickoff_time_raw = "13:00")
+  sims <- list("2024_16_NE_BUF" = list(game_id = "2024_16_NE_BUF", home_team = "BUF", away_team = "NE",
+                                       week = 16L, home = rpois(2000, 24), away = rpois(2000, 21)))
+  old_req <- get0("PROP_REQUIRE_MARKET_ODDS", envir = globalenv(), inherits = FALSE)
+  assign("PROP_REQUIRE_MARKET_ODDS", FALSE, envir = globalenv())
+  on.exit(assign("PROP_REQUIRE_MARKET_ODDS", old_req, envir = globalenv()), add = TRUE)
+  res <- suppressMessages(suppressWarnings(run_correlated_props(
+    sims, schedule_data = schedule, prop_types = "passing", season = 2024,
+    prop_odds_cache = cache, players = players, now = utc("2026-10-13 12:00:00")
+  )))
+  allen <- res[res$player == "Josh Allen", ]
+  expect_identical(allen$odds_source, "market")
+  expect_false(any(res$unpriced_reason == "Kickoff unknown"))
+})
+
+test_that("an edge at or below the minimum edge is a pass, whatever the stake (final review I4)", {
+  # an Over at -500 (decimal 1.2) with p = 0.85: Kelly would stake, but 1.9% EV is below the 2% minimum
+  g <- govern_prop_rows(ev_over = c(0.019, 0.03), ev_under = c(-0.05, -0.05),
+                        p_over = c(0.85, 0.85), p_under = c(0.15, 0.15),
+                        over_odds = c(-500, -500), under_odds = c(350, 350), min_edge = 0.02)
+  expect_identical(g$tier, c("pass", "bet"))
+  expect_identical(g$pass_reason[1], "Edge below minimum")
+  expect_identical(g$final_stake_pct[1], 0)
+  expect_gt(g$final_stake_pct[2], 0)
+})
