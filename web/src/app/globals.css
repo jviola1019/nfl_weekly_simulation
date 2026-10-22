@@ -257,7 +257,7 @@ body {
 /* Base element rules live in the base layer, so Tailwind utilities (in the utilities
    layer) win over them; an unlayered `a { color }` would override text-* on links. */
 @layer base {
-  a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a { color: inherit; text-decoration-line: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 }
 
 .skip-link {

@@ -3,7 +3,7 @@ import { TERM_IDS, TERMS, termAnchor, termHref } from "./glossary";
 
 describe("glossary", () => {
   it("has a label and a one-sentence-or-two definition for every term, in plain words", () => {
-    expect(TERM_IDS.length).toBeGreaterThanOrEqual(12);
+    expect(TERM_IDS.length).toBe(13);
     for (const id of TERM_IDS) {
       const t = TERMS[id];
       expect(t.label.length, id).toBeGreaterThan(2);

@@ -12,6 +12,13 @@ describe("Stamp", () => {
   it("says so when there is no instant", () => {
     expect(html(<Stamp iso={null} />)).toBe("–");
   });
+  it("keeps an empty value as a dash", () => {
+    expect(html(<Stamp iso="" />)).toBe("–");
+  });
+  it("throws a named error for a value that is not an instant", () => {
+    expect(() => html(<Stamp iso="garbage" />)).toThrow('Stamp: "garbage" is not an instant');
+    expect(() => html(<Stamp iso="   " />)).toThrow('Stamp: "   " is not an instant');
+  });
 });
 
 describe("PageHeader", () => {
@@ -74,6 +81,22 @@ describe("Section", () => {
       </Section>
     );
     expect(out).toMatch(/<div class="flex flex-wrap items-end justify-between gap-control"><h2[^>]*>Win probability<\/h2><ul>legend<\/ul><\/div>/);
+  });
+
+  it("carries a label-named section's id on the section, and a titled section's id only on its heading", () => {
+    const labelled = html(
+      <Section id="filters" label="Sort and filter">
+        <p>body</p>
+      </Section>
+    );
+    expect(labelled).toMatch(/<section [^>]*id="filters"[^>]*aria-label="Sort and filter"/);
+    const titled = html(
+      <Section id="gates" title="Promotion gates">
+        <p>body</p>
+      </Section>
+    );
+    expect(titled.match(/id="gates"/g)).toHaveLength(1);
+    expect(titled).not.toMatch(/<section [^>]*\sid=/);
   });
 });
 
@@ -139,6 +162,17 @@ describe("DataTable", () => {
 
   it("throws on a row that lacks a column's cell instead of drawing a hole", () => {
     expect(() => html(<DataTable caption="Gates" columns={columns} rows={[{ key: "x", cells: { candidate: "Elo" } }]} />)).toThrow(/row "x" has no cell for column "g1"/);
+  });
+
+  it("throws the same named error for a cell that is undefined or null", () => {
+    const row = (g1: null | undefined) => <DataTable caption="Gates" columns={columns} rows={[{ key: "x", cells: { candidate: "Elo", g1 } }]} />;
+    expect(() => html(row(undefined))).toThrow(/row "x" has no cell for column "g1"/);
+    expect(() => html(row(null))).toThrow(/row "x" has no cell for column "g1"/);
+  });
+
+  it("does not take an inherited key such as constructor for a cell", () => {
+    const named = [{ key: "candidate", header: "Candidate", rowHeader: true }, { key: "constructor", header: "Constructor" }];
+    expect(() => html(<DataTable caption="Gates" columns={named} rows={[{ key: "x", cells: { candidate: "Elo" } }]} />)).toThrow(/row "x" has no cell for column "constructor"/);
   });
 });
 

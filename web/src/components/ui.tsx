@@ -11,10 +11,16 @@ import type { ContextItem } from "@/lib/context";
 import { utcStamp } from "@/lib/format";
 import { TERMS, type TermId, termHref } from "@/lib/glossary";
 
-/** An instant as text, inside a <time> so its machine-readable value travels with it. */
+/**
+ * An instant as text, inside a <time> so its machine-readable value travels with it. A value that is
+ * not an instant throws, by name (an empty value is a dash, as before).
+ */
 export function Stamp({ iso }: { iso: string | null | undefined }) {
   if (!iso) return <>–</>;
-  return <time dateTime={new Date(iso).toISOString()}>{utcStamp(iso)}</time>;
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) throw new Error(`Stamp: "${iso}" is not an instant`);
+  const canonical = at.toISOString();
+  return <time dateTime={canonical}>{utcStamp(canonical)}</time>;
 }
 
 /** A term, linked to its definition on /methodology. */
@@ -117,6 +123,7 @@ export function Section(props: SectionProps) {
   return (
     <section
       data-section
+      id={title ? undefined : props.id}
       aria-labelledby={title ? props.id : undefined}
       aria-label={title ? undefined : props.label}
       className={`flex flex-col gap-control ${measure ? "max-w-measure" : ""} ${className}`.trim()}
@@ -188,7 +195,7 @@ export interface DataColumn {
 
 export interface DataRow {
   key: string;
-  /** One cell per column, under the column's key. A missing key is a mistake and throws, never an empty cell. */
+  /** One cell per column, under the column's key. A missing or null cell is a mistake and throws, never an empty cell. */
   cells: Record<string, ReactNode>;
   /** A summary or remainder row drawn in secondary ink. */
   muted?: boolean;
@@ -249,8 +256,8 @@ export function DataTable({
           {rows.map((r) => (
             <tr key={r.key} className={r.muted ? "border-t border-rule text-ink-2" : "border-t border-rule"}>
               {columns.map((c, i) => {
-                if (!(c.key in r.cells)) throw new Error(`DataTable "${caption}": row "${r.key}" has no cell for column "${c.key}"`);
-                const cell = r.cells[c.key];
+                const cell = Object.hasOwn(r.cells, c.key) ? r.cells[c.key] : undefined;
+                if (cell === undefined || cell === null) throw new Error(`DataTable "${caption}": row "${r.key}" has no cell for column "${c.key}"`);
                 return i === 0 && c.rowHeader ? (
                   <th key={c.key} scope="row" className={c.nowrap ? "whitespace-nowrap" : undefined}>
                     {cell}
