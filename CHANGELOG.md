@@ -15,6 +15,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - There is one definition, a pure `compute_defense_multipliers(pbp, weeks)` plus `load_defense_rankings(season, weeks = NULL, pbp = NULL)`.
   - `apply_defense_adjustments(..., weeks = NULL, defense_ranks = NULL)` prints "Defense adjustments NEUTRAL" when it has no rankings, rather than staying silent.
   - The duplicate and its two helpers (`scale_defense_rank`, `get_default_defense_rankings`) are removed. They are three functions; no file is deleted.
+- **Per game, not season totals.** Yards allowed are divided by games played before they are scaled. Mid-season, a team past its bye has played one game fewer, and a total made it look about 11% stingier (found in P1's final review). A bye-week test pins it.
 - **Scope:**
   - A current-week run reads only games already played, so it sees no later weeks.
   - A re-run of a past week still passes no `weeks` until P1 Task 3 threads point-in-time weeks through `run_game_props()`.
