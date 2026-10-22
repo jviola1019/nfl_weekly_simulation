@@ -1,6 +1,5 @@
 {
   "arbitrary": {
-    "app/desk/page.tsx": 1,
     "app/evidence/page.tsx": 1,
     "app/games/[id]/page.tsx": 1,
     "components/Field.tsx": 1
