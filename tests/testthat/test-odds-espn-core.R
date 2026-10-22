@@ -154,6 +154,30 @@ test_that("a game without an event id, or a block after some games, leaves the r
   expect_equal(unique(blocked$snapshots$game_id), "2024_01_ARI_BUF")
 })
 
+test_that("a 200 response whose body is not JSON is a block: one request, named as a block, no '(NA)' (fix 2)", {
+  html <- list(text = "<html><head><title>Just a moment...</title></head><body>challenge</body></html>")
+  e <- espn_provider(setNames(list(html), odds_url("401671617")))
+  res <- e$provider$game_snapshots(rbind(GAME_2024, GAME_2026))
+  expect_equal(length(e$fake$state$urls), 1)                         # the run stopped at the first one: no request for the second game
+  expect_equal(res$source_status$status, "unavailable")
+  detail <- res$source_status$detail
+  expect_match(detail, "blocked: HTTP 200 body is not JSON \\(a challenge or geo-fence page\\)")
+  expect_match(detail, "2024_01_ARI_BUF")                            # and it says where
+  expect_false(grepl("(NA)", detail, fixed = TRUE))
+  expect_false(grepl("live only", detail, fixed = TRUE))
+  # after good games the same page makes the result stale, and the good games are kept
+  mid <- espn_provider(setNames(list("espn_game_odds_2024_01_ARI_BUF.json", html), c(odds_url("401671617"), odds_url("401872656"))))
+  after <- mid$provider$game_snapshots(rbind(GAME_2024, GAME_2026, transform(GAME_2026, game_id = "2026_01_NEXT", espn = "401872657")))
+  expect_equal(after$source_status$status, "stale")
+  expect_match(after$source_status$detail, "blocked: HTTP 200 body is not JSON")
+  expect_equal(unique(after$snapshots$game_id), "2024_01_ARI_BUF")
+  expect_equal(length(mid$fake$state$urls), 2)                       # nothing was asked for after it
+  # any other bad body keeps its real text, never "(NA)"
+  e404 <- espn_provider(setNames(list(list(status = 404L)), odds_url("401671617")))$provider$game_snapshots(GAME_2024)
+  expect_match(e404$source_status$detail, "2024_01_ARI_BUF \\(HTTP 404\\)")
+  expect_false(grepl("(NA)", e404$source_status$detail, fixed = TRUE))
+})
+
 test_that("a fetched game with no usable line, or with a market missing, makes the result stale (R5)", {
   bet365_only <- odds_fixture_json("espn_game_odds_2024_01_ARI_BUF.json")
   bet365_only$items <- bet365_only$items[1]                          # Bet 365 carries no open/close blocks
@@ -176,7 +200,17 @@ test_that("a market block with a side or a readable price missing makes the resu
   half$items[[1]]$awayTeamOdds$close$moneyLine <- NULL
   res <- espn_provider(setNames(list(json_route(half)), odds_url("401872656")))$provider$game_snapshots(GAME_2026)
   expect_equal(res$source_status$status, "stale")
-  expect_match(res$source_status$detail, "1 market block\\(s\\) dropped")
+  expect_match(res$source_status$detail, "1 market block\\(s\\) dropped .*: 2026_01_NE_SEA")   # M1: and names the game
+  # M2: a spread price with no handicap line is price-only, dropped and counted like a total's
+  price_only <- odds_fixture_json("espn_game_odds_2026_01_NE_SEA.json")
+  price_only$items[[1]]$homeTeamOdds$open$pointSpread <- NULL
+  price_only$items[[1]]$awayTeamOdds$open$pointSpread <- NULL
+  s <- parse_espn_game_odds(price_only, "g", sha256 = "c")
+  expect_false(any(s$market_id == "spread" & s$snapshot_kind == "open"))
+  expect_true(any(s$market_id == "spread" & s$snapshot_kind == "close"))
+  expect_equal(attr(s, "dropped"), 1L)
+  res2 <- espn_provider(setNames(list(json_route(price_only)), odds_url("401872656")))$provider$game_snapshots(GAME_2026)
+  expect_equal(res2$source_status$status, "stale")
 })
 
 test_that("a line with no price is kept, counted in the detail, and does not make the result stale (R6)", {
@@ -191,7 +225,7 @@ test_that("a line with no price is kept, counted in the detail, and does not mak
   expect_equal(c(kept$line, kept$price_american), c(-3.5, NA))
 })
 
-test_that("an error thrown while fetching or parsing is 'failed' with its message, and keeps what was already read (R5)", {
+test_that("an error thrown while fetching or parsing is 'failed' with its message and carries no snapshots, but keeps the request lineage (R5, R7)", {
   clock <- odds_fake_clock()
   odds_http_reset()
   good <- odds_fake_fetch(setNames(list("espn_game_odds_2024_01_ARI_BUF.json"), odds_url("401671617")))
@@ -200,7 +234,8 @@ test_that("an error thrown while fetching or parsing is 'failed' with its messag
   res <- p$game_snapshots(rbind(GAME_2024, GAME_2026))
   expect_equal(res$source_status$status, "failed")
   expect_match(res$source_status$detail, "socket exploded")
-  expect_equal(unique(res$snapshots$game_id), "2024_01_ARI_BUF")     # rows already parsed are kept, the status says the run broke
+  expect_equal(nrow(res$snapshots), 0)                               # R7: a failed result carries no rows, even those read before the throw
+  expect_equal(nrow(res$fetches), 1)                                 # the request that did complete stays in the lineage
   # a body that parses as JSON but breaks the parser is a thrown parse error too
   bad <- espn_provider(setNames(list(list(text = '{"items": 5}')), odds_url("401671617")))$provider$game_snapshots(GAME_2024)
   expect_equal(bad$source_status$status, "failed")
@@ -267,6 +302,93 @@ test_that("a missing prop page or a game without an event id leaves the prop res
   expect_equal(nrow(empty$snapshots), 0)
 })
 
+test_that("a 200 prop response that is not JSON is a block, and only a 404 gets the post-game note (fix 2)", {
+  url1 <- espn_prop_bets_url("401872656", 100, 1)
+  html <- list(text = "<html><body>Access denied from your region</body></html>")
+  e <- espn_provider(setNames(list(html), url1))
+  res <- e$provider$prop_snapshots(rbind(GAME_2026, GAME_2024))
+  expect_equal(length(e$fake$state$urls), 1)
+  expect_equal(res$source_status$status, "unavailable")
+  detail <- res$source_status$detail
+  expect_match(detail, "blocked: HTTP 200 body is not JSON \\(a challenge or geo-fence page\\)")
+  expect_false(grepl("(NA)", detail, fixed = TRUE))
+  expect_false(grepl("live only", detail, fixed = TRUE))
+  # a server error is reported with its own status and is not blamed on the post-game 404
+  err <- espn_provider(setNames(list(list(status = 500L)), url1))$provider$prop_snapshots(GAME_2026)
+  expect_equal(err$source_status$status, "unavailable")
+  expect_match(err$source_status$detail, "2026_01_NE_SEA page 1 \\(HTTP 500\\)")
+  expect_false(grepl("live only", err$source_status$detail, fixed = TRUE))
+  # a 404 keeps the note
+  expect_match(espn_provider(setNames(list(list(status = 404L)), url1))$provider$prop_snapshots(GAME_2026)$source_status$detail,
+               "live only")
+})
+
+test_that("prop rows that cannot be stored are counted by class; an unreadable athlete or a row with no line is stale, another venue is not (fix 3)", {
+  page <- odds_fixture_json(file.path("..", "capture", "espn_propbets_page1.json"))
+  page$pageCount <- 1L
+  at <- as.POSIXct("2026-09-28 20:53:02", tz = "UTC")
+  # direct: all three classes at once
+  bad <- page
+  bad$items[[1]]$athlete$`$ref` <- "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/athletes/not-a-number"
+  bad$items[[2]]$current <- NULL
+  bad$items[[2]]$open <- NULL
+  bad$items[[3]]$provider$`$ref` <- "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/casinos/999?lang=en"
+  s <- parse_espn_prop_bets(bad, "g", fetched_at = at, sha256 = "d")
+  expect_equal(nrow(s), 0)
+  expect_equal(attr(s, "bad_athlete_refs"), 1L)
+  expect_equal(attr(s, "no_target_rows"), 1L)
+  expect_equal(attr(s, "unmapped_venues"), "999")
+  # a row with only a current line is ordinary: no open line is not a skip
+  cur_only <- page
+  cur_only$items[[1]]$open <- NULL
+  s2 <- parse_espn_prop_bets(cur_only, "g", fetched_at = at, sha256 = "d")
+  expect_equal(nrow(s2), 5)
+  expect_equal(attr(s2, "no_target_rows"), 0L)
+  # through the provider: one bad $ref and one targetless row, one good row left -> stale, both counts named
+  drift <- page
+  drift$items[[1]]$athlete$`$ref` <- "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/athletes/not-a-number"
+  drift$items[[2]]$current <- NULL
+  drift$items[[2]]$open <- NULL
+  url1 <- espn_prop_bets_url("401872656", 100, 1)
+  res <- espn_provider(setNames(list(json_route(drift)), url1))$provider$prop_snapshots(GAME_2026)
+  expect_equal(nrow(res$snapshots), 2)
+  expect_equal(res$source_status$status, "stale")
+  expect_match(res$source_status$detail, "1 prop row\\(s\\) with an unreadable athlete reference")
+  expect_match(res$source_status$detail, "1 prop row\\(s\\) with neither a current nor an open line")
+  # another venue's rows are expected noise: counted in the detail, the result stays ok
+  other <- page
+  other$items[[4]] <- other$items[[3]]
+  other$items[[4]]$provider$`$ref` <- "http://sports.core.api.espn.com/v2/sports/football/leagues/nfl/casinos/999?lang=en"
+  noisy <- espn_provider(setNames(list(json_route(other)), url1))$provider$prop_snapshots(GAME_2026)
+  expect_equal(nrow(noisy$snapshots), 6)
+  expect_equal(noisy$source_status$status, "ok")
+  expect_match(noisy$source_status$detail, "1 prop row\\(s\\) from other venues skipped \\(casino 999\\)")
+})
+
+test_that("a prop pageCount beyond the 20-page cap is read to the cap, reported, and stale (M5)", {
+  game <- "401872656"
+  page1 <- sub('"pageCount": 2', '"pageCount": 25', prop_page1_text(), fixed = TRUE)
+  later <- vapply(2:20, function(p) espn_prop_bets_url(game, 100, p), "")
+  routes <- c(list(list(text = page1)), rep(list(list(text = '{"pageCount": 25, "items": []}')), 19))
+  e <- espn_provider(setNames(routes, c(espn_prop_bets_url(game, 100, 1), later)))
+  res <- e$provider$prop_snapshots(GAME_2026)
+  expect_equal(length(e$fake$state$urls), 20)                        # page 21 is never asked for (it has no route: asking would throw)
+  expect_equal(res$source_status$status, "stale")
+  expect_match(res$source_status$detail, "2026_01_NE_SEA has 25 pages, read the first 20")
+  expect_equal(nrow(res$snapshots), 6)
+})
+
+test_that("a capped prop game that also loses a page reports both gaps (M5)", {
+  game <- "401872656"
+  page1 <- sub('"pageCount": 2', '"pageCount": 30', prop_page1_text(), fixed = TRUE)
+  e <- espn_provider(setNames(list(list(text = page1), list(status = 404L)),
+                              c(espn_prop_bets_url(game, 100, 1), espn_prop_bets_url(game, 100, 2))))
+  res <- e$provider$prop_snapshots(GAME_2026)
+  expect_equal(res$source_status$status, "stale")
+  expect_match(res$source_status$detail, "2026_01_NE_SEA page 2")
+  expect_match(res$source_status$detail, "read the first 20")
+})
+
 test_that("a refused prop request stops the run and is named as a block, not as a post-game 404; unmapped types are named", {
   url1 <- espn_prop_bets_url("401872656", 100, 1)
   e <- espn_provider(setNames(list(list(status = 403L)), url1))
@@ -282,7 +404,7 @@ test_that("a refused prop request stops the run and is named as a block, not as 
   expect_match(named$source_status$detail, "1 prop type\\(s\\) not mapped, skipped: Longest Reception")
 })
 
-test_that("an error thrown while reading props is 'failed' with its message (R5)", {
+test_that("an error thrown while reading props is 'failed' with its message and carries no snapshots (R5, R7)", {
   clock <- odds_fake_clock()
   odds_http_reset()
   p <- provider_espn_core(cfg = odds_http_config(), fetch_fn = function(url, cfg) stop("pipe broke"),
@@ -290,6 +412,17 @@ test_that("an error thrown while reading props is 'failed' with its message (R5)
   res <- p$prop_snapshots(GAME_2026)
   expect_equal(res$source_status$status, "failed")
   expect_match(res$source_status$detail, "pipe broke")
+  expect_equal(nrow(res$snapshots), 0)
+  # a game read before the throw does not survive it: the first game parses, the second throws
+  one_page <- sub('"pageCount": 2', '"pageCount": 1', prop_page1_text(), fixed = TRUE)
+  odds_http_reset()
+  good <- odds_fake_fetch(setNames(list(list(text = one_page)), espn_prop_bets_url("401872656", 100, 1)))
+  mixed <- provider_espn_core(cfg = odds_http_config(), now_fn = clock$now, sleep_fn = clock$sleep,
+                              fetch_fn = function(url, cfg) if (grepl("401671617", url, fixed = TRUE)) stop("pipe broke") else good$fn(url, cfg))
+  after <- mixed$prop_snapshots(rbind(GAME_2026, GAME_2024))
+  expect_equal(after$source_status$status, "failed")
+  expect_equal(nrow(after$snapshots), 0)
+  expect_equal(nrow(after$fetches), 1)                               # the completed request stays in the lineage
 })
 
 # --- capture(): the forward-capture pass ---------------------------------------
@@ -397,6 +530,32 @@ test_that("capture stops with a clear error when the game horizon is missing, be
   expect_error(provider_espn_core()$capture(stub$fn, now = Sys.time(),
                                             cfg = list(horizon_hours = 36, espn_prop_providers = 100L)),
                "game_horizon_hours")
+  expect_length(stub$state$calls, 0)
+})
+
+test_that("the capture pass reads at most 20 prop pages of a game (M5)", {
+  now <- as.POSIXct("2026-10-20 21:23:20", tz = "UTC")
+  week7 <- list(year = 2026L, type = 2L, week = 7L)
+  bodies <- list()
+  bodies[[espn_scoreboard_url()]] <- espn_sb_json(2026L, 2L, 6L, list())
+  bodies[[espn_scoreboard_url(week7)]] <- espn_sb_json(2026L, 2L, 7L, list(
+    list(id = "701", name = "NE at CHI", date = "2026-10-23T00:15Z", status = "STATUS_SCHEDULED")))
+  bodies[[espn_prop_bets_url("701", 100, 1)]] <- '{"pageCount": 25, "items": []}'
+  stub <- capture_stub(bodies)
+  provider_espn_core()$capture(stub$fn, now = now, cfg = capture_cfg)
+  urls <- stub$urls()
+  expect_equal(sum(grepl("propBets", urls)), 20)
+  expect_false(espn_prop_bets_url("701", 100, 21) %in% urls)
+})
+
+test_that("capture stops with a clear error when the prop horizon or the prop providers are missing, before any request (M4)", {
+  stub <- capture_stub(list())
+  expect_error(provider_espn_core()$capture(stub$fn, now = Sys.time(),
+                                            cfg = list(game_horizon_hours = 216, espn_prop_providers = 100L)),
+               "cfg\\$horizon_hours is missing")
+  expect_error(provider_espn_core()$capture(stub$fn, now = Sys.time(),
+                                            cfg = list(game_horizon_hours = 216, horizon_hours = 36)),
+               "cfg\\$espn_prop_providers is missing")
   expect_length(stub$state$calls, 0)
 })
 
