@@ -4,6 +4,29 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Venues by stadium id: real coordinates and roofs for every game (audit M21/S3; output audit F6)
+
+- **Before.** The engine joined a hand-typed table of 29 venues by NAME, and nflverse renames venues while keeping the id. Three kinds of game fell back to league-average weather centred on Kansas, with no roof:
+  - every renamed venue: Heinz Field, CenturyLink Field, Paul Brown Stadium, FirstEnergy Stadium, Mercedes-Benz Superdome, University of Phoenix Stadium, "Reliant Stadium" (Houston, still named that by nflverse in 2026), and others;
+  - Atlanta's Mercedes-Benz Stadium (82 games since 2017);
+  - every international venue.
+
+  In the 2026 week 7 run, the games in Houston, Atlanta and Paris used this fallback.
+- **Now:**
+  - `data/reference/stadiums.csv` holds all 55 stadium ids nflverse used in 2006–2026, with coordinates and a roof type (outdoors, dome or retractable). Some roof types correct nflverse: Stade de France, the MCG and the Allianz Arena are open-air, though nflverse marks them as domes.
+  - `R/stadiums.R` adds `load_stadium_reference()`, `stadium_is_indoor()` and `attach_stadiums()`.
+  - A retractable roof counts as closed until it is reported open.
+  - A game whose id is missing from the reference is named in a message, and its weather fallback is logged, as before.
+  - `NFLsimulation.R` now joins venues by `stadium_id` for both the dome flag and the weather coordinates.
+- **Effect on predictions: none.** Weather and dome terms are computed and logged but are not admitted into the simulated means (`MU_TERMS_ADMITTED` is base and hfa). This makes them correct before G2 tests whether to admit them.
+- **Not changed (listed for G2):** the blend's historical-context features read nflverse's `roof` directly (`is_outdoors`), and they do feed predictions.
+- **Tests:** `tests/testthat/test-stadiums.R`. It checks:
+  - every id from 2006–2026 appears exactly once, with coordinates;
+  - US venues fall inside the continental US;
+  - the roof truth table;
+  - the join names unknown ids;
+  - the engine no longer joins by name.
+
 ### A0: the odds capture sees every game before the close, on time, and is kept (owner, 2026-10-19)
 
 - **Every upcoming game's line is captured mid-week.**
