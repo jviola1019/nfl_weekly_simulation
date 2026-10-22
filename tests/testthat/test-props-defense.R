@@ -55,6 +55,22 @@ test_that("the weeks argument leaves out games played later (no future leak)", {
   expect_null(compute_defense_multipliers(NULL))
 })
 
+test_that("a bye week does not make a defense look better: yards allowed are per game (final review I5)", {
+  # Every defense allows 250 passing and 100 rushing yards a game; DET had a bye in week 2.
+  rows <- list()
+  for (w in 1:3) for (i in seq_along(DEF_TEAMS)) {
+    if (DEF_TEAMS[i] == "DET" && w == 2) next
+    gid <- sprintf("w%d_%s", w, DEF_TEAMS[i])
+    rows[[length(rows) + 1]] <- data.frame(game_id = gid, week = w, defteam = DEF_TEAMS[i], play_type = c("pass", "run"),
+                                           passing_yards = c(250, NA), rushing_yards = c(NA, 100), stringsAsFactors = FALSE)
+  }
+  m <- compute_defense_multipliers(do.call(rbind, rows), weeks = 1:3)
+  expect_equal(m$pass_def_multiplier, rep(1, 32), tolerance = 1e-12)
+  expect_equal(m$rush_def_multiplier, rep(1, 32), tolerance = 1e-12)
+  expect_error(compute_defense_multipliers(data.frame(week = 1L, defteam = "DET", play_type = "pass",
+                                                      passing_yards = 1, rushing_yards = NA)), "game_id")
+})
+
 test_that("load_defense_rankings takes an injected table and apply_defense_adjustments uses it", {
   ranks <- load_defense_rankings(2024, weeks = 1L, pbp = synthetic_pbp())
   expect_equal(nrow(ranks), 32)

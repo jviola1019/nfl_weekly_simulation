@@ -247,15 +247,21 @@ load_game_players <- function(home_team, away_team, season, week = NULL) {
 #' @keywords internal
 compute_defense_multipliers <- function(pbp, weeks = NULL) {
   if (is.null(pbp) || nrow(pbp) == 0) return(NULL)
+  if (!"game_id" %in% names(pbp)) {
+    stop("compute_defense_multipliers: pbp has no game_id, so yards cannot be taken per game", call. = FALSE)
+  }
   if (!is.null(weeks)) pbp <- pbp[pbp$week %in% weeks, , drop = FALSE]
   if (nrow(pbp) == 0) return(NULL)
 
+  # Per game, not season totals: mid-season, a team past its bye has played one game fewer,
+  # and a total would make it look like a better defense (final review I5)
   defense_stats <- pbp %>%
     dplyr::filter(!is.na(defteam), !is.na(play_type)) %>%
     dplyr::group_by(defteam) %>%
     dplyr::summarize(
-      pass_yards_allowed = sum(passing_yards, na.rm = TRUE),
-      rush_yards_allowed = sum(rushing_yards, na.rm = TRUE),
+      games = dplyr::n_distinct(game_id),
+      pass_yards_allowed = sum(passing_yards, na.rm = TRUE) / games,
+      rush_yards_allowed = sum(rushing_yards, na.rm = TRUE) / games,
       .groups = "drop"
     )
   if (nrow(defense_stats) == 0) return(NULL)
