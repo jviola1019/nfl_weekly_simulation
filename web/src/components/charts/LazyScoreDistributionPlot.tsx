@@ -37,7 +37,7 @@ export function LazyScoreDistributionPlot(props: ComponentProps<typeof ScoreDist
     return () => io.disconnect();
   }, []);
   return (
-    <div ref={slot} data-plot-slot className="min-h-[240px] sm:min-h-[280px]">
+    <div ref={slot} data-plot-slot className="min-h-60 sm:min-h-70">
       {near ? <Plot {...props} /> : null}
     </div>
   );

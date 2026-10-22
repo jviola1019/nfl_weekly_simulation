@@ -1,6 +1,7 @@
 "use client";
 
 import { scaleLinear } from "@visx/scale";
+import { DataTable } from "@/components/ui";
 import { candidateLabel } from "@/lib/policy";
 import { pct } from "@/lib/format";
 import { ChartFigure, LineKey } from "./ChartFigure";
@@ -43,31 +44,31 @@ export function ReliabilityGrid({ bins, ece, splitLabel }: { bins: BinRow[]; ece
       title={`Reliability, ${splitLabel}`}
       summary={summary}
       legend={
-        <div className="flex flex-wrap gap-x-5">
+        <div className="flex flex-wrap gap-x-stack">
           <LineKey color="var(--market)" label="Market" />
           <LineKey color="var(--model)" label="Model candidates" />
           <LineKey color="var(--neutral-mid)" label="Perfect calibration" />
         </div>
       }
       table={
-        <table className="num w-full text-left">
-          <thead className="text-ink-2">
-            <tr><th className="py-1 pr-4 font-normal">Candidate</th><th className="pr-4 font-normal">Bin</th><th className="pr-4 font-normal">Mean predicted</th><th className="pr-4 font-normal">Observed</th><th className="font-normal">Games</th></tr>
-          </thead>
-          <tbody>
-            {cands.flatMap((c) =>
-              (byCand.get(c) ?? []).map((b) => (
-                <tr key={`${c}-${b.bin}`} className="border-t border-rule">
-                  <td className="py-1 pr-4">{candidateLabel(c)}</td>
-                  <td className="pr-4">{b.bin}</td>
-                  <td className="pr-4">{pct(b.pMean, 1)}</td>
-                  <td className="pr-4">{pct(b.yMean, 1)}</td>
-                  <td>{b.n}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <DataTable
+          caption={`Reliability, ${splitLabel}, every bin`}
+          numeric
+          dense
+          columns={[
+            { key: "candidate", header: "Candidate", rowHeader: true },
+            { key: "bin", header: "Bin" },
+            { key: "predicted", header: "Mean predicted" },
+            { key: "observed", header: "Observed" },
+            { key: "games", header: "Games" }
+          ]}
+          rows={cands.flatMap((c) =>
+            (byCand.get(c) ?? []).map((b) => ({
+              key: `${c}-${b.bin}`,
+              cells: { candidate: candidateLabel(c), bin: b.bin, predicted: pct(b.pMean, 1), observed: pct(b.yMean, 1), games: b.n }
+            }))
+          )}
+        />
       }
     >
       <ChartTooltip>
