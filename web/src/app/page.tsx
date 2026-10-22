@@ -3,10 +3,11 @@ import { Age } from "@/components/Age";
 import { DataUnavailable } from "@/components/DataUnavailable";
 import { Field, FieldKey } from "@/components/Field";
 import { StatusBadge } from "@/components/StatusBadge";
-import { chipClass, PageTitle, StatTile } from "@/components/ui";
-import { candidateLines, evidence, publicSlate, runCandidates } from "@/lib/data/queries";
+import { Card, chipClass, Grid, Page, PageHeader, Section, Stamp, StatTile, Term } from "@/components/ui";
+import { noRunContext, runContext } from "@/lib/context";
+import { candidateLines, publicGates, publicSlate, runCandidates } from "@/lib/data/queries";
 import { sortSlate } from "@/lib/slateSort";
-import { utcStamp, weekday } from "@/lib/format";
+import { weekday } from "@/lib/format";
 import { candidateLabel, fieldLineNote, fieldLineNoun, publicFieldLine } from "@/lib/policy";
 
 export const dynamic = "force-dynamic";
@@ -22,22 +23,21 @@ export default async function ThisWeek({ searchParams }: { searchParams: Promise
   const sp = await searchParams;
   const sort: Sort = sp.sort && sp.sort in SORTS ? (sp.sort as Sort) : "kickoff";
   const showModel = sp.model !== "off";
-  const [{ run, games }, ev] = await Promise.all([publicSlate(), evidence()]);
+  // the slate and the promotion gates are independent: one round trip for both
+  const [{ run, games }, gates] = await Promise.all([publicSlate(), publicGates()]);
 
   if (!run) {
     return (
-      <>
-        <PageTitle>This week</PageTitle>
-        <div className="mt-6">
-          <DataUnavailable title="No published weekly run">
-            Nothing has been ingested yet. A weekly bundle from the R engine appears here after <code>ingest-bundle</code>.
-          </DataUnavailable>
-        </div>
-      </>
+      <Page>
+        <PageHeader title="This week" context={noRunContext("nothing has been ingested")} />
+        <DataUnavailable title="No published weekly run">
+          Nothing has been ingested yet. A weekly bundle from the R engine appears here after <code>ingest-bundle</code>.
+        </DataUnavailable>
+      </Page>
     );
   }
 
-  const line = publicFieldLine(ev?.gates ?? [], await runCandidates(run.runId));
+  const line = publicFieldLine(gates, await runCandidates(run.runId));
   const label = line ? candidateLabel(line.candidate) : "Model";
   const lines = line ? await candidateLines(run.runId, [line.candidate]) : [];
   const pModel = (gameId: string) => {
@@ -72,66 +72,79 @@ export default async function ThisWeek({ searchParams }: { searchParams: Promise
     if (!m) q.set("model", "off");
     return `/?${q.toString()}`;
   };
-  const chip = chipClass;
   const first = games[0]?.kickoffUtc;
   const last = games[games.length - 1]?.kickoffUtc;
+  const modelSource = line ? `${label} against the no-vig market, ${statRows.length} games with both lines` : "This run carries no model line";
 
   return (
-    <>
-      <section className="grid gap-8 pt-4 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end">
-        <div className="flex flex-col gap-3">
-          <p className="text-[15px] text-muted">
-            {run.season} season{first && last ? ` · ${shortDay(first)} – ${shortDay(last)}` : ""}
-          </p>
-          <h1 className="wdth-expanded text-[64px] font-black leading-[0.9] tracking-[-0.02em] sm:text-[104px]">Week {run.week}</h1>
-          <p className="mt-2 max-w-[660px] text-[17px] leading-relaxed text-ink-2 [text-wrap:pretty]">
+    <Page>
+      <PageHeader
+        size="hero"
+        title={run.week === null ? "This week" : `Week ${run.week}`}
+        lead={
+          <>
             Every game is a field. The line splits it by win chance, so each team&apos;s side of the field is its probability of winning.
-            Blue is the betting market&apos;s no-vig price{line ? `; gold is ${fieldLineNoun(line)}` : ""}.
-          </p>
-        </div>
-        <aside aria-label="Model status" className="flex flex-col gap-3 rounded-[6px] border border-rule bg-surface p-5">
-          <div className="flex items-center gap-3">
-            {line ? (
-              <StatusBadge status={line.validated ? "validated" : "unvalidated"} label={line.validated ? "Validated" : "Unvalidated"} />
-            ) : (
-              <StatusBadge status="unavailable" label="Market only" />
-            )}
-            {line ? <span className="font-semibold">{label}</span> : null}
-          </div>
-          <p className="text-sm leading-relaxed text-ink-2 [text-wrap:pretty]">{fieldLineNote(line)}</p>
-          <Link href="/evidence" className="text-sm font-semibold">
-            See the evidence
-          </Link>
-        </aside>
-      </section>
+            Blue is the betting market&apos;s no-vig price{line ? `; gold is ${fieldLineNoun(line)}` : ""}. <Term id="field">How to read a field</Term>.
+          </>
+        }
+        context={[...runContext(run), { label: "Games", value: first && last ? `${shortDay(first)} – ${shortDay(last)}` : "none scheduled" }]}
+        aside={
+          <Card as="aside" aria-label="Model status" className="flex flex-col gap-control">
+            <div className="flex items-center gap-control">
+              {line ? (
+                <StatusBadge status={line.validated ? "validated" : "unvalidated"} label={line.validated ? "Validated" : "Unvalidated"} />
+              ) : (
+                <StatusBadge status="unavailable" label="Market only" />
+              )}
+              {line ? <span className="font-semibold">{label}</span> : null}
+            </div>
+            <p className="text-sm text-ink-2 text-pretty">{fieldLineNote(line)}</p>
+            <Link href="/evidence" className="text-sm font-semibold">
+              See the evidence
+            </Link>
+          </Card>
+        }
+      />
 
-      <section aria-label="This week in numbers" className="mt-7 grid gap-4 sm:grid-cols-3">
-        <StatTile value={games.length} label="games on the slate" />
-        <StatTile value={statRows.length ? `${flipCount} of ${statRows.length}` : "–"} label="games where the model picks a different favourite" />
-        <StatTile
-          value={biggest ? `${(biggest.gap * 100).toFixed(1)} pts` : "–"}
-          label={`largest model–market gap${biggest ? `: ${biggest.g.awayTeamId} at ${biggest.g.homeTeamId}` : ""}`}
-        />
-      </section>
+      <Section label="This week in numbers">
+        <Grid kind="tiles">
+          <StatTile value={games.length} label="games on the slate" source={`Published run ${run.cycleId}`} />
+          <StatTile
+            value={statRows.length ? `${flipCount} of ${statRows.length}` : "–"}
+            label="games where the model picks a different favourite"
+            source={modelSource}
+          />
+          <StatTile
+            value={biggest ? `${(biggest.gap * 100).toFixed(1)} pts` : "–"}
+            label={
+              <>
+                largest <Term id="gap">model–market gap</Term>
+                {biggest ? `: ${biggest.g.awayTeamId} at ${biggest.g.homeTeamId}` : ""}
+              </>
+            }
+            source={modelSource}
+          />
+        </Grid>
+      </Section>
 
-      <section aria-label="Sort and filter" className="mt-7 flex flex-col gap-4 border-y border-rule py-4 lg:flex-row lg:items-center lg:justify-between">
+      <Section label="Sort and filter" className="border-y border-rule py-card-sm lg:flex-row lg:items-center lg:justify-between">
         <FieldKey showModel={showModel && line !== null} modelLabel={label} validated={line?.validated ?? false} />
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-[13px] text-muted">Sort</span>
+        <div className="flex flex-wrap items-center gap-x-stack gap-y-snug">
+          <div className="flex flex-wrap items-center gap-snug">
+            <span className="text-sm text-muted">Sort</span>
             {(Object.keys(SORTS) as Sort[]).map((s) => (
-              <Link key={s} href={href(s, day, showModel)} aria-current={s === sort ? "true" : undefined} className={chip(s === sort)}>
+              <Link key={s} href={href(s, day, showModel)} aria-current={s === sort ? "true" : undefined} className={chipClass(s === sort)}>
                 {SORTS[s]}
               </Link>
             ))}
           </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="mr-1 text-[13px] text-muted">Day</span>
-            <Link href={href(sort, null, showModel)} aria-current={!day ? "true" : undefined} className={chip(!day)}>
+          <div className="flex flex-wrap items-center gap-snug">
+            <span className="text-sm text-muted">Day</span>
+            <Link href={href(sort, null, showModel)} aria-current={!day ? "true" : undefined} className={chipClass(!day)}>
               All
             </Link>
             {days.map((d) => (
-              <Link key={d} href={href(sort, d, showModel)} aria-current={d === day ? "true" : undefined} className={chip(d === day)}>
+              <Link key={d} href={href(sort, d, showModel)} aria-current={d === day ? "true" : undefined} className={chipClass(d === day)}>
                 {d.slice(0, 3)}
               </Link>
             ))}
@@ -140,18 +153,17 @@ export default async function ThisWeek({ searchParams }: { searchParams: Promise
             <Link
               href={href(sort, day, !showModel)}
               aria-label={showModel ? "Model line is on. Turn it off" : "Model line is off. Turn it on"}
-              className={chip(showModel)}
+              className={chipClass(showModel)}
             >
               Model line {showModel ? "on" : "off"}
             </Link>
           ) : null}
         </div>
-      </section>
+      </Section>
 
-      {groups.map((grp) => (
-        <section key={grp.label} className="mt-7 flex flex-col gap-3.5" aria-label={grp.label}>
-          <h2 className="text-base font-semibold text-ink-2">{grp.label}</h2>
-          <div className="grid gap-5 lg:grid-cols-2">
+      {groups.map((grp, i) => (
+        <Section key={grp.label} id={`group-${i}`} title={grp.label}>
+          <Grid kind="fields">
             {grp.items.map(({ g, m }) => (
               <Field
                 key={g.gameId}
@@ -168,14 +180,14 @@ export default async function ThisWeek({ searchParams }: { searchParams: Promise
                 final={g.homeScore !== null && g.awayScore !== null ? { home: g.homeScore, away: g.awayScore } : null}
               />
             ))}
-          </div>
-        </section>
+          </Grid>
+        </Section>
       ))}
 
-      <p className="mt-6 text-sm text-muted">
-        Market: nflverse consensus moneyline, proportionally devigged, as of {utcStamp(run.dataAsofUtc)} (<Age iso={run.dataAsofUtc} />). It
-        carries no timestamp or book, so line movement is not shown here.
+      <p className="max-w-measure text-sm text-muted">
+        Market: the nflverse consensus <Term id="close">closing line</Term>, <Term id="no-vig">devigged</Term> in proportion, as of{" "}
+        <Stamp iso={run.dataAsofUtc} /> (<Age iso={run.dataAsofUtc} />). It carries no timestamp or book, so line movement is not shown here.
       </p>
-    </>
+    </Page>
   );
 }

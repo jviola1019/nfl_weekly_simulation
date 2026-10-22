@@ -5,7 +5,6 @@
     "app/evidence/page.tsx": 5,
     "app/games/[id]/page.tsx": 29,
     "app/methodology/page.tsx": 1,
-    "app/page.tsx": 11,
     "components/Field.tsx": 1,
     "components/charts/ChartFigure.tsx": 1,
     "components/charts/ChartTooltip.tsx": 1,
@@ -15,7 +14,6 @@
   },
   "textPx": {
     "app/evidence/page.tsx": 2,
-    "app/games/[id]/page.tsx": 15,
-    "app/page.tsx": 6
+    "app/games/[id]/page.tsx": 15
   }
 }
