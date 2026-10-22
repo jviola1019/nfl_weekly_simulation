@@ -11,6 +11,11 @@ import { weekday } from "@/lib/format";
 import { candidateLabel, fieldLineNote, fieldLineNoun, publicFieldLine } from "@/lib/policy";
 
 export const dynamic = "force-dynamic";
+export const metadata = {
+  // the root layout's title template does not apply to the page of its own segment
+  title: { absolute: "This week · Broadcast Line" },
+  description: "Every NFL game of the week drawn as a field: the no-vig market's win probability against the model's, with the run and the date of the data stated."
+};
 
 const SORTS = { kickoff: "Kickoff", gap: "Biggest gap", closest: "Closest game" } as const;
 type Sort = keyof typeof SORTS;

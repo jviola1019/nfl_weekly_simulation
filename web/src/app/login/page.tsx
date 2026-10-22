@@ -1,7 +1,7 @@
 import { BUTTON_CLASS, Card, INPUT_CLASS, Page, PageHeader } from "@/components/ui";
 import { login } from "./actions";
 
-export const metadata = { title: "Sign in", robots: { index: false } };
+export const metadata = { title: "Sign in", description: "Sign in to the private desk, where paper leans and the board for the published run are kept.", robots: { index: false } };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;

@@ -327,3 +327,36 @@ body {
 @media (forced-colors: active) {
   .field-marker, .field-model { forced-color-adjust: none; }
 }
+
+/*
+ * Print (the game and evidence pages are the ones people file): always the light palette on white,
+ * whatever theme the screen is in; no header, no chips, no theme control (print:hidden in the
+ * markup); backgrounds and the field's colours are kept, because the blue and gold lines are
+ * background colours; cards, figures and rows are not split across pages.
+ */
+@media print {
+  @page { margin: 14mm; }
+  :root:root {
+    color-scheme: light;
+    --surface: #ffffff;
+    --surface-sunken: #ffffff;
+    --ink: #000000;
+    --ink-2: #2b2b2b;
+    --ink-muted: #4d4d4d;
+    --rule: #b8b8b8;
+    --grid: #dddddd;
+    --market: #2563d1;
+    --model: #b98600;
+    --actual: #d4456f;
+    --neutral-mid: #c7cdc9;
+    --good: #1d7a46;
+    --warn: #8a5a00;
+    --crit: #b3261e;
+  }
+  html, body { background: #ffffff; color: #000000; }
+  * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .skip-link { display: none; }
+  main { padding: 0; max-width: none; }
+  figure, article, tr, .rounded-card { break-inside: avoid; }
+  [data-section-title] { break-after: avoid; }
+}

@@ -16,7 +16,15 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return { title: id.replace(/_/g, " ") };
+  if (!/^[0-9]{4}_[0-9]{2}_[A-Z]{2,3}_[A-Z]{2,3}$/.test(id)) return { title: "Game not found" };
+  // publicGame is cached per request, so the page below reuses this query
+  const { game } = await publicGame(id);
+  if (!game) return { title: "Game not found" };
+  const matchup = `${game.awayTeamId} ${game.neutral ? "vs" : "at"} ${game.homeTeamId}`;
+  return {
+    title: `${matchup}, week ${game.week}, ${game.season}`,
+    description: `Win probability for ${matchup} in week ${game.week} of ${game.season}: the no-vig market against the model, and the simulated margin and total when the run has them.`
+  };
 }
 
 function TeamBlock({ id, name, big, side, winner }: { id: string; name: string; big: string; side: "away" | "home"; winner: boolean }) {

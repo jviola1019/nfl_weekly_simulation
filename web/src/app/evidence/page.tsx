@@ -11,7 +11,10 @@ import { bps, shortSha, signedPct } from "@/lib/format";
 import { candidateLabel } from "@/lib/policy";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Evidence" };
+export const metadata = {
+  title: "Evidence",
+  description: "The pre-registered test of every model against the no-vig closing market: Brier skill, calibration, promotion gates and closing-line value."
+};
 
 type Split = "confirm" | "tune";
 const SPLIT_LABEL: Record<Split, string> = { confirm: "Confirm 2023–24", tune: "Tune 2018–22 (in-sample for selection)" };

@@ -7,7 +7,10 @@ import { dataHealth } from "@/lib/data/queries";
 import { shortSha } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Data health" };
+export const metadata = {
+  title: "Data health",
+  description: "When each data source last succeeded, whether the published run passed its checks, and the log of recent runs and ingests."
+};
 
 export default async function DataHealthPage() {
   const { run, sources, ingests, runs } = await dataHealth();

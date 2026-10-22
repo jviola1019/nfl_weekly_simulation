@@ -8,7 +8,10 @@ import { TERM_IDS, TERMS, termAnchor } from "@/lib/glossary";
 import { candidateLabel } from "@/lib/policy";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Methodology" };
+export const metadata = {
+  title: "Methodology",
+  description: "How the market probability is built, which models are registered, how they are judged, what is shown publicly, and what each term means."
+};
 
 /** Generated from the ingested runs (their config), the backtest and the evidence ledger. */
 export default async function MethodologyPage() {

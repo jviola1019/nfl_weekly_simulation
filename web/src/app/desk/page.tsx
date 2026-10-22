@@ -10,7 +10,7 @@ import { pct, pts } from "@/lib/format";
 import { candidateLabel, deskLead, NO_LEANS_SIMULATOR, SIMULATOR_CANDIDATE } from "@/lib/policy";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Desk", robots: { index: false } };
+export const metadata = { title: "Desk", description: "The private desk: paper leans and the board for the published run.", robots: { index: false } };
 
 export default async function DeskPage() {
   const user = await requireUser();

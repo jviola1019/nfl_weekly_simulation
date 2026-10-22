@@ -4,7 +4,10 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Card, Grid, Page, PageHeader, Section } from "@/components/ui";
 import { noRunContext } from "@/lib/context";
 
-export const metadata = { title: "Props" };
+export const metadata = {
+  title: "Props",
+  description: "Player props by market. None is priced here until its market passes a pre-registered backtest, and the page says why."
+};
 
 const MARKETS = [
   { group: "Touchdowns", items: ["Anytime", "First", "Two or more"] },
