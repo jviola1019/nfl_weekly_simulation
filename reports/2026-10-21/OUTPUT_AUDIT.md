@@ -52,6 +52,23 @@ Every figure below comes from that run's console log, its bundle files, the nflv
 - **F8 reaches the UI.** The game page's moneyline card says "nflverse consensus close", and data health says "closing moneylines", for a line taken one to five days before kickoff.
 - **F13.** The props page says "the props engine has known defects … (audit P1–P13) … Phase 4 fixes them". That text becomes stale once P1 merges (#216 and the P1 PR). Update the copy with P1's close-out.
 
-## Not yet checked
+## F11 resolved: the "50 or more warnings" (2026-10-22)
 
-- The warnings in F11.
+**Method.** The same run was repeated with `options(warn = 1)` and a fresh HOME, so the calibration was recomputed rather than read from cache. There were 642 warning lines with 10 distinct messages:
+- 7 are package-build notices.
+- 1 is a join-hygiene message: "Backtest per-game table: missing key columns game_type".
+- The other **634** are the finding below.
+
+**F11, the finding.** `simulate_game_nb: invalid mu_home=NA, using fallback 21.5`, and the same for `mu_away`. **317 games** in the calibration backtest (2021–2025) were simulated with 21.5 points for each team, which is a coin flip.
+- They come to 63–65 per season, spread across every regular-season week at about 4 a week (17–20 per week number over five seasons).
+- That is about 23% of the 1,355 calibration games.
+- A warm-cache run shows none of this, which is why it went unnoticed.
+
+The calibration means (`NFLsimulation.R`, around lines 4560–4660) multiply expected drives by points per drive and add rest points and a margin shift, through about ten team joins. The even spread points to a join or term missing for particular teams, not to early-season sparsity.
+
+**Why it matters:** these fallback games feed the calibration fit, the blend and the model-against-market diagnostics. They are a likely part of the raw simulator's poor Brier, 0.247 against the market's 0.212.
+
+**Owner:** G1, the A3a defect "21.5/10.0, `safe_mu`/`safe_sd`: silent substitution → remove". The first step is to diagnose which join or term yields NA for these games, as an owner-gated engine change.
+
+## F14, an engine kickoff bug (from P1's final review)
+`games_ready$kickoff_utc` (`NFLsimulation.R:2025`) holds the Eastern wall-clock time labelled UTC. For example, 2026_07_NE_CHI shows "20:15 UTC" for a 20:15 ET kickoff, because `as.POSIXct(<Date>)` gives midnight UTC. The web bundle computes its own correct kickoff (`2026-10-23T00:15:00Z`), and P1 now reads `game_date` and `kickoff_time_raw`, so neither uses this column. It is owner-gated engine work for G1.
