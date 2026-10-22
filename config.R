@@ -821,18 +821,12 @@ MODEL_VIG_PCT <- 0.10
 # PROP ODDS DATA SOURCE (v2.9.2)
 # -----------------------------------------------------------------------------
 
-#' @description API key for The Odds API (prop lines)
-#' @default Empty string (uses position-based defaults)
-#' @note Get free API key at https://the-odds-api.com/
-#' @usage Set via environment variable: Sys.setenv(ODDS_API_KEY = "your_key")
-ODDS_API_KEY <- Sys.getenv("ODDS_API_KEY", unset = "")
-
 #' @description Enable real market prop odds loading
 #' @default TRUE (attempts API, falls back to defaults if unavailable)
 #' @note Set FALSE to always use position-based default odds
 USE_REAL_PROP_ODDS <- TRUE
 
-#' @description Prop odds source ("auto", "odds_api", "scoresandodds", "csv", or "model")
+#' @description Prop odds source ("auto", "scoresandodds", "csv", or "model"; keyless sources only)
 #' @default "auto"
 #' @note "auto" walks PROP_ODDS_SOURCE_ORDER. ScoresAndOdds scraping is off by default
 #'   (audit S5: a private endpoint called with a browser user agent breaks the keyless,
@@ -840,8 +834,8 @@ USE_REAL_PROP_ODDS <- TRUE
 PROP_ODDS_SOURCE <- "auto"
 
 #' @description Prop odds source order when PROP_ODDS_SOURCE="auto"
-#' @default c("odds_api","csv","model")
-PROP_ODDS_SOURCE_ORDER <- c("odds_api", "csv", "model")
+#' @default c("csv","model")
+PROP_ODDS_SOURCE_ORDER <- c("csv", "model")
 
 #' @description Allow remote HTML/API scraping for prop odds (audit S5: keep FALSE)
 #' @default FALSE
@@ -878,6 +872,21 @@ PROP_REQUIRE_MARKET_ODDS <- TRUE
 #' @description Quantile used to derive fallback prop lines from simulation
 #' @default 0.50 (median)
 PROP_FALLBACK_LINE_QUANTILE <- 0.50
+
+#' @description A prop quote older than this many minutes before the decision time is stale
+#'   (a live run decides at now; a historical run at the game's kickoff). The prop then
+#'   stays unpriced with a pass reason.
+#' @default 120
+#' @note Policy value, not measured. Owner-visible default (P1 plan, Task 3).
+PROP_QUOTE_MAX_AGE_MIN <- 120
+
+#' @description Kalshi taker fee per contract = KALSHI_TAKER_FEE_COEF * P * (1 - P), P the
+#'   contract price in dollars. EV on a Kalshi quote is computed after this fee.
+#' @default 0.07
+#' @note UNVERIFIED against the primary source: kalshi.com/docs/kalshi-fee-schedule.pdf
+#'   answered HTTP 429 on 2026-10-13; 0.07 is from third-party pages that quote the
+#'   schedule (P1 plan, Task 4). Some Kalshi markets carry other fees. Owner-visible default.
+KALSHI_TAKER_FEE_COEF <- 0.07
 
 #' @description Position-based default anytime TD odds (American format)
 #' @note Used when API unavailable; based on typical market ranges

@@ -119,8 +119,7 @@ DEFAULT_YARD_PROP_ODDS <- -110     # Standard -110 both sides
 # =============================================================================
 
 # Source selection for prop odds:
-#  - "auto": Prefer ScoresAndOdds scraping when available; otherwise Odds API
-#  - "odds_api": The Odds API (requires ODDS_API_KEY)
+#  - "auto": walk PROP_ODDS_SOURCE_ORDER (keyless sources only)
 #  - "scoresandodds": ScoresAndOdds market-comparison API
 #  - "csv": Local CSV file (see PROP_ODDS_CSV_PATH)
 #  - "model": Synthetic market derived from simulation distribution
@@ -128,7 +127,7 @@ if (!exists("PROP_ODDS_SOURCE")) PROP_ODDS_SOURCE <- "auto"
 
 # Source order when PROP_ODDS_SOURCE = "auto"
 if (!exists("PROP_ODDS_SOURCE_ORDER")) {
-  PROP_ODDS_SOURCE_ORDER <- c("odds_api", "csv", "model")
+  PROP_ODDS_SOURCE_ORDER <- c("csv", "model")
 }
 
 # Remote HTML/API scraping (ScoresAndOdds) is off by default (audit S5)
@@ -268,16 +267,23 @@ get_prop_recommendation <- function(ev_over, ev_under = NA_real_, model_error = 
 #' @param recommendation Recommendation label
 #' @return Edge quality display label
 classify_prop_edge_quality <- function(ev_over, ev_under = NA_real_, recommendation = NA_character_) {
-  if (identical(recommendation, "MODEL ERROR")) return("MODEL ERROR")
+  # Vectorized (audit P1): every row gets its own tier from its own best positive EV
+  n <- max(length(ev_over), length(ev_under), length(recommendation))
+  if (n == 0) return(character())
+  ev_over <- rep_len(suppressWarnings(as.numeric(ev_over)), n)
+  ev_under <- rep_len(suppressWarnings(as.numeric(ev_under)), n)
+  recommendation <- rep_len(as.character(recommendation), n)
 
-  best_candidates <- c(ev_over, ev_under)
-  best_candidates <- best_candidates[is.finite(best_candidates) & best_candidates > 0]
-  best_ev <- if (length(best_candidates)) max(best_candidates, na.rm = TRUE) else NA_real_
-  if (!is.finite(best_ev)) return("MODEL ERROR")
+  ev_over[!is.finite(ev_over) | ev_over <= 0] <- NA_real_
+  ev_under[!is.finite(ev_under) | ev_under <= 0] <- NA_real_
+  best_ev <- pmax(ev_over, ev_under, na.rm = TRUE)
 
-  if (best_ev <= PROP_EDGE_BIN_OK_MAX) return("OK")
-  if (best_ev <= PROP_EDGE_BIN_HIGH_MAX) return("High")
-  "Review"
+  out <- rep("Review", n)
+  out[!is.na(best_ev) & best_ev <= PROP_EDGE_BIN_HIGH_MAX] <- "High"
+  out[!is.na(best_ev) & best_ev <= PROP_EDGE_BIN_OK_MAX] <- "OK"
+  out[is.na(best_ev)] <- "MODEL ERROR"
+  out[!is.na(recommendation) & recommendation == "MODEL ERROR"] <- "MODEL ERROR"
+  out
 }
 
 # =============================================================================

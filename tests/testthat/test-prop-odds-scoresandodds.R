@@ -45,8 +45,10 @@ test_that("get_market_prop_line honors preferred books", {
   skip_if_not(exists("get_market_prop_line"), "get_market_prop_line not loaded")
 
   props <- tibble::tibble(
-    player = c("Sam Darnold", "Sam Darnold"),
+    player_id = c("00-SD", "00-SD"),
     prop_type = c("passing_yards", "passing_yards"),
+    game_id = "2025_22_SEA_NE",
+    captured_at = as.POSIXct("2026-02-08 22:00:00", tz = "UTC"),
     line = c(230.5, 229.5),
     line_over = c(230.5, 229.5),
     line_under = c(230.5, 229.5),
@@ -55,7 +57,10 @@ test_that("get_market_prop_line honors preferred books", {
     book = c("draftkings", "fanduel")
   )
 
-  dk_line <- get_market_prop_line("Sam Darnold", "passing_yards", props, preferred_books = "draftkings")
+  dk_line <- get_market_prop_line("00-SD", "passing_yards", props, game_id = "2025_22_SEA_NE",
+                                  kickoff = as.POSIXct("2026-02-08 23:30:00", tz = "UTC"),
+                                  now = as.POSIXct("2026-02-09 12:00:00", tz = "UTC"),
+                                  preferred_books = "draftkings")
   expect_equal(dk_line$book, "draftkings")
   expect_equal(dk_line$line, 230.5)
 })

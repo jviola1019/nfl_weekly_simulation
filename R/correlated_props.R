@@ -29,6 +29,18 @@ local({
   if (file.exists(config_path)) source(config_path, local = FALSE)
 })
 
+# Source the team and player key helpers (the quote cache is joined by id, audit P9)
+local({
+  keys_path <- file.path(getwd(), "R", "prop_keys.R")
+  if (file.exists(keys_path)) source(keys_path, local = FALSE)
+})
+
+# Source the pricing arithmetic (devig, Kalshi fee, best-EV quote; audit P12)
+local({
+  pricing_path <- file.path(getwd(), "R", "prop_pricing.R")
+  if (file.exists(pricing_path)) source(pricing_path, local = FALSE)
+})
+
 # Source prop odds API if available
 local({
   api_path <- file.path(getwd(), "R", "prop_odds_api.R")
@@ -222,52 +234,72 @@ load_game_players <- function(home_team, away_team, season, week = NULL) {
 # DEFENSE AND GAME CONTEXT ADJUSTMENTS
 # =============================================================================
 
-#' Load defense rankings for a season
+#' Defense multipliers from a play-by-play table (pure: no network)
+#'
+#' League average = 1.0. A defense that allows more yards than average gives the
+#' offence facing it a multiplier above 1. The multipliers are built elementwise,
+#' one per team (audit P13: the old `if_else(avg > 0, <32 values>, 1)` could not
+#' recycle and always errored).
+#'
+#' @param pbp Play-by-play with defteam, play_type, week, passing_yards, rushing_yards
+#' @param weeks Optional weeks to include (the caller passes only weeks played before the game)
+#' @return Tibble team, pass_def_multiplier, rush_def_multiplier, recv_def_multiplier; NULL if no rows
+#' @keywords internal
+compute_defense_multipliers <- function(pbp, weeks = NULL) {
+  if (is.null(pbp) || nrow(pbp) == 0) return(NULL)
+  if (!"game_id" %in% names(pbp)) {
+    stop("compute_defense_multipliers: pbp has no game_id, so yards cannot be taken per game", call. = FALSE)
+  }
+  if (!is.null(weeks)) pbp <- pbp[pbp$week %in% weeks, , drop = FALSE]
+  if (nrow(pbp) == 0) return(NULL)
+
+  # Per game, not season totals: mid-season, a team past its bye has played one game fewer,
+  # and a total would make it look like a better defense (final review I5)
+  defense_stats <- pbp %>%
+    dplyr::filter(!is.na(defteam), !is.na(play_type)) %>%
+    dplyr::group_by(defteam) %>%
+    dplyr::summarize(
+      games = dplyr::n_distinct(game_id),
+      pass_yards_allowed = sum(passing_yards, na.rm = TRUE) / games,
+      rush_yards_allowed = sum(rushing_yards, na.rm = TRUE) / games,
+      .groups = "drop"
+    )
+  if (nrow(defense_stats) == 0) return(NULL)
+
+  scale_to_multiplier <- function(allowed, lo, hi) {
+    avg <- mean(allowed, na.rm = TRUE)
+    if (!is.finite(avg) || avg <= 0) return(rep(1, length(allowed)))
+    pmin(pmax(allowed / avg, lo), hi)
+  }
+  pass_mult <- scale_to_multiplier(defense_stats$pass_yards_allowed, 0.80, 1.20)
+
+  tibble::tibble(
+    team = defense_stats$defteam,
+    # Higher yards allowed = easier defense = higher multiplier for the opponent
+    pass_def_multiplier = pass_mult,
+    rush_def_multiplier = scale_to_multiplier(defense_stats$rush_yards_allowed, 0.75, 1.25),
+    recv_def_multiplier = pass_mult   # same as pass for receiving
+  )
+}
+
+#' Load defense rankings for a season (the only definition: audit P13)
 #'
 #' @param season Season year
-#' @return Tibble with team defense multipliers
+#' @param weeks Optional weeks to include (default all: a historical run should pass the
+#'   weeks played before its game so later games do not leak in)
+#' @param pbp Optional play-by-play table (a test seam; default loads the season)
+#' @return Tibble with team defense multipliers; NULL (and a message) when no data
 #' @keywords internal
-load_defense_rankings <- function(season) {
-  tryCatch({
-    # Load play-by-play data for defense rankings (PBP-based approach)
-    pbp <- nflreadr::load_pbp(seasons = season)
-
-    if (is.null(pbp) || nrow(pbp) == 0) return(NULL)
-
-    # Aggregate defensive yards allowed by team
-    defense_stats <- pbp %>%
-      dplyr::filter(!is.na(.data$defteam), !is.na(.data$play_type)) %>%
-      dplyr::group_by(.data$defteam) %>%
-      dplyr::summarize(
-        pass_yards_allowed = sum(.data$passing_yards, na.rm = TRUE),
-        rush_yards_allowed = sum(.data$rushing_yards, na.rm = TRUE),
-        .groups = "drop"
-      )
-
-    # Convert to multipliers (league average = 1.0)
-    avg_pass <- mean(defense_stats$pass_yards_allowed, na.rm = TRUE)
-    avg_rush <- mean(defense_stats$rush_yards_allowed, na.rm = TRUE)
-
-    defense_stats %>%
-      dplyr::transmute(
-        team = .data$defteam,
-        # Higher yards allowed = easier defense = higher multiplier for opponent
-        pass_def_multiplier = dplyr::if_else(
-          avg_pass > 0,
-          pmin(pmax(.data$pass_yards_allowed / avg_pass, 0.80), 1.20),
-          1.0
-        ),
-        rush_def_multiplier = dplyr::if_else(
-          avg_rush > 0,
-          pmin(pmax(.data$rush_yards_allowed / avg_rush, 0.75), 1.25),
-          1.0
-        ),
-        recv_def_multiplier = .data$pass_def_multiplier  # Same as pass for receiving
-      )
-  }, error = function(e) {
-    message(sprintf("  Defense rankings unavailable: %s", e$message))
-    NULL
-  })
+load_defense_rankings <- function(season, weeks = NULL, pbp = NULL) {
+  if (is.null(pbp)) {
+    pbp <- tryCatch(nflreadr::load_pbp(seasons = season), error = function(e) {
+      message(sprintf("  Defense rankings unavailable: %s", e$message))
+      NULL
+    })
+  }
+  ranks <- compute_defense_multipliers(pbp, weeks)
+  if (is.null(ranks)) message("  Defense rankings unavailable: no play-by-play rows")
+  ranks
 }
 
 #' Apply defense adjustments to player projections
@@ -281,14 +313,19 @@ load_defense_rankings <- function(season) {
 #' @param season Season year
 #' @return Adjusted player projections
 #' @keywords internal
-apply_defense_adjustments <- function(players, home_team, away_team, season) {
-  # Load defense rankings (with fallback to neutral)
-  defense_ranks <- tryCatch({
-    load_defense_rankings(season)
-  }, error = function(e) NULL)
+apply_defense_adjustments <- function(players, home_team, away_team, season,
+                                      weeks = NULL, defense_ranks = NULL) {
+  if (is.null(defense_ranks)) {
+    defense_ranks <- tryCatch({
+      load_defense_rankings(season, weeks)
+    }, error = function(e) {
+      message(sprintf("  Defense rankings failed: %s", e$message))
+      NULL
+    })
+  }
 
   if (is.null(defense_ranks) || nrow(defense_ranks) == 0) {
-    # Use neutral defense rankings
+    message("  Defense adjustments NEUTRAL: no rankings, every multiplier is 1.0")
     defense_ranks <- tibble::tibble(
       team = unique(c(home_team, away_team)),
       pass_def_multiplier = 1.0,
@@ -441,7 +478,9 @@ simulate_correlated_prop <- function(baseline, sd, z_game, rho,
 #' @export
 run_game_props <- function(game_sim, home_team, away_team, season,
                            prop_types = c("passing", "rushing", "receiving", "receptions", "td"),
-                           prop_odds_cache = NULL) {
+                           prop_odds_cache = NULL,
+                           game_id = NULL, kickoff = NULL, week = NULL,
+                           players = NULL, defense_ranks = NULL, now = Sys.time()) {
 
   # Extract game totals from simulation
   if (is.list(game_sim) && "total" %in% names(game_sim)) {
@@ -463,8 +502,6 @@ run_game_props <- function(game_sim, home_team, away_team, season,
     prop_odds_cache <- tryCatch({
       if (exists("resolve_prop_odds_cache", mode = "function")) {
         resolve_prop_odds_cache()
-      } else if (exists("load_prop_odds", mode = "function")) {
-        load_prop_odds()
       } else {
         NULL
       }
@@ -474,8 +511,8 @@ run_game_props <- function(game_sim, home_team, away_team, season,
     })
   }
 
-  # Load player data
-  players <- load_game_players(home_team, away_team, season)
+  # Load player data (`players` is a test seam)
+  if (is.null(players)) players <- load_game_players(home_team, away_team, season)
 
   if (nrow(players) == 0) {
     message(sprintf("  No player data for %s @ %s", away_team, home_team))
@@ -484,7 +521,12 @@ run_game_props <- function(game_sim, home_team, away_team, season,
 
   # Apply defense adjustments based on opponent strength (skip if fails)
   players <- tryCatch({
-    adjusted <- apply_defense_adjustments(players, home_team, away_team, season)
+    # only games played before this one count (week 1: none, so the adjustment is neutral and says so)
+    adjusted <- apply_defense_adjustments(
+      players, home_team, away_team, season,
+      weeks = if (!is.null(week)) seq_len(week - 1L) else NULL,
+      defense_ranks = defense_ranks
+    )
     if (!is.null(adjusted) && nrow(adjusted) > 0) adjusted else players
   }, error = function(e) {
     message(sprintf("  Defense adjustments skipped: %s", e$message))
@@ -531,16 +573,42 @@ run_game_props <- function(game_sim, home_team, away_team, season,
     fallback
   }
 
-  get_market_line_for_books <- function(player_name, prop_type, books = NULL) {
-    if (is.null(prop_odds_cache) || !exists("get_market_prop_line", mode = "function")) return(NULL)
-    get_market_prop_line(
-      player_name,
+  # Why a prop has no market price, by "player|market" (audit P14, rule M11)
+  unpriced_log <- list()
+  quote_log <- list()   # what the price came from, by "player|market"
+
+  # `sim_values` or `p_yes` given: the best-EV quote across books and Kalshi, fee included (P12).
+  # Neither: the display lookups for one named book.
+  get_market_line_for_books <- function(player_name, prop_type, books = NULL,
+                                        sim_values = NULL, p_yes = NULL) {
+    key <- paste(player_name, prop_type, sep = "|")
+    note <- function(reason) unpriced_log[[key]] <<- reason
+    if (is.null(prop_odds_cache)) {
+      note("No prop lines loaded")
+      return(NULL)
+    }
+    ids <- unique(players$player_id[players$player_name == player_name])
+    if (length(ids) != 1) {
+      note("Player id unresolved")
+      return(NULL)
+    }
+    found <- get_market_prop_line(
+      ids,
       prop_type,
       prop_odds_cache,
-      home_team = home_team,
-      away_team = away_team,
-      preferred_books = books
+      game_id = game_id,
+      kickoff = kickoff,
+      now = now,
+      preferred_books = books,
+      on_unpriced = note,
+      sim_values = sim_values,
+      p_yes = p_yes
     )
+    if (!is.null(found) && (!is.null(sim_values) || !is.null(p_yes))) {
+      quote_log[[key]] <<- list(venue = found$venue, fair_over = found$fair_over,
+                                captured_at = found$captured_at)
+    }
+    found
   }
 
   resolve_two_way_market <- function(sim_values, market_line) {
@@ -671,7 +739,7 @@ run_game_props <- function(game_sim, home_team, away_team, season,
             projection <- round(median(sim_values), 1)
 
             # Get market line from API when available; otherwise derive from simulation
-            market_line <- get_market_line_for_books(qb_name, "passing_yards", books = book_priority)
+            market_line <- get_market_line_for_books(qb_name, "passing_yards", sim_values = sim_values)
             market_line_dk <- get_market_line_for_books(qb_name, "passing_yards", books = "draftkings")
             market_line_fd <- get_market_line_for_books(qb_name, "passing_yards", books = "fanduel")
 
@@ -799,7 +867,7 @@ run_game_props <- function(game_sim, home_team, away_team, season,
             projection <- round(median(sim_values), 1)
 
             # Get market line from API when available; otherwise derive from simulation
-            market_line <- get_market_line_for_books(pl_name, "rushing_yards", books = book_priority)
+            market_line <- get_market_line_for_books(pl_name, "rushing_yards", sim_values = sim_values)
             market_line_dk <- get_market_line_for_books(pl_name, "rushing_yards", books = "draftkings")
             market_line_fd <- get_market_line_for_books(pl_name, "rushing_yards", books = "fanduel")
 
@@ -926,7 +994,7 @@ run_game_props <- function(game_sim, home_team, away_team, season,
             projection <- round(median(sim_values), 1)
 
             # Get market line from API when available; otherwise derive from simulation
-            market_line <- get_market_line_for_books(pl_name, "receiving_yards", books = book_priority)
+            market_line <- get_market_line_for_books(pl_name, "receiving_yards", sim_values = sim_values)
             market_line_dk <- get_market_line_for_books(pl_name, "receiving_yards", books = "draftkings")
             market_line_fd <- get_market_line_for_books(pl_name, "receiving_yards", books = "fanduel")
 
@@ -1050,7 +1118,7 @@ run_game_props <- function(game_sim, home_team, away_team, season,
 
             projection <- round(median(sim_values), 2)
 
-            market_line <- get_market_line_for_books(pl_name, "receptions", books = book_priority)
+            market_line <- get_market_line_for_books(pl_name, "receptions", sim_values = sim_values)
             market_line_dk <- get_market_line_for_books(pl_name, "receptions", books = "draftkings")
             market_line_fd <- get_market_line_for_books(pl_name, "receptions", books = "fanduel")
 
@@ -1189,7 +1257,7 @@ run_game_props <- function(game_sim, home_team, away_team, season,
             p_anytime <- mean(sim_values >= 1)
 
             # Get market odds for anytime TD from API
-            market_td <- get_market_line_for_books(pl_name, "anytime_td", books = book_priority)
+            market_td <- get_market_line_for_books(pl_name, "anytime_td", p_yes = p_anytime)
             market_td_dk <- get_market_line_for_books(pl_name, "anytime_td", books = "draftkings")
             market_td_fd <- get_market_line_for_books(pl_name, "anytime_td", books = "fanduel")
 
@@ -1281,10 +1349,132 @@ run_game_props <- function(game_sim, home_team, away_team, season,
   }
 
   if (length(results_list) > 0) {
-    dplyr::bind_rows(results_list)
+    res <- dplyr::bind_rows(results_list)
+    reason <- vapply(paste(res$player, res$prop_type, sep = "|"), function(k) {
+      if (is.null(unpriced_log[[k]])) "" else unpriced_log[[k]]
+    }, character(1), USE.NAMES = FALSE)
+    reason[res$odds_source == "market"] <- ""
+    reason[res$odds_source != "market" & !nzchar(reason)] <- "Market odds missing"
+    res$unpriced_reason <- reason
+    from_quote <- function(field, empty) {
+      vapply(paste(res$player, res$prop_type, sep = "|"), function(k) {
+        v <- quote_log[[k]][[field]]
+        if (is.null(v) || length(v) != 1 || is.na(v)) empty else v
+      }, empty, USE.NAMES = FALSE)
+    }
+    res$mkt_fair_over <- from_quote("fair_over", NA_real_)
+    res$price_venue <- from_quote("venue", NA_character_)
+    res$quote_captured_at <- as.POSIXct(from_quote("captured_at", NA_real_), origin = "1970-01-01", tz = "UTC")
+    res
   } else {
     tibble::tibble()
   }
+}
+
+# =============================================================================
+# GOVERNANCE: SIDE, TIER AND STAKE TOGETHER (audit P1, P2, P3; rule M11)
+# =============================================================================
+
+#' Decide every prop row once: side, tier and stake together
+#'
+#' The side is the one with the larger EV among sides that have a market price; its probability and
+#' price feed apply_bet_governance(). A row is a bet exactly when its final stake is above zero. A row
+#' that is not priced from the market (`priced = FALSE`) has no EV, no side and no bet; its pass reason
+#' is `unpriced_reason`, or "Market odds missing/placeholder" when none was recorded.
+#'
+#' @param ev_over,ev_under Model EV per unit staked on each side (NA allowed)
+#' @param p_over,p_under Model probability of each side
+#' @param over_odds,under_odds American prices of each side (effective prices, net of fees)
+#' @param priced TRUE where the prices come from the market
+#' @param unpriced_reason Why a row is unpriced ("" otherwise)
+#' @param one_sided TRUE for Yes-only markets (anytime TD); the Under is never taken
+#' @param model_error TRUE where the row failed its validity checks
+#' @param min_stake,kelly_fraction,max_stake,max_edge Passed to apply_bet_governance(); min_stake must be > 0
+#' @param min_edge A priced row whose chosen side's EV is at or below this is a pass, "Edge
+#'   below minimum", whatever Kelly would stake (props_config.R PROP_MIN_BET_EDGE; final review I4)
+#' @return Tibble: side, tier, recommendation, edge_quality, ev_over, ev_under, raw_kelly_pct,
+#'   capped_stake_pct, final_stake_pct, pass_reason
+govern_prop_rows <- function(ev_over, ev_under, p_over, p_under, over_odds, under_odds,
+                             priced = TRUE, unpriced_reason = "", one_sided = FALSE,
+                             model_error = FALSE,
+                             min_stake = 0.01, kelly_fraction = 0.125, max_stake = 0.02, max_edge = 0.10,
+                             min_edge = 0.02) {
+  if (!is.finite(min_stake) || min_stake <= 0) {
+    stop("govern_prop_rows: min_stake must be > 0 (a stake above zero is what makes a row a bet)", call. = FALSE)
+  }
+  n <- length(ev_over)
+  num <- function(x) rep_len(suppressWarnings(as.numeric(x)), n)
+  lgl <- function(x) {
+    x <- rep_len(as.logical(x), n)
+    x[is.na(x)] <- FALSE
+    x
+  }
+  ev_o <- num(ev_over)
+  ev_u <- num(ev_under)
+  p_o <- num(p_over)
+  p_u <- num(p_under)
+  odds_o <- num(over_odds)
+  odds_u <- num(under_odds)
+  priced <- lgl(priced)
+  one_sided <- lgl(one_sided)
+  model_error <- lgl(model_error)
+  reason_in <- rep_len(as.character(unpriced_reason), n)
+  reason_in[is.na(reason_in)] <- ""
+
+  # M11: no market price, no EV
+  ev_o[!priced] <- NA_real_
+  ev_u[!priced] <- NA_real_
+  ev_u[one_sided] <- NA_real_
+
+  has_o <- is.finite(ev_o) & is.finite(odds_o)
+  has_u <- is.finite(ev_u) & is.finite(odds_u)
+  take_u <- has_u & (!has_o | ev_u > ev_o)
+  take_o <- has_o & !take_u
+  side <- ifelse(take_u, "UNDER", ifelse(take_o, ifelse(one_sided, "YES", "OVER"), "NONE"))
+  ev <- ifelse(take_u, ev_u, ifelse(take_o, ev_o, NA_real_))
+  prob <- ifelse(take_u, p_u, ifelse(take_o, p_o, NA_real_))
+  odds <- ifelse(take_u, odds_u, ifelse(take_o, odds_o, NA_real_))
+
+  gov <- apply_bet_governance(
+    ev = ev, prob = prob, odds = odds,
+    min_stake = min_stake, kelly_fraction = kelly_fraction, max_stake = max_stake, max_edge = max_edge
+  )
+
+  pass_reason <- gov$pass_reason
+  # The minimum edge comes before the stake: a short price can make Kelly stake on 1.9% EV
+  below_edge <- priced & is.finite(ev) & ev > 0 & ev <= min_edge &
+    (pass_reason == "" | grepl("^Stake below", pass_reason))
+  pass_reason[below_edge] <- "Edge below minimum"
+  pass_reason[!priced] <- ifelse(nzchar(reason_in[!priced]), reason_in[!priced],
+                                 "Market odds missing/placeholder")
+  pass_reason[model_error] <- "Model error"
+
+  final_stake <- ifelse(pass_reason == "", gov$capped_stake_pct, 0)
+  tier <- ifelse(model_error, "model_error",
+                 ifelse(pass_reason == "", "bet",
+                        ifelse(grepl("^Edge too large", pass_reason), "review", "pass")))
+  recommendation <- ifelse(tier == "bet", ifelse(side == "YES", "BET", side),
+                           ifelse(tier == "review", "REVIEW",
+                                  ifelse(tier == "model_error", "MODEL ERROR", "PASS")))
+  edge_quality <- ifelse(
+    recommendation == "PASS", "Pass",
+    ifelse(recommendation == "REVIEW", "Review",
+           ifelse(recommendation == "MODEL ERROR", "MODEL ERROR",
+                  classify_prop_edge_quality(ev_o, ev_u, recommendation)))
+  )
+
+  tibble::tibble(
+    side = side,
+    tier = tier,
+    recommendation = recommendation,
+    edge_quality = edge_quality,
+    ev_over = ev_o,
+    ev_under = ev_u,
+    raw_kelly_pct = gov$raw_kelly_pct,
+    capped_stake_pct = gov$capped_stake_pct,
+    final_stake_pct = final_stake,
+    pass_reason = pass_reason
+  )
 }
 
 # =============================================================================
@@ -1316,7 +1506,8 @@ run_game_props <- function(game_sim, home_team, away_team, season,
 #' @export
 run_correlated_props <- function(game_sim_results, schedule_data = NULL,
                                   prop_types = c("passing", "rushing", "receiving", "receptions", "td"),
-                                  season = NULL) {
+                                  season = NULL, prop_odds_cache = NULL, players = NULL,
+                                  now = Sys.time()) {
 
   message("\n=== Running Correlated Player Props ===")
 
@@ -1334,7 +1525,13 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
       dplyr::select(
         game_id = dplyr::any_of(c("game_id", "gameId")),
         home_team = dplyr::any_of(c("home_team", "homeTeam")),
-        away_team = dplyr::any_of(c("away_team", "awayTeam"))
+        away_team = dplyr::any_of(c("away_team", "awayTeam")),
+        week = dplyr::any_of("week"),
+        gameday = dplyr::any_of("gameday"),
+        gametime = dplyr::any_of("gametime"),
+        # run_week.R passes games_ready, which has the Eastern date and time under these names
+        game_date = dplyr::any_of("game_date"),
+        kickoff_time_raw = dplyr::any_of("kickoff_time_raw")
       ) %>%
       dplyr::distinct()
   } else if (!is.null(game_sim_results) && length(game_sim_results) > 0) {
@@ -1351,9 +1548,8 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
 
   message(sprintf("Processing %d games for player props...", nrow(games)))
 
-  # Load prop odds once (if enabled)
-  prop_odds_cache <- NULL
-  use_prop_odds <- TRUE
+  # Load prop odds once (if enabled and not supplied)
+  use_prop_odds <- is.null(prop_odds_cache)
   if (exists("USE_REAL_PROP_ODDS") && !isTRUE(USE_REAL_PROP_ODDS)) {
     use_prop_odds <- FALSE
   }
@@ -1361,8 +1557,6 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
     prop_odds_cache <- tryCatch({
       if (exists("resolve_prop_odds_cache", mode = "function")) {
         resolve_prop_odds_cache()
-      } else if (exists("load_prop_odds", mode = "function")) {
-        load_prop_odds()
       } else {
         NULL
       }
@@ -1389,6 +1583,7 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
 
     message(sprintf("  [%d/%d] %s @ %s", i, nrow(games), game$away_team, game$home_team))
 
+    game_week <- if ("week" %in% names(game)) game$week else if (!is.null(game_sim$week)) game_sim$week else NA
     game_props <- tryCatch({
       run_game_props(
         game_sim = game_sim,
@@ -1396,7 +1591,20 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
         away_team = game$away_team,
         season = season,
         prop_types = prop_types,
-        prop_odds_cache = prop_odds_cache
+        prop_odds_cache = prop_odds_cache,
+        game_id = game$game_id,
+        # nflverse's gameday/gametime, else games_ready's game_date/kickoff_time_raw (both
+        # Eastern; final review C1). games_ready$kickoff_utc is not used: it holds the Eastern
+        # wall-clock time labelled UTC (an engine bug, output audit F14).
+        kickoff = prop_kickoff_utc(
+          if ("gameday" %in% names(game) && !is.na(game$gameday)) game$gameday
+          else if ("game_date" %in% names(game)) format(as.Date(game$game_date), "%Y-%m-%d") else NA,
+          if ("gametime" %in% names(game) && !is.na(game$gametime)) game$gametime
+          else if ("kickoff_time_raw" %in% names(game)) game$kickoff_time_raw else NA
+        ),
+        week = if (is.na(game_week)) NULL else as.integer(game_week),
+        players = if (is.null(players)) NULL else players[players$recent_team %in% c(game$home_team, game$away_team), , drop = FALSE],
+        now = now
       )
     }, error = function(e) {
       warning(sprintf("Failed to generate props for %s: %s", game$game_id, e$message))
@@ -1413,59 +1621,36 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
     results <- dplyr::bind_rows(all_props)
     message(sprintf("\nGenerated %d player prop recommendations", nrow(results)))
 
-    # Add edge quality classification
-    # Note: TD props naturally have higher EV variance due to long odds, so use different thresholds
-    # For TD props, ev_over contains the ev_anytime value (set at line 836)
+
+    # One decision per row: side, tier and stake together (audit P1, P2, P3). A row without a market
+    # price keeps NA EV and the reason Task 3 recorded (rule M11). TD props are Yes-only.
+    gov <- govern_prop_rows(
+      ev_over = results$ev_over, ev_under = results$ev_under,
+      p_over = results$p_over, p_under = results$p_under,
+      over_odds = results$over_odds, under_odds = results$under_odds,
+      priced = results$odds_source == "market",
+      unpriced_reason = if ("unpriced_reason" %in% names(results)) results$unpriced_reason else "",
+      one_sided = results$prop_type == "anytime_td",
+      model_error = results$recommendation == "MODEL ERROR",
+      kelly_fraction = get0("KELLY_FRACTION", ifnotfound = 0.125, inherits = TRUE),
+      max_stake = get0("MAX_STAKE", ifnotfound = 0.02, inherits = TRUE),
+      max_edge = get0("MAX_EDGE", ifnotfound = 0.10, inherits = TRUE),
+      min_edge = get0("PROP_MIN_BET_EDGE", ifnotfound = 0.02, inherits = TRUE)
+    )
     results <- results %>%
       dplyr::mutate(
-        governance_ev = dplyr::case_when(
-          recommendation == "OVER" ~ ev_over,
-          recommendation == "UNDER" ~ ev_under,
-          recommendation == "BET" ~ ev_over,
-          TRUE ~ dplyr::coalesce(ev_over, ev_under)
-        ),
-        governance_prob = dplyr::case_when(
-          recommendation == "OVER" ~ p_over,
-          recommendation == "UNDER" ~ p_under,
-          recommendation == "BET" ~ p_over,
-          TRUE ~ p_over
-        ),
-        governance_odds = dplyr::case_when(
-          recommendation == "OVER" ~ over_odds,
-          recommendation == "UNDER" ~ under_odds,
-          recommendation == "BET" ~ over_odds,
-          TRUE ~ over_odds
-        ),
-        governance = purrr::pmap(
-          list(
-            ev = governance_ev,
-            prob = governance_prob,
-            odds = governance_odds,
-            is_placeholder_odds = is.na(governance_odds) | governance_odds == 0
-          ),
-          ~ apply_bet_governance(
-            ev = ..1,
-            prob = ..2,
-            odds = ..3,
-            min_stake = 0.01,
-            kelly_fraction = 0.125,
-            max_stake = 0.02,
-            max_edge = get0("MAX_EDGE", ifnotfound = 0.10, inherits = TRUE),
-            is_placeholder_odds = ..4
-          )
-        ),
-        `Raw Kelly (%)` = purrr::map_dbl(governance, ~ .x$raw_kelly_pct[[1]]),
-        `Capped Stake (%)` = purrr::map_dbl(governance, ~ .x$capped_stake_pct[[1]]),
-        `Final Stake (%)` = purrr::map_dbl(governance, ~ .x$final_stake_pct[[1]]),
-        `Pass Reason` = purrr::map_chr(governance, ~ .x$pass_reason[[1]]),
+        ev_over = gov$ev_over,
+        ev_under = gov$ev_under,
+        recommendation = gov$recommendation,
+        side = gov$side,
+        tier = gov$tier,
+        `Raw Kelly (%)` = gov$raw_kelly_pct,
+        `Capped Stake (%)` = gov$capped_stake_pct,
+        `Final Stake (%)` = gov$final_stake_pct,
+        `Pass Reason` = gov$pass_reason,
+        edge_quality = gov$edge_quality,
         # Get the relevant EV for classification (ev_over for both yard props and TDs)
         .ev_for_quality = dplyr::coalesce(pmax(ev_over, ev_under, na.rm = TRUE), ev_over),
-        edge_quality = dplyr::case_when(
-          recommendation == "PASS" ~ "Pass",
-          recommendation == "REVIEW" ~ "Review",
-          recommendation == "MODEL ERROR" ~ "MODEL ERROR",
-          TRUE ~ classify_prop_edge_quality(ev_over, ev_under, recommendation)
-        ),
         # Document why positive EV can still show PASS (2% minimum edge threshold)
         edge_note = dplyr::case_when(
           recommendation == "PASS" & !is.na(.ev_for_quality) & .ev_for_quality > 0 & .ev_for_quality <= PROP_MIN_BET_EDGE ~ "Edge < 2%",
@@ -1475,7 +1660,7 @@ run_correlated_props <- function(game_sim_results, schedule_data = NULL,
           TRUE ~ ""
         )
       ) %>%
-      dplyr::select(-.ev_for_quality, -governance_ev, -governance_prob, -governance_odds, -governance)  # Remove helper columns
+      dplyr::select(-.ev_for_quality)
 
     require_market_odds <- isTRUE(if (exists("PROP_REQUIRE_MARKET_ODDS")) PROP_REQUIRE_MARKET_ODDS else FALSE)
     if (require_market_odds) {
