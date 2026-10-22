@@ -6,7 +6,7 @@
     "app/games/[id]/page.tsx": 29,
     "app/methodology/page.tsx": 1,
     "app/page.tsx": 11,
-    "components/Field.tsx": 31,
+    "components/Field.tsx": 1,
     "components/charts/ChartFigure.tsx": 1,
     "components/charts/ChartTooltip.tsx": 1,
     "components/charts/LazyScoreDistributionPlot.tsx": 2,
