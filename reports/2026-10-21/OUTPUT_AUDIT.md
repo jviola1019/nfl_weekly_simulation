@@ -70,5 +70,27 @@ The calibration means (`NFLsimulation.R`, around lines 4560–4660) multiply exp
 
 **Owner:** G1, the A3a defect "21.5/10.0, `safe_mu`/`safe_sd`: silent substitution → remove". The first step is to diagnose which join or term yields NA for these games, as an owner-gated engine change.
 
+### F11 root cause (2026-10-26)
+
+**The cause.** `hfa_tbl` is built only for `teams_on_slate`, the teams playing in the week being simulated (`NFLsimulation.R:2798`). The calibration backtest joins it for every team of every past week (`recent_form_at_sim`, `:4387`).
+- A team on a bye in the target week therefore has `hfa = NA` in all of its calibration games.
+- That makes `margin_shift` NA, so both means are NA, and `simulate_game_nb` replaces them with 21.5 each.
+- A neutral-site game escapes, because `if_else(neutral_site, 0, …)` gives 0 there.
+
+**Evidence.** From the cold-cache calibration file of the warn = 1 run, read by `f11-teams.R` in the session scratchpad:
+- The games with a simulated margin of about 0 involve LAC, WAS, BUF or JAX: 99%, 99%, 98% and 92% of each team's 2021–2025 calibration games.
+- Exactly **317** calibration games involve one of these four teams, F11's count.
+- `nflreadr::load_schedules(2026)` gives week 7's bye teams as **BUF, JAX, LAC, WAS**.
+- JAX is lower (92%) because of its London games, which are neutral-site.
+
+**Why nothing caught it.**
+- The golden master pins week 15 of 2024, where all 32 teams play.
+- `calib_cache_key` has no week. The first run of a season caches a calibration broken for that week's bye teams, and every later week of the season reuses it.
+
+**Fix (owner-gated engine edit):** `fix/calib-hfa-all-teams`.
+- `team_hfa_table()` builds home field for every team in the schedule.
+- `assert_finite_means()` stops a calibration week whose means are not finite.
+- The cache version goes to 4L.
+
 ## F14, an engine kickoff bug (from P1's final review)
 `games_ready$kickoff_utc` (`NFLsimulation.R:2025`) holds the Eastern wall-clock time labelled UTC. For example, 2026_07_NE_CHI shows "20:15 UTC" for a 20:15 ET kickoff, because `as.POSIXct(<Date>)` gives midnight UTC. The web bundle computes its own correct kickoff (`2026-10-23T00:15:00Z`), and P1 now reads `game_date` and `kickoff_time_raw`, so neither uses this column. It is owner-gated engine work for G1.
