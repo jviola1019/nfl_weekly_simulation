@@ -85,16 +85,17 @@ test_that("both rest tables in NFLsimulation.R use compute_rest_table (audit M23
   expect_false(any(grepl("fake_slate_date", code, fixed = TRUE)))
 })
 
-test_that("calibration and score cache keys carry versions that invalidate pre-M23/M24 caches", {
+test_that("calibration and score cache keys carry versions that invalidate pre-M23/M24 and pre-F11 caches", {
   code <- readLines(file.path(PROJECT_ROOT, "NFLsimulation.R"), warn = FALSE)
   code <- code[!grepl("^\\s*#", code)]
-  expect_true(any(grepl("version = 3L", code, fixed = TRUE)))
+  expect_true(any(grepl("version = 4L", code, fixed = TRUE)))
+  expect_false(any(grepl("version = 3L", code, fixed = TRUE)))
   expect_false(any(grepl("version = 2L", code, fixed = TRUE)))
   env <- load_script_functions(file.path(PROJECT_ROOT, "NFLsimulation.R"),
                                c("score_cache_key", "calib_cache_key"))
   env$N_RECENT <- 1; env$USE_SOS <- TRUE; env$SOS_STRENGTH <- 1; env$RECENCY_HALFLIFE <- 1
   expect_equal(env$calib_cache_key(2024, 3, 2, TRUE, 1, 100, 0.1, 1),
-               digest::digest(list(tag = "calib_sim_df_nb", version = 3L, season = 2024, n_years = 3,
+               digest::digest(list(tag = "calib_sim_df_nb", version = 4L, season = 2024, n_years = 3,
                                    halflife = 2, use_sos = TRUE, sos_pow = 1, trials = 100,
                                    rho = 0.1, seed = 1)))
   expect_equal(env$score_cache_key(2024, 2024, 15, 100, 1, 0.1),

@@ -65,3 +65,41 @@ compute_rest_table <- function(slate, team_games, season, week,
     ifelse(bye_prev, bye_bonus, 0)
   tibble::tibble(team = per_team$team, days_rest = per_team$days_rest, rest_points = rest_points)
 }
+
+#' Home-field points per team (output audit F11)
+#'
+#' Each team's mean home margin, shrunk toward the league value with weight n / (n + shrink_n),
+#' for every team in `teams`: a team with no home game gets the league value, and DEN gets the
+#' altitude bonus. The calibration backtest joins this for every team of every past week, so it
+#' must not be limited to the teams on the slate being simulated (a bye team got no value, and
+#' every one of its calibration games became a 21.5-21.5 coin flip).
+#' @param home_margins one row per non-neutral REG home game: team_home, margin (NA if unplayed)
+#' @param teams the teams that need a value
+#' @return tibble(team, hfa), one row per element of `teams`
+team_hfa_table <- function(home_margins, teams, league_hfa, den_bonus = 0, shrink_n = 60) {
+  by_team <- home_margins |>
+    dplyr::group_by(team_home) |>
+    dplyr::summarise(hfa_raw = mean(margin, na.rm = TRUE), n = dplyr::n(), .groups = "drop") |>
+    dplyr::mutate(w = n / (n + shrink_n), hfa = w * hfa_raw + (1 - w) * league_hfa) |>
+    dplyr::transmute(team = team_home, hfa)
+  tibble::tibble(team = teams) |>
+    dplyr::left_join(by_team, by = "team") |>
+    dplyr::mutate(
+      hfa = dplyr::coalesce(hfa, league_hfa),
+      hfa = ifelse(team == "DEN", hfa + den_bonus, hfa)
+    )
+}
+
+#' Stop when a week's simulated means are not finite (output audit F11)
+#'
+#' simulate_game_nb would otherwise replace them with 21.5 each, a coin flip, without a word.
+#' @param g one row per game: game_id, mu_home, mu_away
+#' @param where label for the message, e.g. "calibration 2024 week 3"
+assert_finite_means <- function(g, where) {
+  bad <- !is.finite(g$mu_home) | !is.finite(g$mu_away)
+  if (any(bad)) {
+    stop(sprintf("%s: %d game(s) without a finite mean: %s", where, sum(bad),
+                 paste(utils::head(g$game_id[bad], 10), collapse = ", ")), call. = FALSE)
+  }
+  invisible(g)
+}
