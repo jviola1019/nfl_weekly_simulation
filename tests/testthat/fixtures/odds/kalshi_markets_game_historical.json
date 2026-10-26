@@ -1,0 +1,41 @@
+{
+ "cursor": "",
+ "markets": [
+  {
+   "ticker": "KXNFLGAME-26AUG06CARARI-CAR",
+   "event_ticker": "KXNFLGAME-26AUG06CARARI",
+   "title": "Will Carolina win the Carolina vs Arizona Pro Football game?",
+   "yes_sub_title": "Carolina",
+   "status": "finalized",
+   "result": "yes",
+   "open_time": "2026-06-29T18:01:00Z",
+   "close_time": "2026-08-07T03:05:24Z",
+   "expected_expiration_time": "2026-08-07T06:00:00Z",
+   "last_price_dollars": "0.9900",
+   "volume_fp": "6891841.66",
+   "custom_strike": {
+    "football_team": "e37050ce-354f-4dd0-b2d8-0bd1e9650eb7"
+   },
+   "strike_type": "structured",
+   "market_type": "binary"
+  },
+  {
+   "ticker": "KXNFLGAME-26AUG06CARARI-ARI",
+   "event_ticker": "KXNFLGAME-26AUG06CARARI",
+   "title": "Will Arizona win the Carolina vs Arizona Pro Football game?",
+   "yes_sub_title": "Arizona",
+   "status": "finalized",
+   "result": "no",
+   "open_time": "2026-06-29T18:01:00Z",
+   "close_time": "2026-08-07T03:05:24Z",
+   "expected_expiration_time": "2026-08-07T06:00:00Z",
+   "last_price_dollars": "0.0100",
+   "volume_fp": "6077734.63",
+   "custom_strike": {
+    "football_team": "d73dae4f-1f08-4b5e-bf23-4e25e9b6a69c"
+   },
+   "strike_type": "structured",
+   "market_type": "binary"
+  }
+ ]
+}
