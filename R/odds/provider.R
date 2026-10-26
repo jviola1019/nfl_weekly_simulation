@@ -42,6 +42,26 @@ validate_odds_provider <- function(p) {
   fails
 }
 
+# ---- helpers shared by the providers' error and block handling ----
+# An error message on one line, for a detail string
+odds_one_line <- function(text) trimws(gsub("[[:space:]]+", " ", text))
+
+# TRUE for a 2xx response whose body is not JSON (the caller has found odds_json(rec) NULL): a
+# captcha, challenge or geo-fence page served as 200. It is a block, not a missing game.
+odds_is_html_block <- function(rec) {
+  !is.na(rec$status) && rec$status >= 200L && rec$status < 300L
+}
+
+# What went wrong with a response that has no JSON: odds_fetch's own error text, or for a body that
+# arrived but is not JSON (rec$error is NA on success) the status and that fact
+odds_fetch_problem <- function(rec) {
+  if (is.na(rec$error)) sprintf("HTTP %d, body is not JSON", rec$status) else rec$error
+}
+
+odds_html_block_note <- function(rec, where) {
+  sprintf("blocked: HTTP %d body is not JSON (a challenge or geo-fence page) at %s; run stopped", rec$status, where)
+}
+
 #' One row of fetch lineage from an odds_fetch() record
 odds_fetch_row <- function(rec, key) {
   data.frame(

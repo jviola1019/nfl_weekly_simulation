@@ -17,7 +17,7 @@
 # Supported contracts: KXNFLGAME (moneyline) and the player series below. Spread and total
 # series are not mapped yet; a market that cannot be mapped is counted, never guessed.
 #
-# Status (roadmap rule R5: partial data is stale), as in provider_espn_core.R:
+# Status (roadmap rule R5: partial data is stale), as in the ESPN core provider:
 #   ok           every game was found and read, with no gap
 #   stale        partial data; the detail names each gap: a game without a kickoff or without a
 #                Kalshi event, a request that failed (with its real error text), a response with
@@ -31,7 +31,7 @@
 #                NO snapshots (R7); its `fetches` still list the requests that completed
 # A block is a 401, 403 or 429, or a 2xx response whose body is not JSON (a captcha, challenge or
 # geo-fence page served as 200). The run stops at the first one and makes no further request.
-# The block and error helpers (espn_is_html_block, espn_fetch_problem, ...) are Task 5's, shared.
+# The block and error helpers (odds_is_html_block, odds_fetch_problem, ...) are in provider.R.
 # =============================================================================
 
 KALSHI_GAME_SERIES <- "KXNFLGAME"
@@ -96,7 +96,7 @@ kalshi_num <- function(x) if (is.null(x) || length(x) == 0) NA_real_ else suppre
 #' How one Kalshi market maps to (market_id, side, line, player_key).
 #' @return list(ok = TRUE, market_id, side, line, player_key) or list(ok = FALSE, reason)
 kalshi_market_meta <- function(market, game, series) {
-  no <- function(reason) list(ok = FALSE, reason = reason)
+  no <- function(reason, drift = FALSE) list(ok = FALSE, reason = reason, drift = drift)
   ticker <- market$ticker %||% ""
   if (series == KALSHI_GAME_SERIES) {
     code <- sub("^.*-", "", ticker)
@@ -115,6 +115,10 @@ kalshi_market_meta <- function(market, game, series) {
     if (is.na(market_id)) return(no(sprintf("series %s is not supported", series)))
   }
   # a touchdown market's strike is its definition: anytime = more than 0.5, 2+ = more than 1.5
+  # a yards or receptions market without its strike has no line to store: schema drift, never a NA line
+  if (is.na(strike) && market_id %in% c("passing_yards", "rushing_yards", "receiving_yards", "receptions")) {
+    return(no(sprintf("%s has no floor_strike", ticker), drift = TRUE))
+  }
   if (is.na(strike)) strike <- switch(market_id, anytime_td = 0.5, td_2plus = 1.5, NA_real_)
   list(ok = TRUE, market_id = market_id, side = "yes", line = strike, player_key = paste0("kalshi:", player))
 }
@@ -153,7 +157,14 @@ parse_kalshi_candles <- function(parsed, meta, game_id, sha256, source) {
       }
       v
     }
-    field <- function(obj, name) num(obj[[name]] %||% obj[[paste0(name, "_dollars")]], dollars = TRUE)
+    field <- function(obj, name) {
+      if (is.null(obj)) return(NA_real_)
+      if (!is.list(obj)) {          # a bare value where a quote object belongs: unreadable, counted
+        bad <<- TRUE
+        return(NA_real_)
+      }
+      num(obj[[name]] %||% obj[[paste0(name, "_dollars")]], dollars = TRUE)
+    }
     ts <- kalshi_num(if (length(cd$end_period_ts) == 1) cd$end_period_ts else NULL)
     if (is.na(ts) || !is.finite(ts)) {
       no_time <- no_time + 1L
@@ -215,18 +226,29 @@ provider_kalshi <- function(cfg = odds_http_config(), fetch_fn = odds_http_get, 
     cutoff <- NULL
     cutoff_note <- NULL
     blocked <- NULL
+    never_attempted <- 0L
     thrown <- NULL
     log_fetch <- function(rec, key) fetches[[length(fetches) + 1]] <<- odds_fetch_row(rec, key)
     note_failure <- function(rec, what) {
       if (isTRUE(rec$status == 404L)) return(invisible(NULL))
-      failures <<- c(failures, sprintf("%s (%s)", what, espn_fetch_problem(rec)))
+      failures <<- c(failures, sprintf("%s (%s)", what, odds_fetch_problem(rec)))
     }
     # The body as JSON, or NULL when there is none. A 2xx body that is not JSON (a captcha,
     # challenge or geo-fence page served as 200) and a 401/403/429 stop the whole run at once.
     read_json <- function(rec, where) {
       parsed <- odds_json(rec)
-      if (!is.null(parsed)) return(parsed)
-      if (espn_is_html_block(rec)) stop(kalshi_block_condition(espn_html_block_note(rec, where)))
+      if (!is.null(parsed)) {
+        if (is.list(parsed) && (length(parsed) == 0 || !is.null(names(parsed)))) return(parsed)
+        drift <<- c(drift, sprintf("%s returned JSON that is not an object", where))    # valid JSON, wrong shape: not a block
+        return(list())
+      }
+      valid_json <- odds_is_html_block(rec) && !is.null(rec$body) &&
+        tryCatch({ jsonlite::fromJSON(rawToChar(rec$body), simplifyVector = FALSE); TRUE }, error = function(e) FALSE)
+      if (valid_json) {            # JSON null: valid JSON, wrong shape
+        drift <<- c(drift, sprintf("%s returned JSON null, not an object", where))
+        return(list())
+      }
+      if (odds_is_html_block(rec)) stop(kalshi_block_condition(odds_html_block_note(rec, where)))
       if (isTRUE(rec$blocked)) {
         stop(kalshi_block_condition(sprintf("blocked: HTTP %s at %s; run stopped", rec$status, where)))
       }
@@ -247,12 +269,12 @@ provider_kalshi <- function(cfg = odds_http_config(), fetch_fn = odds_http_get, 
           done <- TRUE
           break
         }
-        if (is.null(parsed$markets)) {
+        if (!"markets" %in% names(parsed)) {      # an absent key is drift; null or [] means no markets
           drift <<- c(drift, sprintf("%s has no markets field", event_ticker))
           done <- TRUE
           break
         }
-        got <- parsed$markets
+        got <- parsed$markets %||% list()
         usable <- vapply(got, function(m) is.list(m) && is.character(m$ticker) && length(m$ticker) == 1 && nzchar(m$ticker), logical(1))
         if (!all(usable)) drift <<- c(drift, sprintf("%s has %s without a ticker", event_ticker, kalshi_count(sum(!usable), "market")))
         markets <- c(markets, got[usable])
@@ -293,7 +315,7 @@ provider_kalshi <- function(cfg = odds_http_config(), fetch_fn = odds_http_get, 
           cutoff <- if (is.character(ts) && length(ts) == 1) as.POSIXct(ts, format = "%Y-%m-%dT%H:%M:%SZ", tz = "UTC") else as.POSIXct(NA, tz = "UTC")
           if (is.na(cutoff)) {
             cutoff_note <- sprintf("historical cutoff unreadable (%s); live endpoints tried first",
-                                   if (is.null(parsed)) espn_fetch_problem(rec) else "no market_settled_ts")
+                                   if (is.null(parsed)) odds_fetch_problem(rec) else "no market_settled_ts")
           }
         }
         historical_first <- !is.na(cutoff) && g$kickoff_utc < cutoff
@@ -310,8 +332,12 @@ provider_kalshi <- function(cfg = odds_http_config(), fetch_fn = odds_http_get, 
           for (m in markets) {
             meta <- kalshi_market_meta(m, g, series)
             if (!meta$ok) {
-              n_unsupported <- n_unsupported + 1L
-              unsupported <- c(unsupported, meta$reason)
+              if (isTRUE(meta$drift)) {
+                drift <- c(drift, meta$reason)
+              } else {
+                n_unsupported <- n_unsupported + 1L
+                unsupported <- c(unsupported, meta$reason)
+              }
               next
             }
             got <- NULL
@@ -352,7 +378,10 @@ provider_kalshi <- function(cfg = odds_http_config(), fetch_fn = odds_http_get, 
           }
         }
       }
-    }, kalshi_block = function(b) blocked <<- conditionMessage(b),
+    }, kalshi_block = function(b) {
+      blocked <<- conditionMessage(b)
+      never_attempted <<- nrow(games) - i       # i is the game the block stopped
+    },
        error = function(e) thrown <<- e)
 
     all_fetches <- do.call(rbind, c(list(odds_fetches_empty()), fetches))
@@ -360,7 +389,7 @@ provider_kalshi <- function(cfg = odds_http_config(), fetch_fn = odds_http_get, 
       # R7: a failed result carries no snapshots; the requests that completed stay in the lineage
       return(odds_result(source = source_name, status = "failed", fetches = all_fetches,
                          detail = paste0(sprintf("%d request(s) completed; stopped by an error: ", nrow(all_fetches)),
-                                         espn_one_line(conditionMessage(thrown)))))
+                                         odds_one_line(conditionMessage(thrown)))))
     }
     snaps <- bind_odds_snapshots(parts)
     shown <- function(x, n = 5) paste0(paste(utils::head(unique(x), n), collapse = " | "),
@@ -372,7 +401,7 @@ provider_kalshi <- function(cfg = odds_http_config(), fetch_fn = odds_http_get, 
       if (!is.null(cutoff_note)) cutoff_note,
       if (length(drift)) paste0("schema drift: ", shown(drift)),
       if (length(capped)) paste0("more pages than the ", KALSHI_MAX_PAGES, "-page cap: ", shown(capped)),
-      if (!is.null(blocked)) blocked,
+      if (!is.null(blocked)) paste0(blocked, if (never_attempted > 0) paste0("; ", kalshi_count(never_attempted, "game"), " never attempted")),
       if (n_no_time) sprintf("%d candle without a readable time skipped", n_no_time),
       if (n_bad_fields) sprintf("%d candle(s) with an unreadable price or crossed quote (stored as NA)", n_bad_fields)
     )
@@ -406,9 +435,22 @@ provider_kalshi <- function(cfg = odds_http_config(), fetch_fn = odds_http_get, 
     }
     series_text <- fetch("kalshi_series", "sports", kalshi_series_url())
     if (is.null(series_text)) return(invisible(FALSE))
-    series_json <- tryCatch(jsonlite::fromJSON(series_text, simplifyVector = FALSE), error = function(e) NULL)
-    if (is.null(series_json)) return(block("sports"))
-    series <- series_json$series %||% list()
+    as_object <- function(text) {       # list(ok, value): ok FALSE when the text is not JSON at all
+      v <- tryCatch(list(value = jsonlite::fromJSON(text, simplifyVector = FALSE)), error = function(e) NULL)
+      if (is.null(v)) return(list(ok = FALSE))
+      list(ok = TRUE, object = is.list(v$value) && (length(v$value) == 0 || !is.null(names(v$value))), value = v$value)
+    }
+    series_json <- as_object(series_text)
+    if (!series_json$ok) return(block("sports"))
+    if (!series_json$object) {
+      message("Kalshi capture: the series response is not a JSON object; nothing read")
+      return(invisible(FALSE))
+    }
+    if (!"series" %in% names(series_json$value)) {
+      message("Kalshi capture: schema drift, the series response has no series field; nothing read")
+      return(invisible(FALSE))
+    }
+    series <- series_json$value$series %||% list()
     tickers <- vapply(series, function(s) as.character(s$ticker %||% NA_character_), character(1))
     if (anyNA(tickers)) message(sprintf("Kalshi: %s without a ticker skipped", kalshi_count(sum(is.na(tickers)), "series entry")))
     tickers <- sort(tickers[!is.na(tickers)])
@@ -421,9 +463,13 @@ provider_kalshi <- function(cfg = odds_http_config(), fetch_fn = odds_http_get, 
         key <- sprintf("%s_p%d", ticker, page)
         text <- fetch("kalshi_markets", key, kalshi_open_markets_url(ticker, cursor))
         if (is.null(text)) break
-        page_json <- tryCatch(jsonlite::fromJSON(text, simplifyVector = FALSE), error = function(e) NULL)
-        if (is.null(page_json)) return(block(key))
-        cursor <- page_json$cursor
+        page_json <- as_object(text)
+        if (!page_json$ok) return(block(key))
+        if (!page_json$object) {
+          message(sprintf("Kalshi: %s is not a JSON object (schema drift), series skipped", key))
+          break
+        }
+        cursor <- page_json$value$cursor
         if (is.null(cursor) || !nzchar(cursor)) break
         if (page >= KALSHI_MAX_PAGES) {
           message(sprintf("Kalshi: %s has more than %d pages, read the first %d", ticker, KALSHI_MAX_PAGES, KALSHI_MAX_PAGES))

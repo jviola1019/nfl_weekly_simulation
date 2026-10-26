@@ -388,3 +388,129 @@ test_that("a game with no Kalshi event is a named gap", {
   expect_equal(res$source_status$status, "unavailable")
   expect_match(res$source_status$detail, "1 game-series with no Kalshi event")
 })
+
+# ---- fix round 1 (task review of feefb95..b55fabd) ---------------------------------------------
+
+test_that("the shared fetch helpers live in provider.R under odds_ names, and neither provider uses the other's", {
+  read_src <- function(f) paste(readLines(testthat::test_path("..", "..", "R", "odds", f), warn = FALSE), collapse = "\n")
+  expect_false(grepl("espn_", read_src("provider_kalshi.R"), fixed = TRUE))
+  expect_false(grepl("kalshi_", read_src("provider_espn_core.R"), fixed = TRUE))
+  for (old in c("espn_fetch_problem", "espn_is_html_block", "espn_html_block_note", "espn_one_line")) {
+    expect_false(exists(old), info = old)
+  }
+  expect_match(read_src("provider.R"), "odds_fetch_problem <- function", fixed = TRUE)
+  expect_equal(odds_one_line("a\n  b\t c "), "a b c")
+  expect_equal(odds_fetch_problem(list(error = NA_character_, status = 200L)), "HTTP 200, body is not JSON")
+  expect_equal(odds_fetch_problem(list(error = "HTTP 500", status = 500L)), "HTTP 500")
+  expect_true(odds_is_html_block(list(status = 200L)))
+  expect_false(odds_is_html_block(list(status = 500L)))
+  expect_match(odds_html_block_note(list(status = 200L), "X"), "blocked: HTTP 200 body is not JSON")
+})
+
+test_that("markets: null is the same as [] (not found, no drift); an absent key is drift", {
+  for (body in c('{"markets": null, "cursor": ""}', '{"markets": [], "cursor": ""}')) {
+    b <- game_routes()
+    b[[kalshi_event_markets_url("KXNFLGAME-26OCT12BUFLA", FALSE)]] <- list(text = body)
+    res <- kalshi_provider(b)$provider$game_snapshots(GAME_K)
+    expect_equal(res$source_status$status, "ok", info = body)
+    expect_false(grepl("schema drift", res$source_status$detail), info = body)
+  }
+  b <- game_routes()
+  b[[kalshi_event_markets_url("KXNFLGAME-26OCT12BUFLA", FALSE)]] <- list(text = '{"cursor": ""}')
+  res <- kalshi_provider(b)$provider$game_snapshots(GAME_K)
+  expect_equal(res$source_status$status, "stale")
+  expect_match(res$source_status$detail, "schema drift")
+})
+
+test_that("a yards market with no floor_strike is counted drift and stores no row with a NA line", {
+  parsed <- odds_fixture_json("kalshi_markets_recyds_live.json")
+  parsed$markets[[1]]$floor_strike <- NULL
+  meta <- kalshi_market_meta(parsed$markets[[1]], GAME_K, "KXNFLRECYDS")
+  expect_false(meta$ok)
+  expect_true(isTRUE(meta$drift))
+  expect_match(meta$reason, "no floor_strike")
+  b <- list()
+  b[[kalshi_cutoff_url()]] <- "kalshi_cutoff.json"
+  b[[kalshi_event_markets_url("KXNFLRECYDS-26OCT12BUFLA", FALSE)]] <- empty_markets
+  b[[kalshi_event_markets_url("KXNFLRECYDS-26OCT12BUFLAR", FALSE)]] <- kalshi_json_route(parsed)
+  k <- kalshi_provider(b)
+  res <- k$provider$prop_snapshots(GAME_K, series = "KXNFLRECYDS")
+  expect_equal(nrow(res$snapshots), 0)
+  expect_match(res$source_status$detail, "schema drift")
+  expect_match(res$source_status$detail, "no floor_strike")
+  expect_false(any(grepl("candlesticks", k$fake$state$urls)))
+  # a touchdown market keeps its default strike: still stored, still ok
+  b2 <- list()
+  b2[[kalshi_cutoff_url()]] <- "kalshi_cutoff.json"
+  b2[[kalshi_event_markets_url("KXNFLTD-26OCT12BUFLA", FALSE)]] <- empty_markets
+  b2[[kalshi_event_markets_url("KXNFLTD-26OCT12BUFLAR", FALSE)]] <- "kalshi_markets_td_live.json"
+  b2[[kalshi_candles_url("KXNFLTD", "KXNFLTD-26OCT12BUFLAR-BUFJCOOK4-1", TS(KO) - 48L * 3600L, TS(KO), FALSE)]] <- "kalshi_candles_td_live.json"
+  b2[[kalshi_candles_url("KXNFLTD", "KXNFLTD-26OCT12BUFLAR-BUFJCOOK4-2", TS(KO) - 48L * 3600L, TS(KO), FALSE)]] <- empty_candles
+  expect_equal(kalshi_provider(b2)$provider$prop_snapshots(GAME_K, series = "KXNFLTD")$source_status$status, "ok")
+})
+
+test_that("M1: a quote that is a bare value instead of an object is counted, not thrown", {
+  meta <- list(ok = TRUE, market_id = "moneyline", side = "away", line = NA_real_, player_key = NA_character_)
+  parsed <- odds_fixture_json("kalshi_candles_game_live.json")
+  parsed$candlesticks[[1]]$yes_bid <- "0.38"
+  parsed$candlesticks[[2]]$price <- 0.39
+  out <- parse_kalshi_candles(parsed, meta, "g", "e", "kalshi_live")
+  expect_equal(nrow(out), 4)
+  expect_equal(attr(out, "bad_fields"), 2L)
+  res <- kalshi_provider(game_routes(buf_candles = kalshi_json_route(parsed)))$provider$game_snapshots(GAME_K)
+  expect_equal(res$source_status$status, "stale")
+})
+
+test_that("M2: valid JSON that is not an object is drift and stale, never a throw", {
+  for (body in c("null", "5", '"text"', "[1, 2]")) {
+    b <- game_routes(buf_candles = list(text = body))
+    res <- kalshi_provider(b)$provider$game_snapshots(GAME_K)
+    expect_false(res$source_status$status == "failed", info = body)
+    expect_match(res$source_status$detail, "schema drift", info = body)
+    expect_false(grepl("blocked", res$source_status$detail), info = body)
+  }
+  b <- game_routes()
+  b[[kalshi_event_markets_url("KXNFLGAME-26OCT12BUFLA", FALSE)]] <- list(text = "5")
+  res <- kalshi_provider(b)$provider$game_snapshots(GAME_K)
+  expect_equal(res$source_status$status, "stale")
+  expect_match(res$source_status$detail, "schema drift")
+})
+
+test_that("M2/M3: capture treats a non-object body as drift (not a block) and a series list without `series` is named", {
+  odds_http_reset()
+  msgs <- testthat::capture_messages(provider_kalshi()$capture(function(source, key, url) "null", now = Sys.time(), cfg = list()))
+  expect_false(grepl("blocked", paste(msgs, collapse = " ")))
+  expect_match(paste(msgs, collapse = " "), "not a JSON object")
+  msgs <- testthat::capture_messages(provider_kalshi()$capture(function(source, key, url) '{"other": []}', now = Sys.time(), cfg = list()))
+  expect_match(paste(msgs, collapse = " "), "no series field")
+  # a page that is not an object stops that series only; the next series is still read
+  seen <- character()
+  fetch <- function(source, key, url) {
+    seen <<- c(seen, paste(source, key, sep = ":"))
+    if (source == "kalshi_series") return('{"series": [{"ticker": "KXNFLGAME"}, {"ticker": "KXNFLTD"}]}')
+    if (key == "KXNFLGAME_p1") return("5")
+    '{"markets": [], "cursor": ""}'
+  }
+  msgs <- testthat::capture_messages(provider_kalshi()$capture(fetch, now = Sys.time(), cfg = list()))
+  expect_equal(seen, c("kalshi_series:sports", "kalshi_markets:KXNFLGAME_p1", "kalshi_markets:KXNFLTD_p1"))
+  expect_match(paste(msgs, collapse = " "), "KXNFLGAME_p1 is not a JSON object")
+})
+
+test_that("M4: a block says how many games were never attempted", {
+  g2 <- transform(GAME_K, game_id = "2026_05_X_Y")
+  games <- rbind(GAME_K, g2)
+  b <- list()
+  b[[kalshi_cutoff_url()]] <- "kalshi_cutoff.json"
+  b[[kalshi_event_markets_url("KXNFLGAME-26OCT12BUFLA", FALSE)]] <- HTML_200
+  res <- kalshi_provider(b)$provider$game_snapshots(games)
+  expect_match(res$source_status$detail, "1 game never attempted")
+})
+
+test_that("M5: a non-404 failure on a candle request is named with its real error and leaves the result stale", {
+  b <- game_routes(lar_candles = list(status = 500L))
+  res <- kalshi_provider(b)$provider$game_snapshots(GAME_K)
+  expect_equal(res$source_status$status, "stale")
+  expect_match(res$source_status$detail, "KXNFLGAME-26OCT12BUFLAR-LAR (HTTP 500)", fixed = TRUE)
+  expect_false(grepl("without candles", res$source_status$detail))
+  expect_equal(nrow(res$snapshots), 4)
+})

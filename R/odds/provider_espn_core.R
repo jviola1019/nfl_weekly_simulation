@@ -58,25 +58,6 @@ espn_number <- function(x) {
   suppressWarnings(as.numeric(gsub("[^0-9.+-]", "", txt)))
 }
 
-# An error message on one line, for a detail string
-espn_one_line <- function(text) trimws(gsub("[[:space:]]+", " ", text))
-
-# TRUE for a 2xx response whose body is not JSON (the caller has found odds_json(rec) NULL): a
-# captcha, challenge or geo-fence page served as 200. It is a block, not a missing game.
-espn_is_html_block <- function(rec) {
-  !is.na(rec$status) && rec$status >= 200L && rec$status < 300L
-}
-
-# What went wrong with a response that has no JSON: odds_fetch's own error text, or for a body that
-# arrived but is not JSON (rec$error is NA on success) the status and that fact
-espn_fetch_problem <- function(rec) {
-  if (is.na(rec$error)) sprintf("HTTP %d, body is not JSON", rec$status) else rec$error
-}
-
-espn_html_block_note <- function(rec, where) {
-  sprintf("blocked: HTTP %d body is not JSON (a challenge or geo-fence page) at %s; run stopped", rec$status, where)
-}
-
 #' Normalize one ESPN game-odds response (parsed JSON) into snapshots
 parse_espn_game_odds <- function(parsed, game_id, sha256) {
   rows <- list()
@@ -230,12 +211,12 @@ provider_espn_core <- function(cfg = odds_http_config(), fetch_fn = odds_http_ge
         fetches[[length(fetches) + 1]] <- odds_fetch_row(rec, g$espn)
         parsed <- odds_json(rec)
         if (is.null(parsed)) {
-          if (espn_is_html_block(rec)) {          # a challenge or geo-fence page served as 200: stop, never retry
+          if (odds_is_html_block(rec)) {          # a challenge or geo-fence page served as 200: stop, never retry
             blocked <- TRUE
-            block_note <- espn_html_block_note(rec, g$game_id)
+            block_note <- odds_html_block_note(rec, g$game_id)
             break
           }
-          failed <- c(failed, sprintf("%s (%s)", g$game_id, espn_fetch_problem(rec)))
+          failed <- c(failed, sprintf("%s (%s)", g$game_id, odds_fetch_problem(rec)))
           if (rec$blocked) {
             blocked <- TRUE
             break
@@ -261,7 +242,7 @@ provider_espn_core <- function(cfg = odds_http_config(), fetch_fn = odds_http_ge
       # R7: a failed result carries no snapshots (the nflverse provider's does not either); the
       # requests that completed stay in the lineage
       return(odds_result(source = "espn_core_game_odds", status = "failed", fetches = all_fetches,
-                         detail = paste0(n_fetched, "; stopped by an error: ", espn_one_line(conditionMessage(thrown)))))
+                         detail = paste0(n_fetched, "; stopped by an error: ", odds_one_line(conditionMessage(thrown)))))
     }
     snaps <- bind_odds_snapshots(parts)
     gaps <- c(
@@ -307,15 +288,15 @@ provider_espn_core <- function(cfg = odds_http_config(), fetch_fn = odds_http_ge
           parsed <- odds_json(rec)
           if (is.null(parsed)) {
             where <- sprintf("%s page %d", g$game_id, page)
-            if (espn_is_html_block(rec)) {        # a challenge or geo-fence page served as 200: stop, never retry
+            if (odds_is_html_block(rec)) {        # a challenge or geo-fence page served as 200: stop, never retry
               blocked <- TRUE
-              block_note <- espn_html_block_note(rec, where)
+              block_note <- odds_html_block_note(rec, where)
             } else if (rec$blocked) {
               blocked <- TRUE
             } else if (isTRUE(rec$status == 404L)) {
-              gone <- c(gone, sprintf("%s (%s)", where, espn_fetch_problem(rec)))
+              gone <- c(gone, sprintf("%s (%s)", where, odds_fetch_problem(rec)))
             } else {
-              failed <- c(failed, sprintf("%s (%s)", where, espn_fetch_problem(rec)))
+              failed <- c(failed, sprintf("%s (%s)", where, odds_fetch_problem(rec)))
             }
             break
           }
@@ -341,7 +322,7 @@ provider_espn_core <- function(cfg = odds_http_config(), fetch_fn = odds_http_ge
     if (!is.null(thrown)) {
       # R7: a failed result carries no snapshots; the completed requests stay in the lineage
       return(odds_result(source = "espn_core_prop_lines", status = "failed", fetches = all_fetches,
-                         detail = paste0("stopped by an error: ", espn_one_line(conditionMessage(thrown)))))
+                         detail = paste0("stopped by an error: ", odds_one_line(conditionMessage(thrown)))))
     }
     snaps <- bind_odds_snapshots(parts)
     gaps <- c(
