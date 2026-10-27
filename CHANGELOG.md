@@ -4,6 +4,13 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### D1: the keyless odds layer and the decision-time archive (roadmap D1; audit S2, S4)
+
+- **`R/odds/`:** one HTTP layer (`http.R`: truthful user agent, 20 s timeout, at most 1 request/second per domain as a floor in code, backoff on 429/5xx, a 401/403/429 that survives the retries or a challenge page blocks the domain, sha256 of every successful raw response, error responses recorded by status and error text, fetch log), the `odds_snapshots` shape and market/venue vocabulary (`snapshots.R`), the closing rule (`closing.R`: last snapshot at or before kickoff at the same line, more than 60 minutes is stale, a missing line stays missing), one provider interface with `provider_nflverse`, `provider_espn_core` and `provider_kalshi`, forward capture (`capture.R`) and the archive builder (`archive.R`). Every gap a provider meets (a market not served, a dropped block, a page cap) is counted and makes its status `stale`. No new dependency; tests inject a fetch function and read recorded fixtures in `tests/testthat/fixtures/odds/`.
+- **Capture:** `scripts/capture_odds_raw.R` is a thin caller of `run_capture()`, which delegates to the providers; `odds-capture.yml` is unchanged. `capture_http_get()` delegates to the new layer. Nothing is captured for a sealed season (2025). A live run on 2026-10-27: 208 requests, all HTTP 200, 3 min 27 s, 20.1 MB.
+- **Archive:** `backtest/build_odds_archive.R` wrote `backtest/data/odds_archive/` (ESPN BET game openers and closes, 570 games of 2023–2024; 570 requests, all HTTP 200, 9.5 min). It refuses 2025 before any schedule load or request and exits 1 only when a game could not be fetched; `--from-raw` rebuilds the CSVs byte for byte and makes no request. Measured coverage of games with a complete moneyline opener and closer: 2023 205 of 285 (71.9%), 2024 284 of 285 (99.6%). ESPN BET has no moneyline opener for 78 regular-season games of 2023 (weeks 1 to 5), so "open and close from 2023" holds from 2024 on. `backtest/data/espn_open_close.csv` and the v1 protocol hashes are untouched.
+- **Docs:** `docs/odds-sources.md` (endpoints, rate limits, coverage, terms matrix; the terms texts are not yet reviewed by the owner). Manual `odds-live-smoke.yml` and `scripts/odds_live_smoke.R`; the live tests are in `tests/live/`, outside the default suite.
+
 ### A0 follow-up: the Tuesday capture reads the coming week (2026-10-21)
 
 - **Before:** the capture read only ESPN's default scoreboard. ESPN keeps that on the week just played until it rolls the week over. The Tuesday 2026-10-20 21:23Z run (39499941009) saw week 6, with all 14 games final, so it fetched zero ESPN game odds; the 216 h horizon had nothing to select.

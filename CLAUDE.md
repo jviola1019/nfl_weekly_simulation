@@ -349,6 +349,7 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `R/sim_bundle.R` - the simulator's weekly bundle, written by `run_week.R` (replaced the HTML report at A8)
 - `R/mu_terms.R` - explicit mean composition: the term table and `compose_mu()` (M22)
 - `R/schedule_context.R` - neutral sites, home-field points and rest days (M24, M23)
+- `R/odds/` - the keyless odds layer (D1): `http.R` is the only HTTP code (1 request/second per domain, no workaround for a 403/429); providers for nflverse, ESPN core and Kalshi; the `odds_snapshots` shape; the closing rule; the archive builder. Tests inject a fetch function and read `tests/testthat/fixtures/odds/`; live checks are in `tests/live/` only. Endpoints and the terms matrix: `docs/odds-sources.md`
 
 ### Props Data Sources
 - `sports/nfl/props/data_sources.R` - Player projections with fallback chain
@@ -364,6 +365,7 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 ### Game Backtest
 - `backtest/walk_forward.R` - pre-registered walk-forward shootout; `--stage score` refuses to run unless `reports/<date>/backtest-games-v1/PROTOCOL.md` matches the hash in `backtest/eval_windows/nfl_games_v1.json` and is committed. Never edit a frozen PROTOCOL.md; register a new version instead.
 - `backtest/build_inputs.R` - derives the committed point-in-time inputs in `backtest/data/`
+- `backtest/build_odds_archive.R` - derives `backtest/data/odds_archive/` (ESPN game openers and closes, 2023-2024). It refuses 2025: the G3 Holdout build appends 2025 after the freeze
 
 ### Tests
 - `tests/testthat/setup.R` - Test infrastructure
