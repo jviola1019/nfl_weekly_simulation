@@ -73,6 +73,10 @@ LOAD_FIRST <- c("logging", "utils", "capture_raw", "data_validation", "playoffs"
 all_modules <- sub("\\.R$", "", list.files(file.path(PROJECT_ROOT, "R"), pattern = "\\.R$"))
 for (m in c(LOAD_FIRST, setdiff(sort(all_modules), LOAD_FIRST))) source_module(m)
 
+# R/odds/*.R, the keyless odds layer (roadmap D1): list.files() above is not recursive
+odds_modules <- sub("\\.R$", "", list.files(file.path(PROJECT_ROOT, "R", "odds"), pattern = "\\.R$"))
+for (m in file.path("odds", sort(odds_modules))) source_module(m)
+
 # Load player props configuration (v2.9.0)
 props_config_path <- file.path(PROJECT_ROOT, "sports", "nfl", "props", "props_config.R")
 if (!file.exists(props_config_path)) {

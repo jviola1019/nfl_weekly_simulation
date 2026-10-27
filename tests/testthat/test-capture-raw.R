@@ -151,3 +151,65 @@ test_that("write_capture records failed fetches in the manifest without a body f
   expect_equal(entry$http_status, 503L)
   expect_equal(entry$error, "HTTP 503")
 })
+
+# --- A0 follow-up (2026-10-21): a Tuesday capture also reads the coming week ---
+# ESPN's default scoreboard lists the week just played until ESPN rolls it over. The Tuesday
+# 2026-10-20 21:23Z run (39499941009) saw week 6, every game final, and fetched no game odds.
+# ESPN refuses a dates=YYYYMMDD-YYYYMMDD range (HTTP 400), so the next week is asked by number.
+
+sb_json <- function(year, type, week, events) {
+  as.character(jsonlite::toJSON(list(
+    season = list(year = year, type = type), week = list(number = week),
+    events = lapply(events, function(e) {
+      list(id = e[["id"]], name = e[["name"]], date = e[["date"]], status = list(type = list(name = e[["status"]])))
+    })
+  ), auto_unbox = TRUE))
+}
+
+test_that("parse_espn_scoreboard_week reads the season, season type and week", {
+  expect_equal(parse_espn_scoreboard_week(read_fixture_text("espn_scoreboard.json")),
+               list(year = 2026L, type = 2L, week = 3L))
+  expect_null(parse_espn_scoreboard_week("{}"))
+})
+
+test_that("espn_next_week steps through the regular season into the playoffs and stops after the Super Bowl", {
+  expect_equal(espn_next_week(list(year = 2026L, type = 2L, week = 6L)), list(year = 2026L, type = 2L, week = 7L))
+  expect_equal(espn_next_week(list(year = 2026L, type = 2L, week = 18L)), list(year = 2026L, type = 3L, week = 1L))
+  expect_equal(espn_next_week(list(year = 2026L, type = 3L, week = 4L)), list(year = 2026L, type = 3L, week = 5L))
+  expect_null(espn_next_week(list(year = 2026L, type = 3L, week = 5L)))
+  expect_null(espn_next_week(list(year = 2026L, type = 4L, week = 1L)))   # off-season: nothing to ask for
+})
+
+test_that("espn_scoreboard_url names a week only when asked", {
+  expect_equal(espn_scoreboard_url(), paste0(ESPN_SITE_BASE, "/scoreboard"))
+  expect_equal(espn_scoreboard_url(list(year = 2026L, type = 2L, week = 7L)),
+               paste0(ESPN_SITE_BASE, "/scoreboard?seasontype=2&week=7&dates=2026"))
+})
+
+test_that("a Tuesday capture also reads the coming week and fetches its game odds (run 39499941009)", {
+  now <- as.POSIXct("2026-10-20 21:23:20", tz = "UTC")
+  week7 <- list(year = 2026L, type = 2L, week = 7L)
+  bodies <- list()
+  bodies[[espn_scoreboard_url()]] <- sb_json(2026L, 2L, 6L, list(
+    list(id = "601", name = "WSH at SF", date = "2026-10-20T00:15Z", status = "STATUS_FINAL")))
+  bodies[[espn_scoreboard_url(week7)]] <- sb_json(2026L, 2L, 7L, list(
+    list(id = "701", name = "NE at CHI", date = "2026-10-23T00:15Z", status = "STATUS_SCHEDULED"),
+    list(id = "714", name = "DAL at PHI", date = "2026-10-27T00:15Z", status = "STATUS_SCHEDULED")))
+  seen <- character()
+  fetch_fn <- function(url, cfg) {
+    seen <<- c(seen, url)
+    body <- bodies[[url]]
+    list(status = 200L, body = charToRaw(if (is.null(body)) "{}" else body), error = NA_character_, retry_after = NA_real_)
+  }
+  cfg <- list(user_agent = "test", timeout_sec = 1, max_tries = 1, min_interval_sec = 0,
+              game_horizon_hours = 216, horizon_hours = 36, espn_prop_providers = 100L)
+  odds_http_reset()
+  clock <- odds_fake_clock()
+
+  run_capture(withr::local_tempdir(), cfg, now = now, sources = "espn", fetch_fn = fetch_fn,
+              now_fn = clock$now, sleep_fn = clock$sleep)
+
+  expect_equal(seen[1:2], c(espn_scoreboard_url(), espn_scoreboard_url(week7)))
+  expect_setequal(seen[grepl("/odds$", seen)], c(espn_game_odds_url("701"), espn_game_odds_url("714")))
+  expect_false(any(grepl("events/601/", seen, fixed = TRUE)))   # a final game is never fetched
+})

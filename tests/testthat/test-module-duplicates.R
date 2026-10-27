@@ -61,14 +61,14 @@ test_that("the definition scan sees plain and conditional definitions", {
 })
 
 test_that("no new function is defined in more than one R/ module", {
-  files <- list.files(file.path(PROJECT_ROOT, "R"), pattern = "\\.R$", full.names = TRUE)
+  files <- list.files(file.path(PROJECT_ROOT, "R"), pattern = "\\.R$", full.names = TRUE, recursive = TRUE)
   all_defs <- strip_if(unlist(lapply(files, defined_functions)))
   dups <- sort(unique(all_defs[duplicated(all_defs)]))
   expect_equal(setdiff(dups, KNOWN_DUPLICATES), character())
 })
 
 test_that("NFLmarket.R and NFLbrier_logloss.R add no new copies of R/ functions", {
-  r_files <- list.files(file.path(PROJECT_ROOT, "R"), pattern = "\\.R$", full.names = TRUE)
+  r_files <- list.files(file.path(PROJECT_ROOT, "R"), pattern = "\\.R$", full.names = TRUE, recursive = TRUE)
   r_defs <- unique(strip_if(unlist(lapply(r_files, defined_functions))))
   overlaps <- unlist(lapply(ENGINE_FILES, function(f) {
     defs <- defined_functions(file.path(PROJECT_ROOT, f))

@@ -1,0 +1,25 @@
+{
+ "cursor": "",
+ "markets": [
+  {
+   "ticker": "KXNFLRECYDS-26OCT12BUFLAR-BUFTJOHNSON26-75",
+   "event_ticker": "KXNFLRECYDS-26OCT12BUFLAR",
+   "title": "Ty Johnson: 75+ receiving yards",
+   "yes_sub_title": "Ty Johnson: 75+",
+   "status": "finalized",
+   "result": "no",
+   "open_time": "2026-10-13T03:32:00Z",
+   "close_time": "2026-10-13T03:57:24Z",
+   "expected_expiration_time": "2026-10-13T06:15:00Z",
+   "last_price_dollars": "0.0200",
+   "volume_fp": "52.00",
+   "custom_strike": {
+    "football_player": "a2f1b838-3ddb-43f5-b1ff-aca7c57d9c5d",
+    "football_team": "f9acd396-ba35-4cae-a431-a44b2af707b0"
+   },
+   "floor_strike": 74.5,
+   "strike_type": "greater",
+   "market_type": "binary"
+  }
+ ]
+}

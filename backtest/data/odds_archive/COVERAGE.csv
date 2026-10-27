@@ -1,0 +1,13 @@
+"season","venue_id","market_id","games_expected","games_with_open","games_with_close","games_with_open_and_close","pct_open_and_close"
+2023,"espn_bet","moneyline",285,207,282,205,71.9
+2023,"espn_bet","spread",285,192,281,192,67.4
+2023,"espn_bet","total",285,192,285,192,67.4
+2023,"any","moneyline",285,207,282,205,71.9
+2023,"any","spread",285,192,281,192,67.4
+2023,"any","total",285,192,285,192,67.4
+2024,"espn_bet","moneyline",285,284,284,284,99.6
+2024,"espn_bet","spread",285,284,284,284,99.6
+2024,"espn_bet","total",285,284,284,284,99.6
+2024,"any","moneyline",285,284,284,284,99.6
+2024,"any","spread",285,284,284,284,99.6
+2024,"any","total",285,284,284,284,99.6
