@@ -10,7 +10,7 @@ literal_source_targets <- function(path) {
 
 test_that("literal source() targets in entry points exist", {
   entry <- c("run_week.R", "NFLsimulation.R", "NFLmarket.R",
-             file.path("R", list.files(file.path(PROJECT_ROOT, "R"), pattern = "\\.R$")))
+             file.path("R", list.files(file.path(PROJECT_ROOT, "R"), pattern = "\\.R$", recursive = TRUE)))
   targets <- unique(unlist(lapply(file.path(PROJECT_ROOT, entry), literal_source_targets)))
   missing <- targets[!file.exists(file.path(PROJECT_ROOT, targets))]
   expect_equal(missing, character())
