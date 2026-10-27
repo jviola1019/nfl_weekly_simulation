@@ -131,6 +131,23 @@ test_that("the archive rebuilds byte for byte from its stored raw responses, off
   }
 })
 
+test_that("a replay of the stored raw responses adds nothing to the fetch log", {
+  # the fetch log records requests that reached ESPN; a replay reads local files and makes none
+  a <- archive_provider(archive_routes())
+  out <- file.path(withr::local_tempdir(), "archive")
+  raw <- file.path(withr::local_tempdir(), "raw")
+  odds_archive_build(odds_archive_games(schedule_rows(), 2024L), a$provider, out, raw)
+  log <- file.path(raw, "fetch_log.ndjson")
+  writeLines('{"source":"espn_game_odds","http_status":200}', log)          # the live build's one line
+  withr::local_dir(PROJECT_ROOT)
+  st <- suppressWarnings(system2(file.path(R.home("bin"), "Rscript"),
+                                 c(shQuote("backtest/build_odds_archive.R"), shQuote(raw), "--from-raw",
+                                   "--seasons=2024", paste0("--out=", shQuote(out))),
+                                 stdout = TRUE, stderr = TRUE))
+  expect_equal(attr(st, "status") %||% 0L, 0L, info = paste(st, collapse = "\n"))
+  expect_length(readLines(log), 1)
+})
+
 test_that("the build fails only when a game could not be fetched, not for gaps in what ESPN serves", {
   # a stale source status from markets ESPN never posted is reported, not a failure (Task 9 ruling)
   expect_equal(odds_archive_exit_status(list(fetch_failures = list(), source_status = "stale")), 0L)

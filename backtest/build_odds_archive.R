@@ -52,8 +52,9 @@ message(sprintf("Odds archive: %d games, seasons %s, %s", nrow(games), paste(sea
                 if (from_raw) "replaying stored raw responses" else "fetching at 1 request/second"))
 
 # a replay reads local files, so it is not throttled (the 1 request/second floor protects hosts)
+# and writes no fetch log, which records only the requests that reached ESPN
 provider <- provider_espn_core(cfg = odds_http_config(env = cfg_env), fetch_fn = fetch_fn,
-                               log_path = file.path(raw_dir, "fetch_log.ndjson"),
+                               log_path = if (from_raw) NULL else file.path(raw_dir, "fetch_log.ndjson"),
                                sleep_fn = if (from_raw) function(s) invisible(NULL) else Sys.sleep)
 res <- odds_archive_build(games, provider, out_dir, raw_dir)
 
