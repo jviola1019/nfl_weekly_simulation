@@ -364,6 +364,10 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 ### Game Backtest
 - `backtest/walk_forward.R` - pre-registered walk-forward shootout; `--stage score` refuses to run unless `reports/<date>/backtest-games-v1/PROTOCOL.md` matches the hash in `backtest/eval_windows/nfl_games_v1.json` and is committed. Never edit a frozen PROTOCOL.md; register a new version instead.
 - `backtest/build_inputs.R` - derives the committed point-in-time inputs in `backtest/data/`
+- `backtest/vvf/` - the validation framework (A3a: S0 provenance, S1 screen, S2 structure) on PR #205's ported inputs; `reproduce_v2.R` is its known-answer test
+- `docs/VARIABLE_LEDGER.md` - every variable, its known-at class, defects, results and disclosures; generated, never edited by hand
+- `scripts/write_variable_ledger.R` - writes `docs/VARIABLE_LEDGER.md` from the registry and the committed results
+- `scripts/diagnose_mu_na.R` - F11: which calibration mean term is NA, found from the call frames
 
 ### Tests
 - `tests/testthat/setup.R` - Test infrastructure

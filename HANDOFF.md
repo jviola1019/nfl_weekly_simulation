@@ -2,6 +2,33 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec. To verify everything and finish the remaining work in a full local environment (VS Code), use `docs/handoff/2026-09-29-vscode-prompt.md`.
 
+## A3a done - 2026-10-27 (feat/a3a-vvf, draft PR, awaiting the owner)
+
+The validation framework's S0–S2 are in `backtest/vvf/` (see CHANGELOG, "A3a").
+- **Objective:** S0–S2 on PR #205's ported inputs, with the variable ledger.
+- **Done:**
+  - the port;
+  - the registry and S0;
+  - S1 and S2;
+  - the reproduction of v2's §1;
+  - the generated ledger;
+  - the F11 diagnosis script and its positive control.
+- **Not done:**
+  - Plan Task 10 Step 2, the regression check on the fixed main, after #223 and F11b;
+  - A3b, S3–S5 and the controls. These are built and dry-run in `../nfl-worktrees/a3dry`, and their plan comes next.
+- **Confirmed facts:**
+  - The port reproduces v1 within 5.0e-11 and v2's screen within 4.5e-06.
+  - v2's moneyline joint df was 30 for 29 estimable terms, so p is 0.575, not 0.627.
+  - All 108 screen rows read "no evidence".
+- **Open risks:** F11b, the 2019 Raiders' missing drive inputs. Once #223 merges, it stops any calibration that reaches 2019.
+- **Owner questions** (disclosures in the ledger):
+  - JOINT-WALD: the robust joint Wald is not size-controlled;
+  - CLUSTER-UNIT: season-week or week of season;
+  - A3-FLEX: `primetime`'s flex timing;
+  - V2-JOINT-DF: the known-answer p moves from 0.63 to 0.575;
+  - F11B.
+- **Next target:** A3b.
+
 ## Current state — A8 (feat/a8-local-app)
 
 2026-10-13. Branch `feat/a8-local-app` (base `4f9aad3`; `main` at `28e4ed7`, with #210, merged in on 2026-10-13), draft PR #212 against `main` (never merged by the agent). The final whole-branch review returned "with fixes"; the fix wave below applied them and the owner's four decisions, and every gate was re-run on the merged branch.

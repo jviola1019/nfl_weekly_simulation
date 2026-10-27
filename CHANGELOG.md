@@ -4,6 +4,46 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### A3a: the validation framework, S0–S2 (master plan Track A; spec 2026-10-20 §2, §4–§6)
+
+- **The port** (`backtest/vvf/`; owner decision of 2026-10-20, "Port builder + inputs"). Three things come over from PR #205:
+  - its input builder, `build_inputs.R`, with injectable loaders and the network rules;
+  - its feature builder, `features.R`. `vvf_anchor_features()` makes the anchor-relative columns follow the close today and the opener later;
+  - its sha256-locked inputs, `backtest/vvf/data/`, for the seasons 2009–2024.
+
+  Every loader refuses the 2025 Holdout, and so do the anchor features and both screens, from the table's `season` or `game_id`. VVF code refuses `reports/2026-09-29/clv-power/espn_open_close_2024_2025.csv`. v1's `backtest/build_inputs.R:106` still reads that file and drops 2025 only afterwards; this is disclosed (spec §6). The builder refuses to overwrite locked inputs unless `--overwrite` is given.
+- **S0, the registry** (`registry.R`, `provenance.R`). It has one row per variable, with its `known_at` class and its defects.
+  - `vvf_assert_known_at()` refuses a feature that is not known at the decision point, before any model is fit. Of v2's 36 features, 21 are admissible at IS-A.
+  - `vvf_assert_anchor()` refuses a table whose anchor is not known at the decision. The close is known only at the close; the opener is known at every decision.
+- **S1, the screen** (`s1_screen.R`):
+  - LR and F tests, with the anchor as a parameter;
+  - week-clustered robust p, using a wild cluster bootstrap below 30 clusters, where no sandwich SE or CI is reported beside it;
+  - BH and the MDE;
+  - joint tests whose df counts the estimable terms only.
+- **S2, structure** (`s2_structure.R`): VIF with declared-first precedence, the sign in each period, and feature × period tests.
+  - The first-declared feature over VIF 5 stays, and its most collinear later partner yields (spec §4).
+  - On the Tune window that keeps `rest_diff` and drops `home_bye`.
+- **The known-answer test** (`reproduce_v2.R`, with the results in `reports/2026-10-22/vvf-v2-repro/`). It runs on the ported inputs over the Tune seasons 2018–2022:
+  - The base predictions match v1 within 5.0e-11 over 1,372 games.
+  - The screen matches v2's 108 rows within a relative 4.5e-06.
+  - v2's moneyline joint test counted df 30 for 29 estimable terms. With df 29, χ² 26.933 gives p 0.575; v2 printed 0.627.
+  - All 108 rows read "no evidence". The smallest BH q is 0.147 (spread, `abs_tz_away`).
+  - Each joint test's p of record is `p_test`. The cluster-robust Wald beside it is not size-controlled with 29 to 34 coefficients (disclosure JOINT-WALD).
+- **The ledger** (`docs/VARIABLE_LEDGER.md`). `scripts/write_variable_ledger.R` generates it from the registry and the committed results, and a docs-truth test fails on any hand edit.
+- **F11's diagnosis** (`scripts/diagnose_mu_na.R`). It finds which mean term is NA in the calibration backtest from the call frames, with no engine edit.
+  - Its positive control on main (2024 week 5, `reports/2026-10-26/f11-bye-week-main/`) found 328 calibration games with a missing mean.
+  - `home_hfa` is missing in 171 of them and `away_hfa` in 172, the bye teams' games. That is F11, whose fix is the open PR #223.
+  - 16 are the 2019 Raiders' games: the play-by-play files them under `LV`, while the schedule says `OAK`. That is F11b, an owner decision.
+  - The script stops if a mean term is missing from the engine's table.
+  - The regression check on the fixed main waits for both fixes.
+- **The final review** (Haiku, one per branch) found 1 Critical and 8 Important issues; each is fixed with a test that failed first, or disclosed. Five questions stay with the owner, as ledger disclosures:
+  - JOINT-WALD;
+  - CLUSTER-UNIT;
+  - A3-FLEX;
+  - F11B;
+  - V2-JOINT-DF, the known-answer p moving from 0.63 to 0.575.
+- **Unchanged:** the engine files, `config.R`, `renv.lock` and the protocols. S3–S5 and the controls are A3b.
+
 ### A0: the odds capture sees every game before the close, on time, and is kept (owner, 2026-10-19)
 
 - **Every upcoming game's line is captured mid-week.**
