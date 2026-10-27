@@ -20,7 +20,8 @@
     "local": "tsx scripts/local.ts start",
     "local:stop": "tsx scripts/local.ts stop",
     "check-bundle": "tsx scripts/check-bundle.ts",
-    "db-check": "tsx scripts/db-check.ts"
+    "db-check": "tsx scripts/db-check.ts",
+    "erd": "tsx scripts/erd.ts"
   },
   "dependencies": {
     "@visx/axis": "4.0.0",

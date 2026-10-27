@@ -71,6 +71,7 @@ Every page renders on demand from the database (the CSP nonce requires it). A co
 | `npx playwright test --grep @sim` | with a simulator run published (the committed `weekly-sim-2024-w15` fixture, or `E2E_SIM_BUNDLE` pointing at a run's bundle): the market and simulator probabilities on the pages equal the bundle's at the displayed precision, and the margin and total distributions render with no axe issue |
 | `E2E_PARITY_SNAPSHOTS=<dir> npx playwright test --grep @parity` | offline versus online pixel parity (see above); skips without the variable |
 | `npm run contracts:export` | regenerates `contracts/schema/*.json` from the Drizzle schema; CI fails if the committed files differ |
+| `npm run erd` | writes `docs/ERD.md`, the data model as a Mermaid ERD generated from `src/db/schema.ts`; `src/lib/erd.test.ts` fails when the file is stale (`npm run erd -- --check` says so too) |
 | `npm run db-check` | SQL data checks against `DATABASE_URL` (`src/lib/dbcheck/checks.ts`): every assertion query must return zero rows. Errors exit 1 and warnings are printed. They run after every ingest: in CI, in the deployed ingest (`weekly-sim.yml`) and in `npm run local` |
 
 `scripts/review-ui.mjs` takes full-page screenshots at 390, 768 and 1440 px in both themes and prints overflow, console and axe results for a visual review (`GAME=<game_id>` picks the game page; default `2026_04_DEN_SF` from the fixture).
