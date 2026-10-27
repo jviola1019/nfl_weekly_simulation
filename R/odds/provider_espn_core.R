@@ -42,7 +42,7 @@
 ESPN_GAME_VENUES <- c("58" = "espn_bet", "100" = "draftkings")
 ESPN_GAME_MARKETS <- c("moneyline", "spread", "total")
 ESPN_PROP_PROVIDER_ID <- 100L
-ESPN_PROP_MAX_PAGES <- 20L   # as run_capture()'s Kalshi loop caps its pages
+ESPN_PROP_MAX_PAGES <- 20L   # as provider_kalshi()'s capture caps its market pages
 ESPN_PROP_MARKETS <- c(
   "Total Passing Yards (incl. overtime)" = "passing_yards",
   "Total Rushing Yards (incl. overtime)" = "rushing_yards",
@@ -350,7 +350,7 @@ provider_espn_core <- function(cfg = odds_http_config(), fetch_fn = odds_http_ge
   #' game horizon and propBets for the games inside the prop horizon (owner A0, 2026-10-19).
   #' `fetch(source, key, url)` stores the raw response and returns its text, or NULL.
   #' ESPN's default scoreboard lists the week just played until ESPN rolls it over, so the next week
-  #' is asked for by number as well (R4); this mirrors run_capture() in R/capture_raw.R.
+  #' is asked for by number as well (R4). run_capture() (R/odds/capture.R) calls it.
   capture <- function(fetch, now, cfg) {
     # A setting that is missing stops the pass before any request (no default is guessed)
     required <- c(game_horizon_hours = "CAPTURE_ESPN_GAME_HORIZON_HOURS", horizon_hours = "CAPTURE_HORIZON_HOURS",
@@ -362,8 +362,12 @@ provider_espn_core <- function(cfg = odds_http_config(), fetch_fn = odds_http_ge
     }
     sb_text <- fetch("espn_scoreboard", "scoreboard", espn_scoreboard_url())
     if (is.null(sb_text)) return(invisible(FALSE))
-    events <- parse_espn_scoreboard(sb_text)
     sb_week <- parse_espn_scoreboard_week(sb_text)
+    if (!is.null(sb_week) && sb_week$year %in% ODDS_SEALED_SEASONS) {
+      message(sprintf("ESPN: the scoreboard is season %d, which is sealed; no game or prop requests", sb_week$year))
+      return(invisible(FALSE))
+    }
+    events <- parse_espn_scoreboard(sb_text)
     next_week <- if (is.null(sb_week)) NULL else espn_next_week(sb_week)
     if (!is.null(next_week)) {
       next_text <- fetch("espn_scoreboard",

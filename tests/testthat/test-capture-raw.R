@@ -196,18 +196,18 @@ test_that("a Tuesday capture also reads the coming week and fetches its game odd
     list(id = "701", name = "NE at CHI", date = "2026-10-23T00:15Z", status = "STATUS_SCHEDULED"),
     list(id = "714", name = "DAL at PHI", date = "2026-10-27T00:15Z", status = "STATUS_SCHEDULED")))
   seen <- character()
-  stub <- function(url, ...) {
+  fetch_fn <- function(url, cfg) {
     seen <<- c(seen, url)
     body <- bodies[[url]]
-    list(status = 200L, body = charToRaw(if (is.null(body)) "{}" else body), error = NA_character_)
+    list(status = 200L, body = charToRaw(if (is.null(body)) "{}" else body), error = NA_character_, retry_after = NA_real_)
   }
-  old <- capture_http_get
-  assign("capture_http_get", stub, envir = globalenv())
-  on.exit(assign("capture_http_get", old, envir = globalenv()), add = TRUE)
   cfg <- list(user_agent = "test", timeout_sec = 1, max_tries = 1, min_interval_sec = 0,
               game_horizon_hours = 216, horizon_hours = 36, espn_prop_providers = 100L)
+  odds_http_reset()
+  clock <- odds_fake_clock()
 
-  run_capture(withr::local_tempdir(), cfg, now = now, sources = "espn")
+  run_capture(withr::local_tempdir(), cfg, now = now, sources = "espn", fetch_fn = fetch_fn,
+              now_fn = clock$now, sleep_fn = clock$sleep)
 
   expect_equal(seen[1:2], c(espn_scoreboard_url(), espn_scoreboard_url(week7)))
   expect_setequal(seen[grepl("/odds$", seen)], c(espn_game_odds_url("701"), espn_game_odds_url("714")))

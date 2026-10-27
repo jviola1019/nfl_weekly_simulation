@@ -145,11 +145,14 @@ odds_fetch <- function(url, cfg = odds_http_config(), fetch_fn = odds_http_get, 
   max_tries <- max(1L, as.integer(cfg$max_tries %||% ODDS_DEFAULT_MAX_TRIES))
   realm <- odds_url_realm(url)
   blocked_key <- paste0("blocked:", realm)
+  was_blocked <- exists(blocked_key, envir = .odds_http_state, inherits = FALSE)
 
-  if (exists(blocked_key, envir = .odds_http_state, inherits = FALSE)) {
+  if (was_blocked) {
+    reason_key <- paste0("blocked_reason:", realm)
+    reason <- if (exists(reason_key, envir = .odds_http_state, inherits = FALSE)) get(reason_key, envir = .odds_http_state) else "refused an earlier request"
     res <- list(status = get(blocked_key, envir = .odds_http_state), body = NULL,
-                error = sprintf("blocked: %s refused an earlier request (HTTP %s); no further requests this session",
-                                realm, get(blocked_key, envir = .odds_http_state)),
+                error = sprintf("blocked: %s %s (HTTP %s); no further requests this session",
+                                realm, reason, get(blocked_key, envir = .odds_http_state)),
                 retry_after = NA_real_)
     attempts <- 0L
   } else {
@@ -178,10 +181,21 @@ odds_fetch <- function(url, cfg = odds_http_config(), fetch_fn = odds_http_get, 
     sha256 = if (is.null(body)) NA_character_ else digest::digest(body, algo = "sha256", serialize = FALSE),
     bytes = if (is.null(body)) 0L else length(body),
     fetched_at = as.POSIXct(now_fn(), tz = "UTC"), tries = attempts,
-    blocked = !is.na(status) && status %in% ODDS_BLOCKED_STATUS
+    blocked = was_blocked || (!is.na(status) && status %in% ODDS_BLOCKED_STATUS)
   )
   if (!is.null(log_path)) odds_log_fetch(log_path, rec)
   rec
+}
+
+#' Declare a domain blocked from outside the HTTP layer. A caller that finds a 2xx body which is
+#' not JSON (a captcha, challenge or geo-fence page served as 200) calls this, and every later
+#' odds_fetch() to that domain in the session is refused without a request, exactly as after a
+#' 401/403/429. It is never retried or worked around.
+odds_declare_blocked <- function(url, status, reason = "served a body that is not JSON") {
+  realm <- odds_url_realm(url)
+  assign(paste0("blocked:", realm), as.integer(status), envir = .odds_http_state)
+  assign(paste0("blocked_reason:", realm), reason, envir = .odds_http_state)
+  invisible(realm)
 }
 
 #' Parse a fetch result's body as JSON. Returns NULL (and the caller records why)

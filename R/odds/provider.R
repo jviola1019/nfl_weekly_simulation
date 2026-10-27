@@ -18,6 +18,16 @@
 
 ODDS_RESULT_STATUSES <- c("ok", "complete", "stale", "failed", "unavailable")
 
+# Seasons whose games D1 never fetches, stores or reads: the 2025 game holdout stays sealed until
+# its protocol is signed (roadmap D1 global constraints). Capture skips them at the source.
+ODDS_SEALED_SEASONS <- 2025L
+
+#' The NFL season a date falls in: January and February belong to the season before
+odds_nfl_season <- function(now) {
+  d <- as.POSIXlt(now, tz = "UTC")
+  as.integer(d$year + 1900L - (d$mon + 1L <= 2L))
+}
+
 #' Build and check a provider
 new_odds_provider <- function(id, venue_ids, game_snapshots = NULL, prop_snapshots = NULL, capture = NULL) {
   p <- structure(

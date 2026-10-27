@@ -10,8 +10,8 @@
 #   - ESPN core API: scoreboard, per-game odds (open/close), DraftKings propBets
 #   - Kalshi public market data: open markets for per-game NFL series
 #
-# Pure helpers (parse/select/URL/path) are unit-tested with fixtures; only
-# capture_http_get() touches the network.
+# Pure helpers (parse/select/URL/path) are unit-tested with fixtures. The network
+# calls and the capture pass live in R/odds/ (http.R, provider_*.R, capture.R).
 # =============================================================================
 
 ESPN_CORE_BASE <- "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl"
@@ -166,27 +166,15 @@ write_capture <- function(root, source, key, captured_at, url, http_status,
   list(path = path, sha256 = sha, bytes = bytes)
 }
 
-#' GET with a truthful user agent, timeout, polite throttle and bounded retry
+#' GET through the odds HTTP layer (R/odds/http.R): truthful user agent, timeout, at most
+#' 1 request per second per domain, bounded retry with backoff, no workaround for a 403.
+#' Kept for the spike scripts; new code calls odds_fetch() directly.
 #' @return list(status, body [raw or NULL], error)
 capture_http_get <- function(url, user_agent, timeout_sec, max_tries, min_interval_sec) {
-  req <- httr2::request(url) |>
-    httr2::req_user_agent(user_agent) |>
-    httr2::req_timeout(timeout_sec) |>
-    httr2::req_throttle(capacity = 1, fill_time_s = min_interval_sec) |>
-    httr2::req_retry(
-      max_tries = max_tries,
-      is_transient = function(resp) httr2::resp_status(resp) %in% c(429, 500, 502, 503, 504)
-    ) |>
-    httr2::req_error(is_error = function(resp) FALSE)
-  resp <- tryCatch(httr2::req_perform(req), error = function(e) e)
-  if (inherits(resp, "error")) {
-    return(list(status = NA_integer_, body = NULL, error = conditionMessage(resp)))
-  }
-  status <- httr2::resp_status(resp)
-  if (status >= 400) {
-    return(list(status = status, body = NULL, error = sprintf("HTTP %d", status)))
-  }
-  list(status = status, body = httr2::resp_body_raw(resp), error = NA_character_)
+  if (!exists("odds_fetch", mode = "function")) source("R/odds/http.R")
+  rec <- odds_fetch(url, list(user_agent = user_agent, timeout_sec = timeout_sec,
+                              max_tries = max_tries, min_interval_sec = min_interval_sec))
+  list(status = rec$status, body = rec$body, error = rec$error)
 }
 
 #' Which ESPN events to capture: game odds on the long horizon (every upcoming game's
@@ -200,89 +188,4 @@ capture_targets <- function(events, now, game_horizon_hours, prop_horizon_hours)
   }
   list(game = select_capture_events(events, now, game_horizon_hours)$event_id,
        props = select_capture_events(events, now, prop_horizon_hours)$event_id)
-}
-
-#' One capture pass over ESPN and Kalshi. Returns a summary data.frame.
-#' @param cfg list with user_agent, timeout_sec, max_tries, min_interval_sec,
-#'   horizon_hours (props), game_horizon_hours (ESPN game odds), espn_prop_providers
-#'   (integer vector)
-run_capture <- function(root, cfg, now = Sys.time(), sources = c("espn", "kalshi")) {
-  now <- as.POSIXct(format(now, tz = "UTC"), tz = "UTC")
-  log <- list()
-  fetch <- function(source, key, url) {
-    res <- capture_http_get(url, cfg$user_agent, cfg$timeout_sec,
-                            cfg$max_tries, cfg$min_interval_sec)
-    rec <- write_capture(root, source, key, Sys.time(), url, res$status,
-                         body = res$body, error = res$error)
-    log[[length(log) + 1]] <<- data.frame(
-      source = source, key = key, status = res$status %||% NA_integer_,
-      bytes = rec$bytes, error = res$error %||% NA_character_, stringsAsFactors = FALSE
-    )
-    if (is.null(res$body)) NULL else rawToChar(res$body)
-  }
-
-  if ("espn" %in% sources) {
-    sb_text <- fetch("espn_scoreboard", "scoreboard", espn_scoreboard_url())
-    if (!is.null(sb_text)) {
-      if (is.null(cfg$game_horizon_hours)) {
-        stop("run_capture: cfg$game_horizon_hours is missing (config.R CAPTURE_ESPN_GAME_HORIZON_HOURS)", call. = FALSE)
-      }
-      # ESPN's current week can still be the week just played, so read the next week as well
-      events <- parse_espn_scoreboard(sb_text)
-      sb_week <- parse_espn_scoreboard_week(sb_text)
-      next_week <- if (is.null(sb_week)) NULL else espn_next_week(sb_week)
-      if (!is.null(next_week)) {
-        next_text <- fetch("espn_scoreboard",
-                           sprintf("scoreboard_%d_t%d_w%02d", next_week$year, next_week$type, next_week$week),
-                           espn_scoreboard_url(next_week))
-        if (!is.null(next_text)) {
-          upcoming <- parse_espn_scoreboard(next_text)
-          events <- rbind(events, upcoming[!upcoming$event_id %in% events$event_id, , drop = FALSE])
-        }
-      }
-      targets <- capture_targets(events, now, cfg$game_horizon_hours, cfg$horizon_hours)
-      message(sprintf("ESPN: %d game(s) within %sh (game odds), %d within %sh (props)",
-                      length(targets$game), cfg$game_horizon_hours,
-                      length(targets$props), cfg$horizon_hours))
-      for (event_id in targets$game) {
-        fetch("espn_game_odds", event_id, espn_game_odds_url(event_id))
-        if (!event_id %in% targets$props) next
-        for (provider_id in cfg$espn_prop_providers) {
-          first <- fetch("espn_propbets", sprintf("%s_%s_p1", event_id, provider_id),
-                         espn_prop_bets_url(event_id, provider_id, 1))
-          if (is.null(first)) next
-          n_pages <- espn_page_count(first)
-          for (page in seq_len(n_pages)[-1]) {
-            fetch("espn_propbets", sprintf("%s_%s_p%d", event_id, provider_id, page),
-                  espn_prop_bets_url(event_id, provider_id, page))
-          }
-        }
-      }
-    }
-  }
-
-  if ("kalshi" %in% sources) {
-    series_text <- fetch("kalshi_series", "sports", kalshi_series_url())
-    if (!is.null(series_text)) {
-      series <- jsonlite::fromJSON(series_text, simplifyVector = FALSE)$series %||% list()
-      tickers <- vapply(series, function(s) s$ticker, character(1))
-      tickers <- sort(tickers[is_nfl_game_series(tickers)])
-      message(sprintf("Kalshi: %d per-game NFL series", length(tickers)))
-      for (ticker in tickers) {
-        cursor <- NULL
-        page <- 1L
-        repeat {
-          text <- fetch("kalshi_markets", sprintf("%s_p%d", ticker, page),
-                        kalshi_open_markets_url(ticker, cursor))
-          if (is.null(text)) break
-          cursor <- jsonlite::fromJSON(text, simplifyVector = FALSE)$cursor
-          if (is.null(cursor) || !nzchar(cursor) || page >= 20L) break
-          page <- page + 1L
-        }
-      }
-    }
-  }
-
-  if (length(log) == 0) return(data.frame())
-  do.call(rbind, log)
 }
