@@ -24,11 +24,11 @@ export async function runDbChecks(db: Queryable, checks: readonly DbCheck[] = DB
     let rows: Array<{ n: number; samples: string[] | null }>;
     try {
       rows = await db.execute<{ n: number; samples: string[] | null }>(
-        sql`SELECT count(*)::int AS n, (array_agg(q.detail ORDER BY q.detail))[1:${sql.raw(String(Math.trunc(sampleSize)))}] AS samples
+        sql`SELECT count(*)::int AS n, (array_agg(q.detail ORDER BY q.detail))[1:${Math.trunc(sampleSize)}::int] AS samples
             FROM (${check.query}) q`
       );
     } catch (e) {
-      throw new Error(`db-check ${check.id}: ${e instanceof Error ? e.message : String(e)}`);
+      throw new Error(`db-check ${check.id}: ${e instanceof Error ? e.message : String(e)}`, { cause: e });
     }
     const row = rows[0];
     out.push({ id: check.id, severity: check.severity, what: check.what, count: row?.n ?? 0, samples: row?.samples ?? [] });

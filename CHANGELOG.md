@@ -7,24 +7,27 @@ All notable changes to the NFL Prediction Model are documented in this file.
 ### C2: SQL data checks after every ingest, and an ERD generated from the schema (web only)
 
 - **18 SQL checks** (`web/src/lib/dbcheck/checks.ts`). Each is a query that returns one row per violation, so clean data returns zero rows from all of them. `npm run db-check` runs them against `DATABASE_URL`: errors exit 1, warnings are printed, and a missing URL exits 2.
-- **What the 16 error checks cover:**
+- **Which runs are checked.** Checks on run-scoped rows look only at the runs the app serves: the runs a publish pointer names, and their backtest runs. The ingest keeps superseded and QA-failed runs, so checking every run would let one bad run fail every later legitimate ingest. Shared tables (games, markets, odds) and publication consistency are checked whole.
+- **What the 15 error checks cover:**
   - every probability in `[0, 1]`, with NaN and Infinity caught;
-  - backtest metric ranges and interval bounds;
+  - backtest metric ranges, with every interval value finite and lower ≤ upper;
   - score distributions that cover their run's stated `distribution_mass`, with consecutive integer bins;
-  - duplicate matchups and inconsistent scores;
+  - duplicate matchups and inconsistent scores (a score more than a day before kickoff, since a kickoff with no game time is assumed 1 PM ET);
   - publication consistency (one published run per kind, pointers to published runs, an ingest log row for every run);
   - one backtest run per model run (B2's deferred minor: `evidence()` and `publicGates()` would otherwise disagree);
-  - coded columns inside their vocabularies;
   - odds quotes:
     - no price;
     - an American price in (−100, 100);
     - a bid above its ask;
     - a yes/no quote outside [0, 1];
     - a two-way price whose implied sum is outside [1.00, 1.15], with spreads paired by |line|;
-    - a closing line captured after kickoff or pointing at another venue's snapshot.
-- **The 2 warnings:**
+    - a closing line captured after kickoff, or pointing at another game, market, venue, side or player.
+- **The 3 warnings:**
   - a slope or skill outside its own bootstrap interval (a percentile interval need not contain it);
-  - a venue more than 8 points from the median no-vig probability of at least three venues in the same hour.
+  - a venue more than 8 points from the median no-vig probability of at least three venues in the same UTC hour;
+  - a coded column outside the vocabulary its table uses. This is a warning because the bundle contract keys its vocabularies by column name alone, so it admits wider values; making the contract per table is a follow-up.
+- **Six checks target tables no bundle writes yet:** the five odds checks and `prop_line_probs` (the K3 odds bundle and P2 will write them). So far these are verified only on rows planted in the tests.
+- **Writer contract for K3:** both sides of a two-way quote carry the same `captured_at`, or no pair forms.
 - **Audit F7 is by design.** A run's bins cover the central `distribution_mass` (0.999) of its draws, so they sum to between 0.999 and 1. The check compares against the run's stated mass.
 - **Where the checks run:**
   - after every ingest in CI (the fixture, simulator and parity-online steps);
@@ -34,7 +37,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
   In the deployed ingest the check runs after the ingest has committed, so it fails the job loudly but does not stop that run being published. Gating inside the ingest transaction is a follow-up.
 - **`docs/ERD.md`** is the data model as a Mermaid ERD: 32 tables and 44 foreign keys, with PK, FK and UK marks. `npm run erd` generates it from `web/src/db/schema.ts`. `web/src/lib/erd.test.ts` fails when the file is stale (a test column added to the schema made it fail), and `npm run erd -- --check` says the same.
 - **Gates:**
-  - vitest 21 files, 156 tests with `REQUIRE_DB_TESTS=1` (main has 18 files, 126 tests). Every check returns zero rows on the three fixture bundles, and each fires on a row planted to break it.
+  - vitest 21 files, 160 tests with `REQUIRE_DB_TESTS=1` (main has 18 files, 126 tests). Every check returns zero rows on the three fixture bundles, and each fires on a row planted to break it.
   - typecheck and lint exit 0.
   - `verify_repo_integrity.R`: 63 passed, 0 failed.
   - `npm run local` on the three fixture bundles printed `db-check: 18 checks, 0 error(s), 0 warning(s)`.

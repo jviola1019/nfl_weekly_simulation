@@ -27,7 +27,7 @@ export function renderErd(): string {
   const tables = Object.values(schema)
     .filter((v: unknown): v is PgTable => is(v, PgTable))
     .map((t) => getTableConfig(t))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   const entities: string[] = [];
   const relationships: Array<{ key: string; line: string }> = [];
   for (const t of tables) {
@@ -53,6 +53,6 @@ export function renderErd(): string {
       relationships.push({ key: `${parent}|${t.name}|${cols.join(",")}`, line: `  ${parent} ${optional ? "|o--o{" : "||--o{"} ${t.name} : "${cols.join(", ")}"` });
     }
   }
-  relationships.sort((a, b) => a.key.localeCompare(b.key));
+  relationships.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
   return [HEADER, "```mermaid", "erDiagram", ...entities, ...relationships.map((r) => r.line), "```", ""].join("\n");
 }

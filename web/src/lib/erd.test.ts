@@ -17,7 +17,7 @@ const tables = Object.values(schema).filter((v: unknown): v is PgTable => is(v, 
 describe("the ERD rendered from the schema", () => {
   it("has one entity per table, sorted by name, with every column", () => {
     const names = [...erd.matchAll(/^ {2}(\w+) \{$/gm)].map((m) => m[1]!);
-    expect(names).toEqual(tables.map((t) => t.name).sort((a, b) => a.localeCompare(b)));
+    expect(names).toEqual(tables.map((t) => t.name).sort());
     for (const t of tables) {
       const block = erd.match(new RegExp(`^ {2}${t.name} \\{\\n([\\s\\S]*?)\\n {2}\\}$`, "m"))?.[1] ?? "";
       expect(block.split("\n").length, t.name).toBe(t.columns.length);

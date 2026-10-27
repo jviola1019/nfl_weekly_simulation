@@ -4,6 +4,11 @@
  * CI, the deployed ingest and the local app). The invariants the schema itself enforces
  * (keys, foreign keys, drizzle/0001_invariants.sql) are not repeated here.
  *
+ * Run-scoped checks look only at the runs the app serves (the runs a publish pointer names, and
+ * the backtest runs of those). The ingest keeps superseded and qa_failed runs, so a check over all
+ * runs would let one bad run fail every later legitimate ingest until its rows were deleted.
+ * Shared tables (games, markets, odds) and publication consistency are checked whole.
+ *
  * "Outside [0, 1]" is written NOT (x BETWEEN 0 AND 1): Postgres double precision accepts NaN
  * and Infinity, and NaN sorts above every number, so a plain x < 0 OR x > 1 would be true for
  * NaN only by that accident.
@@ -21,12 +26,19 @@ export interface DbCheck {
   query: SQL;
 }
 
+/** The runs the app serves: the runs the publish pointers name. */
+const SERVED_RUNS = sql`SELECT run_id FROM publish_pointers`;
+/** The backtest runs of the served runs. */
+const SERVED_BT_RUNS = sql`SELECT bt_run_id FROM backtest_runs WHERE run_id IN (SELECT run_id FROM publish_pointers)`;
+
 /**
  * Two-way priced quotes: one row per (game, market, venue, player, |line|, capture time) whose two
  * sides both carry an American price. The pair is keyed by |line| because a spread is quoted as
  * home -3.5 against away +3.5. `side` is the pair's first side by name (the canonical side, so a
  * venue is compared once per quote), and `p_side` is that side's proportionally devigged probability.
  * American odds a: a >= 100 gives 100 / (a + 100); a <= -100 gives -a / (-a + 100).
+ * Writer contract (K3, before any odds bundle is ingested): both sides of one quote carry the same
+ * captured_at (one fetch), or no pair forms and these checks see nothing.
  */
 const PRICED_PAIRS = sql`
   SELECT game_id, market_id, venue_id, coalesce(player_id, '') AS player_key, abs(coalesce(line, 0)) AS aline, captured_at,
@@ -48,7 +60,7 @@ export const DB_CHECKS: readonly DbCheck[] = [
     query: sql`SELECT format('game_predictions run=%s game=%s candidate=%s %s=%s', g.run_id, g.game_id, g.candidate, v.col, v.val) AS detail
       FROM game_predictions g
       CROSS JOIN LATERAL (VALUES ('p_home_raw', g.p_home_raw), ('p_home_final', g.p_home_final), ('p_home_mkt_novig', g.p_home_mkt_novig)) v(col, val)
-      WHERE v.val IS NOT NULL AND NOT (v.val BETWEEN 0 AND 1)`
+      WHERE g.run_id IN (${SERVED_RUNS}) AND v.val IS NOT NULL AND NOT (v.val BETWEEN 0 AND 1)`
   },
   {
     id: "prob.recommendations",
@@ -57,7 +69,7 @@ export const DB_CHECKS: readonly DbCheck[] = [
     query: sql`SELECT format('recommendations run=%s rec=%s %s=%s', r.run_id, r.rec_id, v.col, v.val) AS detail
       FROM recommendations r
       CROSS JOIN LATERAL (VALUES ('p_model', r.p_model), ('p_mkt_novig', r.p_mkt_novig)) v(col, val)
-      WHERE v.val IS NOT NULL AND NOT (v.val BETWEEN 0 AND 1)`
+      WHERE r.run_id IN (${SERVED_RUNS}) AND v.val IS NOT NULL AND NOT (v.val BETWEEN 0 AND 1)`
   },
   {
     id: "prob.prop_line_probs",
@@ -65,7 +77,7 @@ export const DB_CHECKS: readonly DbCheck[] = [
     what: "a prop line's over or push probability is outside [0, 1], or the two sum above 1",
     query: sql`SELECT format('prop_line_probs run=%s player=%s market=%s line=%s p_over=%s p_push=%s', run_id, player_id, market_id, line, p_over, p_push) AS detail
       FROM prop_line_probs
-      WHERE NOT (p_over BETWEEN 0 AND 1) OR NOT (p_push BETWEEN 0 AND 1) OR p_over + p_push > 1 + 1e-9`
+      WHERE run_id IN (${SERVED_RUNS}) AND (NOT (p_over BETWEEN 0 AND 1) OR NOT (p_push BETWEEN 0 AND 1) OR p_over + p_push > 1 + 1e-9)`
   },
   {
     id: "prob.calibration_bins",
@@ -73,18 +85,21 @@ export const DB_CHECKS: readonly DbCheck[] = [
     what: "a calibration bin's mean is outside [0, 1] or its count is negative",
     query: sql`SELECT format('calibration_bins bt_run=%s split=%s candidate=%s bin=%s p_mean=%s y_mean=%s n=%s', bt_run_id, split, candidate, bin, p_mean, y_mean, n) AS detail
       FROM calibration_bins
-      WHERE NOT (p_mean BETWEEN 0 AND 1) OR NOT (y_mean BETWEEN 0 AND 1) OR n < 0`
+      WHERE bt_run_id IN (${SERVED_BT_RUNS}) AND (NOT (p_mean BETWEEN 0 AND 1) OR NOT (y_mean BETWEEN 0 AND 1) OR n < 0)`
   },
   {
     id: "backtest_metrics.ranges",
     severity: "error",
-    what: "a backtest metric is out of its range, or an interval's lower bound is above its upper",
+    what: "a backtest metric is out of its range, an interval value is not finite, or an interval's lower bound is above its upper",
     query: sql`SELECT format('backtest_metrics bt_run=%s split=%s phase=%s candidate=%s n=%s brier=%s logloss=%s accuracy=%s ece=%s slope=[%s, %s] skill=[%s, %s]',
                      bt_run_id, split, phase, candidate, n, brier, logloss, accuracy, ece, slope_lo, slope_hi, skill_lo, skill_hi) AS detail
       FROM backtest_metrics
-      WHERE NOT (brier BETWEEN 0 AND 1) OR NOT (accuracy BETWEEN 0 AND 1) OR NOT (ece BETWEEN 0 AND 1)
-         OR NOT (logloss >= 0 AND logloss < 'Infinity'::float8) OR n <= 0
-         OR slope_lo > slope_hi OR skill_lo > skill_hi`
+      CROSS JOIN LATERAL (SELECT bool_and(v > '-Infinity'::float8 AND v < 'Infinity'::float8) AS finite
+                          FROM (VALUES (slope), (slope_lo), (slope_hi), (skill), (skill_lo), (skill_hi)) b(v)) f
+      WHERE bt_run_id IN (${SERVED_BT_RUNS})
+        AND (NOT (brier BETWEEN 0 AND 1) OR NOT (accuracy BETWEEN 0 AND 1) OR NOT (ece BETWEEN 0 AND 1)
+             OR NOT (logloss >= 0 AND logloss < 'Infinity'::float8) OR n <= 0
+             OR NOT f.finite OR slope_lo > slope_hi OR skill_lo > skill_hi)`
   },
   {
     // a percentile-bootstrap interval need not contain its point estimate, so this is a warning
@@ -94,7 +109,7 @@ export const DB_CHECKS: readonly DbCheck[] = [
     query: sql`SELECT format('backtest_metrics bt_run=%s split=%s phase=%s candidate=%s slope=%s in [%s, %s] skill=%s in [%s, %s]',
                      bt_run_id, split, phase, candidate, slope, slope_lo, slope_hi, skill, skill_lo, skill_hi) AS detail
       FROM backtest_metrics
-      WHERE NOT (slope BETWEEN slope_lo AND slope_hi) OR NOT (skill BETWEEN skill_lo AND skill_hi)`
+      WHERE bt_run_id IN (${SERVED_BT_RUNS}) AND (NOT (slope BETWEEN slope_lo AND slope_hi) OR NOT (skill BETWEEN skill_lo AND skill_hi))`
   },
   {
     // the bins cover the central distribution_mass (0.999) of the draws, so they sum to at least
@@ -105,7 +120,7 @@ export const DB_CHECKS: readonly DbCheck[] = [
     query: sql`SELECT format('score_distributions run=%s game=%s kind=%s sum=%s mass=%s', d.run_id, d.game_id, d.kind,
                      round(s.total::numeric, 6), coalesce(m.config->>'distribution_mass', 'none')) AS detail
       FROM score_distributions d
-      JOIN model_runs m ON m.run_id = d.run_id
+      JOIN model_runs m ON m.run_id = d.run_id AND d.run_id IN (${SERVED_RUNS})
       CROSS JOIN LATERAL (
         SELECT sum(CASE WHEN jsonb_typeof(b->'p') = 'number' THEN (b->>'p')::float8 END) AS total,
                bool_or(CASE WHEN jsonb_typeof(b->'p') = 'number' THEN NOT ((b->>'p')::float8 BETWEEN 0 AND 1) ELSE true END) AS bad_bin
@@ -136,6 +151,7 @@ export const DB_CHECKS: readonly DbCheck[] = [
               THEN 'x is not consecutive ascending integers'
           END AS problem
         FROM score_distributions d
+        WHERE d.run_id IN (${SERVED_RUNS})
       ) t
       WHERE problem IS NOT NULL`
   },
@@ -151,14 +167,14 @@ export const DB_CHECKS: readonly DbCheck[] = [
   {
     id: "games.scores",
     severity: "error",
-    what: "a game has one score without the other, a negative score, or a score before its kickoff",
+    what: "a game has one score without the other, a negative score, or a score more than a day before its kickoff (a kickoff with no game time is assumed 1 PM ET)",
     query: sql`SELECT format('games %s: home_score=%s away_score=%s kickoff=%s: %s', game_id, coalesce(home_score::text, 'null'),
                      coalesce(away_score::text, 'null'), kickoff_utc, problem) AS detail
       FROM (
         SELECT g.*, CASE
           WHEN (home_score IS NULL) <> (away_score IS NULL) THEN 'one score without the other'
           WHEN home_score < 0 OR away_score < 0 THEN 'a negative score'
-          WHEN home_score IS NOT NULL AND kickoff_utc > now() THEN 'a score before kickoff'
+          WHEN home_score IS NOT NULL AND kickoff_utc > now() + interval '1 day' THEN 'a score more than a day before kickoff'
         END AS problem
         FROM games g
       ) t
@@ -189,25 +205,27 @@ export const DB_CHECKS: readonly DbCheck[] = [
     severity: "error",
     what: "a model run has more than one backtest run, or a backtest run belongs to a run that is not a backtest",
     query: sql`SELECT format('backtest_runs run %s has %s rows (%s)', run_id, count(*), string_agg(bt_run_id, ', ' ORDER BY bt_run_id)) AS detail
-      FROM backtest_runs GROUP BY run_id HAVING count(*) > 1
+      FROM backtest_runs WHERE run_id IN (${SERVED_RUNS}) GROUP BY run_id HAVING count(*) > 1
       UNION ALL
       SELECT format('backtest_runs %s: run %s is of kind %s', b.bt_run_id, b.run_id, m.kind)
-      FROM backtest_runs b JOIN model_runs m ON m.run_id = b.run_id WHERE m.kind <> 'backtest'`
+      FROM backtest_runs b JOIN model_runs m ON m.run_id = b.run_id WHERE b.run_id IN (${SERVED_RUNS}) AND m.kind <> 'backtest'`
   },
   {
+    // a warning: the bundle contract keys its vocabularies by column name alone, so it admits wider
+    // values (side: over/under/yes/no) than a table uses; failing on them would block a valid ingest
     id: "enum.values",
-    severity: "error",
-    what: "a coded column holds a value outside its vocabulary",
+    severity: "warning",
+    what: "a coded column holds a value outside the vocabulary its table uses",
     query: sql`SELECT format('source_status run=%s source=%s status=%s', run_id, source, status) AS detail
-        FROM source_status WHERE status NOT IN ('ok', 'stale', 'failed', 'unavailable')
+        FROM source_status WHERE run_id IN (${SERVED_RUNS}) AND status NOT IN ('ok', 'stale', 'failed', 'unavailable')
       UNION ALL SELECT format('recommendations run=%s rec=%s side=%s', run_id, rec_id, side)
-        FROM recommendations WHERE side NOT IN ('home', 'away', 'none')
+        FROM recommendations WHERE run_id IN (${SERVED_RUNS}) AND side NOT IN ('home', 'away', 'none')
       UNION ALL SELECT format('games %s game_type=%s', game_id, game_type)
         FROM games WHERE game_type NOT IN ('REG', 'WC', 'DIV', 'CON', 'SB')
       UNION ALL SELECT format('markets %s scope=%s outcome_kind=%s', market_id, scope, outcome_kind)
         FROM markets WHERE scope NOT IN ('game', 'player') OR outcome_kind NOT IN ('line', 'yes_no')
       UNION ALL SELECT format('backtest_metrics bt_run=%s candidate=%s split=%s phase=%s', bt_run_id, candidate, split, phase)
-        FROM backtest_metrics WHERE split NOT IN ('tune', 'confirm', 'holdout') OR phase NOT IN ('pooled', 'REG', 'POST')
+        FROM backtest_metrics WHERE bt_run_id IN (${SERVED_BT_RUNS}) AND (split NOT IN ('tune', 'confirm', 'holdout') OR phase NOT IN ('pooled', 'REG', 'POST'))
       UNION ALL SELECT format('bet_grades run=%s rec=%s grader=%s outcome=%s', run_id, rec_id, grader_version, outcome)
         FROM bet_grades WHERE outcome NOT IN ('win', 'loss', 'push', 'void')`
   },
@@ -251,11 +269,12 @@ export const DB_CHECKS: readonly DbCheck[] = [
   {
     id: "odds.close_snapshot_mismatch",
     severity: "error",
-    what: "a closing line points at a snapshot of another game, market, venue or side",
+    what: "a closing line points at a snapshot of another game, market, venue, side or player",
     query: sql`SELECT format('closing_lines game=%s market=%s venue=%s side=%s -> snapshot %s is game=%s market=%s venue=%s side=%s',
                      c.game_id, c.market_id, c.venue_id, c.side, s.snapshot_id, s.game_id, s.market_id, s.venue_id, s.side) AS detail
       FROM closing_lines c JOIN odds_snapshots s ON s.snapshot_id = c.snapshot_id
-      WHERE s.game_id <> c.game_id OR s.market_id <> c.market_id OR s.venue_id <> c.venue_id OR s.side <> c.side`
+      WHERE s.game_id <> c.game_id OR s.market_id <> c.market_id OR s.venue_id <> c.venue_id OR s.side <> c.side
+         OR c.player_key <> coalesce(s.player_id, '')`
   },
   {
     // a venue's latest pair in each UTC hour against the median of the venues quoting the same
@@ -263,7 +282,7 @@ export const DB_CHECKS: readonly DbCheck[] = [
     id: "odds.cross_venue",
     severity: "warning",
     what: "a venue's no-vig probability is more than 8 points from the median of at least three venues in the same hour",
-    query: sql`WITH pairs AS (SELECT *, date_trunc('hour', captured_at) AS hour FROM (${PRICED_PAIRS}) p),
+    query: sql`WITH pairs AS (SELECT *, date_trunc('hour', captured_at AT TIME ZONE 'UTC') AS hour FROM (${PRICED_PAIRS}) p),
       latest AS (
         SELECT DISTINCT ON (game_id, market_id, player_key, aline, hour, venue_id) *
         FROM pairs ORDER BY game_id, market_id, player_key, aline, hour, venue_id, captured_at DESC

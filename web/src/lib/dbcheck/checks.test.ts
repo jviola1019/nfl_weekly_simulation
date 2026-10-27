@@ -83,7 +83,7 @@ describe.skipIf(!hasDb)("SQL data checks (Postgres)", () => {
   it("NaN and Infinity are outside [0, 1]", async () => {
     const r = await withPlanted((tx) =>
       tx.execute(sql`INSERT INTO game_predictions (run_id, game_id, candidate, p_home_final)
-                     VALUES (${weeklyRun}, '2026_04_DEN_SF', 'CX', 'NaN'), (${weeklyRun}, '2026_04_DEN_SF', 'CY', 'Infinity')`)
+                     VALUES (${simRun}, '2024_15_LA_SF', 'CX', 'NaN'), (${simRun}, '2024_15_LA_SF', 'CY', 'Infinity')`)
     );
     expect(count(r, "prob.game_predictions").count).toBe(2);
   });
@@ -91,7 +91,7 @@ describe.skipIf(!hasDb)("SQL data checks (Postgres)", () => {
   it("a recommendation probability above 1 is reported", async () => {
     const r = await withPlanted((tx) =>
       tx.execute(sql`INSERT INTO recommendations (rec_id, run_id, game_id, candidate, side, p_model, stake_pct, tier)
-                     VALUES ('planted', ${weeklyRun}, '2026_04_DEN_SF', 'C2', 'home', 1.5, 0, 'pass')`)
+                     VALUES ('planted', ${simRun}, '2024_15_LA_SF', 'C2', 'home', 1.5, 0, 'pass')`)
     );
     const c = count(r, "prob.recommendations");
     expect(c.count).toBe(1);
@@ -103,7 +103,7 @@ describe.skipIf(!hasDb)("SQL data checks (Postgres)", () => {
       await tx.execute(sql`INSERT INTO players (player_id, full_name) VALUES ('00-planted', 'Planted Player')`);
       await tx.execute(sql`INSERT INTO markets (market_id, scope, outcome_kind, grading_rule) VALUES ('rec_yds', 'player', 'line', 'over_under')`);
       await tx.execute(sql`INSERT INTO prop_line_probs (run_id, player_id, market_id, line, p_over, p_push)
-                           VALUES (${weeklyRun}, '00-planted', 'rec_yds', 55.5, 0.7, 0.4)`);
+                           VALUES (${simRun}, '00-planted', 'rec_yds', 55.5, 0.7, 0.4)`);
     });
     expect(count(r, "prob.prop_line_probs").count).toBe(1);
   });
@@ -137,12 +137,13 @@ describe.skipIf(!hasDb)("SQL data checks (Postgres)", () => {
     expect([w.count, w.severity]).toEqual([1, "warning"]);
   });
 
-  it("a distribution whose run states no mass is reported", async () => {
+  it("a served run whose config states no distribution_mass has every distribution reported", async () => {
+    const n = (await db.execute<{ n: number }>(sql`SELECT count(*)::int AS n FROM score_distributions WHERE run_id = ${simRun}`))[0]!.n;
     const r = await withPlanted((tx) =>
-      tx.execute(sql`INSERT INTO score_distributions (run_id, game_id, kind, bins)
-                     VALUES (${weeklyRun}, '2026_04_DEN_SF', 'margin', ${JSON.stringify([{ x: 0, p: 1 }])}::jsonb)`)
+      tx.execute(sql`UPDATE model_runs SET config = config - 'distribution_mass' WHERE run_id = ${simRun}`)
     );
-    expect(count(r, "score_distributions.mass").count).toBe(1);
+    expect(n).toBeGreaterThan(0);
+    expect(count(r, "score_distributions.mass").count).toBe(n);
   });
 
   it("bins with a gap in x are reported", async () => {
@@ -189,13 +190,43 @@ describe.skipIf(!hasDb)("SQL data checks (Postgres)", () => {
     expect(count(r, "backtest_runs.run_key").count).toBe(1);
   });
 
-  it("an unknown source status is reported", async () => {
+  it("an unknown source status is a warning (the contract's vocabularies are wider, so it must not block an ingest)", async () => {
     const r = await withPlanted((tx) =>
-      tx.execute(sql`INSERT INTO source_status (run_id, source, status) VALUES (${weeklyRun}, 'planted', 'unknown')`)
+      tx.execute(sql`INSERT INTO source_status (run_id, source, status) VALUES (${simRun}, 'planted', 'unknown')`)
     );
     const c = count(r, "enum.values");
-    expect(c.count).toBe(1);
+    expect([c.count, c.severity]).toEqual([1, "warning"]);
     expect(c.samples[0]).toContain("unknown");
+  });
+
+  it("a violation in a run no pointer serves is not reported, so it cannot block the next ingest (final review C-1)", async () => {
+    // weekly-2026-w04 was superseded when the simulator run was ingested
+    const r = await withPlanted((tx) =>
+      tx.execute(sql`INSERT INTO game_predictions (run_id, game_id, candidate, p_home_final) VALUES (${weeklyRun}, '2026_04_DEN_SF', 'CX', 1.5)`)
+    );
+    expect(count(r, "prob.game_predictions").count).toBe(0);
+    expect(formatReport(r).errors).toBe(0);
+  });
+
+  it("an interval bound that is NaN or Infinity is an error (final review I-1)", async () => {
+    const r = await withPlanted(async (tx) => {
+      await tx.execute(sql`INSERT INTO backtest_metrics (bt_run_id, split, phase, candidate, n, brier, logloss, accuracy, ece,
+                                                         slope, slope_lo, slope_hi, skill, skill_lo, skill_hi) VALUES
+        (${btRunId}, 'tune', 'pooled', 'CN', 100, 0.21, 0.61, 0.66, 0.02, 1, 0.9, 'NaN', 0.01, -0.01, 0.03),
+        (${btRunId}, 'tune', 'pooled', 'CI', 100, 0.21, 0.61, 0.66, 0.02, 1, 0.9, 1.1, 0.01, -0.01, 'Infinity')`);
+    });
+    expect(count(r, "backtest_metrics.ranges").count).toBe(2);
+  });
+
+  it("a score more than a day before its kickoff is an error; a few hours is not (an assumed 1 PM ET kickoff can be late)", async () => {
+    const soon = await withPlanted((tx) =>
+      tx.execute(sql`UPDATE games SET home_score = 24, away_score = 17, kickoff_utc = now() + interval '3 hours' WHERE game_id = '2026_04_DEN_SF'`)
+    );
+    expect(count(soon, "games.scores").count).toBe(0);
+    const later = await withPlanted((tx) =>
+      tx.execute(sql`UPDATE games SET home_score = 24, away_score = 17, kickoff_utc = now() + interval '3 days' WHERE game_id = '2026_04_DEN_SF'`)
+    );
+    expect(count(later, "games.scores").count).toBe(1);
   });
 
   it("a check whose SQL fails is reported by id, not skipped", async () => {
@@ -256,6 +287,18 @@ describe.skipIf(!hasDb)("SQL data checks (Postgres)", () => {
     const c = count(r, "odds.close_after_kickoff");
     expect(c.count).toBe(1);
     expect(c.samples[0]).toContain("bkA");
+  });
+
+  it("a closing line pointing at another player's snapshot is reported (final review I-3)", async () => {
+    const r = await withPlanted(async (tx) => {
+      await oddsBase(tx, ["bkA"]);
+      await tx.execute(sql`INSERT INTO players (player_id, full_name) VALUES ('P1', 'Player One'), ('P2', 'Player Two')`);
+      const s = (await tx.execute(sql`INSERT INTO odds_snapshots (game_id, market_id, venue_id, player_id, side, price_american, captured_at)
+                                       VALUES (${GAME}, 'td_yes', 'bkA', 'P2', 'yes', 150, ${AT}) RETURNING snapshot_id`))[0] as { snapshot_id: number };
+      await tx.execute(sql`INSERT INTO closing_lines (game_id, market_id, venue_id, player_key, side, snapshot_id, rule_version)
+                           VALUES (${GAME}, 'td_yes', 'bkA', 'P1', 'yes', ${s.snapshot_id}, 'test')`);
+    });
+    expect(count(r, "odds.close_snapshot_mismatch").count).toBe(1);
   });
 
   it("a closing line pointing at another venue's snapshot is reported", async () => {
