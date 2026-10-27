@@ -13,7 +13,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - The golden master (2024 week 15, no byes) could not see it. `calib_cache_key` has no week, so the first run of a season cached the broken fit for every later week.
 - **The fix.**
   - `team_hfa_table()` (`R/schedule_context.R`) builds home field for every team in the schedule.
-  - `assert_finite_means()` stops a calibration week whose means are not finite, naming the games, instead of letting them become 21.5.
+  - `assert_finite_means()` stops a calibration week whose means are not finite, naming the games, instead of letting them become 21.5. The message also names every missing input of those means, with up to three of its games.
   - The calibration cache version is now 4L, so no cached fit from before the fix is reused.
 - **The effect.** Measured on a cold-cache `run_week.R 7 2026` with `warn = 1`, against the audit's run before the fix:
   - fallback warnings: 634 before, 0 after;
@@ -22,6 +22,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - blend minus market, week-block bootstrap: ΔLog-loss +0.0131 [0.0025, 0.0260] before and +0.0134 [0.0022, 0.0265] after; ΔBrier +0.0034 [0.0012, 0.0058] before and +0.0032 [0.0009, 0.0058] after.
 
   **The fix makes the simulator's inputs honest, but it does not close the gap to the market. F4 still stands.**
+- **Open, for the owner.** CI's golden master (2024 week 15; its calibration starts at 2019 week 1) now stops at `2019_01_DEN_OAK`: the home team's four drive inputs are missing. nflverse play-by-play files the 2019 Raiders as `LV`, while the schedules say `OAK`, so the play-by-play tables never join the schedule's code. On main those games were coin flips. The fix (franchise codes in the schedule, or schedule codes in the play-by-play) changes the golden master, so it waits for the owner.
 - **Gates:**
   - `run_tests.R`: 458 tests, 1,769 passed, 0 failed, 1 allowlisted skip.
   - `verify_repo_integrity.R`: 63 passed, 0 failed.

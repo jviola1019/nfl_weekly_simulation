@@ -28,6 +28,15 @@ test_that("a calibration week whose means are not finite stops and names the gam
   expect_silent(assert_finite_means(ok, "calibration 2024 week 3"))
 })
 
+test_that("a missing mean names the inputs that are missing, with their games", {
+  g <- data.frame(game_id = c("2019_01_DEN_OAK", "2019_01_KC_JAX", "2019_01_NE_PIT"),
+                  home_team = c("OAK", "JAX", "NE"), exp_ppd_home = c(NA, 2.1, 1.9),
+                  margin_shift = c(1, NA, 0.5), home_hfa = c(1.2, 1.5, 1.4),
+                  mu_home = c(NA, NA, 24.0), mu_away = c(20, 21, 18.5))
+  expect_error(assert_finite_means(g, "calibration 2019 week 1"),
+               "2 game\\(s\\) without a finite mean: 2019_01_DEN_OAK, 2019_01_KC_JAX; missing inputs: exp_ppd_home \\(2019_01_DEN_OAK\\); margin_shift \\(2019_01_KC_JAX\\)$")
+})
+
 test_that("the engine builds home field for every schedule team and refuses a missing mean (F11)", {
   code <- readLines(file.path(PROJECT_ROOT, "NFLsimulation.R"), warn = FALSE)
   code <- code[!grepl("^\\s*#", code)]

@@ -93,13 +93,23 @@ team_hfa_table <- function(home_margins, teams, league_hfa, den_bonus = 0, shrin
 #' Stop when a week's simulated means are not finite (output audit F11)
 #'
 #' simulate_game_nb would otherwise replace them with 21.5 each, a coin flip, without a word.
-#' @param g one row per game: game_id, mu_home, mu_away
+#' The message names every other column that is missing in those games, with up to three of
+#' its games, so the input that broke the mean is in the error itself.
+#' @param g one row per game: game_id, mu_home, mu_away, and the inputs of the means
 #' @param where label for the message, e.g. "calibration 2024 week 3"
 assert_finite_means <- function(g, where) {
   bad <- !is.finite(g$mu_home) | !is.finite(g$mu_away)
   if (any(bad)) {
-    stop(sprintf("%s: %d game(s) without a finite mean: %s", where, sum(bad),
-                 paste(utils::head(g$game_id[bad], 10), collapse = ", ")), call. = FALSE)
+    rows <- g[bad, setdiff(names(g), c("game_id", "mu_home", "mu_away")), drop = FALSE]
+    ids <- g$game_id[bad]
+    missing <- names(rows)[vapply(rows, function(x) any(is.na(x)), logical(1))]
+    detail <- if (length(missing)) {
+      sprintf("; missing inputs: %s", paste(vapply(utils::head(missing, 12), function(col)
+        sprintf("%s (%s)", col, paste(utils::head(ids[is.na(rows[[col]])], 3), collapse = ", ")), ""),
+        collapse = "; "))
+    } else ""
+    stop(sprintf("%s: %d game(s) without a finite mean: %s%s", where, sum(bad),
+                 paste(utils::head(ids, 10), collapse = ", "), detail), call. = FALSE)
   }
   invisible(g)
 }
