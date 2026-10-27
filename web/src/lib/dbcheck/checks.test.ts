@@ -202,6 +202,85 @@ describe.skipIf(!hasDb)("SQL data checks (Postgres)", () => {
     const broken: readonly DbCheck[] = [{ id: "test.broken", severity: "error", what: "x", query: sql`SELECT no_such_column AS detail FROM games` }];
     await expect(runDbChecks(db, broken)).rejects.toThrow(/^db-check test\.broken: /);
   });
+
+  // --- odds checks (Task 2): quotes planted on fixture game 2026_04_DEN_SF ---
+  const GAME = "2026_04_DEN_SF";
+  const AT = "2026-09-20T15:00:00Z";
+  async function oddsBase(tx: Queryable, venues: string[]) {
+    for (const v of venues) await tx.execute(sql`INSERT INTO venues (venue_id, display_name, kind) VALUES (${v}, ${v}, 'sportsbook') ON CONFLICT DO NOTHING`);
+    await tx.execute(sql`INSERT INTO markets (market_id, scope, outcome_kind, grading_rule) VALUES
+      ('ml', 'game', 'line', 'moneyline'), ('spread', 'game', 'line', 'spread'), ('td_yes', 'player', 'yes_no', 'scores_td')
+      ON CONFLICT DO NOTHING`);
+  }
+  const quote = (tx: Queryable, venue: string, market: string, side: string, price: number | null, line: number | null = null, at = AT) =>
+    tx.execute(sql`INSERT INTO odds_snapshots (game_id, market_id, venue_id, side, line, price_american, captured_at)
+                   VALUES (${GAME}, ${market}, ${venue}, ${side}, ${line}, ${price}, ${at}) RETURNING snapshot_id`);
+
+  it("a two-way price whose implied probabilities sum outside [1.00, 1.15] is reported; spreads pair by |line|", async () => {
+    const r = await withPlanted(async (tx) => {
+      await oddsBase(tx, ["bkA", "bkB", "bkC", "bkD", "exK"]);
+      await quote(tx, "bkA", "ml", "home", -110); await quote(tx, "bkA", "ml", "away", -110); // 1.0476: fine
+      await quote(tx, "bkB", "ml", "home", 150); await quote(tx, "bkB", "ml", "away", 150); // 0.80: reported
+      await quote(tx, "bkC", "spread", "home", -110, -3.5); await quote(tx, "bkC", "spread", "away", -110, 3.5); // one pair, fine
+      await quote(tx, "bkD", "ml", "home", -120); // one side only: not a pair
+      await tx.execute(sql`INSERT INTO odds_snapshots (game_id, market_id, venue_id, side, bid, ask, captured_at)
+                           VALUES (${GAME}, 'ml', 'exK', 'home', 0.55, 0.57, ${AT})`); // exchange quote, no price
+    });
+    const c = count(r, "odds.overround");
+    expect(c.count).toBe(1);
+    expect(c.samples[0]).toContain("bkB");
+  });
+
+  it("a quote with an impossible shape is reported", async () => {
+    const r = await withPlanted(async (tx) => {
+      await oddsBase(tx, ["bkA", "exK"]);
+      await quote(tx, "bkA", "ml", "home", 50); // American odds cannot lie in (-100, 100)
+      await tx.execute(sql`INSERT INTO odds_snapshots (game_id, market_id, venue_id, side, bid, ask, captured_at) VALUES
+        (${GAME}, 'td_yes', 'exK', 'yes', 0.30, 1.2, ${AT}),
+        (${GAME}, 'ml', 'exK', 'away', 0.6, 0.5, ${AT}),
+        (${GAME}, 'ml', 'exK', 'home', NULL, NULL, ${AT})`);
+    });
+    expect(count(r, "odds.quote_shape").count).toBe(4);
+  });
+
+  it("a closing line captured after kickoff is reported, one captured before it is not", async () => {
+    const kickoff = (await db.execute<{ k: string }>(sql`SELECT kickoff_utc::text AS k FROM games WHERE game_id = ${GAME}`))[0]!.k;
+    const shift = (min: number) => new Date(new Date(kickoff).getTime() + min * 60_000).toISOString();
+    const r = await withPlanted(async (tx) => {
+      await oddsBase(tx, ["bkA", "bkB"]);
+      const after = (await quote(tx, "bkA", "ml", "home", -110, null, shift(5)))[0] as { snapshot_id: number };
+      const before = (await quote(tx, "bkB", "ml", "home", -110, null, shift(-5)))[0] as { snapshot_id: number };
+      await tx.execute(sql`INSERT INTO closing_lines (game_id, market_id, venue_id, side, snapshot_id, rule_version) VALUES
+        (${GAME}, 'ml', 'bkA', 'home', ${after.snapshot_id}, 'test'), (${GAME}, 'ml', 'bkB', 'home', ${before.snapshot_id}, 'test')`);
+    });
+    const c = count(r, "odds.close_after_kickoff");
+    expect(c.count).toBe(1);
+    expect(c.samples[0]).toContain("bkA");
+  });
+
+  it("a closing line pointing at another venue's snapshot is reported", async () => {
+    const r = await withPlanted(async (tx) => {
+      await oddsBase(tx, ["bkA", "bkB"]);
+      const s = (await quote(tx, "bkB", "ml", "home", -110))[0] as { snapshot_id: number };
+      await tx.execute(sql`INSERT INTO closing_lines (game_id, market_id, venue_id, side, snapshot_id, rule_version)
+                           VALUES (${GAME}, 'ml', 'bkA', 'home', ${s.snapshot_id}, 'test')`);
+    });
+    expect(count(r, "odds.close_snapshot_mismatch").count).toBe(1);
+  });
+
+  it("a venue more than 8 points from the median of three is a warning, reported once per quote", async () => {
+    const r = await withPlanted(async (tx) => {
+      await oddsBase(tx, ["v1", "v2", "v3"]);
+      // no-vig home 0.600, 0.611 and 0.750 (median 0.611)
+      await quote(tx, "v1", "ml", "home", -166); await quote(tx, "v1", "ml", "away", 140);
+      await quote(tx, "v2", "ml", "home", -174); await quote(tx, "v2", "ml", "away", 147);
+      await quote(tx, "v3", "ml", "home", -355); await quote(tx, "v3", "ml", "away", 285);
+    });
+    const w = count(r, "odds.cross_venue");
+    expect([w.count, w.severity]).toEqual([1, "warning"]);
+    expect(w.samples[0]).toContain("v3");
+    expect(formatReport(r).errors).toBe(0);
+  });
 });
 
 describe("formatReport", () => {

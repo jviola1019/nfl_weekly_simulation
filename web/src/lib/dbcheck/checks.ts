@@ -21,6 +21,25 @@ export interface DbCheck {
   query: SQL;
 }
 
+/**
+ * Two-way priced quotes: one row per (game, market, venue, player, |line|, capture time) whose two
+ * sides both carry an American price. The pair is keyed by |line| because a spread is quoted as
+ * home -3.5 against away +3.5. `side` is the pair's first side by name (the canonical side, so a
+ * venue is compared once per quote), and `p_side` is that side's proportionally devigged probability.
+ * American odds a: a >= 100 gives 100 / (a + 100); a <= -100 gives -a / (-a + 100).
+ */
+const PRICED_PAIRS = sql`
+  SELECT game_id, market_id, venue_id, coalesce(player_id, '') AS player_key, abs(coalesce(line, 0)) AS aline, captured_at,
+         min(side) AS side, sum(implied) AS total,
+         (array_agg(implied ORDER BY side))[1] / sum(implied) AS p_side
+  FROM (
+    SELECT s.*, CASE WHEN s.price_american >= 100 THEN 100.0 / (s.price_american + 100)
+                     WHEN s.price_american <= -100 THEN (-s.price_american)::float8 / (-s.price_american + 100) END AS implied
+    FROM odds_snapshots s WHERE s.price_american IS NOT NULL
+  ) q
+  GROUP BY game_id, market_id, venue_id, coalesce(player_id, ''), abs(coalesce(line, 0)), captured_at
+  HAVING count(*) = 2 AND count(DISTINCT side) = 2 AND count(implied) = 2`;
+
 export const DB_CHECKS: readonly DbCheck[] = [
   {
     id: "prob.game_predictions",
@@ -191,5 +210,72 @@ export const DB_CHECKS: readonly DbCheck[] = [
         FROM backtest_metrics WHERE split NOT IN ('tune', 'confirm', 'holdout') OR phase NOT IN ('pooled', 'REG', 'POST')
       UNION ALL SELECT format('bet_grades run=%s rec=%s grader=%s outcome=%s', run_id, rec_id, grader_version, outcome)
         FROM bet_grades WHERE outcome NOT IN ('win', 'loss', 'push', 'void')`
+  },
+  // --- odds (no bundle writes these tables yet; the K3 odds bundle will) ---
+  {
+    id: "odds.quote_shape",
+    severity: "error",
+    what: "a quote has no price and no bid, ask or last, an American price in (-100, 100), a bid above its ask, or a yes/no quote outside [0, 1]",
+    query: sql`SELECT format('odds_snapshots %s game=%s market=%s venue=%s side=%s: %s', snapshot_id, game_id, market_id, venue_id, side, problem) AS detail
+      FROM (
+        SELECT s.snapshot_id, s.game_id, s.market_id, s.venue_id, s.side, CASE
+          WHEN s.price_american IS NULL AND s.bid IS NULL AND s.ask IS NULL AND s.last IS NULL THEN 'no price and no quote'
+          WHEN s.price_american > -100 AND s.price_american < 100 THEN format('American price %s is between -100 and 100', s.price_american)
+          WHEN s.bid > s.ask THEN format('bid %s above ask %s', s.bid, s.ask)
+          WHEN m.outcome_kind = 'yes_no' AND (NOT (coalesce(s.bid, 0) BETWEEN 0 AND 1) OR NOT (coalesce(s.ask, 0) BETWEEN 0 AND 1)
+                                              OR NOT (coalesce(s.last, 0) BETWEEN 0 AND 1))
+            THEN format('a yes/no quote outside [0, 1]: bid %s ask %s last %s', s.bid, s.ask, s.last)
+        END AS problem
+        FROM odds_snapshots s JOIN markets m ON m.market_id = s.market_id
+      ) t
+      WHERE problem IS NOT NULL`
+  },
+  {
+    id: "odds.overround",
+    severity: "error",
+    what: "a two-way price's implied probabilities sum outside [1.00, 1.15]",
+    query: sql`SELECT format('odds game=%s market=%s venue=%s line=%s captured=%s: implied sum %s', game_id, market_id, venue_id, aline, captured_at, round(total::numeric, 4)) AS detail
+      FROM (${PRICED_PAIRS}) p
+      WHERE total < 1 - 1e-9 OR total > 1.15 + 1e-9`
+  },
+  {
+    id: "odds.close_after_kickoff",
+    severity: "error",
+    what: "a closing line was captured after its game's kickoff",
+    query: sql`SELECT format('closing_lines game=%s market=%s venue=%s side=%s: snapshot %s captured %s, kickoff %s', c.game_id, c.market_id, c.venue_id, c.side, c.snapshot_id, s.captured_at, g.kickoff_utc) AS detail
+      FROM closing_lines c
+      JOIN odds_snapshots s ON s.snapshot_id = c.snapshot_id
+      JOIN games g ON g.game_id = c.game_id
+      WHERE s.captured_at > g.kickoff_utc`
+  },
+  {
+    id: "odds.close_snapshot_mismatch",
+    severity: "error",
+    what: "a closing line points at a snapshot of another game, market, venue or side",
+    query: sql`SELECT format('closing_lines game=%s market=%s venue=%s side=%s -> snapshot %s is game=%s market=%s venue=%s side=%s',
+                     c.game_id, c.market_id, c.venue_id, c.side, s.snapshot_id, s.game_id, s.market_id, s.venue_id, s.side) AS detail
+      FROM closing_lines c JOIN odds_snapshots s ON s.snapshot_id = c.snapshot_id
+      WHERE s.game_id <> c.game_id OR s.market_id <> c.market_id OR s.venue_id <> c.venue_id OR s.side <> c.side`
+  },
+  {
+    // a venue's latest pair in each UTC hour against the median of the venues quoting the same
+    // game, market, player and |line| in that hour; flagged, not failed: a venue can be right
+    id: "odds.cross_venue",
+    severity: "warning",
+    what: "a venue's no-vig probability is more than 8 points from the median of at least three venues in the same hour",
+    query: sql`WITH pairs AS (SELECT *, date_trunc('hour', captured_at) AS hour FROM (${PRICED_PAIRS}) p),
+      latest AS (
+        SELECT DISTINCT ON (game_id, market_id, player_key, aline, hour, venue_id) *
+        FROM pairs ORDER BY game_id, market_id, player_key, aline, hour, venue_id, captured_at DESC
+      ),
+      med AS (
+        SELECT game_id, market_id, player_key, aline, hour, side, count(*) AS n_venues,
+               percentile_cont(0.5) WITHIN GROUP (ORDER BY p_side) AS median
+        FROM latest GROUP BY game_id, market_id, player_key, aline, hour, side
+      )
+      SELECT format('odds game=%s market=%s line=%s hour=%s venue=%s %s=%s, median %s over %s venues', l.game_id, l.market_id, l.aline, l.hour,
+                    l.venue_id, l.side, round(l.p_side::numeric, 3), round(m.median::numeric, 3), m.n_venues) AS detail
+      FROM latest l JOIN med m USING (game_id, market_id, player_key, aline, hour, side)
+      WHERE m.n_venues >= 3 AND abs(l.p_side - m.median) > 0.08`
   }
 ];
