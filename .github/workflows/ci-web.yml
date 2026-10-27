@@ -84,6 +84,8 @@ jobs:
           # the second ingest of the same bundle must be a no-op
           npm run ingest -- ../contracts/fixtures/bundles/weekly-2026-w04 | tee ingest-again.log
           grep -q "^duplicate:" ingest-again.log
+          # SQL data checks after every ingest: zero rows from every assertion query (C2)
+          npm run db-check
           # per-run credentials, generated here and masked; never stored
           echo "DESK_EMAIL=desk@example.test" >> "$GITHUB_ENV"
           pw="$(openssl rand -base64 24)"; echo "::add-mask::$pw"; echo "DESK_PASSWORD=$pw" >> "$GITHUB_ENV"
@@ -111,6 +113,7 @@ jobs:
         run: |
           # the simulator fixture becomes the published weekly run (A8: run_week.R's bundle)
           npm run ingest -- ../contracts/fixtures/bundles/weekly-sim-2024-w15
+          npm run db-check
           npx playwright test --grep @sim
 
       - name: Server log
@@ -182,6 +185,7 @@ jobs:
           for d in weekly-2026-w04 backtest-nfl-games-v1 weekly-sim-2024-w15; do
             npm run ingest -- "../contracts/fixtures/bundles/$d"
           done
+          npm run db-check
           npm run seed:user
           nohup npm run start -- -p 3100 > next-online.log 2>&1 &
           for i in $(seq 1 60); do curl -fsS -o /dev/null http://127.0.0.1:3100/login && exit 0; sleep 1; done

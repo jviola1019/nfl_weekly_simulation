@@ -19,7 +19,8 @@
     "seed:user": "tsx scripts/seed-user.ts",
     "local": "tsx scripts/local.ts start",
     "local:stop": "tsx scripts/local.ts stop",
-    "check-bundle": "tsx scripts/check-bundle.ts"
+    "check-bundle": "tsx scripts/check-bundle.ts",
+    "db-check": "tsx scripts/db-check.ts"
   },
   "dependencies": {
     "@visx/axis": "4.0.0",

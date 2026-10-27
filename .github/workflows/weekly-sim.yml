@@ -141,3 +141,6 @@ jobs:
         run: |
           npm run db:migrate
           npm run ingest -- ../sim-bundle
+          # SQL data checks after the ingest (C2): a violation fails this job loudly; the ingest
+          # has already committed, so the published run must be checked by hand
+          npm run db-check
