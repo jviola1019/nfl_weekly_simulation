@@ -184,6 +184,10 @@ graph LR
 ### D1: the keyless odds layer and the decision-time archive
 **Spec:** Phase 2. **Audit IDs:** S2 and S4.
 
+**Status (2026-10-27):** executed, as draft PR #224, which awaits the owner.
+- The archive holds 570 games of 2023–2024. Games with both a moneyline opener and a closer: 205 of 285 in 2023 (71.9%) and 284 of 285 in 2024 (99.6%).
+- Gates: 643 tests, 0 failed; golden master "no differences"; live smoke and live capture passed.
+
 **Scope:**
 - **HTTP layer.** `R/odds/http.R` uses httr2 (already locked), with a truthful user agent, at most 1 req/s, a 20 s timeout, and backoff on 429/5xx. Each fetch records the raw response's sha256.
 - **Providers.** `provider_nflverse.R`, `provider_espn_core.R` (game open/close from 2023; live DraftKings prop lines) and `provider_kalshi.R` (`/historical/markets` and candles for the game and prop series). All follow one interface.

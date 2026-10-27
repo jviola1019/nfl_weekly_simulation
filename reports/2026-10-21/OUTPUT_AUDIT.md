@@ -87,10 +87,36 @@ The calibration means (`NFLsimulation.R`, around lines 4560–4660) multiply exp
 - The golden master pins week 15 of 2024, where all 32 teams play.
 - `calib_cache_key` has no week. The first run of a season caches a calibration broken for that week's bye teams, and every later week of the season reuses it.
 
-**Fix (owner-gated engine edit):** `fix/calib-hfa-all-teams`.
+**Fix (owner-gated engine edit):** `fix/calib-hfa-all-teams`, PR #223.
 - `team_hfa_table()` builds home field for every team in the schedule.
-- `assert_finite_means()` stops a calibration week whose means are not finite.
+- `assert_finite_means()` stops a calibration week whose means are not finite, and names the missing inputs.
 - The cache version goes to 4L.
+
+**Measured effect** (a cold-cache `run_week.R 7 2026` with `warn = 1`, before and after; #223's CHANGELOG):
+- Fallback warnings: 634 before, 0 after.
+- Raw simulator over the 1,355 calibration games:
+  - Brier 0.247 → 0.243;
+  - log-loss 0.690 → 0.682;
+  - the market's are 0.212 and 0.611.
+- The production blend is unchanged: Brier 0.215, log-loss 0.624.
+- Blend minus market (week-block bootstrap): ΔLog-loss +0.0131 [0.0025, 0.0260] before and +0.0134 [0.0022, 0.0265] after.
+- **The fix makes the simulator's inputs honest. It does not close the gap to the market, so F4 stands.**
+
+### F11b: the 2019 Raiders in the calibration (2026-10-27, owner decision)
+
+CI's golden master on #223 stops at calibration 2019 week 1 (2024 week 15's calibration starts there). The new stop names the missing inputs: `2019_01_DEN_OAK` has none of the home team's drive inputs (`home_off_drives_pg`, `home_def_drives_pg`, `home_off_ppd`, `home_def_ppd`). It is reproduced locally with `golden_master.R record 15 2024`.
+
+**Cause.** Pre-existing on main; #223's stop exposed it.
+- nflverse play-by-play uses franchise codes. In `nflreadr::load_pbp(2019)` the posteams of this game are `DEN` and `LV`, and `OAK` never appears.
+- `load_schedules()` keeps the codes of the time: `OAK` through 2019, and `SD` and `STL` in 2015–2019.
+- The drive and points-per-drive tables are keyed by the play-by-play's code and joined on the schedule's, so those teams have no drive data for their pre-move games.
+- On main every 2019 Raiders calibration game was a silent 21.5–21.5 coin flip.
+
+**Options.** Both are engine edits, and both change the golden master:
+- **A. Franchise codes in the schedule (recommended).** Map OAK→LV, SD→LAC and STL→LA, the map `R/sim_bundle.R` already uses. Form, pace and points per drive carry across a relocation; home field pools both stadiums.
+- **B. Schedule codes in the play-by-play.** OAK and LV stay separate, so LV starts 2020 with no form.
+
+Production runs are unaffected: 2026's calibration spans 2021–2025. The finding is posted on #223.
 
 ## F14, an engine kickoff bug (from P1's final review)
 `games_ready$kickoff_utc` (`NFLsimulation.R:2025`) holds the Eastern wall-clock time labelled UTC. For example, 2026_07_NE_CHI shows "20:15 UTC" for a 20:15 ET kickoff, because `as.POSIXct(<Date>)` gives midnight UTC. The web bundle computes its own correct kickoff (`2026-10-23T00:15:00Z`), and P1 now reads `game_date` and `kickoff_time_raw`, so neither uses this column. It is owner-gated engine work for G1.
