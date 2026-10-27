@@ -131,6 +131,12 @@ test_that("the archive rebuilds byte for byte from its stored raw responses, off
   }
 })
 
+test_that("the build fails only when a game could not be fetched, not for gaps in what ESPN serves", {
+  # a stale source status from markets ESPN never posted is reported, not a failure (Task 9 ruling)
+  expect_equal(odds_archive_exit_status(list(fetch_failures = list(), source_status = "stale")), 0L)
+  expect_equal(odds_archive_exit_status(list(fetch_failures = list(list(key = "999", http_status = 404L)), source_status = "stale")), 1L)
+})
+
 test_that("the event map round-trips into the games table", {
   a <- archive_provider(archive_routes())
   out <- file.path(withr::local_tempdir(), "archive")

@@ -51,8 +51,10 @@ if (from_raw) {
 message(sprintf("Odds archive: %d games, seasons %s, %s", nrow(games), paste(seasons, collapse = ", "),
                 if (from_raw) "replaying stored raw responses" else "fetching at 1 request/second"))
 
+# a replay reads local files, so it is not throttled (the 1 request/second floor protects hosts)
 provider <- provider_espn_core(cfg = odds_http_config(env = cfg_env), fetch_fn = fetch_fn,
-                               log_path = file.path(raw_dir, "fetch_log.ndjson"))
+                               log_path = file.path(raw_dir, "fetch_log.ndjson"),
+                               sleep_fn = if (from_raw) function(s) invisible(NULL) else Sys.sleep)
 res <- odds_archive_build(games, provider, out_dir, raw_dir)
 
 cat("\nCoverage (games with a complete open and close):\n")
@@ -60,7 +62,11 @@ print(res$coverage[res$coverage$venue_id == "any", ], row.names = FALSE)
 cat("\n", res$status$source, ": ", res$status$status, " - ", res$status$detail, "\n", sep = "")
 verify <- odds_archive_verify(out_dir, raw_dir)
 if (length(verify)) stop("odds archive: verification failed: ", paste(verify, collapse = "; "))
-if (!identical(res$status$status, "ok")) {
-  message("INCOMPLETE: some games could not be fetched; see fetch_failures in SOURCES.json")
+if (odds_archive_exit_status(res$sources) > 0L) {
+  message(sprintf("INCOMPLETE: %d game(s) could not be fetched; see fetch_failures in SOURCES.json",
+                  length(res$sources$fetch_failures)))
   quit(status = 1)
+}
+if (!identical(res$status$status, "ok")) {
+  message("Every game was fetched; the gaps above are in what ESPN serves (source_detail in SOURCES.json)")
 }

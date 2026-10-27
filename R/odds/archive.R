@@ -198,6 +198,11 @@ odds_archive_build <- function(games, provider, out_dir, raw_dir, built_utc = Sy
   invisible(list(snapshots = arch, coverage = coverage, sources = sources, status = res$source_status))
 }
 
+#' The build's exit status: 1 only when a game could not be fetched. A stale source status from
+#' gaps in what ESPN serves (a market it never posted, a line with no price) is reported in
+#' SOURCES.json, not treated as a failure: every game was fetched and stored.
+odds_archive_exit_status <- function(sources) if (length(sources$fetch_failures)) 1L else 0L
+
 #' Re-hash the stored raw responses and the derived files against SOURCES.json.
 #' With `raw_dir = NULL` only the committed derived files are checked (the raw
 #' responses are not committed).
