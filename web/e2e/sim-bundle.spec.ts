@@ -76,7 +76,7 @@ test.describe("@sim simulator run", () => {
 
   for (const scheme of SCHEMES) {
     for (const width of WIDTHS) {
-      test(`distributions at ${width}px ${scheme}: no overflow, no serious axe issue`, async ({ page }) => {
+      test(`distributions at ${width}px ${scheme}: no overflow, no axe violation`, async ({ page }) => {
         await page.setViewportSize({ width, height: 900 });
         await page.emulateMedia({ colorScheme: scheme });
         await page.goto(`/games/${games[0]!.game_id}`, { waitUntil: "networkidle" });
@@ -84,8 +84,8 @@ test.describe("@sim simulator run", () => {
         await drawLazyCharts(page);
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
         expect(overflow).toBeLessThanOrEqual(0);
-        const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
-        expect(axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => v.id)).toEqual([]);
+        const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "best-practice"]).analyze();
+        expect(axe.violations.map((v) => `${v.id} (${v.impact})`)).toEqual([]);
       });
     }
   }

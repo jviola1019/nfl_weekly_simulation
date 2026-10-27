@@ -65,14 +65,18 @@ Every page renders on demand from the database (the CSP nonce requires it). A co
 |---|---|
 | `npm run typecheck` | TypeScript, strict |
 | `npm run lint` | ESLint (`eslint-config-next`) |
-| `npm test` | vitest: contract drift, shared row fixtures, CSP, passwords, policy, slop scan, docs truth, offline fonts, design language, the local runner's rules, score distributions |
+| `npm test` | vitest: contract drift, shared row fixtures, CSP, passwords, policy, slop scan, docs truth, offline fonts, design language, the token ratchet, the ui components, the theme and the glossary, the local runner's rules, score distributions |
 | `TEST_DATABASE_URL=postgres://…/nfl_test REQUIRE_DB_TESTS=1 npm test` | adds the Postgres suites: ingest idempotency, tamper rejection, the qa_failed pointer, append-only triggers, the tier/stake CHECK, and public queries without stakes. The database name must end in `_test`; the harness drops its schema. |
-| `npm run e2e -- --grep-invert @sim` | Playwright against a running server (`E2E_BASE_URL`, default `http://127.0.0.1:3100`) with the fixture bundles: axe, overflow, security headers, `/desk` redirect, stakes never public, ID leaks, reduced motion, and offline rendering (every request served by this server) |
+| `npm run e2e -- --grep-invert @sim` | Playwright against a running server (`E2E_BASE_URL`, default `http://127.0.0.1:3100`) with the fixture bundles: axe, overflow, security headers, `/desk` redirect, stakes never public, ID leaks, reduced motion, offline rendering (every request served by this server), axe with the best-practice rules (any violation fails), and the Track B2 specs: flag geometry (`e2e/flags.spec.ts`), the theme cookie (`e2e/theme.spec.ts`), the two-row header (`e2e/header.spec.ts`), the stretched game link (`e2e/card-link.spec.ts`), run and data-date context (`e2e/context.spec.ts`), one vertical rhythm (`e2e/rhythm.spec.ts`), page structure and metadata (`e2e/html.spec.ts`) and print (`e2e/print.spec.ts`) |
 | `npx playwright test --grep @sim` | with a simulator run published (the committed `weekly-sim-2024-w15` fixture, or `E2E_SIM_BUNDLE` pointing at a run's bundle): the market and simulator probabilities on the pages equal the bundle's at the displayed precision, and the margin and total distributions render with no axe issue |
 | `E2E_PARITY_SNAPSHOTS=<dir> npx playwright test --grep @parity` | offline versus online pixel parity (see above); skips without the variable |
 | `npm run contracts:export` | regenerates `contracts/schema/*.json` from the Drizzle schema; CI fails if the committed files differ |
 
 `scripts/review-ui.mjs` takes full-page screenshots at 390, 768 and 1440 px in both themes and prints overflow, console and axe results for a visual review (`GAME=<game_id>` picks the game page; default `2026_04_DEN_SF` from the fixture).
+
+## Tokens and components
+
+Type, spacing, radius and measure are named tokens in `src/app/globals.css`, in a static theme block: the type roles heading, figure, stat, title, score and hero; the spacing roles tight, snug, control, stack, card, section, page-top and gutter; the radii card, field, control and tick; the measure and table widths. A page is a `<Page>` of `<Section>`s under one `<PageHeader>`, built from the components in `src/components/ui.tsx` (`Card`, `StatTile`, `DataTable`, `Stamp`, `Term`, `Breadcrumb`), and picks no size of its own. `src/test/tokens.test.ts` is the ratchet: `src/test/tokenCeilings.json` caps the arbitrary utilities (`text-[13px]`, `mt-[7px]`) in each file, the caps only fall, and `text-[Npx]` is allowed only in `src/components/ui.tsx` and `src/components/Field.tsx`. Each term a page uses is defined once in `src/lib/glossary.ts` and shown on /methodology. The theme is a cookie that the server renders (`src/app/theme/route.ts`, `src/lib/theme.ts`), so there is no theme script and nothing flashes.
 
 ## The contract
 

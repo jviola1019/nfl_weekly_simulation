@@ -141,6 +141,95 @@
   --font-sans: var(--font-archivo), system-ui, sans-serif;
 }
 
+/*
+ * Tokens beyond colour (Track B2): type, spacing, radius and measure come from named
+ * roles, so a page never invents a size. The unit is 4px (Tailwind's --spacing, 0.25rem);
+ * every role is a multiple of it, except the field geometry. Tailwind's xs, sm, base, lg
+ * and xl stay the small type scale (12 to 20px); the roles below are the display sizes.
+ * Roles that grow with the screen are overridden on :root by the breakpoint rules below.
+ * The block is static: every token is always emitted, because plain CSS (the tables, the print
+ * rules) reads some of them without a utility.
+ * tokens.test.ts holds the line: no new arbitrary utility, no text-[Npx] outside the
+ * components that draw numbers.
+ */
+@theme static {
+  --text-heading: 1.5rem;
+  --text-heading--line-height: 2rem;
+  --text-figure: 1.75rem;
+  --text-figure--line-height: 1;
+  --text-stat: 2.5rem;
+  --text-stat--line-height: 1;
+  --text-title-sm: 2rem;
+  --text-title-sm--line-height: 0.95;
+  --text-title: 2.5rem;
+  --text-title--line-height: 0.95;
+  --text-title--letter-spacing: -0.01em;
+  --text-score: 3.5rem;
+  --text-score--line-height: 0.9;
+  --text-hero: 4rem;
+  --text-hero--line-height: 0.9;
+  --text-hero--letter-spacing: -0.02em;
+
+  --spacing-tight: 0.25rem;
+  --spacing-snug: 0.5rem;
+  --spacing-control: 0.75rem;
+  --spacing-stack: 1.25rem;
+  --spacing-card: 1.25rem;
+  --spacing-card-sm: 1rem;
+  --spacing-section: 2.5rem;
+  --spacing-page-top: 3rem;
+  --spacing-gutter: 1rem;
+  --spacing-row: 0.5rem;
+  --spacing-cell: 1rem;
+  --spacing-endzone: 1.625rem;
+  --spacing-endzone-hero: 3.625rem;
+  --spacing-turf-hero: calc(3.625rem + 1px);
+
+  --radius-card: 6px;
+  --radius-field: 4px;
+  --radius-control: 3px;
+  --radius-tick: 2px;
+
+  --container-page: 90rem;
+  --container-measure: 42rem;
+  --container-aside: 26.25rem;
+  --container-tabular: 40rem;
+  --container-tabular-wide: 45rem;
+
+  --tracking-code: 0.14em;
+}
+
+@theme inline {
+  --color-turf-edge: var(--turf-edge);
+}
+
+/* What each role is for (the values are above):
+   tight 4: a label above its value. snug 8: a swatch or icon beside text, chip gaps.
+   control 12: a title above its content, control groups. stack 20: cards and tiles in a grid.
+   (Not "inline" or "block": Tailwind reads those names as inline-size and block-size utilities,
+   and inline-block would pick up a width.)
+   card 20 and card-sm 16: card padding (sm for a game strip or an empty state).
+   section 40: between the sections of a page. page-top 48: the header to the first block.
+   gutter: page side padding, 16 on a phone, 32 from sm, 64 from xl. row 8 and cell 16: tables.
+   endzone: the strip's end zones (26 on a phone, 46 from sm); endzone-hero 58; turf-hero is the
+   hero end zone plus the strip's 1px border, the inset of the flag row above it. */
+@media (min-width: 40rem) {
+  :root {
+    --text-title-sm: 2.5rem;
+    --text-title: 3.5rem;
+    --text-score: 5.5rem;
+    --text-hero: 6.5rem;
+    --spacing-gutter: 2rem;
+    --spacing-endzone: 2.875rem;
+  }
+}
+
+@media (min-width: 80rem) {
+  :root {
+    --spacing-gutter: 4rem;
+  }
+}
+
 html {
   background: var(--surface-sunken);
   color: var(--ink);
@@ -168,7 +257,7 @@ body {
 /* Base element rules live in the base layer, so Tailwind utilities (in the utilities
    layer) win over them; an unlayered `a { color }` would override text-* on links. */
 @layer base {
-  a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a { color: inherit; text-decoration-line: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 }
 
 .skip-link {
@@ -183,10 +272,91 @@ body {
 }
 .skip-link:focus { transform: none; }
 
+/* The definition a term link lands on is marked, so a reader sees which entry they came for. */
+[id^="term-"]:target { background: var(--surface-sunken); outline: 2px solid var(--rule); outline-offset: 4px; }
+
+/* A card whose whole surface is its link (a game strip): the title link stretches over the card, and
+   the card, not the title text, shows the focus ring. Unlayered, so it outranks the global focus rule. */
+.card-link:hover { border-color: var(--ink-2); }
+.card-link:has(a:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.card-link a:focus-visible { outline: none; }
+
+/* Component rules. Tailwind utilities (the utilities layer) still win over them. */
+@layer components {
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  .data-table th,
+  .data-table td {
+    padding: var(--spacing-row) var(--spacing-cell) var(--spacing-row) 0;
+    text-align: left;
+    font-weight: 400;
+  }
+  .data-table th:last-child,
+  .data-table td:last-child {
+    padding-right: 0;
+  }
+  .data-table thead th {
+    padding-top: 0;
+    color: var(--ink-2);
+  }
+  .data-table-dense th,
+  .data-table-dense td {
+    padding-top: calc(var(--spacing-row) / 2);
+    padding-bottom: calc(var(--spacing-row) / 2);
+  }
+  .data-table-top th,
+  .data-table-top td {
+    vertical-align: top;
+  }
+  .data-table-caption {
+    padding-bottom: var(--spacing-snug);
+    text-align: left;
+    font-weight: 500;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
 
 @media (forced-colors: active) {
   .field-marker, .field-model { forced-color-adjust: none; }
+}
+
+/*
+ * Print (the game and evidence pages are the ones people file): always the light palette on white,
+ * whatever theme the screen is in; no header, no chips, no theme control (print:hidden in the
+ * markup); backgrounds and the field's colours are kept, because the blue and gold lines are
+ * background colours; cards, figures and rows are not split across pages.
+ */
+@media print {
+  @page { margin: 14mm; }
+  :root:root {
+    color-scheme: light;
+    --surface: #ffffff;
+    --surface-sunken: #ffffff;
+    --ink: #000000;
+    --ink-2: #2b2b2b;
+    --ink-muted: #4d4d4d;
+    --rule: #b8b8b8;
+    --grid: #dddddd;
+    --market: #2563d1;
+    --model: #b98600;
+    --actual: #d4456f;
+    --neutral-mid: #c7cdc9;
+    --good: #1d7a46;
+    --warn: #8a5a00;
+    --crit: #b3261e;
+  }
+  html, body { background: #ffffff; color: #000000; }
+  * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .skip-link { display: none; }
+  main { padding: 0; max-width: none; }
+  figure, article, tr, .rounded-card { break-inside: avoid; }
+  [data-section-title] { break-after: avoid; }
 }
