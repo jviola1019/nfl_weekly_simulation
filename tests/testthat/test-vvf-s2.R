@@ -29,7 +29,7 @@ test_that("VIF above 5 drops the later-declared feature; aliased and constant fe
   expect_true(all(a$vif <= 5))
   expect_equal(a$dropped$feature, c("k0", "x4", "x2"))
   expect_equal(a$dropped$reason[1:2], c("constant", "aliased"))
-  expect_match(a$dropped$reason[3], "^VIF [0-9.]+ > 5$")
+  expect_match(a$dropped$reason[3], "^collinear with x1, declared first \\(VIF [0-9.]+ > 5\\)$")
   b <- v2s$vvf_s2_vif(d, c("x2", "x3", "x1"), "y")
   expect_equal(b$kept, c("x2", "x3"))
   expect_equal(b$dropped$feature, "x1")
@@ -81,4 +81,36 @@ test_that("S2 runs S0 first and reports every family", {
   expect_equal(nrow(s$stability), 6L)
   expect_equal(s$vif[family == "outcome", dropped], "abs_tz_away")
   expect_identical(unique(s$stability$anchor), "open")
+})
+
+test_that("the first-declared feature stays when only it is over the limit; its most collinear later partner yields (review I1)", {
+  set.seed(7)
+  n <- 2000
+  d <- data.table::data.table(g1 = stats::rbinom(n, 1, 0.5), g2 = stats::rbinom(n, 1, 0.5), y = stats::rnorm(n))
+  d[, f1 := 4 * g1 - 2 * g2 + stats::rnorm(n)]
+  v0 <- car::vif(stats::lm(y ~ f1 + g1 + g2, data = d))
+  expect_gt(v0[["f1"]], 5)                                           # only the first-declared feature is over the limit
+  expect_true(all(v0[c("g1", "g2")] < 5))
+  a <- v2s$vvf_s2_vif(d, c("f1", "g1", "g2"), "y")
+  expect_equal(a$kept, c("f1", "g2"))
+  expect_equal(a$dropped$feature, "g1")
+  expect_match(a$dropped$reason, "^collinear with f1, declared first \\(VIF [0-9.]+ > 5\\)$")
+  last <- v2s$vvf_s2_vif(d, c("g1", "g2", "f1"), "y")                # declared last, it yields itself
+  expect_equal(last$kept, c("g1", "g2"))
+  expect_match(last$dropped$reason, "^VIF [0-9.]+ > 5$")
+})
+
+test_that("S2 refuses a close anchor at an opener decision, and a sealed season (review C1, I5)", {
+  withr::local_dir(PROJECT_ROOT)
+  reg <- v2s$vvf_registry()
+  d <- sim_s2(seed = 8)
+  d[, `:=`(rest_diff = x1, turf = as.integer(x3 > 0))]
+  data.table::setattr(d, "vvf_anchor", "close")
+  expect_error(v2s$vvf_s2_structure(d, c("rest_diff", "turf"), "open_isa", families = c(outcome = "y"), registry = reg),
+               "the close anchor is known only at close")
+  s <- sim_s2(seed = 9)
+  s[, `:=`(rest_diff = x1, turf = as.integer(x3 > 0))]
+  s[1, season := 2025L]
+  expect_error(v2s$vvf_s2_structure(s, c("rest_diff", "turf"), "open_isa", families = c(outcome = "y"), registry = reg),
+               "sealed-season guard")
 })

@@ -25,3 +25,25 @@ vvf_assert_known_at <- function(features, decision, registry = vvf_registry()) {
   }
   invisible(TRUE)
 }
+
+#' The decisions at which each anchor is known: the opener from the first decision on, the
+#' close only at the close (review C1)
+vvf_anchor_decisions <- function() list(open = names(VVF_DECISIONS), close = "close")
+
+#' Stop unless the table's anchor (attribute vvf_anchor) is known at `decision`. A screen at
+#' the opener with the close as its offset would leak the close.
+vvf_assert_anchor <- function(anchor, decision) {
+  known <- vvf_anchor_decisions()
+  if (is.null(anchor)) {
+    stop("known-at violation: the table has no anchor; call vvf_anchor_features() first", call. = FALSE)
+  }
+  if (!anchor %in% names(known)) {
+    stop(sprintf("known-at violation: the table's anchor '%s' is not one of %s", anchor,
+                 paste(names(known), collapse = ", ")), call. = FALSE)
+  }
+  if (!decision %in% known[[anchor]]) {
+    stop(sprintf("known-at violation at %s: the %s anchor is known only at %s", decision, anchor,
+                 paste(known[[anchor]], collapse = ", ")), call. = FALSE)
+  }
+  invisible(TRUE)
+}

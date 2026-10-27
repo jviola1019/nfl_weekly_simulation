@@ -244,7 +244,8 @@ VVF_V2_SITUATIONAL <- setdiff(VVF_V2_FEATURES, c("d_c1", "d_c2", "d_e1", "lp_anc
 #' Disclosures the ledger and the protocols carry
 vvf_disclosures <- function() {
   data.table::data.table(
-    id = c("F3", "F11-CALIB", "CLV-POWER", "V1-BUILDER", "V1-CLV-2024", "V2-TUNE"),
+    id = c("F3", "F11-CALIB", "CLV-POWER", "V1-BUILDER", "V1-CLV-2024", "V2-TUNE",
+           "F11B", "V2-JOINT-DF", "JOINT-WALD", "CLUSTER-UNIT", "A3-FLEX"),
     text = c(
       paste("The production calibration window includes 2025. Every 2026 production run before PR #218, and the 2026-10-13 C3 retest,",
             "printed in-sample 2025 model-against-market figures (week 7: calibration Brier, model 0.214 against market 0.212;",
@@ -258,8 +259,26 @@ vvf_disclosures <- function() {
             "keeping 2024 rows only (found by the A3 planner on 2026-10-22). The owner decides whether it should refuse the file."),
       "v1 already looked at 2024 opener CLV for C1, C2, E1 and K[E1], so 2024 is secondary evidence for PC-C2.",
       paste("v2's close-anchored screen (PR #205) chose nothing on Confirm 2023-24 or the 2025 holdout; it used Tune 2018-22,",
-            "and this framework reproduces its numbers on the same inputs.")),
+            "and this framework reproduces its numbers on the same inputs."),
+      paste("F11b: nflverse play-by-play files the 2019 Raiders as LV while the schedules say OAK (SD and STL likewise before",
+            "their moves), so every 2019 Raiders calibration game had no drive inputs and was simulated at 21.5-21.5 on main",
+            "(16 games in the 2024 week 5 positive control). The fix is an engine edit and the owner's decision."),
+      paste("The known-answer target changes: v2's moneyline joint test counted df 30 for 29 estimable terms. With df 29,",
+            "chi-square 26.933 gives p 0.575, where v2 printed 0.627 (design section 4 names p = 0.63). The owner acknowledges it."),
+      paste("Each joint test reports p_test (LR or F, model-based), the one to cite, and p_wald_robust, a cluster-robust",
+            "chi-square(k) Wald kept for v2 fidelity. With 29 to 34 coefficients over 107 clusters the Wald is not",
+            "size-controlled: its p from 1.2e-06 to 0.45 is no evidence beside p_test from 0.22 to 0.58. Dropping it or",
+            "calibrating it by the wild bootstrap is the owner's decision."),
+      paste("The cluster unit is the season-week (backtest/common.R wk): one season has 22 clusters, under 30, so the wild",
+            "bootstrap gives its p-value and no sandwich CI is reported; the pooled 2023-24 opener window has 44, so the",
+            "sandwich applies. Clustering by week of season across seasons is the alternative; the owner decides."),
+      paste("primetime uses the final, post-flex kickoff and is classed schedule, which assumes every flex change is",
+            "announced before the decision. The notice periods are not verified here; if a flex can follow a decision,",
+            "primetime knows more than that decision did.")),
     source = c(VVF_OUTPUT_AUDIT, paste(VVF_OUTPUT_AUDIT, "'F11 root cause'"), "design 2026-10-20, section 6",
                "backtest/build_inputs.R", "design 2026-10-20, section 6",
-               "reports/2026-09-30/validation-sprint/REPORT.md (PR #205)"))
+               "reports/2026-09-30/validation-sprint/REPORT.md (PR #205)",
+               "reports/2026-10-26/f11-bye-week-main (PR #223 comment)", "reports/2026-10-22/vvf-v2-repro/run_meta.json",
+               "reports/2026-10-22/vvf-v2-repro/s1_joint.csv", "backtest/common.R; A3a final review I4",
+               "backtest/vvf/registry.R primetime; A3a final review I6"))
 }

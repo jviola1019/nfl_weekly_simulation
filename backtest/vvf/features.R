@@ -180,6 +180,7 @@ vvf_build_features <- function(base, inp, max_season) {
 #' close p_close_venue for the movement target). Returns a copy.
 vvf_anchor_features <- function(d, anchor = c("close", "open")) {
   anchor <- match.arg(anchor)
+  vvf_guard_table(d, "the table to anchor")
   need <- c(VVF_ANCHORS[[anchor]], if (anchor == "open") "p_close_venue")
   miss <- setdiff(need, names(d))
   if (length(miss)) {

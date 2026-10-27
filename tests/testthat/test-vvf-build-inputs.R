@@ -5,6 +5,16 @@
 
 vb <- vvf_test_env(c("common.R", "build_inputs.R"))
 
+test_that("the builder refuses to overwrite inputs that already have a SOURCES.json, before any request (review I8)", {
+  withr::local_dir(PROJECT_ROOT)
+  tmp <- withr::local_tempdir()
+  writeLines("{}", file.path(tmp, "SOURCES.json"))
+  never <- function(...) stop("a request was made")
+  expect_error(vb$vvf_build_inputs(out_dir = tmp, seasons = 2024L, load_schedules = never, load_injuries = never,
+                                   http_get = never), "would overwrite")
+  expect_identical(list.files(tmp), "SOURCES.json")
+})
+
 mini_games <- function() {
   data.table::data.table(
     game_id = c("2020_01_AAA_BBB", "2020_02_BBB_AAA"), season = 2020L, week = 1:2,

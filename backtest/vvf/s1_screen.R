@@ -123,6 +123,9 @@ vvf_s1_one <- function(dat, family, feature, response, B = VVF_WILD_B, seed = VV
     p_robust <- vvf_wild_p_linear(x$r, x$fx, x$wk, B, seed)
     method <- sprintf("wild bootstrap-t, Rademacher, B = %d", B)
   }
+  # below the cluster floor the p-value is the bootstrap's; a sandwich SE and CI beside it could
+  # contradict it, so none is reported (review I3)
+  if (base$n_clusters < VVF_MIN_CLUSTERS) se <- NA_real_
   base[, `:=`(mean_x = mean(x$fx), sd_x = sdx, test = test, stat = stat, p_test = p_test,
               estimate = est, se_robust = se, ci_lo = est - 1.96 * se, ci_hi = est + 1.96 * se,
               p_robust = p_robust, robust_method = method, p = max(p_test, p_robust),
@@ -171,6 +174,8 @@ vvf_s1_screen <- function(d, features, decision, families = VVF_FAMILIES_CLOSE, 
                           registry = vvf_registry(), B = VVF_WILD_B, seed = VVF_WILD_SEED) {
   anchor <- attr(d, "vvf_anchor")
   if (is.null(anchor)) stop("vvf_s1_screen: the table has no anchor; call vvf_anchor_features() first", call. = FALSE)
+  vvf_assert_anchor(anchor, decision)
+  vvf_guard_table(d, "the S1 table")
   vvf_assert_known_at(unique(c(features, unlist(joint_sets))), decision, registry)
   rows <- list(); joints <- list(); n <- list()
   for (fam in names(families)) {

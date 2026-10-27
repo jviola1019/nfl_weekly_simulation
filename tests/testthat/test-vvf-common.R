@@ -12,6 +12,15 @@ test_that("the season guard refuses the sealed season and anything after the inp
   expect_invisible(vc$vvf_guard_seasons(c(2009L, 2024L), 2024L, "probe"))
 })
 
+test_that("a table is checked by its season column or the season in its game_id (review I5)", {
+  withr::local_dir(PROJECT_ROOT)
+  expect_error(vc$vvf_guard_table(data.table::data.table(season = c(2024L, 2025L)), "probe"), "sealed-season guard")
+  expect_error(vc$vvf_guard_table(data.table::data.table(game_id = c("2024_01_AAA_BBB", "2025_02_CCC_DDD")), "probe"),
+               "sealed-season guard")
+  expect_invisible(vc$vvf_guard_table(data.table::data.table(game_id = c("2024_01_AAA_BBB", "x")), "probe"))
+  expect_invisible(vc$vvf_guard_table(data.table::data.table(z = 1), "probe"))   # nothing to check
+})
+
 test_that("sealed seasons join config.R's SEALED_SEASONS when it is defined (PR #218)", {
   tmp <- withr::local_tempdir()
   with_seal <- file.path(tmp, "with.R")

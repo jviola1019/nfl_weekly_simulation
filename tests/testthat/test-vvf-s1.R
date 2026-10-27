@@ -140,3 +140,36 @@ test_that("the joint test counts only estimable coefficients and equals anova() 
   expect_identical(j$aliased, "x3")
   expect_equal(j$k_entered, 4L)
 })
+
+test_that("a close-anchored table cannot be screened at an opener decision (review C1)", {
+  withr::local_dir(PROJECT_ROOT)
+  reg <- vs$vvf_registry()
+  d <- sim_screen_data(200, 40, seed = 31)
+  d[, rest_diff := stats::rnorm(.N)]
+  data.table::setattr(d, "vvf_anchor", "close")
+  expect_error(vs$vvf_s1_screen(d, "rest_diff", "open_isa", families = c(outcome = "y"), registry = reg),
+               "the close anchor is known only at close")
+})
+
+test_that("below 30 clusters no sandwich SE or CI is reported beside the bootstrap p-value (review I3)", {
+  r <- vs$vvf_s1_one(sim_screen_data(600, 12, seed = 32), "outcome", "z", "y", B = 199, seed = 1)
+  expect_match(r$robust_method, "wild")
+  expect_true(all(is.na(c(r$se_robust, r$ci_lo, r$ci_hi, r$effect_ci_lo, r$effect_ci_hi))))
+  many <- vs$vvf_s1_one(sim_screen_data(600, 40, seed = 33), "outcome", "z", "y")
+  expect_true(all(is.finite(c(many$se_robust, many$ci_lo, many$ci_hi, many$effect_ci_lo, many$effect_ci_hi))))
+})
+
+test_that("the screen refuses a table that carries a sealed season, by its season or its game_id (review I5)", {
+  withr::local_dir(PROJECT_ROOT)
+  reg <- vs$vvf_registry()
+  d <- sim_screen_data(200, 40, seed = 34)
+  d[, `:=`(rest_diff = stats::rnorm(.N), season = 2024L)]
+  d[1, season := 2025L]
+  expect_error(vs$vvf_s1_screen(d, "rest_diff", "open_isa", families = c(outcome = "y"), registry = reg),
+               "sealed-season guard")
+  g <- sim_screen_data(200, 40, seed = 35)
+  g[, `:=`(rest_diff = stats::rnorm(.N), game_id = "2024_01_AAA_BBB")]
+  g[1, game_id := "2025_01_AAA_BBB"]
+  expect_error(vs$vvf_s1_screen(g, "rest_diff", "open_isa", families = c(outcome = "y"), registry = reg),
+               "sealed-season guard")
+})

@@ -30,7 +30,7 @@
 
 1. **A sealed season arrives through a loader, a raised ceiling or a rebuild** (for example `max_season = 2026` for a prospective run): 2025 is still refused. Pinned by Task 1's "season guard" test (`vvf_guard_seasons(2025L, 2026L, ...)` errors), Task 2's two seal tests and Task 3's feature-guard test.
 2. **A feature known only after the decision enters an opener screen**, such as the actual starting QB, a retractable roof's state, or an injury row updated on Saturday: S0 refuses it before any model is fit. Pinned by Task 4's S0 test and its "only 21 of v2's 36 features are admissible at IS-A" test, and by Task 5's screen test (`d_c1` at `open_isa` errors).
-3. **Fewer than 30 week clusters** (the opener windows have about 13 to 18 weeks): the week-clustered normal test over-rejects there, so the wild cluster bootstrap must hold its size. Pinned by Task 5's 12-cluster null test, which measured 0.058 (score) and 0.054 (bootstrap-t) over 500 simulations against the band [0.032, 0.070].
+3. **Fewer than 30 clusters.** The cluster unit is the season-week (`backtest/common.R` `wk`): one opener season has 22, and the pooled 2023–24 window has 44, which uses the sandwich (the final review's I4; the owner chooses the unit, disclosure CLUSTER-UNIT). Below 30 the week-clustered normal test over-rejects, so the wild cluster bootstrap must hold its size, and no sandwich SE or CI is reported beside it. Pinned by Task 5's 12-cluster null test, which measured 0.058 (score) and 0.054 (bootstrap-t) over 500 simulations against the band [0.032, 0.070].
 4. **Aliased or collinear features**, such as `inj_diff_all` (the sum of the groups) or `d_e1` (the mean of `d_c1` and `d_c2`): they must not inflate a joint test's degrees of freedom (v2's moneyline joint test used df 30 for 29 estimable coefficients) or crash `car::vif`. Pinned by Task 5's joint test (df equals `anova()`'s) and Task 6's VIF test (aliased logged, the declared-first feature kept).
 5. **The ledger drifts from the registry or the results**, through a hand edit or a re-run that changes a hash: the docs-truth test fails. Pinned by Task 8's ledger tests and Task 7's committed-hash test.
 
@@ -374,6 +374,8 @@ outcome min q: 0.4879 (abs_tz_away)
 spread abs_tz_away: -0.8792 [-1.4625, -0.2959], p 0.0041, q 0.1468
 result_sha256: 339f63e0591b8bad234049624f3be2ebee23b0af4dfc7cf1eb5e01c054cca288
 ```
+
+(This is the dry run's output. After the final review's S2 fix, which keeps the declared-first `rest_diff`, the S1 lines are unchanged and the result_sha256 is `12d2bc99164c30786b2b6a48087504b73a6cc8e8698d55b9f0f6b487ec3c0624`; `run_meta.json` holds the hash of record.)
 The script stops if the base predictions differ from v1's by more than 1e-9 or any S1 column differs from v2's by more than 1e-5 (relative). On another platform `result_sha256` may differ only through the last of the six significant digits written; the numbers above may not.
 
 **What reproduces, and the one difference.** v2's REPORT.md §1 numbers are reproduced:
@@ -542,14 +544,19 @@ The owner-STOP edit of `simulate_game_nb()` is no longer needed. #223's `assert_
   - S1 against v2: 108 rows, max relative diff 4.54e-06;
   - the outcome joint test: χ² 26.9332 with 30 entered and df 29, p 0.5753 (v2 counted df 30, p 0.6268);
   - the spread's `abs_tz_away`: −0.8792 [−1.4625, −0.2959], p 0.0041, q 0.1468;
-  - result_sha256: `339f63e0591b8bad234049624f3be2ebee23b0af4dfc7cf1eb5e01c054cca288`.
+  - result_sha256: `339f63e0591b8bad234049624f3be2ebee23b0af4dfc7cf1eb5e01c054cca288` in the dry run; `12d2bc99…` after the review's S2 fix (`run_meta.json`).
 - **Task 10:** Step 1, as above.
 
 ## Owner checkpoints
 
 1. **The disclosure.** v1's `backtest/build_inputs.R:106` reads `reports/2026-09-29/clv-power/espn_open_close_2024_2025.csv` and drops 2025 only after reading it (spec §6). The VVF test allows exactly that one site.
 2. **F11b's fix:** franchise codes or schedule codes. It is an engine edit, and Task 10 Step 2 waits for it.
-3. **The merge.**
+3. **The final review's open questions,** carried as ledger disclosures:
+   - JOINT-WALD: drop or calibrate the robust joint Wald;
+   - CLUSTER-UNIT: season-week or week of season;
+   - A3-FLEX: `primetime`'s flex timing;
+   - V2-JOINT-DF: the known-answer p, 0.575 instead of 0.63.
+4. **The merge.**
 
 ## Self-review
 
@@ -568,4 +575,6 @@ The owner-STOP edit of `simulate_game_nb()` is no longer needed. #223's `assert_
 ## Execution
 
 Native (inline), with one Haiku whole-branch review at the end (owner decision of 2026-10-26).
+
+**Gate waiver, for the owner to confirm.** Each task ran its own tests RED, then GREEN. The full suite and the integrity check ran after Task 7, at the end, and after the review's fix pass, not after every task. Every A3a change is a new file, so an earlier task cannot break an existing test. The final review overturned this ruling, so it stands only with the owner's agreement.
 

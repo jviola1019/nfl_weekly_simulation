@@ -21,6 +21,12 @@ The validation framework's S0–S2 are in `backtest/vvf/` (see CHANGELOG, "A3a")
   - v2's moneyline joint df was 30 for 29 estimable terms, so p is 0.575, not 0.627.
   - All 108 screen rows read "no evidence".
 - **Open risks:** F11b, the 2019 Raiders' missing drive inputs. Once #223 merges, it stops any calibration that reaches 2019.
+- **Owner questions** (disclosures in the ledger):
+  - JOINT-WALD: the robust joint Wald is not size-controlled;
+  - CLUSTER-UNIT: season-week or week of season;
+  - A3-FLEX: `primetime`'s flex timing;
+  - V2-JOINT-DF: the known-answer p moves from 0.63 to 0.575;
+  - F11B.
 - **Next target:** A3b.
 
 ## Current state — A8 (feat/a8-local-app)

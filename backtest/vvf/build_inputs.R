@@ -3,7 +3,10 @@
 # VVF input builder: the extra point-in-time inputs (schedule context, injury
 # reports, venues) for seasons 2009-2024, from keyless sources only.
 #
-#   Rscript backtest/vvf/build_inputs.R
+#   Rscript backtest/vvf/build_inputs.R <out_dir> [--overwrite]
+#
+# A directory that already holds locked inputs (SOURCES.json), backtest/vvf/data/
+# included, is refused without --overwrite: a rebuild changes the committed sha256s.
 #
 # Ported with attribution from PR #205 (validation sprint v2,
 # backtest/v2/build_inputs.R at 759dd1c; owner decision 2026-10-20). Changes:
@@ -202,8 +205,13 @@ vvf_build_injuries <- function(inj, games) {
 
 vvf_build_inputs <- function(out_dir = VVF_DATA_DIR, seasons = VVF_SEASONS_BUILD,
                              load_schedules = nflreadr::load_schedules, load_injuries = nflreadr::load_injuries,
-                             http_get = vvf_http_get_text, sleep = Sys.sleep) {
+                             http_get = vvf_http_get_text, sleep = Sys.sleep, overwrite = FALSE) {
   vvf_guard_seasons(seasons, VVF_MAX_INPUT_SEASON, "requested seasons")
+  # a rebuild replaces the locked inputs and their sha256s, so it is never the default (review I8)
+  if (file.exists(file.path(out_dir, "SOURCES.json")) && !isTRUE(overwrite)) {
+    stop(sprintf("vvf_build_inputs: %s already holds locked inputs (SOURCES.json); a build would overwrite them and their sha256s. Build into another directory, or pass overwrite = TRUE (--overwrite).",
+                 out_dir), call. = FALSE)
+  }
   games <- vvf_load_v1_inputs(max_season = VVF_MAX_INPUT_SEASON)$games
   old <- options(nflreadr.cache = "off", nflreadr.verbose = FALSE)
   on.exit(options(old), add = TRUE)
@@ -226,10 +234,16 @@ vvf_build_inputs <- function(out_dir = VVF_DATA_DIR, seasons = VVF_SEASONS_BUILD
   invisible(meta)
 }
 
+#   Rscript backtest/vvf/build_inputs.R <out_dir> [--overwrite]
+# makes live requests. Without --overwrite it refuses a directory that already holds locked
+# inputs, backtest/vvf/data/ included: a rebuild there would change the committed sha256s.
 if (sys.nframe() == 0L) {
   e <- environment()
   sys.source(file.path("backtest", "common.R"), envir = e)
   sys.source(file.path("backtest", "vvf", "common.R"), envir = e)
-  m <- vvf_build_inputs()
+  args <- commandArgs(trailingOnly = TRUE)
+  pos <- args[!startsWith(args, "--")]
+  if (length(pos) != 1L) stop("usage: Rscript backtest/vvf/build_inputs.R <out_dir> [--overwrite]", call. = FALSE)
+  m <- vvf_build_inputs(out_dir = pos[[1]], overwrite = "--overwrite" %in% args)
   str(m$derived)
 }

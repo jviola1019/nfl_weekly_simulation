@@ -81,3 +81,20 @@ test_that("the disclosures name the 2025 reads and the earlier looks", {
   expect_true(all(c("F3", "F11-CALIB", "CLV-POWER", "V1-BUILDER", "V1-CLV-2024") %in% ds$id))
   expect_match(ds[id == "V1-BUILDER", text], "backtest/build_inputs.R")
 })
+
+test_that("S0 binds the anchor to the decision: the close is known only at the close (review C1)", {
+  expect_error(vr$vvf_assert_anchor("close", "open_isa"), "the close anchor is known only at close")
+  expect_error(vr$vvf_assert_anchor("close", "fri_21z"), "known-at violation at fri_21z")
+  expect_invisible(vr$vvf_assert_anchor("close", "close"))
+  for (dec in names(vr$VVF_DECISIONS)) expect_invisible(vr$vvf_assert_anchor("open", dec))
+  expect_error(vr$vvf_assert_anchor(NULL, "close"), "the table has no anchor")
+  expect_error(vr$vvf_assert_anchor("kalshi", "close"), "not one of open, close")
+})
+
+test_that("the disclosures carry the review's open questions: the joint Wald, the cluster unit, flex kickoffs, F11b, the joint df", {
+  ds <- vr$vvf_disclosures()
+  expect_true(all(c("JOINT-WALD", "CLUSTER-UNIT", "A3-FLEX", "F11B", "V2-JOINT-DF") %in% ds$id))
+  expect_match(ds[id == "JOINT-WALD", text], "p_test")
+  expect_match(ds[id == "CLUSTER-UNIT", text], "season-week")
+  expect_match(ds[id == "F11B", text], "OAK")
+})

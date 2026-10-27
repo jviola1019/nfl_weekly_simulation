@@ -31,9 +31,20 @@ vvf_s2_vif <- function(dat, features, response) {
   while (length(keep) >= 2L) {
     v <- car::vif(stats::lm(stats::reformulate(keep, "r_"), data = x))
     if (max(v) <= VVF_VIF_MAX) break
-    over <- names(v)[v > VVF_VIF_MAX]
-    drop <- over[length(over)]                    # the later-declared feature yields
-    log[[length(log) + 1L]] <- data.table(feature = drop, reason = sprintf("VIF %.3f > 5", v[[drop]]))
+    # the first-declared feature over the limit stays (design §4); its most collinear
+    # later-declared partner yields, over the limit or not, and it yields itself only when
+    # every partner was declared before it (review I1)
+    f <- names(v)[v > VVF_VIF_MAX][1]
+    later <- keep[-seq_len(match(f, keep))]
+    if (length(later)) {
+      r2 <- vapply(later, function(g) stats::cor(x[[f]], x[[g]])^2, numeric(1))
+      drop <- later[which.max(r2)]
+      why <- sprintf("collinear with %s, declared first (VIF %.3f > %g)", f, v[[f]], VVF_VIF_MAX)
+    } else {
+      drop <- f
+      why <- sprintf("VIF %.3f > %g", v[[f]], VVF_VIF_MAX)
+    }
+    log[[length(log) + 1L]] <- data.table(feature = drop, reason = why)
     keep <- setdiff(keep, drop)
     v <- NULL
   }
@@ -86,6 +97,8 @@ vvf_s2_stability <- function(dat, family, feature, response) {
 vvf_s2_structure <- function(d, features, decision, families = VVF_FAMILIES_CLOSE, registry = vvf_registry()) {
   anchor <- attr(d, "vvf_anchor")
   if (is.null(anchor)) stop("vvf_s2_structure: the table has no anchor; call vvf_anchor_features() first", call. = FALSE)
+  vvf_assert_anchor(anchor, decision)
+  vvf_guard_table(d, "the S2 table")
   vvf_assert_known_at(features, decision, registry)
   vif <- list(); stab <- list()
   for (fam in names(families)) {

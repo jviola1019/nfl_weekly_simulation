@@ -39,7 +39,12 @@ dmn_find_game <- function(frames) {
   for (j in rev(seq_along(frames))) {
     if (j > k && exists("i", envir = frames[[j]], inherits = FALSE) && identical(parent.env(frames[[j]]), frames[[k]])) {
       g <- as.data.frame(get("g", envir = frames[[k]]))
-      row <- g[get("i", envir = frames[[j]]), intersect(DMN_TERMS, names(g)), drop = FALSE]
+      miss <- setdiff(DMN_TERMS, names(g))           # a renamed engine column stops the run (review I7)
+      if (length(miss)) {
+        stop("diagnose_mu_na: the engine's g has no column ", paste(miss, collapse = ", "), "; update DMN_TERMS",
+             call. = FALSE)
+      }
+      row <- g[get("i", envir = frames[[j]]), DMN_TERMS, drop = FALSE]
       return(cbind(data.frame(cut_season = get("cut_season", envir = frames[[k]]),
                               cut_week = get("cut_week", envir = frames[[k]])), row))
     }
@@ -75,6 +80,21 @@ dmn_summarise <- function(rows) {
                          n_games = nrow(rows))
 }
 
+#' Stop if the target season is sealed
+dmn_check_target <- function(season, sealed) {
+  if (as.integer(season) %in% sealed) stop("diagnose_mu_na: season ", season, " is sealed", call. = FALSE)
+  invisible(TRUE)
+}
+
+#' Stop if a calibration is cached under `home`: it would skip week_inputs_and_sim_2w() and hide F11
+dmn_check_cache <- function(home = path.expand("~")) {
+  cache <- file.path(home, ".cache", "nfl_sim_calib_cache")
+  if (length(list.files(cache, pattern = "\\.rds$"))) {
+    stop("diagnose_mu_na: ", cache, " holds a cached calibration, which would hide F11; run with HOME=<empty dir>", call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
 dmn_main <- function(args) {
   if (length(args) < 3L) stop("usage: HOME=<empty dir> Rscript scripts/diagnose_mu_na.R <week> <season> <out_dir>", call. = FALSE)
   out_dir <- args[3]
@@ -82,11 +102,8 @@ dmn_main <- function(args) {
   sys.source(file.path("backtest", "common.R"), envir = vvf)
   sys.source(file.path("backtest", "vvf", "common.R"), envir = vvf)
   sealed <- vvf$vvf_sealed_seasons()
-  if (as.integer(args[2]) %in% sealed) stop("diagnose_mu_na: season ", args[2], " is sealed", call. = FALSE)
-  cache <- file.path(path.expand("~"), ".cache", "nfl_sim_calib_cache")
-  if (length(list.files(cache, pattern = "\\.rds$"))) {
-    stop("diagnose_mu_na: ", cache, " holds a cached calibration, which would hide F11; run with HOME=<empty dir>", call. = FALSE)
-  }
+  dmn_check_target(args[2], sealed)
+  dmn_check_cache()
   options(warn = 1)
   res <- dmn_capture(function() source("run_week.R"), sealed)
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)

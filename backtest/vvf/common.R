@@ -144,6 +144,17 @@ vvf_load_inputs <- function(data_dir = VVF_DATA_DIR, max_season = VVF_MAX_INPUT_
   out
 }
 
+#' Stop if a table carries a sealed season, by its season column or else the season in its
+#' game_id. The stages check the table they are given, whatever built it (review I5); a table
+#' with neither column has nothing to check.
+vvf_guard_table <- function(d, what, sealed = NULL) {
+  s <- if ("season" %in% names(d)) d$season else if ("game_id" %in% names(d)) substr(d$game_id, 1L, 4L) else NULL
+  s <- unique(suppressWarnings(as.integer(s)))
+  s <- s[!is.na(s)]
+  if (!length(s)) return(invisible(TRUE))
+  vvf_guard_seasons(s, max_season = .Machine$integer.max, what = what, sealed = sealed %||% vvf_sealed_seasons())
+}
+
 #' Load the v1 inputs against the nfl_games_v1 window's sha256s, then cut the
 #' games at `max_season`
 vvf_load_v1_inputs <- function(max_season, window_path = file.path("backtest", "eval_windows", "nfl_games_v1.json")) {
@@ -151,6 +162,9 @@ vvf_load_v1_inputs <- function(max_season, window_path = file.path("backtest", "
   for (nm in names(win$data_sha256)) vvf_assert_readable(file.path(win$data_dir, paste0(nm, ".csv")))
   inp <- bt_load_inputs(win$data_dir, win$data_sha256)
   vvf_guard_seasons(inp$games$season, VVF_MAX_INPUT_SEASON, "v1 games.csv")
+  for (nm in setdiff(names(inp), "games")) {          # the team and QB tables have no season: their game_id
+    if (is.data.frame(inp[[nm]])) vvf_guard_table(inp[[nm]], paste("v1", nm))
+  }
   inp$games <- inp$games[season <= max_season]
   inp
 }

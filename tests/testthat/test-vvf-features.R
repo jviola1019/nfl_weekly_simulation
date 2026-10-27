@@ -70,3 +70,10 @@ test_that("anchor features follow the anchor: the close, or the opener with its 
   expect_false("lp_anchor" %in% names(d))
   expect_error(vf$vvf_anchor_features(d[, !"p_open"], "open"), "needs column p_open")
 })
+
+test_that("anchor features refuse a table that carries a sealed season (review I5)", {
+  withr::local_dir(PROJECT_ROOT)
+  d <- data.table::data.table(game_id = c("a", "b"), season = c(2024L, 2025L), p_c0 = c(0.6, 0.15), p_c1 = c(0.5, 0.3),
+                              p_c2 = c(0.7, 0.1), p_e1 = c(0.6, 0.15))
+  expect_error(vf$vvf_anchor_features(d, "close"), "sealed-season guard")
+})
