@@ -4,6 +4,31 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### F11: home field for every team in the calibration backtest; a missing mean stops (engine, owner-gated)
+
+- **The bug.**
+  - `hfa_tbl` was built only for the teams on the slate being simulated (`NFLsimulation.R`, near the old line 2798). The calibration backtest joins it for every team of every past week (`recent_form_at_sim`).
+  - So a team on a bye in the target week had no home-field value in all of its calibration games. Both means went NA, and `simulate_game_nb` replaced each with 21.5, a coin flip.
+  - In the 2026 week 7 run (byes BUF, JAX, LAC, WAS), 317 of the 1,355 calibration games (2021–2025) were coin flips. That is exactly the games that involve those four teams (output audit F11).
+  - The golden master (2024 week 15, no byes) could not see it. `calib_cache_key` has no week, so the first run of a season cached the broken fit for every later week.
+- **The fix.**
+  - `team_hfa_table()` (`R/schedule_context.R`) builds home field for every team in the schedule.
+  - `assert_finite_means()` stops a calibration week whose means are not finite, naming the games, instead of letting them become 21.5.
+  - The calibration cache version is now 4L, so no cached fit from before the fix is reused.
+- **The effect.** Measured on a cold-cache `run_week.R 7 2026` with `warn = 1`, against the audit's run before the fix:
+  - fallback warnings: 634 before, 0 after;
+  - raw simulator over the 1,355 calibration games: Brier 0.247 → 0.243 and log-loss 0.690 → 0.682 (the market is 0.212 and 0.611);
+  - the production blend is unchanged at Brier 0.215 and log-loss 0.624;
+  - blend minus market, week-block bootstrap: ΔLog-loss +0.0131 [0.0025, 0.0260] before and +0.0134 [0.0022, 0.0265] after; ΔBrier +0.0034 [0.0012, 0.0058] before and +0.0032 [0.0009, 0.0058] after.
+
+  **The fix makes the simulator's inputs honest, but it does not close the gap to the market. F4 still stands.**
+- **Gates:**
+  - `run_tests.R`: 458 tests, 1,769 passed, 0 failed, 1 allowlisted skip.
+  - `verify_repo_integrity.R`: 63 passed, 0 failed.
+  - The fixed run finished with exit 0 and `QA: passed`.
+  - New test: `tests/testthat/test-calibration-hfa.R`.
+  - The pinned cache version is 3L → 4L in `test-schedule-context.R`.
+
 ### A0: the odds capture sees every game before the close, on time, and is kept (owner, 2026-10-19)
 
 - **Every upcoming game's line is captured mid-week.**
