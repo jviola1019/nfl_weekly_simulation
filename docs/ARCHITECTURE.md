@@ -67,6 +67,8 @@ This document describes the architecture of the NFL prediction model, designed a
 
 ## Data Flow
 
+The database tables and their keys: [docs/ERD.md](ERD.md) (generated from web/src/db/schema.ts).
+
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
 │   nflreadr   │    │  ESPN API    │    │ Sleeper API  │
