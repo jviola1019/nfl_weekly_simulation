@@ -56,17 +56,33 @@ validate_odds_provider <- function(p) {
 # An error message on one line, for a detail string
 odds_one_line <- function(text) trimws(gsub("[[:space:]]+", " ", text))
 
-# TRUE for a 2xx response whose body is not JSON (the caller has found odds_json(rec) NULL): a
-# captcha, challenge or geo-fence page served as 200. It is a block, not a missing game.
+# What a body that odds_json() could not turn into a value holds: "empty" (no bytes, or white
+# space only), "null" (the JSON literal null) or "not_json" (anything else, a binary body included)
+odds_body_kind <- function(rec) {
+  body <- rec$body
+  if (is.null(body) || length(body) == 0L) return("empty")
+  if (any(body == as.raw(0L))) return("not_json")
+  txt <- tryCatch(trimws(rawToChar(body)), error = function(e) NA_character_)
+  if (is.na(txt)) "not_json" else if (!nzchar(txt)) "empty" else if (identical(txt, "null")) "null" else "not_json"
+}
+
+# TRUE for a 2xx response whose body has text that is not JSON (the caller has found odds_json(rec)
+# NULL): a captcha, challenge or geo-fence page served as 200. It is a block, not a missing game.
+# An empty body or JSON null is no page at all: the caller counts it as a gap (review I-1).
 odds_is_html_block <- function(rec) {
-  !is.na(rec$status) && rec$status >= 200L && rec$status < 300L
+  !is.na(rec$status) && rec$status >= 200L && rec$status < 300L && identical(odds_body_kind(rec), "not_json")
 }
 
 # What went wrong with a response that has no JSON: odds_fetch's own error text, or for a body that
-# arrived but is not JSON (rec$error is NA on success) the status and that fact
+# arrived (rec$error is NA on success) the status and what the body held
 odds_fetch_problem <- function(rec) {
-  if (is.na(rec$error)) sprintf("HTTP %d, body is not JSON", rec$status) else rec$error
+  if (!is.na(rec$error)) return(rec$error)
+  sprintf("HTTP %d, %s", rec$status,
+          switch(odds_body_kind(rec), empty = "empty body", null = "JSON null", "body is not JSON"))
 }
+
+# The reason a provider gives odds_declare_blocked() for a 2xx page that is not JSON
+ODDS_PAGE_BLOCK_REASON <- "served a page that is not JSON (a challenge or geo-fence page)"
 
 odds_html_block_note <- function(rec, where) {
   sprintf("blocked: HTTP %d body is not JSON (a challenge or geo-fence page) at %s; run stopped", rec$status, where)

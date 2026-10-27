@@ -12,8 +12,9 @@
 # the other side on a 404 or an empty list. The two candle forms differ in field names
 # (price.close vs price.close_dollars), and both are parsed.
 # One row per candle: captured_at is the candle's end, bid/ask/last are the yes-side
-# close in dollars, volume is the candle volume. The Kalshi close is the mid of the last
-# pre-kickoff candle (kalshi_mid), chosen by select_closing_snapshots().
+# close in dollars, volume is the candle volume. select_closing_snapshots() picks the last
+# pre-kickoff candle and returns its bid, ask and last; the consumer takes the mid of that
+# quote with kalshi_mid() (no code in R/odds computes it).
 # Supported contracts: KXNFLGAME (moneyline) and the player series below. Spread and total
 # series are not mapped yet; a market that cannot be mapped is counted, never guessed.
 #
@@ -104,10 +105,12 @@ kalshi_market_meta <- function(market, game, series) {
     if (is.na(side)) return(no(sprintf("team code %s matches neither side of %s", code, game$game_id)))
     return(list(ok = TRUE, market_id = "moneyline", side = side, line = NA_real_, player_key = NA_character_))
   }
+  # a player market without its player, or a KXNFLTD market without its strike, is schema drift
   player <- market$custom_strike$football_player
-  if (is.null(player)) return(no(sprintf("%s has no player in custom_strike", ticker)))
+  if (is.null(player)) return(no(sprintf("%s has no player in custom_strike", ticker), drift = TRUE))
   strike <- kalshi_num(market$floor_strike)
   if (series == "KXNFLTD") {
+    if (is.na(strike)) return(no(sprintf("%s has no floor_strike", ticker), drift = TRUE))
     market_id <- unname(KALSHI_TD_LADDER[format(strike, nsmall = 1)])
     if (is.na(market_id)) return(no(sprintf("strike %s is not mapped for KXNFLTD", strike)))
   } else {
@@ -233,8 +236,9 @@ provider_kalshi <- function(cfg = odds_http_config(), fetch_fn = odds_http_get, 
       if (isTRUE(rec$status == 404L)) return(invisible(NULL))
       failures <<- c(failures, sprintf("%s (%s)", what, odds_fetch_problem(rec)))
     }
-    # The body as JSON, or NULL when there is none. A 2xx body that is not JSON (a captcha,
-    # challenge or geo-fence page served as 200) and a 401/403/429 stop the whole run at once.
+    # The body as JSON, or NULL when there is none (a failed request, an empty 2xx body
+    # included; the caller counts it). JSON null is drift. A 2xx body that is not JSON (a
+    # captcha, challenge or geo-fence page served as 200) and a 401/403/429 stop the whole run at once.
     read_json <- function(rec, where) {
       parsed <- odds_json(rec)
       if (!is.null(parsed)) {
@@ -242,13 +246,15 @@ provider_kalshi <- function(cfg = odds_http_config(), fetch_fn = odds_http_get, 
         drift <<- c(drift, sprintf("%s returned JSON that is not an object", where))    # valid JSON, wrong shape: not a block
         return(list())
       }
-      valid_json <- odds_is_html_block(rec) && !is.null(rec$body) &&
-        tryCatch({ jsonlite::fromJSON(rawToChar(rec$body), simplifyVector = FALSE); TRUE }, error = function(e) FALSE)
-      if (valid_json) {            # JSON null: valid JSON, wrong shape
+      ok_status <- !is.na(rec$status) && rec$status >= 200L && rec$status < 300L
+      if (ok_status && identical(odds_body_kind(rec), "null")) {      # JSON null: valid JSON, wrong shape
         drift <<- c(drift, sprintf("%s returned JSON null, not an object", where))
         return(list())
       }
-      if (odds_is_html_block(rec)) stop(kalshi_block_condition(odds_html_block_note(rec, where)))
+      if (odds_is_html_block(rec)) {
+        odds_declare_blocked(rec$url, rec$status, ODDS_PAGE_BLOCK_REASON)   # no later request to kalshi.com either
+        stop(kalshi_block_condition(odds_html_block_note(rec, where)))
+      }
       if (isTRUE(rec$blocked)) {
         stop(kalshi_block_condition(sprintf("blocked: HTTP %s at %s; run stopped", rec$status, where)))
       }
@@ -436,7 +442,7 @@ provider_kalshi <- function(cfg = odds_http_config(), fetch_fn = odds_http_get, 
     series_text <- fetch("kalshi_series", "sports", kalshi_series_url())
     if (is.null(series_text)) return(invisible(FALSE))
     as_object <- function(text) {       # list(ok, value): ok FALSE when the text is not JSON at all
-      v <- tryCatch(list(value = jsonlite::fromJSON(text, simplifyVector = FALSE)), error = function(e) NULL)
+      v <- tryCatch(list(value = jsonlite::parse_json(text, simplifyVector = FALSE)), error = function(e) NULL)
       if (is.null(v)) return(list(ok = FALSE))
       list(ok = TRUE, object = is.list(v$value) && (length(v$value) == 0 || !is.null(names(v$value))), value = v$value)
     }

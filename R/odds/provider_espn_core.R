@@ -59,7 +59,12 @@ espn_number <- function(x) {
 }
 
 #' Normalize one ESPN game-odds response (parsed JSON) into snapshots
-parse_espn_game_odds <- function(parsed, game_id, sha256) {
+#'
+#' A close block is a close only in a response fetched after kickoff. Given the response's
+#' `fetched_at` and the game's `kickoff_utc`, a close block fetched before kickoff is kept as
+#' observed snapshots at `fetched_at`, which the closing rule judges by their gap (review I-7).
+#' For a stored response, `fetched_at` is when ESPN served it, never when it is read back.
+parse_espn_game_odds <- function(parsed, game_id, sha256, fetched_at = NULL, kickoff_utc = NULL) {
   rows <- list()
   skipped <- character()
   dropped <- 0L
@@ -77,7 +82,7 @@ parse_espn_game_odds <- function(parsed, game_id, sha256) {
     h <- it$homeTeamOdds
     a <- it$awayTeamOdds
     # a block that is absent yields no rows for that phase (ESPN BET has a close but no open
-    # for 80 of the 285 games of 2023); only an item with neither is skipped
+    # for most games of weeks 1 to 5 of 2023, docs/odds-sources.md); only an item with neither is skipped
     has_blocks <- !is.null(h$open$moneyLine$american) || !is.null(h$close$moneyLine$american)
     if (is.na(venue) || !has_blocks) {
       skipped <- c(skipped, trimws(label))
@@ -122,6 +127,15 @@ parse_espn_game_odds <- function(parsed, game_id, sha256) {
     }
   }
   out <- if (length(rows)) new_odds_snapshots(do.call(rbind, rows)) else odds_snapshots_empty()
+  pre_kickoff <- 0L
+  if (length(fetched_at) == 1L && length(kickoff_utc) == 1L && !is.na(fetched_at) && !is.na(kickoff_utc) &&
+      fetched_at < kickoff_utc && nrow(out)) {
+    is_close <- out$snapshot_kind == "close"
+    out$snapshot_kind[is_close] <- "observed"
+    out$captured_at[is_close] <- fetched_at
+    pre_kickoff <- sum(is_close)
+  }
+  attr(out, "pre_kickoff_closes") <- pre_kickoff
   attr(out, "skipped_providers") <- skipped
   attr(out, "dropped") <- dropped
   attr(out, "line_only") <- sum(out$market_id %in% c("spread", "total") & !is.na(out$line) & is.na(out$price_american))
@@ -185,6 +199,12 @@ provider_espn_core <- function(cfg = odds_http_config(), fetch_fn = odds_http_ge
     sprintf("%d game%s without an ESPN event id", length(ids), if (length(ids) == 1) "" else "s")
   }
   game_list <- function(ids) paste(utils::head(ids, 5), collapse = ", ")
+  # the games after the one where a block stopped the run that have an event id (review I-2)
+  never_requested <- function(games, stopped_at) {
+    if (is.na(stopped_at) || stopped_at >= nrow(games)) return(0L)
+    rest <- games$espn[seq.int(stopped_at + 1L, nrow(games))]
+    sum(!is.na(rest) & nzchar(rest))
+  }
 
   game_snapshots <- function(games, on_raw = NULL, ...) {
     parts <- list()
@@ -196,7 +216,9 @@ provider_espn_core <- function(cfg = odds_http_config(), fetch_fn = odds_http_ge
     dropped <- 0L
     dropped_games <- character()
     line_only <- 0L
+    pre_close <- 0L
     blocked <- FALSE
+    stopped_at <- NA_integer_
     block_note <- "blocked by the server, run stopped"
     thrown <- NULL
     tryCatch({
@@ -212,20 +234,26 @@ provider_espn_core <- function(cfg = odds_http_config(), fetch_fn = odds_http_ge
         parsed <- odds_json(rec)
         if (is.null(parsed)) {
           if (odds_is_html_block(rec)) {          # a challenge or geo-fence page served as 200: stop, never retry
+            odds_declare_blocked(rec$url, rec$status, ODDS_PAGE_BLOCK_REASON)   # no later request to the domain either
             blocked <- TRUE
+            stopped_at <- i
             block_note <- odds_html_block_note(rec, g$game_id)
             break
           }
+          # a failed request, or an empty or JSON-null body: a counted gap, and the run goes on
           failed <- c(failed, sprintf("%s (%s)", g$game_id, odds_fetch_problem(rec)))
           if (rec$blocked) {
             blocked <- TRUE
+            stopped_at <- i
             break
           }
           next
         }
         if (!is.null(on_raw)) on_raw(g$espn, rec$body, rec)
-        snap <- parse_espn_game_odds(parsed, g$game_id, rec$sha256)
+        snap <- parse_espn_game_odds(parsed, g$game_id, rec$sha256, fetched_at = rec$fetched_at,
+                                     kickoff_utc = if ("kickoff_utc" %in% names(g)) g$kickoff_utc)
         parts[[length(parts) + 1]] <- snap
+        pre_close <- pre_close + attr(snap, "pre_kickoff_closes")
         dropped <- dropped + attr(snap, "dropped")
         if (attr(snap, "dropped") > 0L) dropped_games <- c(dropped_games, g$game_id)
         line_only <- line_only + attr(snap, "line_only")
@@ -245,15 +273,19 @@ provider_espn_core <- function(cfg = odds_http_config(), fetch_fn = odds_http_ge
                          detail = paste0(n_fetched, "; stopped by an error: ", odds_one_line(conditionMessage(thrown)))))
     }
     snaps <- bind_odds_snapshots(parts)
+    never <- never_requested(games, stopped_at)
     gaps <- c(
       if (length(no_event)) no_event_note(no_event),
       if (length(failed)) paste0("failed: ", game_list(failed)),
       if (blocked) block_note,
+      if (never) sprintf("%d game(s) never requested after the block", never),
       if (length(no_lines)) sprintf("%d game(s) fetched with no ESPN BET or DraftKings line: %s", length(no_lines), game_list(no_lines)),
       if (length(missing_market)) sprintf("%d game(s) missing a moneyline, spread or total: %s", length(missing_market), game_list(missing_market)),
-      if (dropped) sprintf("%d market block(s) dropped (a side, a line or a readable price missing): %s", dropped, game_list(dropped_games))
+      if (dropped) sprintf("%d market block(s) dropped (a side, a line or a readable price missing): %s", dropped, game_list(dropped_games)),
+      # a game market's line without its price is a missing price in a headline market (review I-6)
+      if (line_only) sprintf("%d line-only row(s) kept (a spread or total line with no price)", line_only)
     )
-    info <- if (line_only) sprintf("%d line-only row(s) kept (a spread or total line with no price)", line_only)
+    info <- if (pre_close) sprintf("%d close-block row(s) fetched before kickoff kept as observed snapshots", pre_close)
     detail <- paste(c(n_fetched, gaps, info), collapse = "; ")
     status <- if (nrow(snaps) == 0) "unavailable" else if (length(gaps)) "stale" else "ok"
     odds_result(snaps, source = "espn_core_game_odds", status = status, detail = detail, fetches = all_fetches)
@@ -270,7 +302,9 @@ provider_espn_core <- function(cfg = odds_http_config(), fetch_fn = odds_http_ge
     unmapped_venues <- character()
     bad_athlete <- 0L
     no_target <- 0L
+    no_page_count <- character()
     blocked <- FALSE
+    stopped_at <- NA_integer_
     block_note <- "blocked by the server, run stopped"
     thrown <- NULL
     tryCatch({
@@ -289,6 +323,7 @@ provider_espn_core <- function(cfg = odds_http_config(), fetch_fn = odds_http_ge
           if (is.null(parsed)) {
             where <- sprintf("%s page %d", g$game_id, page)
             if (odds_is_html_block(rec)) {        # a challenge or geo-fence page served as 200: stop, never retry
+              odds_declare_blocked(rec$url, rec$status, ODDS_PAGE_BLOCK_REASON)
               blocked <- TRUE
               block_note <- odds_html_block_note(rec, where)
             } else if (rec$blocked) {
@@ -301,6 +336,7 @@ provider_espn_core <- function(cfg = odds_http_config(), fetch_fn = odds_http_ge
             break
           }
           if (page == 1L) {
+            if (is.null(parsed$pageCount)) no_page_count <- c(no_page_count, g$game_id)   # drift: page 1 only (review I-5)
             n_pages <- max(1L, as.integer(parsed$pageCount %||% 1L))
             if (n_pages > ESPN_PROP_MAX_PAGES) {
               capped <- c(capped, sprintf("%s has %d pages, read the first %d", g$game_id, n_pages, ESPN_PROP_MAX_PAGES))
@@ -315,7 +351,10 @@ provider_espn_core <- function(cfg = odds_http_config(), fetch_fn = odds_http_ge
           no_target <- no_target + attr(snap, "no_target_rows")
           page <- page + 1L
         }
-        if (blocked) break
+        if (blocked) {
+          stopped_at <- i
+          break
+        }
       }
     }, error = function(e) thrown <<- e)
     all_fetches <- do.call(rbind, c(list(odds_fetches_empty()), fetches))
@@ -325,13 +364,17 @@ provider_espn_core <- function(cfg = odds_http_config(), fetch_fn = odds_http_ge
                          detail = paste0("stopped by an error: ", odds_one_line(conditionMessage(thrown)))))
     }
     snaps <- bind_odds_snapshots(parts)
+    never <- never_requested(games, stopped_at)
     gaps <- c(
       if (length(no_event)) no_event_note(no_event),
       if (length(gone)) paste0("no propBets for: ", game_list(gone),
                                " (DraftKings propBets are live only; they return 404 after the game)"),
       if (length(failed)) paste0("failed: ", game_list(failed)),
       if (length(capped)) paste0("more pages than the ", ESPN_PROP_MAX_PAGES, "-page cap: ", game_list(capped)),
+      if (length(no_page_count)) paste0(paste(sprintf("%s has no pageCount", utils::head(no_page_count, 5)), collapse = ", "),
+                                        "; read page 1 only (schema drift)"),
       if (blocked) block_note,
+      if (never) sprintf("%d game(s) never requested after the block", never),
       if (bad_athlete) sprintf("%d prop row(s) with an unreadable athlete reference skipped", bad_athlete),
       if (no_target) sprintf("%d prop row(s) with neither a current nor an open line skipped", no_target)
     )
@@ -388,6 +431,9 @@ provider_espn_core <- function(cfg = odds_http_config(), fetch_fn = odds_http_ge
         first <- fetch("espn_propbets", sprintf("%s_%s_p1", event_id, provider_id),
                        espn_prop_bets_url(event_id, provider_id, 1))
         if (is.null(first)) next
+        if (!grepl('"pageCount"', first, fixed = TRUE)) {      # logged, as every capture gap is (review I-5)
+          message(sprintf("ESPN propBets %s (provider %s): no pageCount, page 1 only (schema drift)", event_id, provider_id))
+        }
         for (page in seq_len(min(espn_page_count(first), ESPN_PROP_MAX_PAGES))[-1]) {
           fetch("espn_propbets", sprintf("%s_%s_p%d", event_id, provider_id, page),
                 espn_prop_bets_url(event_id, provider_id, page))

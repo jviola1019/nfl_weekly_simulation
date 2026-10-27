@@ -79,3 +79,15 @@ test_that("no provider or HTTP code can reach a host outside the owner-approved 
   hosts <- sub("^https?://", "", urls)
   expect_true(all(hosts %in% c("github.com", "example.test")), info = paste(hosts, collapse = ", "))   # hosts appear only in comments
 })
+
+test_that("the live smoke fails when a live test is skipped or none ran: an unreachable host is not a pass (review I-9)", {
+  ran <- data.frame(failed = c(0L, 0L), error = c(FALSE, FALSE), skipped = c(FALSE, FALSE))
+  expect_equal(live_smoke_exit_status(ran), 0L)
+  expect_equal(live_smoke_exit_status(transform(ran, skipped = c(FALSE, TRUE))), 1L)
+  expect_equal(live_smoke_exit_status(transform(ran, failed = c(1L, 0L))), 1L)
+  expect_equal(live_smoke_exit_status(ran[0, ]), 1L)
+  smoke <- readLines(file.path(PROJECT_ROOT, "scripts", "odds_live_smoke.R"), warn = FALSE)
+  expect_true(any(grepl("live_smoke_exit_status(", smoke, fixed = TRUE)))
+  # the live calls read config.R's CAPTURE_* settings, which odds_http_config() looks up in the global environment
+  expect_true(any(grepl('sys.source("config.R", envir = globalenv())', smoke, fixed = TRUE)))
+})

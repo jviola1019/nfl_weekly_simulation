@@ -32,3 +32,10 @@ with_live <- function(host, expr) {
     stop(e)
   })
 }
+
+#' Exit status of scripts/odds_live_smoke.R from its test results: 0 only when every live test
+#' ran and passed. A skipped test (its host unreachable) or no test at all is not a live check.
+live_smoke_exit_status <- function(results) {
+  if (!nrow(results)) return(1L)
+  if (sum(results$failed) + sum(results$error) + sum(results$skipped) > 0) 1L else 0L
+}

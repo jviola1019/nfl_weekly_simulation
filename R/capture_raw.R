@@ -35,7 +35,7 @@ format_utc_iso <- function(x) {
 #' @param json_text Scoreboard JSON as a string
 #' @return data.frame(event_id, name, kickoff_utc [POSIXct UTC], status)
 parse_espn_scoreboard <- function(json_text) {
-  sb <- jsonlite::fromJSON(json_text, simplifyVector = FALSE)
+  sb <- jsonlite::parse_json(json_text, simplifyVector = FALSE)
   events <- sb$events %||% list()
   if (length(events) == 0) {
     return(data.frame(
@@ -67,7 +67,7 @@ select_capture_events <- function(events, now, horizon_hours) {
 #' The season, season type (1 preseason, 2 regular season, 3 postseason) and week an ESPN
 #' scoreboard response lists; NULL when the response names none
 parse_espn_scoreboard_week <- function(json_text) {
-  sb <- jsonlite::fromJSON(json_text, simplifyVector = FALSE)
+  sb <- jsonlite::parse_json(json_text, simplifyVector = FALSE)
   year <- sb$season$year
   type <- sb$season$type
   week <- sb$week$number
@@ -106,7 +106,7 @@ espn_prop_bets_url <- function(event_id, provider_id, page = 1) {
 
 #' Number of pages in an ESPN core collection response (1 when absent)
 espn_page_count <- function(json_text) {
-  parsed <- jsonlite::fromJSON(json_text, simplifyVector = FALSE)
+  parsed <- jsonlite::parse_json(json_text, simplifyVector = FALSE)
   n <- parsed$pageCount
   if (is.null(n) || !is.numeric(n) || n < 1) 1L else as.integer(n)
 }

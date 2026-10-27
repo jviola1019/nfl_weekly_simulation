@@ -313,7 +313,7 @@ Rscript scripts/run_matrix.R  # Should show 11/11 passed (golden-master needs ne
 ### Keyless Odds Layer (`R/odds/`)
 | File | Purpose |
 |------|---------|
-| `R/odds/http.R` | The only HTTP layer: truthful user agent, 20 s timeout, at most 1 request/second per domain, backoff on 429/5xx, no workaround for a 403 or a challenge page, raw sha256 per successful response (error responses are recorded by status and error text) |
+| `R/odds/http.R` | The only HTTP layer for ESPN and Kalshi (nflverse downloads go through nflreadr): truthful user agent, 20 s timeout, at most 1 request/second per domain, backoff on 429/5xx, no workaround for a 403 or a challenge page, raw sha256 per successful response (error responses are recorded by status and error text) |
 | `R/odds/snapshots.R` | The `odds_snapshots` shape, market and venue vocabulary, validation |
 | `R/odds/closing.R` | The closing rule: last snapshot at or before kickoff at the same line; over 60 minutes is stale |
 | `R/odds/provider.R`, `provider_nflverse.R`, `provider_espn_core.R`, `provider_kalshi.R` | One provider interface and the three keyless sources |

@@ -349,7 +349,7 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `R/sim_bundle.R` - the simulator's weekly bundle, written by `run_week.R` (replaced the HTML report at A8)
 - `R/mu_terms.R` - explicit mean composition: the term table and `compose_mu()` (M22)
 - `R/schedule_context.R` - neutral sites, home-field points and rest days (M24, M23)
-- `R/odds/` - the keyless odds layer (D1): `http.R` is the only HTTP code (1 request/second per domain, no workaround for a 403/429); providers for nflverse, ESPN core and Kalshi; the `odds_snapshots` shape; the closing rule; the archive builder. Tests inject a fetch function and read `tests/testthat/fixtures/odds/`; live checks are in `tests/live/` only. Endpoints and the terms matrix: `docs/odds-sources.md`
+- `R/odds/` - the keyless odds layer (D1): `http.R` is the only HTTP code for ESPN and Kalshi (nflverse loads through nflreadr; 1 request/second per domain, no workaround for a 403/429 or a challenge page); providers for nflverse, ESPN core and Kalshi; the `odds_snapshots` shape; the closing rule; the archive builder. Tests inject a fetch function and read `tests/testthat/fixtures/odds/`; live checks are in `tests/live/` only. Endpoints and the terms matrix: `docs/odds-sources.md`
 
 ### Props Data Sources
 - `sports/nfl/props/data_sources.R` - Player projections with fallback chain

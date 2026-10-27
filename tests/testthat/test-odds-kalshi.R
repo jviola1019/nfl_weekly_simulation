@@ -400,10 +400,14 @@ test_that("the shared fetch helpers live in provider.R under odds_ names, and ne
   }
   expect_match(read_src("provider.R"), "odds_fetch_problem <- function", fixed = TRUE)
   expect_equal(odds_one_line("a\n  b\t c "), "a b c")
-  expect_equal(odds_fetch_problem(list(error = NA_character_, status = 200L)), "HTTP 200, body is not JSON")
+  page <- charToRaw("<html><body>challenge</body></html>")
+  expect_equal(odds_fetch_problem(list(error = NA_character_, status = 200L, body = page)), "HTTP 200, body is not JSON")
+  expect_equal(odds_fetch_problem(list(error = NA_character_, status = 200L)), "HTTP 200, empty body")       # review I-1
+  expect_equal(odds_fetch_problem(list(error = NA_character_, status = 200L, body = charToRaw("null"))), "HTTP 200, JSON null")
   expect_equal(odds_fetch_problem(list(error = "HTTP 500", status = 500L)), "HTTP 500")
-  expect_true(odds_is_html_block(list(status = 200L)))
-  expect_false(odds_is_html_block(list(status = 500L)))
+  expect_true(odds_is_html_block(list(status = 200L, body = page)))
+  expect_false(odds_is_html_block(list(status = 200L)))                # an empty body is a gap, not a page (review I-1)
+  expect_false(odds_is_html_block(list(status = 500L, body = page)))
   expect_match(odds_html_block_note(list(status = 200L), "X"), "blocked: HTTP 200 body is not JSON")
 })
 
@@ -513,4 +517,38 @@ test_that("M5: a non-404 failure on a candle request is named with its real erro
   expect_match(res$source_status$detail, "KXNFLGAME-26OCT12BUFLAR-LAR (HTTP 500)", fixed = TRUE)
   expect_false(grepl("without candles", res$source_status$detail))
   expect_equal(nrow(res$snapshots), 4)
+})
+
+test_that("an empty 200 body is a counted failure, not a block, and a challenge page blocks kalshi.com for the session (review I-1, I-4)", {
+  res <- kalshi_provider(game_routes(lar_candles = list(text = "")))$provider$game_snapshots(GAME_K)
+  expect_false(grepl("blocked", res$source_status$detail))
+  expect_match(res$source_status$detail, "KXNFLGAME-26OCT12BUFLAR-LAR (HTTP 200, empty body)", fixed = TRUE)
+  expect_equal(res$source_status$status, "stale")
+  expect_equal(nrow(res$snapshots), 4)                               # the other side's candles are kept
+  k <- kalshi_provider(game_routes(buf_candles = HTML_200))
+  first <- k$provider$game_snapshots(GAME_K)
+  expect_match(first$source_status$detail, "blocked")
+  n <- length(k$fake$state$urls)
+  again <- k$provider$game_snapshots(GAME_K)
+  expect_equal(length(k$fake$state$urls), n)                         # refused without a request
+  expect_match(again$source_status$detail, "blocked")
+})
+
+test_that("a KXNFLTD market without floor_strike, or a prop market without its player, is drift (review I-5)", {
+  m <- odds_fixture_json("kalshi_markets_td_live.json")$markets[[1]]
+  no_strike <- m
+  no_strike$floor_strike <- NULL
+  meta <- kalshi_market_meta(no_strike, GAME_K, "KXNFLTD")
+  expect_false(meta$ok)
+  expect_true(isTRUE(meta$drift))
+  expect_match(meta$reason, "no floor_strike")
+  no_player <- m
+  no_player$custom_strike$football_player <- NULL
+  meta2 <- kalshi_market_meta(no_player, GAME_K, "KXNFLTD")
+  expect_false(meta2$ok)
+  expect_true(isTRUE(meta2$drift))
+  expect_match(meta2$reason, "no player")
+  three <- m
+  three$floor_strike <- 3                                             # 3+ is present but unmapped by design: unsupported, not drift
+  expect_false(isTRUE(kalshi_market_meta(three, GAME_K, "KXNFLTD")$drift))
 })

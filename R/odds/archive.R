@@ -161,7 +161,11 @@ odds_archive_build <- function(games, provider, out_dir, raw_dir, built_utc = Sy
   odds_archive_assert_seasons(unique(games$season))
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
   dir.create(raw_dir, recursive = TRUE, showWarnings = FALSE)
-  res <- provider$game_snapshots(games, on_raw = function(key, body, rec) oa_write_gz(oa_raw_path(raw_dir, key), body))
+  stored <- character()
+  res <- provider$game_snapshots(games, on_raw = function(key, body, rec) {
+    oa_write_gz(oa_raw_path(raw_dir, key), body)
+    stored <<- c(stored, key)
+  })
 
   s <- res$snapshots
   meta <- games[match(s$game_id, games$game_id), c("season", "week", "game_type")]
@@ -182,11 +186,30 @@ odds_archive_build <- function(games, provider, out_dir, raw_dir, built_utc = Sy
   oa_write_csv(event_map, paths$event_map)
   oa_write_csv(coverage, paths$coverage)
 
+  # A game is fetched when its raw response was stored. Every other game with an event id is a
+  # failure: a failed request, a body that is not usable JSON, or a game never requested because
+  # a block stopped the run (review I-2).
   f <- res$fetches
-  ok <- !is.na(f$http_status) & f$http_status == 200L & !is.na(f$raw_sha256)
+  ok <- f$key %in% stored
   raw <- lapply(which(ok), function(i) list(file = basename(oa_raw_path(raw_dir, f$key[i])), url = f$url[i],
                                             sha256 = f$raw_sha256[i], bytes = f$bytes[i]))
-  failures <- lapply(which(!ok), function(i) list(key = f$key[i], url = f$url[i], http_status = f$http_status[i]))
+  wanted <- games$espn[!is.na(games$espn) & nzchar(games$espn)]
+  failures <- lapply(setdiff(wanted, stored), function(k) {
+    i <- utils::tail(which(f$key == k), 1)
+    if (!length(i)) {
+      return(list(key = k, url = NA_character_, http_status = NA_integer_,
+                  reason = "never requested: a block stopped the run"))
+    }
+    st <- f$http_status[i]
+    reason <- if (is.na(st)) {
+      if (isTRUE(f$blocked[i])) "refused: the domain is blocked" else "no response"
+    } else if (st >= 200L && st < 300L) {
+      "a body that is not usable JSON (source_detail says which)"
+    } else {
+      sprintf("HTTP %d", st)
+    }
+    list(key = k, url = f$url[i], http_status = st, reason = reason)
+  })
   derived <- lapply(paths, function(p) list(file = basename(p), rows = nrow(utils::read.csv(p)), sha256 = oa_sha256_file(p)))
   sources <- list(
     built_utc = odds_iso(built_utc), seasons = sort(unique(games$season)), max_season = ODDS_ARCHIVE_MAX_SEASON,

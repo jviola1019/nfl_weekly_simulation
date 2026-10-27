@@ -78,7 +78,7 @@ test_that("a moneyline whose price cannot be read is dropped and counted, never 
   expect_equal(attr(s, "dropped"), 1L)
 })
 
-test_that("a game with a close but no open keeps its close (80 of the 285 games of 2023)", {
+test_that("a game with a close but no open keeps its close (ESPN BET posted no opener for much of early 2023)", {
   parsed <- odds_fixture_json("espn_game_odds_2024_01_ARI_BUF.json")
   espn_bet <- which(vapply(parsed$items, function(i) identical(i$provider$id, "58"), logical(1)))
   for (side in c("homeTeamOdds", "awayTeamOdds")) parsed$items[[espn_bet]][[side]]$open <- NULL
@@ -213,12 +213,12 @@ test_that("a market block with a side or a readable price missing makes the resu
   expect_equal(res2$source_status$status, "stale")
 })
 
-test_that("a line with no price is kept, counted in the detail, and does not make the result stale (R6)", {
+test_that("a spread or total line with no price is kept and counted, and makes the game result stale (review I-6; R6 holds for props)", {
   parsed <- odds_fixture_json("espn_game_odds_2026_01_NE_SEA.json")
   parsed$items[[1]]$homeTeamOdds$open$spread <- NULL
   parsed$items[[1]]$open$over <- NULL
   res <- espn_provider(setNames(list(json_route(parsed)), odds_url("401872656")))$provider$game_snapshots(GAME_2026)
-  expect_equal(res$source_status$status, "ok")
+  expect_equal(res$source_status$status, "stale")
   expect_match(res$source_status$detail, "2 line-only row\\(s\\) kept")
   kept <- res$snapshots[res$snapshots$market_id == "spread" & res$snapshots$side == "home" &
                           res$snapshots$snapshot_kind == "open", ]
@@ -564,4 +564,77 @@ test_that("the ESPN provider satisfies the provider interface", {
   expect_equal(validate_odds_provider(p), character())
   expect_setequal(p$venue_ids, c("espn_bet", "draftkings"))
   expect_true(is.function(p$game_snapshots) && is.function(p$prop_snapshots) && is.function(p$capture))
+})
+
+test_that("an empty or JSON-null 200 body is a counted gap, not a block: the next game is still requested (review I-1)", {
+  for (case in list(list(text = "", says = "HTTP 200, empty body"), list(text = "null", says = "HTTP 200, JSON null"))) {
+    e <- espn_provider(setNames(list(list(text = case$text), "espn_game_odds_2026_01_NE_SEA.json"),
+                                c(odds_url("401671617"), odds_url("401872656"))))
+    res <- e$provider$game_snapshots(rbind(GAME_2024, GAME_2026))
+    expect_equal(length(e$fake$state$urls), 2, info = case$says)
+    expect_equal(res$source_status$status, "stale", info = case$says)
+    expect_match(res$source_status$detail, sprintf("2024_01_ARI_BUF (%s)", case$says), fixed = TRUE)
+    expect_false(grepl("blocked", res$source_status$detail), info = case$says)
+    expect_equal(unique(res$snapshots$game_id), "2026_01_NE_SEA")
+  }
+  # a prop page the same way: a gap, and the next game is still asked for
+  one_page <- sub('"pageCount": 2', '"pageCount": 1', prop_page1_text(), fixed = TRUE)
+  e <- espn_provider(setNames(list(list(text = ""), list(text = one_page)),
+                              c(espn_prop_bets_url("401671617", 100, 1), espn_prop_bets_url("401872656", 100, 1))))
+  res <- e$provider$prop_snapshots(rbind(GAME_2024, GAME_2026))
+  expect_equal(length(e$fake$state$urls), 2)
+  expect_false(grepl("blocked", res$source_status$detail))
+  expect_match(res$source_status$detail, "HTTP 200, empty body", fixed = TRUE)
+})
+
+test_that("a block stops the run for the session, and the detail counts the games never requested (review I-2, I-4)", {
+  html <- list(text = "<html><body>challenge</body></html>")
+  third <- transform(GAME_2026, game_id = "2026_01_NEXT", espn = "401872657")
+  e <- espn_provider(setNames(list("espn_game_odds_2024_01_ARI_BUF.json", html),
+                              c(odds_url("401671617"), odds_url("401872656"))))
+  res <- e$provider$game_snapshots(rbind(GAME_2024, GAME_2026, third))
+  expect_match(res$source_status$detail, "1 game(s) never requested after the block", fixed = TRUE)
+  n <- length(e$fake$state$urls)
+  props <- e$provider$prop_snapshots(GAME_2024)                       # the same domain, later in the session
+  expect_equal(length(e$fake$state$urls), n)                         # refused without a request
+  expect_match(props$source_status$detail, "blocked")
+  f <- espn_provider(setNames(list(list(status = 403L)), odds_url("401671617")))
+  r403 <- f$provider$game_snapshots(rbind(GAME_2024, GAME_2026, third))
+  expect_match(r403$source_status$detail, "2 game(s) never requested after the block", fixed = TRUE)
+})
+
+test_that("a prop page without pageCount is read as one page and named as drift (review I-5)", {
+  page <- jsonlite::fromJSON(prop_page1_text(), simplifyVector = FALSE)
+  page$pageCount <- NULL
+  e <- espn_provider(setNames(list(json_route(page)), espn_prop_bets_url("401872656", 100, 1)))
+  res <- e$provider$prop_snapshots(GAME_2026)
+  expect_equal(length(e$fake$state$urls), 1)
+  expect_equal(res$source_status$status, "stale")
+  expect_match(res$source_status$detail, "2026_01_NE_SEA has no pageCount", fixed = TRUE)
+})
+
+test_that("a close block fetched before kickoff is kept as an observed snapshot at the fetch time, never as a close (review I-7)", {
+  parsed <- odds_fixture_json("espn_game_odds_2026_01_NE_SEA.json")
+  kick <- as.POSIXct("2026-09-10 00:20:00", tz = "UTC")
+  pre <- parse_espn_game_odds(parsed, "2026_01_NE_SEA", sha256 = "a", fetched_at = kick - 3600, kickoff_utc = kick)
+  expect_equal(validate_odds_snapshots(pre), character())
+  expect_false(any(pre$snapshot_kind == "close"))
+  obs <- pre[pre$snapshot_kind == "observed", ]
+  expect_gt(nrow(obs), 0)
+  expect_true(all(obs$captured_at == kick - 3600))
+  expect_true(any(pre$snapshot_kind == "open"))                      # an opener is an opener whenever it is fetched
+  expect_equal(attr(pre, "pre_kickoff_closes"), nrow(obs))
+  post <- parse_espn_game_odds(parsed, "2026_01_NE_SEA", sha256 = "a", fetched_at = kick + 86400, kickoff_utc = kick)
+  expect_true(any(post$snapshot_kind == "close"))
+  expect_true(all(is.na(post$captured_at)))
+  # through the provider, which passes each fetch's time and the game's kickoff
+  e <- espn_provider(setNames(list("espn_game_odds_2026_01_NE_SEA.json"), odds_url("401872656")),
+                     clock = odds_fake_clock(start = as.numeric(kick) - 7200))
+  res <- e$provider$game_snapshots(transform(GAME_2026, kickoff_utc = kick))
+  expect_false(any(res$snapshots$snapshot_kind == "close"))
+  expect_match(res$source_status$detail, "close-block row(s) fetched before kickoff kept as observed snapshots", fixed = TRUE)
+  # the closing rule then judges them by their gap, like any timed snapshot
+  closes <- select_closing_snapshots(res$snapshots, data.frame(game_id = "2026_01_NE_SEA", kickoff_utc = kick))
+  expect_true(all(closes$timing == "timed"))
+  expect_true(all(closes$stale))                                     # 2 hours before kickoff
 })

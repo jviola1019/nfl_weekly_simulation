@@ -202,5 +202,6 @@ odds_declare_blocked <- function(url, status, reason = "served a body that is no
 #' when there is no body or it is not JSON; it never returns a guess.
 odds_json <- function(rec) {
   if (is.null(rec$body)) return(NULL)
-  tryCatch(jsonlite::fromJSON(rawToChar(rec$body), simplifyVector = FALSE), error = function(e) NULL)
+  # parse_json, never fromJSON: fromJSON reads a local file, or fetches a URL, when the text names one
+  tryCatch(jsonlite::parse_json(rawToChar(rec$body), simplifyVector = FALSE), error = function(e) NULL)
 }

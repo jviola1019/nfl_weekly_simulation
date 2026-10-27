@@ -295,3 +295,15 @@ test_that("odds_fetch_row stores the redacted URL, never the key", {
   expect_equal(row$url, odds_redact_url(rec$url))
   expect_match(row$url, "apiKey=REDACTED", fixed = TRUE)
 })
+
+test_that("a spread or total line with no price is kept and counted, and makes the result stale (review I-6)", {
+  s <- sched_full_fixture()
+  s$home_spread_odds[s$game_id == "2024_01_BAL_KC"] <- NA
+  p <- provider_nflverse(load_schedules_fn = function(seasons) s)
+  res <- p$game_snapshots(games_of("2024_01_BAL_KC"))
+  kept <- res$snapshots[res$snapshots$market_id == "spread" & res$snapshots$side == "home", ]
+  expect_equal(nrow(kept), 1)
+  expect_true(is.na(kept$price_american))
+  expect_match(res$source_status$detail, "1 spread/total line(s) kept without a price", fixed = TRUE)
+  expect_equal(res$source_status$status, "stale")
+})

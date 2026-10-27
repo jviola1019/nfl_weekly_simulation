@@ -1,8 +1,9 @@
 # =============================================================================
 # nflverse provider: the consensus closing line (roadmap D1)
 # =============================================================================
-# nflreadr::load_schedules() carries one closing moneyline, spread and total per
-# game since 1999. It is a consensus close, with no open and no timestamp, so
+# nflreadr::load_schedules() carries at most one closing moneyline, spread and total
+# per game, back to 1999; older seasons have games with a market missing, and every
+# gap is counted. It is a consensus close, with no open and no timestamp, so
 # every row is snapshot_kind "close" with captured_at NA. Sign convention: nflverse
 # `spread_line` is positive when the HOME team is favoured, so the home handicap is
 # -spread_line and the away handicap is +spread_line.
@@ -117,23 +118,26 @@ provider_nflverse <- function(load_schedules_fn = NULL) {
     no_line <- rep(NA_real_, n)
 
     # Spread and total: a row needs its line. A price with no line cannot be stored, so it is
-    # dropped and counted (price_only). A line with no price is kept, and a price that does not
-    # read on a kept row is counted (unreadable).
-    line_part <- function(market_id, side, line, price) {
+    # dropped and counted (price_only). A line with no price is kept and counted (no_price, unless
+    # its price column is absent, which is named once), and a price that does not read on a kept
+    # row is counted (unreadable).
+    line_part <- function(market_id, side, line, price_col) {
+      price <- sched[[price_col]]
       price_int <- american_to_int(price)
       raw_present <- !is.na(price)
       keep <- in_req & !is.na(line)
       list(
         rows = market_rows(market_id, side, line, price_int, keep),
         price_only = sum(in_req & is.na(line) & raw_present),
+        no_price = if (price_col %in% absent) 0L else sum(keep & !raw_present),
         unreadable = sum(keep & raw_present & is.na(price_int))
       )
     }
     line_parts <- list(
-      line_part("spread", "home", -as.numeric(sched$spread_line), sched$home_spread_odds),
-      line_part("spread", "away", as.numeric(sched$spread_line), sched$away_spread_odds),
-      line_part("total", "over", as.numeric(sched$total_line), sched$over_odds),
-      line_part("total", "under", as.numeric(sched$total_line), sched$under_odds)
+      line_part("spread", "home", -as.numeric(sched$spread_line), "home_spread_odds"),
+      line_part("spread", "away", as.numeric(sched$spread_line), "away_spread_odds"),
+      line_part("total", "over", as.numeric(sched$total_line), "over_odds"),
+      line_part("total", "under", as.numeric(sched$total_line), "under_odds")
     )
     rows <- do.call(rbind, Filter(Negate(is.null), c(
       list(market_rows("moneyline", "home", no_line, home_ml, ml_pair),
@@ -142,6 +146,7 @@ provider_nflverse <- function(load_schedules_fn = NULL) {
     )))
     snaps <- new_odds_snapshots(rows %||% odds_snapshots_empty())
     price_only <- sum(vapply(line_parts, `[[`, integer(1), "price_only"))
+    no_price <- sum(vapply(line_parts, `[[`, integer(1), "no_price"))
     unreadable <- unreadable_ml + sum(vapply(line_parts, `[[`, integer(1), "unreadable"))
 
     # The requested games the schedule has, and how many of the three markets each has rows for.
@@ -158,6 +163,7 @@ provider_nflverse <- function(load_schedules_fn = NULL) {
       if (games_none) sprintf("%d requested game(s) in the schedule with no market rows", games_none),
       if (games_partial) sprintf("%d requested game(s) missing a moneyline, spread or total", games_partial),
       if (price_only) sprintf("%d price-only spread/total row(s) dropped (no line)", price_only),
+      if (no_price) sprintf("%d spread/total line(s) kept without a price", no_price),   # review I-6
       if (unreadable) sprintf("%d unreadable price(s) not stored (for example a moneyline of 0)", unreadable)
     )
     base <- sprintf("%d of %d requested games in the schedule; %d without a moneyline",

@@ -235,3 +235,20 @@ test_that("a transport error comes back as a record with no status, not as an ex
   expect_match(res$error, "connection reset by peer", fixed = TRUE)
   expect_true(is.na(res$retry_after))
 })
+
+test_that("odds_json parses the body only: a body that names a local file is never read (review I-3)", {
+  f <- withr::local_tempfile(fileext = ".json")
+  writeLines('{"a": 1}', f)
+  expect_null(odds_json(list(body = charToRaw(f))))                   # jsonlite::fromJSON would read the file
+  expect_equal(odds_json(list(body = charToRaw('{"a": 1}'))), list(a = 1L))
+})
+
+test_that("no odds or capture code parses server text with jsonlite::fromJSON, which also reads files and URLs (review I-3)", {
+  files <- c(list.files(file.path(PROJECT_ROOT, "R", "odds"), pattern = "\\.R$", full.names = TRUE),
+             file.path(PROJECT_ROOT, "R", "capture_raw.R"))
+  uses <- vapply(files, function(f) {
+    code <- readLines(f, warn = FALSE)
+    any(grepl("fromJSON(", code[!grepl("^\\s*#", code)], fixed = TRUE))
+  }, logical(1))
+  expect_equal(unname(basename(files[uses])), character())
+})

@@ -16,8 +16,9 @@
 #     and is not eligible for headline CLV; every timed row has a gap
 #   - a venue's labelled close (no timestamp) is used only when no timed snapshot
 #     exists; it has no gap, so it is never stale, and its timing is "labelled"
-# Opening lines are ignored here. The rule is price-agnostic: Kalshi's close is
-# the mid of the returned bid and ask, a sportsbook's is price_american.
+# Opening lines are ignored here. The rule is price-agnostic: it returns the closing
+# row as stored. For Kalshi that is the candle's bid, ask and last (the consumer takes
+# the mid with kalshi_mid()); for a sportsbook it is price_american.
 # Inputs are checked on entry: the snapshots must pass validate_odds_snapshots(),
 # kickoff_utc must be POSIXct, and each game_id may appear once in kickoffs. A pick
 # with an NA where its identity needs a value stops (match_close_at_line).
