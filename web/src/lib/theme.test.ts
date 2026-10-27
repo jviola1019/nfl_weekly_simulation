@@ -31,7 +31,9 @@ describe("safeBackPath", () => {
   });
 
   it("never leaves the site: another host, no referrer or a value that is not a URL goes home", () => {
-    for (const bad of ["https://evil.example/phish", "http://127.0.0.1:3001/", "//evil.example", "javascript:alert(1)", "not a url", "", null, undefined]) {
+    // a same-host referer whose path starts with // would make "Location: //evil.example#theme",
+    // which the browser reads as another host (B2 final review I1)
+    for (const bad of ["https://evil.example/phish", "http://127.0.0.1:3001/", "//evil.example", "http://127.0.0.1:3000//evil.example", "javascript:alert(1)", "not a url", "", null, undefined]) {
       expect(safeBackPath(bad, host), String(bad)).toBe("/#theme");
     }
     expect(safeBackPath("http://127.0.0.1:3000/evidence", null)).toBe("/#theme");

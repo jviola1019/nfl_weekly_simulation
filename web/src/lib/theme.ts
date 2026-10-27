@@ -38,6 +38,8 @@ export function safeBackPath(referer: string | null | undefined, host: string | 
   try {
     const url = new URL(referer);
     if (url.host !== host) return fallback;
+    // a path starting with // is protocol-relative in a Location header: another host
+    if (url.pathname.startsWith("//")) return fallback;
     return `${url.pathname}${url.search}#${THEME_ANCHOR}`;
   } catch {
     return fallback;

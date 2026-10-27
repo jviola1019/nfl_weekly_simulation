@@ -22,7 +22,7 @@ export const TERMS = {
   },
   gap: {
     label: "Model–market gap",
-    definition: "The model's home win probability minus the no-vig market's, in percentage points (pts)."
+    definition: "The absolute difference between the model's and the no-vig market's home win probabilities, in percentage points (pts)."
   },
   unvalidated: {
     label: "Unvalidated",

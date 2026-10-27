@@ -26,4 +26,9 @@ describe("glossary", () => {
     expect(TERMS.interval.definition).toContain("10,000");
     expect(TERMS.brier.definition).toContain("0.25");
   });
+
+  it("defines the gap as the absolute difference the home page computes (Math.abs, B2 final review I2)", () => {
+    expect(TERMS.gap.definition).toMatch(/absolute difference/);
+    expect(TERMS.gap.definition).not.toMatch(/minus/);
+  });
 });
