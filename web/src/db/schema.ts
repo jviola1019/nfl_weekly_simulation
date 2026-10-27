@@ -215,7 +215,7 @@ export const scoreDistributions = pgTable(
     runId: text("run_id").notNull().references(() => modelRuns.runId, { onDelete: "cascade" }),
     gameId: text("game_id").notNull().references(() => games.gameId),
     kind: text("kind").notNull(), // margin | total
-    bins: jsonb("bins").notNull() // [{x0, x1, p}]
+    bins: jsonb("bins").notNull() // [{x, p}]: one bin per integer outcome over the run's distribution_mass (R sb_bins)
   },
   (t) => [primaryKey({ columns: [t.runId, t.gameId, t.kind] })]
 );
