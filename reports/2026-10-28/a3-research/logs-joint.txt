@@ -1,0 +1,28 @@
+G = 107 week clusters; estimated week effect SD on the logit scale 0.000
+situational k=29 week_sd=0.000 done
+situational k=29 week_sd=0.100 done
+situational k=29 week_sd=0.200 done
+all k=34 week_sd=0.000 done
+all k=34 week_sd=0.100 done
+all k=34 week_sd=0.200 done
+Key: <set, k, G, week_sd>
+                       set     k     G week_sd    lr score_boot_diag
+                    <char> <int> <int>   <num> <num>           <num>
+1:                     all    34   107     0.0 0.053           0.044
+2:                     all    34   107     0.1 0.072           0.045
+3:                     all    34   107     0.2 0.070           0.049
+4:             situational    29   107     0.0 0.053           0.047
+5:             situational    29   107     0.1 0.067           0.041
+6:             situational    29   107     0.2 0.073           0.041
+7: situational, one season    29    22     0.0 0.116           0.054
+   score_boot_full wald_chi2 wald_f
+             <num>     <num>  <num>
+1:           0.062     0.535  0.423
+2:           0.061     0.538  0.427
+3:           0.059     0.538  0.438
+4:           0.059     0.399  0.304
+5:           0.054     0.419  0.324
+6:           0.049     0.403  0.328
+7:             NaN       NaN    NaN
+There were 27 warnings (use warnings() to see them)
+exit=0

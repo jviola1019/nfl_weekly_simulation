@@ -98,3 +98,18 @@ test_that("the disclosures carry the review's open questions: the joint Wald, th
   expect_match(ds[id == "CLUSTER-UNIT", text], "season-week")
   expect_match(ds[id == "F11B", text], "OAK")
 })
+
+test_that("the research settles the joint test, the cluster unit, late changes and the S4 null, citing committed evidence", {
+  withr::local_dir(PROJECT_ROOT)
+  ds <- vr$vvf_disclosures()
+  ids <- c("JOINT-WALD", "CLUSTER-UNIT", "A3-FLEX", "S4-NULL")
+  expect_true(all(ids %in% ds$id))
+  for (i in ids) {
+    src <- ds[id == i, source]
+    expect_match(src, "reports/2026-10-28/a3-research/", fixed = TRUE, info = i)
+    paths <- regmatches(src, gregexpr("reports/[A-Za-z0-9_./-]+[A-Za-z0-9_]", src))[[1]]
+    for (p in paths) expect_true(file.exists(p), info = paste(i, p))
+  }
+  expect_match(ds[id == "JOINT-WALD", text], "p_joint")
+  expect_match(ds[id == "S4-NULL", text], "consistency resampling")
+})
