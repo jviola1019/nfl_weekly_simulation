@@ -5,6 +5,6 @@
 if (!file.exists(file.path("backtest", "vvf", "registry.R"))) stop("Run from the repository root", call. = FALSE)
 e <- environment()
 sys.source(file.path("backtest", "common.R"), envir = e)
-for (f in c("common.R", "registry.R", "ledger.R")) sys.source(file.path("backtest", "vvf", f), envir = e)
+for (f in c("common.R", "registry.R", "s1_screen.R", "input_schema.R", "ledger.R")) sys.source(file.path("backtest", "vvf", f), envir = e)
 vvf_write_text(vvf_render_ledger(), file.path("docs", "VARIABLE_LEDGER.md"))
 cat("wrote docs/VARIABLE_LEDGER.md\n")
