@@ -14,7 +14,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
 - **The fix.**
   - `team_hfa_table()` (`R/schedule_context.R`) builds home field for every team in the schedule.
   - `assert_finite_means()` stops a calibration week whose means are not finite, naming the games, instead of letting them become 21.5. The message also names every missing input of those means, with up to three of its games.
-  - The calibration cache version is now 4L, so no cached fit from before the fix is reused.
+  - The calibration cache version is now 5L, and the score cache's 2L (F11b below), so no cached fit from before the fix is reused.
 - **The effect.** Measured on a cold-cache `run_week.R 7 2026` with `warn = 1`, against the audit's run before the fix:
   - fallback warnings: 634 before, 0 after;
   - raw simulator over the 1,355 calibration games: Brier 0.247 → 0.243 and log-loss 0.690 → 0.682 (the market is 0.212 and 0.611);
@@ -22,13 +22,23 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - blend minus market, week-block bootstrap: ΔLog-loss +0.0131 [0.0025, 0.0260] before and +0.0134 [0.0022, 0.0265] after; ΔBrier +0.0034 [0.0012, 0.0058] before and +0.0032 [0.0009, 0.0058] after.
 
   **The fix makes the simulator's inputs honest, but it does not close the gap to the market. F4 still stands.**
-- **Open, for the owner.** CI's golden master (2024 week 15; its calibration starts at 2019 week 1) now stops at `2019_01_DEN_OAK`: the home team's four drive inputs are missing. nflverse play-by-play files the 2019 Raiders as `LV`, while the schedules say `OAK`, so the play-by-play tables never join the schedule's code. On main those games were coin flips. The fix (franchise codes in the schedule, or schedule codes in the play-by-play) changes the golden master, so it waits for the owner.
+- **F11b: franchise codes** (owner decision, 2026-10-28).
+  - **The bug.** The new stop exposed it: CI's golden master (2024 week 15, whose calibration starts at 2019 week 1) stopped at `2019_01_DEN_OAK`, missing all four of the home team's drive inputs.
+    - nflverse play-by-play files the 2019 Raiders as `LV`, while its schedules and injuries say `OAK`; `SD` and `STL` are the same before their moves.
+    - So no play-by-play table joined the schedule's code. On main, every 2019 Raiders calibration game was a 21.5–21.5 coin flip, and no 2015–2019 `OAK`, `SD` or `STL` game had its division flags (`load_teams(current = TRUE)` has only the current codes).
+  - **The fix.** `franchise_code()` (`R/schedule_context.R`) maps OAK→LV, SD→LAC and STL→LA. The engine applies it to the schedule as it loads and to the injury table; `game_id` keeps its season's code.
+    - Form, pace and points per drive carry across a move, and home field pools both stadiums.
+    - `score_weeks` starts at SEASON − 8, so it reaches the pre-move seasons, and its cache version is 2L.
+  - **The effect** on the 2024 week 15 golden master, against main's record (`golden_master.R attribute`):
+    - the calibration runs every week of 2019–2023, where F11 alone stopped at 2019 week 1;
+    - two home means move: ATL at LV by −0.616 points (home win probability −0.020) and TB at LAC by −0.332 (−0.013);
+    - the other 14 games keep their means, and their win probabilities move at most 0.0009, through the calibration.
 - **Gates:**
-  - `run_tests.R`: 458 tests, 1,769 passed, 0 failed, 1 allowlisted skip.
+  - `run_tests.R`: 461 tests, 1,773 passed, 0 failed, 1 allowlisted skip.
   - `verify_repo_integrity.R`: 63 passed, 0 failed.
-  - The fixed run finished with exit 0 and `QA: passed`.
-  - New test: `tests/testthat/test-calibration-hfa.R`.
-  - The pinned cache version is 3L → 4L in `test-schedule-context.R`.
+  - `golden_master.R record 15 2024` (fresh HOME) completes, with no missing mean.
+  - The F11 run of `run_week.R 7 2026` finished with exit 0 and `QA: passed`.
+  - New tests are in `tests/testthat/test-calibration-hfa.R`. The pinned cache versions are 5L (calibration) and 2L (score) in `test-schedule-context.R`.
 
 ### A0: the odds capture sees every game before the close, on time, and is kept (owner, 2026-10-19)
 

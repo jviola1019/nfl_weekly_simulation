@@ -43,6 +43,19 @@ test_that("the engine builds home field for every schedule team and refuses a mi
   expect_false(any(grepl("hfa_tbl <- tibble(team = teams_on_slate)", code, fixed = TRUE)))
   expect_true(any(grepl("hfa_tbl <- team_hfa_table(", code, fixed = TRUE)))
   expect_true(any(grepl("assert_finite_means(g, sprintf(\"calibration %d week %d\", cut_season, cut_week))", code, fixed = TRUE)))
-  # a cached calibration built before this fix must not be reused
-  expect_true(any(grepl("version = 4L", code, fixed = TRUE)))
+  # a cached calibration built before the F11b fix must not be reused
+  expect_true(any(grepl("version = 5L", code, fixed = TRUE)))
+})
+
+test_that("franchise_code() gives every team its current franchise code (F11b)", {
+  expect_equal(franchise_code(c("OAK", "SD", "STL", "LV", "LAC", "LA", "KC", NA)),
+               c("LV", "LAC", "LA", "LV", "LAC", "LA", "KC", NA))
+})
+
+test_that("the engine puts schedules and injuries on franchise codes, as the play-by-play is (F11b)", {
+  # nflverse play-by-play files the 2019 Raiders as LV while the schedules and injuries say OAK
+  code <- readLines(file.path(PROJECT_ROOT, "NFLsimulation.R"), warn = FALSE)
+  code <- code[!grepl("^\\s*#", code)]
+  expect_true(any(grepl("home_team = franchise_code(home_team), away_team = franchise_code(away_team)", code, fixed = TRUE)))
+  expect_true(any(grepl("team     = franchise_code(toupper(as.character(.data[[col_team]])))", code, fixed = TRUE)))
 })

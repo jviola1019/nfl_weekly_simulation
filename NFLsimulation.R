@@ -1552,7 +1552,7 @@ if (!dir.exists(.score_cache_dir)) dir.create(.score_cache_dir, recursive = TRUE
 score_cache_key <- function(start_season, end_season, weeks, trials, seed, rho) {
   digest::digest(list(
     tag="score_weeks",
-    version = 1L,  # bump when the calibration-history code changes
+    version = 2L,  # bump when the calibration-history code changes; v2: franchise codes (F11b)
     start_season, end_season, weeks = paste0(weeks, collapse=","),
     trials, seed, rho,
     N_RECENT, USE_SOS, SOS_STRENGTH, RECENCY_HALFLIFE
@@ -1563,7 +1563,7 @@ score_cache_key <- function(start_season, end_season, weeks, trials, seed, rho) 
 calib_cache_key <- function(season, n_years, halflife, use_sos, sos_pow, trials, rho, seed){
   digest::digest(list(
     tag = "calib_sim_df_nb",
-    version = 4L,  # v4: home field for every team, not only the slate's (F11); v3: M24, M23
+    version = 5L,  # v5: franchise codes (F11b); v4: home field for every team, not only the slate's (F11); v3: M24, M23
     season = season,
     n_years = n_years,
     halflife = halflife,
@@ -1865,8 +1865,11 @@ is_playoff_week_sim <- function(week) {
 
 # ------------------------ DATA LOAD -------------------------------------------
 seasons_hfa <- (SEASON - 9):(SEASON - 0)
+# Franchise codes (F11b): the play-by-play files the 2019 Raiders as LV, the schedule as OAK, so
+# every table joined on team uses the current code; game_id keeps the code of its season
 sched <- load_schedules(seasons = seasons_hfa) |>
-  mutate(game_completed = !is.na(home_score) & !is.na(away_score))
+  mutate(game_completed = !is.na(home_score) & !is.na(away_score),
+         home_team = franchise_code(home_team), away_team = franchise_code(away_team))
 
 # CRITICAL: Verify season column exists (fail fast with clear error if missing)
 if (!"season" %in% names(sched)) {
@@ -2716,7 +2719,7 @@ if (!is.data.frame(inj_all) || nrow(inj_all) == 0) {
       transmute(
         season   = if (!is.na(col_season)) .data[[col_season]] else NA_integer_,
         week     = if (!is.na(col_week))   .data[[col_week]]   else NA_integer_,
-        team     = toupper(as.character(.data[[col_team]])),
+        team     = franchise_code(toupper(as.character(.data[[col_team]]))),   # F11b: as the schedule
         position = toupper(as.character(coalesce(if (!is.na(col_pos))    .data[[col_pos]]    else NA_character_, ""))),
         status   = toupper(as.character(coalesce(if (!is.na(col_status)) .data[[col_status]] else NA_character_, ""))),
         player   = as.character(coalesce(if (!is.na(col_player)) .data[[col_player]] else NA_character_, ""))

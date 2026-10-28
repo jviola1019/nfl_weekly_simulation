@@ -2,6 +2,20 @@
 # Pure functions of nflverse schedule columns, used for the current week and for the
 # calibration-history simulator in NFLsimulation.R.
 
+# The franchises that moved since 2015, by their old code (audit F11b). nflverse play-by-play
+# uses the current code in every season; its schedules and injuries keep the old one.
+TEAM_FRANCHISE <- c(OAK = "LV", SD = "LAC", STL = "LA")
+
+#' Current franchise code for a team code, so pre-move games join the play-by-play (F11b)
+#' @param team character team codes (NA stays NA)
+#' @return the codes with OAK, SD and STL replaced by LV, LAC and LA
+franchise_code <- function(team) {
+  team <- as.character(team)
+  moved <- !is.na(team) & team %in% names(TEAM_FRANCHISE)
+  team[moved] <- unname(TEAM_FRANCHISE[team[moved]])
+  team
+}
+
 #' Neutral-site flag (audit M24)
 #'
 #' nflverse marks neutral sites (international games, the Super Bowl) with
