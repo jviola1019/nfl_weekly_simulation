@@ -319,7 +319,7 @@ The other minors go to the ledger as deferred.
 ## Owner checkpoints
 
 1. **Amend spec §4's shuffled-labels control.** The proposal: the anchor null, with the permuted-x null reported, each judged by S3's claim rule. The evidence is `reports/2026-10-28/a3-research/RESEARCH.md`. Until the owner signs, the run's `s4_status` of record is `void` under the spec's control.
-2. **The joint test's p of record** (Task 8). `p_wald_robust` stays, labelled not size-controlled. Dropping it is the owner's call.
+2. **The joint test's p of record** (Task 8). Decided 2026-10-28 in Task 14, at the owner's request for a researched choice: `p_wald_robust` is dropped, and its statistic stays as v2's known answer.
 3. **The merge.** It comes after #225.
 
 ## Self-review

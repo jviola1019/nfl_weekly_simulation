@@ -368,6 +368,7 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `backtest/vvf/run_a3b_close.R` - the close-anchored run of S3, S4 and S5 on Tune 2018-2022 (`reports/2026-10-28/vvf-a3b-close/`)
 - `backtest/vvf/input_schema.R` - the input ERD: every table's key and references, checked against the data, drawn in the ledger
 - `reports/2026-10-28/a3-research/` - the research behind S4's null, the joint test's p, the cluster unit and late schedule changes
+- `reports/2026-10-28/verification/` - `verify.R` recomputes A3b's p-values, Brier and log loss, the research and the blends independently (56 checks; run long R scripts from a frozen copy)
 - `docs/VARIABLE_LEDGER.md` - every variable, its known-at class, defects, results, admission, the input ERD and disclosures; generated, never edited by hand
 - `scripts/write_variable_ledger.R` - writes `docs/VARIABLE_LEDGER.md` from the registry and the committed results
 - `scripts/diagnose_mu_na.R` - F11: which calibration mean term is NA, found from the call frames
