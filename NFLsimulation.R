@@ -1552,7 +1552,7 @@ if (!dir.exists(.score_cache_dir)) dir.create(.score_cache_dir, recursive = TRUE
 score_cache_key <- function(start_season, end_season, weeks, trials, seed, rho) {
   digest::digest(list(
     tag="score_weeks",
-    version = 1L,  # bump when the calibration-history code changes
+    version = 2L,  # bump when the calibration-history code changes; v2: franchise codes (F11b)
     start_season, end_season, weeks = paste0(weeks, collapse=","),
     trials, seed, rho,
     N_RECENT, USE_SOS, SOS_STRENGTH, RECENCY_HALFLIFE
@@ -1563,7 +1563,7 @@ score_cache_key <- function(start_season, end_season, weeks, trials, seed, rho) 
 calib_cache_key <- function(season, n_years, halflife, use_sos, sos_pow, trials, rho, seed){
   digest::digest(list(
     tag = "calib_sim_df_nb",
-    version = 3L,  # v3: neutral sites (M24) and own-game rest (M23) in the calibration history
+    version = 5L,  # v5: franchise codes (F11b); v4: home field for every team, not only the slate's (F11); v3: M24, M23
     season = season,
     n_years = n_years,
     halflife = halflife,
@@ -1865,8 +1865,11 @@ is_playoff_week_sim <- function(week) {
 
 # ------------------------ DATA LOAD -------------------------------------------
 seasons_hfa <- (SEASON - 9):(SEASON - 0)
+# Franchise codes (F11b): the play-by-play files the 2019 Raiders as LV, the schedule as OAK, so
+# every table joined on team uses the current code; game_id keeps the code of its season
 sched <- load_schedules(seasons = seasons_hfa) |>
-  mutate(game_completed = !is.na(home_score) & !is.na(away_score))
+  mutate(game_completed = !is.na(home_score) & !is.na(away_score),
+         home_team = franchise_code(home_team), away_team = franchise_code(away_team))
 
 # CRITICAL: Verify season column exists (fail fast with clear error if missing)
 if (!"season" %in% names(sched)) {
@@ -2716,7 +2719,7 @@ if (!is.data.frame(inj_all) || nrow(inj_all) == 0) {
       transmute(
         season   = if (!is.na(col_season)) .data[[col_season]] else NA_integer_,
         week     = if (!is.na(col_week))   .data[[col_week]]   else NA_integer_,
-        team     = toupper(as.character(.data[[col_team]])),
+        team     = franchise_code(toupper(as.character(.data[[col_team]]))),   # F11b: as the schedule
         position = toupper(as.character(coalesce(if (!is.na(col_pos))    .data[[col_pos]]    else NA_character_, ""))),
         status   = toupper(as.character(coalesce(if (!is.na(col_status)) .data[[col_status]] else NA_character_, ""))),
         player   = as.character(coalesce(if (!is.na(col_player)) .data[[col_player]] else NA_character_, ""))
@@ -2775,32 +2778,16 @@ hfa_sample <- sched_hfa |>
 league_hfa <- mean(hfa_sample$margin, na.rm = TRUE)
 if (!is.finite(league_hfa)) league_hfa <- 1.6  # safe fallback
 
-# Team-specific HFA with shrinkage toward league mean
-team_hfa_tbl <- sched_hfa %>%
-  transmute(
-    team_home = .data[[home_team_col]],
-    team_away = .data[[away_team_col]],
-    margin    = .data[[home_pts_col]] - .data[[away_pts_col]]
-  ) %>%
-  group_by(team_home) %>%
-  summarise(
-    hfa_raw = mean(margin, na.rm = TRUE),
-    n       = n(),
-    .groups = "drop"
-  ) %>%
-  mutate(
-    w   = n / (n + 60),                   # shrinkage weight (tune 60 if you want)
-    hfa = w * hfa_raw + (1 - w) * league_hfa
-  ) %>%
-  transmute(team = team_home, hfa)
-
-# Guarantee a value for every slate team; apply DEN altitude flavor
-hfa_tbl <- tibble(team = teams_on_slate) %>%
-  left_join(team_hfa_tbl, by = "team") %>%
-  mutate(
-    hfa = coalesce(hfa, league_hfa),
-    hfa = ifelse(team == "DEN", hfa + DEN_ALTITUDE_BONUS, hfa)
-  )
+# Team-specific HFA with shrinkage toward the league mean, for EVERY team in the schedule: the
+# calibration backtest joins it for every team of every past week, so a table of this slate's
+# teams left each bye team without home field and its calibration games at 21.5-21.5 (audit F11)
+hfa_tbl <- team_hfa_table(
+  sched_hfa |>
+    dplyr::transmute(team_home = .data[[home_team_col]], margin = .data[[home_pts_col]] - .data[[away_pts_col]]),
+  teams = sort(unique(c(sched[[home_team_col]], sched[[away_team_col]]))),
+  league_hfa = league_hfa,
+  den_bonus = DEN_ALTITUDE_BONUS
+)
 
 # Create a standardized view
 sched_std <- sched |>
@@ -4643,6 +4630,8 @@ week_inputs_and_sim_2w <- function(cut_season, cut_week, n_trials = CALIB_TRIALS
     dplyr::filter(!is.na(y_home))
 
   if (!nrow(g)) return(tibble::tibble())
+  # never let simulate_game_nb turn a missing mean into a 21.5 coin flip (audit F11)
+  assert_finite_means(g, sprintf("calibration %d week %d", cut_season, cut_week))
 
   set.seed(CALIB_SEED_BASE + cut_season * 100 + cut_week)
 
