@@ -2,6 +2,33 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec. To verify everything and finish the remaining work in a full local environment (VS Code), use `docs/handoff/2026-09-29-vscode-prompt.md`.
 
+## A3b done - 2026-10-28 (feat/a3b-vvf, stacked on feat/a3a-vvf, awaiting the owner)
+
+S3–S5, the S4 controls, the researched nulls and joint test, and the input ERD are in `backtest/vvf/` (see CHANGELOG, "A3b").
+- **Objective:** S3 incremental skill, the S4 controls and the S5 diagnostics, close-anchored on Tune 2018–2022. Then the owner's 2026-10-28 requests:
+  - research the label shuffle, the inherited joint test and the cluster unit;
+  - test late schedule changes;
+  - admit only significant variables;
+  - check bias and variance;
+  - verify the ERD and the docs.
+- **Done:** plan Tasks 1–16. That includes the final review's fix pass (Task 13), the old p-values decision (14) and the independent verification (15, 56 of 56 checks).
+  - `reports/2026-10-28/a3-research/` holds the research.
+  - `reports/2026-10-28/vvf-a3b-close/` holds the run.
+  - The ledger shows S3, each variable's admission and the input ERD.
+- **Confirmed facts:**
+  - Against the close, S3 claims none of v2's 36 features, so all 36 are excluded and the close-anchored model is the market alone.
+  - The spec's label shuffle fails by construction. The researched nulls hold.
+  - The inherited robust joint Wald is oversized (0.30–0.69 at a nominal 5%), so its p-value is dropped (decided 2026-10-28 at the owner's request). The wild score bootstrap holds 0.041–0.059.
+  - The ICC is about 0 at every cluster unit.
+  - Late changes are not significant.
+  - The final review's fix pass is done.
+  - `reports/2026-10-28/verification/` recomputes every p-value, Brier and log loss, the research and the blends independently.
+- **Open risks:** S3's power on Tune is low: a planted effect was detected in 11 of 20 runs at 0.20 log-odds per SD and 19 of 20 at 0.40. "No skill" does not rule out effects below about 0.3.
+- **Owner questions:**
+  - S4-NULL: sign the spec §4 amendment (the anchor null);
+  - the merge, after #225.
+- **Next target:** A4, the opener screen on D1's archive, after #224 and #225.
+
 ## A3a done - 2026-10-27 (feat/a3a-vvf, draft PR, awaiting the owner)
 
 The validation framework's S0–S2 are in `backtest/vvf/` (see CHANGELOG, "A3a").

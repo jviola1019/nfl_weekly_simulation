@@ -1,0 +1,41 @@
+               feature iterations rel_gap_at_optimum rel_gap_irls_weights
+                <char>      <int>              <num>                <num>
+ 1:        inj_diff_qb          3           1.58e-05             1.79e-06
+ 2:       inj_diff_all          3           4.99e-06             1.63e-06
+ 3:     qb_change_diff          3           4.48e-06             2.07e-06
+ 4:           home_dog          4           4.12e-06             4.12e-06
+ 5:               turf          3           3.37e-06             3.54e-06
+ 6:               d_e1          4           3.35e-06             3.35e-06
+ 7:               d_c2          4           3.24e-06             3.24e-06
+ 8:          rest_diff          3           2.97e-06             1.70e-06
+ 9:       neutral_site          3           2.92e-06             4.29e-07
+10:        qb_out_diff          3           2.79e-06             1.58e-06
+11:     inj_diff_skill          3           2.69e-06             8.28e-07
+12:      tz_shift_away          3           2.66e-06             8.43e-07
+13:                div          3           2.50e-06             2.51e-06
+14:               d_c1          4           2.41e-06             2.42e-06
+15:         west_early          3           1.57e-06             1.42e-06
+16:          primetime          3           1.12e-06             1.11e-06
+17:           home_bye          3           1.11e-06             1.38e-06
+18:        roof_closed          3           1.02e-06             6.04e-07
+19:            playoff          3           9.82e-07             7.89e-07
+20: away_travel_1000km          3           9.59e-07             7.17e-07
+21:           thursday          3           9.19e-07             8.97e-07
+22:         home_short          3           8.96e-07             8.58e-07
+23:         away_short          3           7.16e-07             8.89e-07
+24:       ref_ml_resid          3           6.48e-07             7.78e-07
+25:        abs_tz_away          3           5.97e-07             5.00e-07
+26:           late_reg          3           5.83e-07             4.26e-07
+27:          lp_anchor          4           4.73e-07             4.49e-07
+28:      ref_tot_resid          3           4.72e-07             4.63e-07
+29:           altitude          3           4.37e-07             5.23e-08
+30:        inj_diff_lb          3           3.52e-07             5.59e-07
+31:            big_fav          4           3.52e-07             3.18e-07
+32:           away_bye          3           2.02e-07             1.49e-07
+33:        inj_diff_dl          3           1.06e-07             3.15e-07
+34:        inj_diff_db          3           9.73e-08             2.51e-07
+35:        inj_diff_ol          3           6.96e-08             5.28e-07
+36: travel_diff_1000km          3           6.13e-08             4.12e-07
+               feature iterations rel_gap_at_optimum rel_gap_irls_weights
+
+largest relative gap: 1.58e-05 at the optimum, 4.12e-06 with glm's IRLS weights (the CSV's 6-digit rounding is up to 5e-6); iterations 3-4

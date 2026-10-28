@@ -1,0 +1,8 @@
+control,passed,gates,gates_amended,detail
+"canary",TRUE,TRUE,TRUE,"3508 rows unchanged, 1 appended, changed columns: none"
+"placebo",TRUE,TRUE,TRUE,"200 placebos, n = 1365, rejection rate 0.055 at alpha 0.05 (band 0.020-0.080)"
+"shuffled_labels",FALSE,TRUE,FALSE,"within wk; 29 of 36 intervals include 0; range of skill -0.00158 to 0.10025"
+"anchor_null",TRUE,FALSE,TRUE,"anchor null; 0 claims; 1 intervals wholly above 0, 2 wholly below, of 36"
+"permuted_x",TRUE,FALSE,FALSE,"permuted_x null; 0 claims; 0 intervals wholly above 0, 2 wholly below, of 36"
+"anchor_copy",TRUE,TRUE,TRUE,"skill 0"
+"reproducibility",TRUE,TRUE,TRUE,"results_sha256 of the 9 result files: 6596847a1d1c4f3a and 6596847a1d1c4f3a"

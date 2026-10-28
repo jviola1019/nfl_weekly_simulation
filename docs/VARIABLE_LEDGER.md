@@ -36,52 +36,143 @@ A post-hoc variable is refused at every decision point.
 
 | Anchor | Decision | Stages | Window | Run | result_sha256 |
 |---|---|---|---|---|---|
-| close | close | S1, S2 | Tune 2018-2022 | `reports/2026-10-22/vvf-v2-repro` | 12d2bc99164c30786b2b6a48087504b73a6cc8e8698d55b9f0f6b487ec3c0624 |
+| close | close | S1, S2 | Tune 2018-2022 | `reports/2026-10-22/vvf-v2-repro` | 997f4984787013511ed16f15aa49437181ec2247aff24f74a05e0bab4a1f0e91 |
+| close | close | S3, S4, S5 | Tune 2018-2022 | `reports/2026-10-28/vvf-a3b-close` | 49875172bfc5b5696a1bd3a88cd9338941176c516b6f14e2b57f26dcd9d07c3b |
 
-S1 columns are the BH q-values within each family: outcome (moneyline, LR test with the anchor as offset), spread and total (F tests on the residual against the line). q < 0.05 is a signal; anything else is "no evidence" at the MDE in the run's `s1_features.csv`. S2 shows the VIF step (VIF <= 5, the declared-first feature kept), whether the effect's sign is the same in every season, and the feature x season LR test, all for the outcome family. The opener anchor has no run yet: its inputs come from D1's archive (A4).
+S1 columns are the BH q-values within each family: outcome (moneyline, LR test with the anchor as offset), spread and total (F tests on the residual against the line). q < 0.05 is a signal; anything else is "no evidence" at the MDE in the run's `s1_features.csv`. S2 shows the VIF step (VIF <= 5, the declared-first feature kept), whether the effect's sign is the same in every season, and the feature x season LR test, all for the outcome family. S3 is the walk-forward skill of anchor + b x over the anchor alone, with its week-block bootstrap 95% CI. Admission takes S3 first, then S1's outcome q, then the run's S4 status of record (reports/2026-10-28/a3-research, section 5); a variable that passes all three is only a candidate until Confirm under G3. The opener anchor has no run yet: its inputs come from D1's archive (A4).
 
 ## Features
 
-| Variable | Group | Definition | Source | known_at | Params | S1 close (q: outcome / spread / total) | S2 close (outcome) | Defects | Unit test |
-|---|---|---|---|---|---|---|---|---|---|
-| `d_c1` | model vs market | logit(C1 Elo walk-forward) - lp_anchor; a team's rating moves only when it plays, so it uses results through the team's previous game | backtest/vvf/features.R: vvf_anchor_features; vvf_base_predictions (bt_elo_run) | results_w-1 | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.920 | - | tests/testthat/test-vvf-features.R |
-| `d_c2` | model vs market | logit(C2 EPA GLM walk-forward) - lp_anchor | backtest/vvf/features.R: vvf_anchor_features; vvf_base_predictions (bt_epa_walk_forward) | gameday | 1 | 0.963 / 0.967 / 0.896 | VIF kept; signs not stable; x season p 0.300 | A3-STARTER | tests/testthat/test-vvf-features.R |
-| `d_e1` | model vs market | logit(E1 = logit mean of C1 and C2) - lp_anchor; aliased with d_c1 and d_c2 when entered jointly | backtest/vvf/features.R: vvf_anchor_features; vvf_base_predictions (bt_e1) | gameday | 1 | 0.963 / 0.998 / 0.896 | VIF dropped, aliased; signs not stable; x season p 0.624 | A3-STARTER | tests/testthat/test-vvf-features.R |
-| `lp_anchor` | market shape | logit of the no-vig anchor price (v2's lp_c0 when the anchor is the close) | backtest/vvf/features.R: vvf_anchor_features | anchor | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.677 | - | tests/testthat/test-vvf-features.R |
-| `home_dog` | market shape | 1 if the anchor prices the home team below 0.5 | backtest/vvf/features.R: vvf_anchor_features | anchor | 1 | 0.963 / 0.596 / 0.896 | VIF kept; signs not stable; x season p 0.603 | - | tests/testthat/test-vvf-features.R |
-| `big_fav` | market shape | 1 if \|p_anchor - 0.5\| > 0.3 | backtest/vvf/features.R: vvf_anchor_features | anchor | 1 | 0.963 / 0.998 / 0.425 | VIF kept; signs not stable; x season p 0.008 | - | tests/testthat/test-vvf-features.R |
-| `rest_diff` | schedule | home rest days - away rest days | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.963 / 0.967 / 0.896 | VIF kept; signs not stable; x season p 0.472 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `home_short` | schedule | 1 if the home team has 6 or fewer rest days | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.129 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `away_short` | schedule | 1 if the away team has 6 or fewer rest days | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.510 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `home_bye` | schedule | 1 if the home team has 13 or more rest days | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.963 / 0.998 / 0.896 | VIF dropped, collinear with rest_diff, declared first (VIF 5.785 > 5); signs not stable; x season p 0.957 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `away_bye` | schedule | 1 if the away team has 13 or more rest days | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.963 / 0.596 / 0.896 | VIF kept; signs not stable; x season p 0.056 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `thursday` | schedule | 1 for a Thursday game | backtest/vvf/data/game_context.csv (weekday) via vvf_build_features | schedule | 1 | 0.977 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.571 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `div` | schedule | 1 for a division game | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.989 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.371 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `neutral_site` | schedule | 1 when the schedule's location is Neutral | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.963 / 0.998 / 0.716 | VIF kept; signs not stable; x season p 0.256 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `late_reg` | schedule | 1 for regular-season weeks 15 and later | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.977 / 0.964 / 0.716 | VIF kept; signs not stable; x season p 0.362 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `playoff` | schedule | 1 for a postseason game | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.818 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `away_travel_1000km` | travel and venue | great-circle km / 1000 from the away team's usual home stadium to the game venue | backtest/vvf/data/venues.csv via vvf_build_features (vvf_home_venues, vvf_haversine_km) | schedule | 1 | 0.963 / 0.596 / 0.896 | VIF kept; signs not stable; x season p 0.868 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `travel_diff_1000km` | travel and venue | away travel - home travel, km / 1000 | venues.csv via vvf_build_features | schedule | 1 | 0.963 / 0.967 / 0.716 | VIF dropped, collinear with away_travel_1000km, declared first (VIF 8.657 > 5); signs not stable; x season p 0.152 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `tz_shift_away` | travel and venue | UTC offset of the venue - UTC offset of the away team's home, hours, at kickoff | venues.csv via vvf_build_features (vvf_utc_offset_h) | schedule | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.636 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `abs_tz_away` | travel and venue | \|tz_shift_away\|: time zones crossed by the away team | venues.csv via vvf_build_features | schedule | 1 | 0.488 / 0.147 / 0.896 | VIF dropped, collinear with away_travel_1000km, declared first (VIF 13.061 > 5); signs stable; x season p 0.823 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `west_early` | travel and venue | 1 if the away team's body clock is before 11:00 and it travelled 2+ zones east | venues.csv via vvf_build_features (vvf_local_hour) | schedule | 1 | 0.896 / 0.998 / 0.716 | VIF kept; signs not stable; x season p 0.299 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `primetime` | travel and venue | 1 if the local kickoff is 19:30 or later (the final, post-flex kickoff) | venues.csv via vvf_build_features | schedule | 1 | 0.963 / 0.998 / 0.716 | VIF kept; signs not stable; x season p 0.221 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `altitude` | travel and venue | 1 if the venue is 1,000 m or higher | venues.csv via vvf_build_features | schedule | 1 | 0.963 / 0.998 / 0.425 | VIF kept; signs not stable; x season p 0.864 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `roof_closed` | travel and venue | 1 if the roof is dome or closed | backtest/data/games.csv (nflverse schedule) via vvf_build_features | gameday | 1 | 0.896 / 0.967 / 0.314 | VIF kept; signs stable; x season p 0.817 | A3-ROOF | tests/testthat/test-vvf-v2-reproduction.R |
-| `turf` | travel and venue | 1 if the surface is not grass | game_context.csv (surface) via vvf_build_features | schedule | 1 | 0.963 / 0.998 / 0.327 | VIF kept; signs not stable; x season p 0.695 | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `inj_diff_qb` | injuries and QB | home - away status-weighted QB injury count (Out 1, Doubtful 0.75, Questionable 0.25) | backtest/vvf/data/injuries_team.csv via vvf_injury_index | gameday | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.488 | A3-INJ-CUTOFF | tests/testthat/test-vvf-features.R |
-| `inj_diff_ol` | injuries and QB | home - away status-weighted offensive-line injury count | injuries_team.csv via vvf_injury_index | gameday | 1 | 0.963 / 0.998 / 0.716 | VIF kept; signs not stable; x season p 0.154 | A3-INJ-CUTOFF | tests/testthat/test-vvf-features.R |
-| `inj_diff_skill` | injuries and QB | home - away status-weighted WR/TE/RB injury count | injuries_team.csv via vvf_injury_index | gameday | 1 | 0.963 / 0.596 / 0.896 | VIF kept; signs not stable; x season p 0.531 | A3-INJ-CUTOFF | tests/testthat/test-vvf-features.R |
-| `inj_diff_dl` | injuries and QB | home - away status-weighted defensive-line injury count | injuries_team.csv via vvf_injury_index | gameday | 1 | 0.977 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.655 | A3-INJ-CUTOFF | tests/testthat/test-vvf-features.R |
-| `inj_diff_lb` | injuries and QB | home - away status-weighted linebacker injury count | injuries_team.csv via vvf_injury_index | gameday | 1 | 0.896 / 0.596 / 0.896 | VIF kept; signs not stable; x season p 0.327 | A3-INJ-CUTOFF | tests/testthat/test-vvf-features.R |
-| `inj_diff_db` | injuries and QB | home - away status-weighted defensive-back injury count | injuries_team.csv via vvf_injury_index | gameday | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.503 | A3-INJ-CUTOFF | tests/testthat/test-vvf-features.R |
-| `inj_diff_all` | injuries and QB | sum of the six group differences; aliased with them when entered jointly | injuries_team.csv via vvf_injury_index | gameday | 1 | 0.963 / 0.998 / 0.716 | VIF dropped, aliased; signs not stable; x season p 0.775 | A3-INJ-CUTOFF | tests/testthat/test-vvf-features.R |
-| `qb_out_diff` | injuries and QB | home - away: the previous game's starter is listed Out or Doubtful | injuries_qb.csv via vvf_qb_out | gameday | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.947 | A3-INJ-CUTOFF | tests/testthat/test-vvf-features.R |
-| `qb_change_diff` | injuries and QB | home - away: this game's actual starter differs from the previous starter | games.csv via vvf_qb_out | gameday | 1 | 0.963 / 0.998 / 0.425 | VIF kept; signs not stable; x season p 0.310 | A3-STARTER | tests/testthat/test-vvf-features.R |
-| `ref_ml_resid` | officials | the assigned referee's prior-season mean of (y - p_close), shrunk with 50 pseudo-games | game_context.csv (referee) via vvf_referee_tendencies | gameday | 1 | 0.977 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.635 | A3-REF | tests/testthat/test-vvf-features.R |
-| `ref_tot_resid` | officials | the assigned referee's prior-season mean of (total - total_line), shrunk with 50 pseudo-games | game_context.csv (referee) via vvf_referee_tendencies | gameday | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.486 | A3-REF | tests/testthat/test-vvf-features.R |
-| `cold_obs` | weather (observed, post-hoc) | 1 for an outdoor game observed at 32 F or colder | game_context.csv (temp_obs) via vvf_build_features | gameday (post-hoc) | 1 | not screened (post-hoc) | - | - | tests/testthat/test-vvf-v2-reproduction.R |
-| `windy_obs` | weather (observed, post-hoc) | 1 for an outdoor game observed at 15 mph or more | game_context.csv (wind_obs) via vvf_build_features | gameday (post-hoc) | 1 | not screened (post-hoc) | - | - | tests/testthat/test-vvf-v2-reproduction.R |
+| Variable | Group | Definition | Source | known_at | Params | S1 close (q: outcome / spread / total) | S2 close (outcome) | S3 close (skill [CI]) | Admission | Defects | Unit test |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `d_c1` | model vs market | logit(C1 Elo walk-forward) - lp_anchor; a team's rating moves only when it plays, so it uses results through the team's previous game | backtest/vvf/features.R: vvf_anchor_features; vvf_base_predictions (bt_elo_run) | results_w-1 | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.920 | -0.0008 [-0.0022, 0.0005] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-features.R |
+| `d_c2` | model vs market | logit(C2 EPA GLM walk-forward) - lp_anchor | backtest/vvf/features.R: vvf_anchor_features; vvf_base_predictions (bt_epa_walk_forward) | gameday | 1 | 0.963 / 0.967 / 0.896 | VIF kept; signs not stable; x season p 0.300 | -0.0005 [-0.0021, 0.0011] | excluded: no incremental skill on Tune (S3) | A3-STARTER | tests/testthat/test-vvf-features.R |
+| `d_e1` | model vs market | logit(E1 = logit mean of C1 and C2) - lp_anchor; aliased with d_c1 and d_c2 when entered jointly | backtest/vvf/features.R: vvf_anchor_features; vvf_base_predictions (bt_e1) | gameday | 1 | 0.963 / 0.998 / 0.896 | VIF dropped, aliased; signs not stable; x season p 0.624 | -0.0000 [-0.0006, 0.0006] | excluded: no incremental skill on Tune (S3) | A3-STARTER | tests/testthat/test-vvf-features.R |
+| `lp_anchor` | market shape | logit of the no-vig anchor price (v2's lp_c0 when the anchor is the close) | backtest/vvf/features.R: vvf_anchor_features | anchor | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.677 | -0.0001 [-0.0021, 0.0020] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-features.R |
+| `home_dog` | market shape | 1 if the anchor prices the home team below 0.5 | backtest/vvf/features.R: vvf_anchor_features | anchor | 1 | 0.963 / 0.596 / 0.896 | VIF kept; signs not stable; x season p 0.603 | -0.0005 [-0.0011, 0.0000] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-features.R |
+| `big_fav` | market shape | 1 if \|p_anchor - 0.5\| > 0.3 | backtest/vvf/features.R: vvf_anchor_features | anchor | 1 | 0.963 / 0.998 / 0.425 | VIF kept; signs not stable; x season p 0.008 | 0.0006 [-0.0019, 0.0031] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-features.R |
+| `rest_diff` | schedule | home rest days - away rest days | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.963 / 0.967 / 0.896 | VIF kept; signs not stable; x season p 0.472 | -0.0005 [-0.0014, 0.0004] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `home_short` | schedule | 1 if the home team has 6 or fewer rest days | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.129 | -0.0007 [-0.0019, 0.0005] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `away_short` | schedule | 1 if the away team has 6 or fewer rest days | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.510 | -0.0005 [-0.0013, 0.0003] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `home_bye` | schedule | 1 if the home team has 13 or more rest days | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.963 / 0.998 / 0.896 | VIF dropped, collinear with rest_diff, declared first (VIF 5.785 > 5); signs not stable; x season p 0.957 | -0.0008 [-0.0022, 0.0005] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `away_bye` | schedule | 1 if the away team has 13 or more rest days | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.963 / 0.596 / 0.896 | VIF kept; signs not stable; x season p 0.056 | -0.0023 [-0.0061, 0.0015] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `thursday` | schedule | 1 for a Thursday game | backtest/vvf/data/game_context.csv (weekday) via vvf_build_features | schedule | 1 | 0.977 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.571 | -0.0007 [-0.0023, 0.0010] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `div` | schedule | 1 for a division game | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.989 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.371 | -0.0008 [-0.0030, 0.0015] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `neutral_site` | schedule | 1 when the schedule's location is Neutral | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.963 / 0.998 / 0.716 | VIF kept; signs not stable; x season p 0.256 | 0.0001 [-0.0027, 0.0028] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `late_reg` | schedule | 1 for regular-season weeks 15 and later | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.977 / 0.964 / 0.716 | VIF kept; signs not stable; x season p 0.362 | -0.0003 [-0.0008, 0.0003] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `playoff` | schedule | 1 for a postseason game | backtest/data/games.csv (nflverse schedule) via vvf_build_features | schedule | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.818 | -0.0001 [-0.0012, 0.0010] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `away_travel_1000km` | travel and venue | great-circle km / 1000 from the away team's usual home stadium to the game venue | backtest/vvf/data/venues.csv via vvf_build_features (vvf_home_venues, vvf_haversine_km) | schedule | 1 | 0.963 / 0.596 / 0.896 | VIF kept; signs not stable; x season p 0.868 | -0.0007 [-0.0016, 0.0002] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `travel_diff_1000km` | travel and venue | away travel - home travel, km / 1000 | venues.csv via vvf_build_features | schedule | 1 | 0.963 / 0.967 / 0.716 | VIF dropped, collinear with away_travel_1000km, declared first (VIF 8.657 > 5); signs not stable; x season p 0.152 | -0.0007 [-0.0017, 0.0003] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `tz_shift_away` | travel and venue | UTC offset of the venue - UTC offset of the away team's home, hours, at kickoff | venues.csv via vvf_build_features (vvf_utc_offset_h) | schedule | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.636 | -0.0003 [-0.0023, 0.0018] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `abs_tz_away` | travel and venue | \|tz_shift_away\|: time zones crossed by the away team | venues.csv via vvf_build_features | schedule | 1 | 0.488 / 0.147 / 0.896 | VIF dropped, collinear with away_travel_1000km, declared first (VIF 13.061 > 5); signs stable; x season p 0.823 | -0.0005 [-0.0021, 0.0011] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `west_early` | travel and venue | 1 if the away team's body clock is before 11:00 and it travelled 2+ zones east | venues.csv via vvf_build_features (vvf_local_hour) | schedule | 1 | 0.896 / 0.998 / 0.716 | VIF kept; signs not stable; x season p 0.299 | -0.0004 [-0.0019, 0.0011] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `primetime` | travel and venue | 1 if the local kickoff is 19:30 or later (the final, post-flex kickoff) | venues.csv via vvf_build_features | schedule | 1 | 0.963 / 0.998 / 0.716 | VIF kept; signs not stable; x season p 0.221 | -0.0003 [-0.0008, 0.0003] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `altitude` | travel and venue | 1 if the venue is 1,000 m or higher | venues.csv via vvf_build_features | schedule | 1 | 0.963 / 0.998 / 0.425 | VIF kept; signs not stable; x season p 0.864 | -0.0009 [-0.0022, 0.0003] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `roof_closed` | travel and venue | 1 if the roof is dome or closed | backtest/data/games.csv (nflverse schedule) via vvf_build_features | gameday | 1 | 0.896 / 0.967 / 0.314 | VIF kept; signs stable; x season p 0.817 | 0.0002 [-0.0013, 0.0016] | excluded: no incremental skill on Tune (S3) | A3-ROOF | tests/testthat/test-vvf-v2-reproduction.R |
+| `turf` | travel and venue | 1 if the surface is not grass | game_context.csv (surface) via vvf_build_features | schedule | 1 | 0.963 / 0.998 / 0.327 | VIF kept; signs not stable; x season p 0.695 | -0.0026 [-0.0072, 0.0022] | excluded: no incremental skill on Tune (S3) | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `inj_diff_qb` | injuries and QB | home - away status-weighted QB injury count (Out 1, Doubtful 0.75, Questionable 0.25) | backtest/vvf/data/injuries_team.csv via vvf_injury_index | gameday | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.488 | 0.0000 [-0.0018, 0.0018] | excluded: no incremental skill on Tune (S3) | A3-INJ-CUTOFF | tests/testthat/test-vvf-features.R |
+| `inj_diff_ol` | injuries and QB | home - away status-weighted offensive-line injury count | injuries_team.csv via vvf_injury_index | gameday | 1 | 0.963 / 0.998 / 0.716 | VIF kept; signs not stable; x season p 0.154 | -0.0004 [-0.0029, 0.0019] | excluded: no incremental skill on Tune (S3) | A3-INJ-CUTOFF | tests/testthat/test-vvf-features.R |
+| `inj_diff_skill` | injuries and QB | home - away status-weighted WR/TE/RB injury count | injuries_team.csv via vvf_injury_index | gameday | 1 | 0.963 / 0.596 / 0.896 | VIF kept; signs not stable; x season p 0.531 | 0.0004 [-0.0016, 0.0023] | excluded: no incremental skill on Tune (S3) | A3-INJ-CUTOFF | tests/testthat/test-vvf-features.R |
+| `inj_diff_dl` | injuries and QB | home - away status-weighted defensive-line injury count | injuries_team.csv via vvf_injury_index | gameday | 1 | 0.977 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.655 | -0.0004 [-0.0013, 0.0004] | excluded: no incremental skill on Tune (S3) | A3-INJ-CUTOFF | tests/testthat/test-vvf-features.R |
+| `inj_diff_lb` | injuries and QB | home - away status-weighted linebacker injury count | injuries_team.csv via vvf_injury_index | gameday | 1 | 0.896 / 0.596 / 0.896 | VIF kept; signs not stable; x season p 0.327 | -0.0019 [-0.0038, -0.0001] | excluded: no incremental skill on Tune (S3) | A3-INJ-CUTOFF | tests/testthat/test-vvf-features.R |
+| `inj_diff_db` | injuries and QB | home - away status-weighted defensive-back injury count | injuries_team.csv via vvf_injury_index | gameday | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.503 | -0.0010 [-0.0044, 0.0023] | excluded: no incremental skill on Tune (S3) | A3-INJ-CUTOFF | tests/testthat/test-vvf-features.R |
+| `inj_diff_all` | injuries and QB | sum of the six group differences; aliased with them when entered jointly | injuries_team.csv via vvf_injury_index | gameday | 1 | 0.963 / 0.998 / 0.716 | VIF dropped, aliased; signs not stable; x season p 0.775 | -0.0006 [-0.0029, 0.0016] | excluded: no incremental skill on Tune (S3) | A3-INJ-CUTOFF | tests/testthat/test-vvf-features.R |
+| `qb_out_diff` | injuries and QB | home - away: the previous game's starter is listed Out or Doubtful | injuries_qb.csv via vvf_qb_out | gameday | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.947 | 0.0005 [-0.0020, 0.0029] | excluded: no incremental skill on Tune (S3) | A3-INJ-CUTOFF | tests/testthat/test-vvf-features.R |
+| `qb_change_diff` | injuries and QB | home - away: this game's actual starter differs from the previous starter | games.csv via vvf_qb_out | gameday | 1 | 0.963 / 0.998 / 0.425 | VIF kept; signs not stable; x season p 0.310 | -0.0006 [-0.0020, 0.0006] | excluded: no incremental skill on Tune (S3) | A3-STARTER | tests/testthat/test-vvf-features.R |
+| `ref_ml_resid` | officials | the assigned referee's prior-season mean of (y - p_close), shrunk with 50 pseudo-games | game_context.csv (referee) via vvf_referee_tendencies | gameday | 1 | 0.977 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.635 | -0.0002 [-0.0014, 0.0010] | excluded: no incremental skill on Tune (S3) | A3-REF | tests/testthat/test-vvf-features.R |
+| `ref_tot_resid` | officials | the assigned referee's prior-season mean of (total - total_line), shrunk with 50 pseudo-games | game_context.csv (referee) via vvf_referee_tendencies | gameday | 1 | 0.963 / 0.998 / 0.896 | VIF kept; signs not stable; x season p 0.486 | -0.0003 [-0.0038, 0.0032] | excluded: no incremental skill on Tune (S3) | A3-REF | tests/testthat/test-vvf-features.R |
+| `cold_obs` | weather (observed, post-hoc) | 1 for an outdoor game observed at 32 F or colder | game_context.csv (temp_obs) via vvf_build_features | gameday (post-hoc) | 1 | not screened (post-hoc) | - | - | - | - | tests/testthat/test-vvf-v2-reproduction.R |
+| `windy_obs` | weather (observed, post-hoc) | 1 for an outdoor game observed at 15 mph or more | game_context.csv (wind_obs) via vvf_build_features | gameday (post-hoc) | 1 | not screened (post-hoc) | - | - | - | - | tests/testthat/test-vvf-v2-reproduction.R |
+
+## Input tables
+
+The tables every stage reads, with each key (PK) and reference (FK), from `backtest/vvf/input_schema.R`. The checks below run on the committed inputs each time the ledger is rendered: unique keys, references that resolve, each team row's team one of its game's two franchises, at most two team rows per game, and no sealed season. Any violation would show here as a count above 0.
+
+```mermaid
+erDiagram
+  games ||--o{ team_games : "game_id"
+  team_games ||--o{ qb_games : "game_id, team"
+  games ||--o| espn_open_close : "game_id"
+  games ||--o| game_context : "game_id"
+  venues ||--o{ game_context : "stadium_id"
+  games ||--o{ injuries_team : "game_id"
+  injuries_team ||--o{ injuries_qb : "game_id, team"
+  games {
+    string game_id PK
+  }
+  team_games {
+    string game_id PK, FK
+    string team PK
+  }
+  qb_games {
+    string game_id PK, FK
+    string team PK, FK
+    string qb_id PK
+  }
+  espn_open_close {
+    string game_id PK, FK
+  }
+  game_context {
+    string game_id PK, FK
+    string stadium_id FK
+  }
+  venues {
+    string stadium_id PK
+  }
+  injuries_team {
+    string game_id PK, FK
+    string team PK
+  }
+  injuries_qb {
+    string game_id PK, FK
+    string team PK, FK
+    string gsis_id PK
+  }
+```
+
+| Check | Table | Detail | Violations |
+|---|---|---|---|
+| key complete | games | game_id | 0 |
+| key unique | games | game_id | 0 |
+| no sealed season | games | 2025 | 0 |
+| key complete | team_games | game_id, team | 0 |
+| key unique | team_games | game_id, team | 0 |
+| reference complete | team_games | game_id -> games.game_id | 0 |
+| reference resolves | team_games | game_id -> games.game_id | 0 |
+| team in game | team_games | team is the home or away franchise | 0 |
+| rows per game | team_games | at most 2 | 0 |
+| no sealed season | team_games | 2025 | 0 |
+| key complete | qb_games | game_id, team, qb_id | 0 |
+| key unique | qb_games | game_id, team, qb_id | 0 |
+| reference complete | qb_games | game_id, team -> team_games.game_id, team | 0 |
+| reference resolves | qb_games | game_id, team -> team_games.game_id, team | 0 |
+| no sealed season | qb_games | 2025 | 0 |
+| key complete | espn_open_close | game_id | 0 |
+| key unique | espn_open_close | game_id | 0 |
+| reference complete | espn_open_close | game_id -> games.game_id | 0 |
+| reference resolves | espn_open_close | game_id -> games.game_id | 0 |
+| no sealed season | espn_open_close | 2025 | 0 |
+| key complete | game_context | game_id | 0 |
+| key unique | game_context | game_id | 0 |
+| reference complete | game_context | game_id -> games.game_id | 0 |
+| reference resolves | game_context | game_id -> games.game_id | 0 |
+| reference complete | game_context | stadium_id -> venues.stadium_id | 0 |
+| reference resolves | game_context | stadium_id -> venues.stadium_id | 0 |
+| no sealed season | game_context | 2025 | 0 |
+| key complete | venues | stadium_id | 0 |
+| key unique | venues | stadium_id | 0 |
+| key complete | injuries_team | game_id, team | 0 |
+| key unique | injuries_team | game_id, team | 0 |
+| reference complete | injuries_team | game_id -> games.game_id | 0 |
+| reference resolves | injuries_team | game_id -> games.game_id | 0 |
+| team in game | injuries_team | team is the home or away franchise | 0 |
+| rows per game | injuries_team | at most 2 | 0 |
+| no sealed season | injuries_team | 2025 | 0 |
+| key complete | injuries_qb | game_id, team, gsis_id | 0 |
+| key unique | injuries_qb | game_id, team, gsis_id | 0 |
+| reference complete | injuries_qb | game_id, team -> injuries_team.game_id, team | 0 |
+| reference resolves | injuries_qb | game_id, team -> injuries_team.game_id, team | 0 |
+| no sealed season | injuries_qb | 2025 | 0 |
 
 ## Engine variables, settings and market inputs
 
@@ -161,8 +252,10 @@ S1 columns are the BH q-values within each family: outcome (moneyline, LR test w
 | V1-BUILDER | backtest/build_inputs.R (v1) also reads that 2024-2025 price file to build backtest/data/espn_open_close.csv, keeping 2024 rows only (found by the A3 planner on 2026-10-22). The owner decides whether it should refuse the file. | backtest/build_inputs.R |
 | V1-CLV-2024 | v1 already looked at 2024 opener CLV for C1, C2, E1 and K[E1], so 2024 is secondary evidence for PC-C2. | design 2026-10-20, section 6 |
 | V2-TUNE | v2's close-anchored screen (PR #205) chose nothing on Confirm 2023-24 or the 2025 holdout; it used Tune 2018-22, and this framework reproduces its numbers on the same inputs. | reports/2026-09-30/validation-sprint/REPORT.md (PR #205) |
-| F11B | F11b: nflverse play-by-play files the 2019 Raiders as LV while the schedules say OAK (SD and STL likewise before their moves), so every 2019 Raiders calibration game had no drive inputs and was simulated at 21.5-21.5 on main (16 games in the 2024 week 5 positive control). The fix is an engine edit and the owner's decision. | reports/2026-10-26/f11-bye-week-main (PR #223 comment) |
+| F11B | F11b: nflverse play-by-play files the 2019 Raiders as LV while the schedules say OAK (SD and STL likewise before their moves), so every 2019 Raiders calibration game had no drive inputs and was simulated at 21.5-21.5 on main (16 games in the 2024 week 5 positive control). The owner chose franchise codes on 2026-10-28: the engine fix (PR #223, c1144c8) maps the schedule and the injury table to them, and is not merged. | reports/2026-10-26/f11-bye-week-main (PR #223 comment) |
 | V2-JOINT-DF | The known-answer target changes: v2's moneyline joint test counted df 30 for 29 estimable terms. With df 29, chi-square 26.933 gives p 0.575, where v2 printed 0.627 (design section 4 names p = 0.63). The owner acknowledges it. | reports/2026-10-22/vvf-v2-repro/run_meta.json |
-| JOINT-WALD | Each joint test reports p_test (LR or F, model-based), the one to cite, and p_wald_robust, a cluster-robust chi-square(k) Wald kept for v2 fidelity. With 29 to 34 coefficients over 107 clusters the Wald is not size-controlled: its p from 1.2e-06 to 0.45 is no evidence beside p_test from 0.22 to 0.58. Dropping it or calibrating it by the wild bootstrap is the owner's decision. | reports/2026-10-22/vvf-v2-repro/s1_joint.csv |
-| CLUSTER-UNIT | The cluster unit is the season-week (backtest/common.R wk): one season has 22 clusters, under 30, so the wild bootstrap gives its p-value and no sandwich CI is reported; the pooled 2023-24 opener window has 44, so the sandwich applies. Clustering by week of season across seasons is the alternative; the owner decides. | backtest/common.R; A3a final review I4 |
-| A3-FLEX | primetime uses the final, post-flex kickoff and is classed schedule, which assumes every flex change is announced before the decision. The notice periods are not verified here; if a flex can follow a decision, primetime knows more than that decision did. | backtest/vvf/registry.R primetime; A3a final review I6 |
+| JOINT-WALD | Each joint test reports p_test (LR or F, model-based), p_joint_wild (a restricted wild cluster score bootstrap with diagonal studentization, Rademacher, B = 9,999) and p_joint = max(p_test, p_joint_wild), the p of record (A3b). The old cluster-robust chi-square(k) Wald p-value, p_wald_robust, is dropped (decided 2026-10-28 on the research, at the owner's request for a researched choice): under a true null with 107 week clusters and 29 to 34 coefficients its test rejects 0.30-0.69 of the time at a nominal 5%, where the diagonal score bootstrap rejects 0.041-0.059 (0.054 on one season, where the Wald is undefined). Its statistic, wald_robust, stays as v2's known answer, NA when its covariance is singular. On v2's inputs the old p ran from 1.2e-06 to 0.45, beside p_test from 0.22 to 0.58 and p_joint_wild from 0.18 to 0.60: no feature set is jointly significant in any family. | reports/2026-10-28/a3-research/RESEARCH.md section 2; reports/2026-10-28/a3-research/joint_size.csv; reports/2026-10-28/a3-research/joint_size_linear.csv; reports/2026-10-22/vvf-v2-repro/s1_joint.csv |
+| CLUSTER-UNIT | The cluster unit is the season-week (backtest/common.R wk), kept on the research's evidence: residuals against the close show no within-cluster correlation at any candidate unit (ICC 0.0000 by season-week, week of season, game day and team-season, except 0.0006 for totals by team-season), and the median design effect of clustering is 1.004-1.064 at every unit. One season has 22 clusters, under 30, so the wild bootstrap gives its p-value there and no sandwich CI is reported; the pooled 2023-24 opener window has 44. | reports/2026-10-28/a3-research/RESEARCH.md section 3; reports/2026-10-28/a3-research/cluster_icc.csv; reports/2026-10-28/a3-research/cluster_design_effects.csv; backtest/common.R |
+| A3-FLEX | primetime uses the final, post-flex kickoff and is classed schedule. The NFL announces a weeks 5-17 Sunday-night flex no later than 12 days before the game and week 18's primetime games no later than 6 days before (its undated procedures text, read 2026-10-28), so every flex is public at the close; at the opener a weeks 5-17 flex is public if the opener posts less than 12 days ahead (not verified), and week 18's can follow it. Of 1,372 Tune games 51 (3.7%) changed and 19 were late (a date or venue change, or weeks 17-18); neither predicts the moneyline or ATS against the close (p 0.33-0.81), and dropping the changed games changes 0 of 108 S1 verdicts. No adjustment and no feature; A4 retests at the opener. | reports/2026-10-28/a3-research/RESEARCH.md section 4; reports/2026-10-28/a3-research/late_tests.csv; reports/2026-10-28/a3-research/late_s1_sensitivity.csv; backtest/vvf/registry.R primetime |
+| S4-NULL | The spec's shuffled-labels control fails by construction for S3's anchor-offset model: permuting y breaks the anchor, and a feature that tracks it then beats it (7 of 36 intervals wholly above 0 on Tune; skill correlates 0.954 with \|cor(x, anchor)\|; a claim in 5 of 5 replicates). Proposed, for the owner to sign: the anchor null, y redrawn as Bernoulli(p_anchor) (consistency resampling), gates in its place, with the permuted-x null reported; each passes when S3's claim rule claims no feature (0 of 5 replicates claimed under each). Until then s4_status follows the spec, and s4_status_amended is reported beside it. | reports/2026-10-28/a3-research/RESEARCH.md section 1; reports/2026-10-28/a3-research/s4_nulls.csv; reports/2026-10-28/a3-research/s4-null-diagnostic.csv; backtest/vvf/s4_controls.R |
+| A3-MOVE-LOOK | The A3 research (2026-10-28) compared the opener-to-close movement of the 2023-2024 games whose schedule changed with the rest, from D1's archive (ESPN BET): 18 changed games moved no more (permutation p 0.48-0.66). Those seasons are nfl_preclose_v1's Tune and Confirm windows. The look scores no model; no model, feature or threshold was chosen from it, and the late-change recommendation rests on the Tune tests against the close. | reports/2026-10-28/a3-research/RESEARCH.md section 4; reports/2026-10-28/a3-research/late_movement.csv; reports/2026-10-28/a3-research/scripts/late-movement.R; final review I-9 |

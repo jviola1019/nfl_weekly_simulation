@@ -173,3 +173,56 @@ test_that("the screen refuses a table that carries a sealed season, by its seaso
   expect_error(vs$vvf_s1_screen(g, "rest_diff", "open_isa", families = c(outcome = "y"), registry = reg),
                "sealed-season guard")
 })
+
+# The joint test's p of record (reports/2026-10-28/a3-research/RESEARCH.md section 2): G week clusters of
+# `per` games, k independent N(0,1) features, a week effect of SD week_sd, beta on the first n_signal
+sim_joint <- function(G, per, k, beta = 0, n_signal = 0L, week_sd = 0, seed = 1) {
+  set.seed(seed)
+  n <- G * per
+  d <- data.table::data.table(wk = rep(seq_len(G), each = per), lp_anchor = stats::rnorm(n, 0.2, 0.8))
+  X <- matrix(stats::rnorm(n * k), n, k, dimnames = list(NULL, paste0("f", seq_len(k))))
+  eta <- d$lp_anchor + stats::rnorm(G, 0, week_sd)[d$wk]
+  if (n_signal > 0L) eta <- eta + drop(X[, seq_len(n_signal), drop = FALSE] %*% rep(beta, n_signal))
+  d[, y := stats::rbinom(n, 1, stats::plogis(eta))]
+  d <- cbind(d, data.table::as.data.table(X))
+  data.table::setattr(d, "vvf_anchor", "open")
+  d
+}
+
+test_that("the joint wild score bootstrap holds its size where the cluster-robust Wald does not", {
+  r <- t(vapply(seq_len(200), function(s) {
+    d <- sim_joint(40, 10, 15, week_sd = 0.2, seed = 7000 + s)
+    j <- vs$vvf_s1_joint(d, "outcome", paste0("f", 1:15), "y", B = 199L, seed = s)
+    c(wild = j$p_joint_wild, wald = stats::pchisq(j$wald_robust, j$k, lower.tail = FALSE))   # the old chi2(k) p, computed here
+  }, numeric(2)))
+  expect_gte(mean(r[, "wild"] < 0.05), 0.01)
+  expect_lte(mean(r[, "wild"] < 0.05), 0.10)
+  expect_gt(mean(r[, "wald"] < 0.05), 0.15)
+})
+
+test_that("a joint test with more coefficients than clusters returns a wild p and no Wald", {
+  d <- sim_joint(10, 30, 15, seed = 71)
+  j <- vs$vvf_s1_joint(d, "outcome", paste0("f", 1:15), "y", B = 199L)
+  expect_true(is.na(j$wald_robust)); expect_false("p_wald_robust" %in% names(j))
+  expect_true(is.finite(j$p_joint_wild))
+  expect_equal(j$p_joint, max(j$p_test, j$p_joint_wild))
+  expect_match(j$joint_wild_method, "diagonal")
+  d[, r := stats::rnorm(.N)]
+  jl <- vs$vvf_s1_joint(d, "spread", paste0("f", 1:15), "r", B = 199L)
+  expect_true(is.na(jl$wald_robust)); expect_true(is.finite(jl$p_joint_wild))
+})
+
+test_that("a planted joint effect is detected", {
+  d <- sim_joint(40, 50, 15, beta = 0.4, n_signal = 3L, seed = 72)
+  j <- vs$vvf_s1_joint(d, "outcome", paste0("f", 1:15), "y", B = 999L)
+  expect_lt(j$p_joint, 0.01)
+  expect_lt(j$p_joint_wild, 0.01)
+})
+
+test_that("the joint table drops the old chi-square Wald p and keeps the statistic as v2's known answer (Task 14)", {
+  d <- sim_joint(40, 20, 6, seed = 73)
+  j <- vs$vvf_s1_joint(d, "outcome", paste0("f", 1:6), "y", B = 199L)
+  expect_false("p_wald_robust" %in% names(j))
+  expect_true(all(c("wald_robust", "k", "p_test", "p_joint_wild", "p_joint") %in% names(j)))
+  expect_true(is.finite(j$wald_robust))
+})

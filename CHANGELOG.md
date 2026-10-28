@@ -4,6 +4,60 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### A3b: incremental skill, the S4 controls and diagnostics (VVF S3–S5), with the owner's research of 2026-10-28
+
+- **S3, incremental skill** (`backtest/vvf/s3_skill.R`).
+  - Each feature enters as `logit(p) = lp_anchor + b·x_c`, refit every week on the earlier weeks only, and is scored against the anchor alone: paired Brier and log loss, a week-block bootstrap (B = 10,000), DM-HLN and BH over the declared order.
+  - It refuses a close anchor at an opener decision, and a table with a sealed season.
+- **S4, the controls** (`s4_controls.R`): the canary, 200 placebos, the spec's label shuffle, the anchor copy and reproducibility, plus two researched nulls.
+  - The anchor null redraws y from the anchor, by consistency resampling.
+  - The permuted-x null permutes each feature within its week.
+  - Each null passes when S3's own claim rule claims no feature.
+  - The run reports two statuses: `s4_status`, under the spec's controls, is the status of record; `s4_status_amended` is under the proposed amendment, which the owner signs.
+- **S5, the diagnostics** (`s5_curves.R`, `s5_scores.R`, `s5_smoothing.R`, `s5_anova.R`):
+  - validation curves with the one-SE rule on paired differences, a nested-tuning guard, learning curves and the fit gap;
+  - an exact Murphy decomposition, calibration slopes, bias and variance, CRPS, a randomized NB PIT and effective df;
+  - the engine's recency weights checked against an EWMA, and the Kalman steady state;
+  - loss ANOVA by season and part of season, and team effects.
+- **The research** (`reports/2026-10-28/a3-research/RESEARCH.md`; every number is in its `summary.txt`):
+  - **The spec's label shuffle fails by construction.** Over 5 replicates of 36 features, shuffled labels break the anchor offset, so it claimed skill in 5 of 5 replicates. The anchor null and the permuted-x null claimed nothing in 5 of 5.
+  - **S3's power is low** (20 replicates per effect): a planted effect was detected in 11 of 20 at 0.20 log-odds per SD (exact 95% CI 0.32–0.77), 15 of 20 at 0.30 and 19 of 20 at 0.40. So "no skill" is no evidence against effects below about 0.3.
+  - **The inherited cluster-robust joint Wald over-rejects:** 0.30–0.69 at a nominal 5% under a true null, with 107 clusters and 29–34 coefficients. The restricted wild cluster score bootstrap with diagonal studentization holds 0.041–0.059. On one season the Wald and the full score bootstrap are undefined and the LR over-rejects (0.116); the diagonal bootstrap holds 0.054.
+  - **The cluster unit:** the ICC is 0.0000 at every unit (0.0006 for totals by team-season), so the season-week stays.
+  - **Late schedule changes** (Wikipedia, 2018–2024, 77 rows): 51 of 1,372 Tune games changed. Nothing is significant against the close (p 0.33–0.81), and dropping them changes 0 of 108 S1 verdicts. No adjustment. A secondary look at 2023–24 opener-to-close movement is disclosed (A3-MOVE-LOOK).
+- **The joint test's p of record** (`s1_screen.R`) is `p_joint = max(p_test, p_joint_wild)`.
+  - **The old p-values, decided on the research** (owner, 2026-10-28: research and choose). The joint Wald's χ²(k) p-value, `p_wald_robust`, is dropped: its test rejects 0.30–0.69 of true nulls. Its statistic stays as v2's known answer, `NA` when the covariance is singular, where the code used to stop.
+  - S1's per-feature `p_robust` (k = 1; 200 placebos reject 0.055) and the reproduction's v2-df p stay.
+  - The v2 reproduction was regenerated, with its known answers unchanged (χ² 26.9332 on df 29, p 0.5753). On v2's inputs `p_joint_wild` runs 0.18–0.60, where the old p ran from 1.2e-06 to 0.45: no feature set is jointly significant in any family.
+- **The close-anchored run** (`run_a3b_close.R`, `reports/2026-10-28/vvf-a3b-close/`, Tune 2018–2022, 1,365 games, result_sha256 `49875172…`):
+  - **S3** claims none of v2's 36 features. Its fallbacks never fired: 0 skipped and 0 constant weeks.
+  - **S4** is `void` under the spec, because the label shuffle fails: 29 of 36 intervals include 0, with skill up to 0.10025. Under the amendment it is `complete`: the anchor null and the permuted-x null claim 0 features each, and the placebo rate is 0.055.
+  - **Bias and variance.** Adding all 36 features to the close as one logit loses out of sample at every training length: log loss 0.6446 with 2 seasons and 0.6188 at best (6), against the anchor's 0.6097. The in-sample fit beats the walk-forward one by 0.068–0.113 per season, which is over-fitting. All 107 fits per length converged.
+  - **C2's half-life curve** over the amendment's grid and v1's 16 is U-shaped: 0.6348 with no decay, 0.6289 at the best, 8, and 0.6543 at 1. The one-SE rule chooses 16. The engine's settings (RECENCY_HALFLIFE, GLMM_BLEND_W, SOS_STRENGTH, N_RECENT, SHRINKAGE) need C3's walk-forward and wait for G2.
+  - **Calibration** is consistent with a slope of 1 for every model (C0 1.047, 0.894–1.200).
+  - **Murphy:** the close's Brier is 0.211116, against 0.219535 for E1.
+  - **E1's excess loss by part of season:** none survives BH over the four loss-ANOVA tests. Part of season has q 0.084 (Brier) and 0.085 (log loss); by season, q 0.714.
+  - **No team effects:** outcome p 0.424, spread p 0.441.
+  - **Market errors:** the closing lines' own errors have a bias of −0.52 points on the margin and +0.20 on the total.
+- **Admission** (`docs/VARIABLE_LEDGER.md`): S3 first, then S1, then S4, and Confirm under G3. All 36 features are excluded against the close, with no incremental skill on Tune, so the close-anchored model is the market alone.
+- **The input ERD** (`input_schema.R`) declares the eight tables the stages read and their keys and references.
+  - The checks run before every stage (both runs stop on a violation) and at every ledger render, and find 0 violations.
+  - A missing key or reference counts as a violation.
+- **An independent verification** (`reports/2026-10-28/verification/VALIDATION_REPORT.md`; owner, 2026-10-28) recomputes the p-values, Brier and log loss, the research and the blends. It uses base R, hand-written cluster sandwiches, lmtest, car and nlme: **56 of 56 checks pass.**
+  - S3's DM-HLN p is exactly the paired t-test at h = 1.
+  - Every test holds its size under the null: DM 0.049, S1's LR 0.042, its robust p 0.048, and the joint wild p 0.043, at a nominal 5%.
+  - The research replicates: the robust Wald's size is 0.397 (research 0.399), and the REML ICC is 0.00000.
+  - #205's and #209's blends recompute from their per-game files, on the same no-vig close as VVF (4.99e-09). No blend beats it: every q is 1.000.
+- **The final review** (Haiku) found no Critical issue, 9 Important and 18 Minor ones.
+  - Each Important finding is fixed, every code fix with a test that failed first.
+  - 13 minors are fixed, 11 of them re-graded up as silent failures or doc errors.
+  - 5 minors are deferred (see the PR).
+- **Docs:** a docs-truth test checks that every repo path cited in CLAUDE.md, README and GETTING_STARTED exists.
+- **Owner decisions:**
+  - S4-NULL: the spec §4 amendment;
+  - the merge, after #225.
+- **Unchanged:** the engine files, `config.R`, `renv.lock`, the protocols and the 2025 seal.
+
 ### A3a: the validation framework, S0–S2 (master plan Track A; spec 2026-10-20 §2, §4–§6)
 
 - **The port** (`backtest/vvf/`; owner decision of 2026-10-20, "Port builder + inputs"). Three things come over from PR #205:

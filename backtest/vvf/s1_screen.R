@@ -134,9 +134,38 @@ vvf_s1_one <- function(dat, family, feature, response, B = VVF_WILD_B, seed = VV
   base[]
 }
 
-#' Joint test of a feature set, with a week-clustered robust Wald test.
+#' Restricted wild cluster score bootstrap p-value for H0: every slope is 0
+#' (Kline and Santos, 2012), with diagonal studentization, so it is defined
+#' for any number of features. X holds the estimable columns; resid and w are
+#' y - p0 and p0 (1 - p0) at the null fit (outcome), or r - mean(r) and 1
+#' (linear). With Rademacher weights the bootstrap variance equals the
+#' observed one, so the statistic needs no refit. Its size holds where the
+#' cluster-robust Wald's does not (reports/2026-10-28/a3-research, section 2).
+vvf_wild_p_joint_score <- function(X, resid, w, cluster, B = VVF_WILD_B, seed = VVF_WILD_SEED) {
+  Xc <- sweep(X, 2, colSums(X * w) / sum(w))     # the efficient score: the intercept projected out
+  Sg <- rowsum(Xc * resid, as.integer(factor(cluster)))
+  S <- colSums(Sg)
+  dg <- colSums(Sg^2)
+  ok <- dg > 0
+  t0 <- sum(S[ok]^2 / dg[ok])
+  hits <- 0
+  W <- vvf_rademacher(nrow(Sg), B, seed)          # G x B
+  for (s in seq(1L, B, by = VVF_WILD_CHUNK)) {
+    j <- s:min(B, s + VVF_WILD_CHUNK - 1L)
+    Ws <- crossprod(W[, j, drop = FALSE], Sg[, ok, drop = FALSE])
+    hits <- hits + sum(rowSums(sweep(Ws^2, 2, dg[ok], "/")) >= t0)
+  }
+  (hits + 1) / (B + 1)
+}
+
+#' Joint test of a feature set: the model-based test (p_test), the wild score
+#' bootstrap (p_joint_wild) and p_joint = max of the two, the p of record. The
+#' week-clustered robust Wald statistic is kept as v2's known answer, NA when
+#' its covariance is singular; its chi-square(k) p-value is not reported: it
+#' rejects 0.30-0.69 of the time at a nominal 5% under a true null with k 29-34
+#' over 107 clusters (reports/2026-10-28/a3-research, section 2).
 #' Aliased (perfectly collinear) features are reported and not counted.
-vvf_s1_joint <- function(dat, family, features, response) {
+vvf_s1_joint <- function(dat, family, features, response, B = VVF_WILD_B, seed = VVF_WILD_SEED) {
   keep <- features[vapply(features, function(f) length(unique(dat[[f]][is.finite(dat[[f]])])) > 1L, logical(1))]
   x <- dat[stats::complete.cases(dat[, ..keep])]
   lhs <- if (family == "outcome") "y" else "r"
@@ -160,11 +189,23 @@ vvf_s1_joint <- function(dat, family, features, response) {
   est <- intersect(keep, names(cf)[!is.na(cf)])
   aliased <- setdiff(keep, est)
   b <- cf[est]
-  V <- sandwich::vcovCL(m1, cluster = x$wk, type = "HC0")[est, est]
-  w <- drop(t(b) %*% solve(V, b))
+  V <- sandwich::vcovCL(m1, cluster = x$wk, type = "HC0")[est, est, drop = FALSE]
+  # with an intercept the slopes' cluster-robust covariance has rank at most G - 1
+  w <- if (qr(V)$rank == length(est)) drop(t(b) %*% solve(V, b)) else NA_real_
+  if (family == "outcome") {
+    p0 <- stats::fitted(m0)
+    resid <- x$y - p0
+    wt <- p0 * (1 - p0)
+  } else {
+    resid <- x$r - mean(x$r)
+    wt <- rep(1, nrow(x))
+  }
+  p_wild <- vvf_wild_p_joint_score(as.matrix(x[, ..est]), resid, wt, x$wk, B, seed)
   data.table(family = family, n = nrow(x), n_clusters = uniqueN(x$wk), k_entered = length(keep), k = length(est),
              test = test, stat = stat, df = df, p_test = p,
-             wald_robust = w, p_wald_robust = stats::pchisq(w, df = length(est), lower.tail = FALSE),
+             wald_robust = w,
+             p_joint_wild = p_wild, joint_wild_method = sprintf("wild score bootstrap, diagonal, Rademacher, B = %d", B),
+             p_joint = max(p, p_wild),
              features = paste(est, collapse = " "), aliased = paste(aliased, collapse = " "))
 }
 
@@ -183,7 +224,7 @@ vvf_s1_screen <- function(d, features, decision, families = VVF_FAMILIES_CLOSE, 
     dat <- if (fam == "outcome") d[!is.na(y) & is.finite(lp_anchor)] else d[is.finite(get(resp))]
     n[[fam]] <- nrow(dat)
     for (f in features) rows[[length(rows) + 1L]] <- vvf_s1_one(dat, fam, f, resp, B, seed)
-    for (sn in names(joint_sets)) joints[[length(joints) + 1L]] <- vvf_s1_joint(dat, fam, joint_sets[[sn]], resp)[, set := sn]
+    for (sn in names(joint_sets)) joints[[length(joints) + 1L]] <- vvf_s1_joint(dat, fam, joint_sets[[sn]], resp, B, seed)[, set := sn]
   }
   res <- rbindlist(rows, fill = TRUE)
   res[, q_bh := NA_real_]

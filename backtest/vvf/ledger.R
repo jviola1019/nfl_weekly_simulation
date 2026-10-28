@@ -5,10 +5,29 @@
 # tests/testthat/test-vvf-ledger.R fails when the document and this render differ.
 # =============================================================================
 
-# Committed VVF runs whose results the ledger shows, one per anchor
+# Committed VVF runs whose results the ledger shows: per anchor, the S1-S2 run
+# and the S3-S5 run
 VVF_LEDGER_RUNS <- data.table::data.table(
-  anchor = "close", decision = "close", stages = "S1, S2", window = "Tune 2018-2022",
-  dir = "reports/2026-10-22/vvf-v2-repro")
+  anchor = c("close", "close"), decision = c("close", "close"), stages = c("S1, S2", "S3, S4, S5"),
+  window = c("Tune 2018-2022", "Tune 2018-2022"),
+  dir = c("reports/2026-10-22/vvf-v2-repro", "reports/2026-10-28/vvf-a3b-close"))
+
+#' A variable's admission (reports/2026-10-28/a3-research, section 5): S3
+#' first, then S1 (outcome family), then S4; one that passes all three goes to
+#' Confirm under G3, which is never scored here
+vvf_admission <- function(s1_q_outcome, s3_verdict, s4_status) {
+  if (!length(s3_verdict) || is.na(s3_verdict) || !startsWith(s3_verdict, "incremental skill")) {
+    return("excluded: no incremental skill on Tune (S3)")
+  }
+  if (!length(s1_q_outcome) || !is.finite(s1_q_outcome) || s1_q_outcome >= VVF_Q_SIGNAL) return("excluded: no S1 signal (q >= 0.05)")
+  if (!identical(s4_status, "complete")) return("held: S4 void")
+  "candidate: Confirm 2023-24 under G3"
+}
+
+#' The schema checks on the committed inputs, for the ledger's ERD section
+vvf_ledger_input_checks <- function() {
+  vvf_check_inputs(vvf_schema_tables(vvf_load_v1_inputs(max_season = VVF_MAX_INPUT_SEASON), vvf_load_inputs()))
+}
 
 vvf_md_cell <- function(x) {
   x <- as.character(x)
@@ -24,12 +43,21 @@ vvf_md_table <- function(header, rows) {
 
 vvf_defect_ids <- function(ds) if (length(ds)) paste(vapply(ds, `[[`, "", "id"), collapse = ", ") else "-"
 
-#' One anchor's results, keyed by feature
+#' One run's results, keyed by feature: S1 and S2 from an S1-S2 run, S3 from
+#' an S3-S5 run
 vvf_ledger_results <- function(run) {
+  meta <- jsonlite::read_json(file.path(run$dir, "run_meta.json"))
+  if (file.exists(file.path(run$dir, "s3_skill.csv"))) {
+    if (is.null(meta$s4_status)) stop(sprintf("vvf_ledger_results: the S3 run %s has no s4_status", run$dir), call. = FALSE)
+    s3 <- vvf_read_csv(file.path(run$dir, "s3_skill.csv"))
+    out <- lapply(seq_len(nrow(s3)), function(i) {
+      list(s3 = sprintf("%.4f [%.4f, %.4f]", s3$skill[i], s3$skill_lo[i], s3$skill_hi[i]), s3_verdict = s3$verdict[i])
+    })
+    return(list(by_feature = setNames(out, s3$feature), sha = meta$result_sha256, s4_status = meta$s4_status))
+  }
   s1 <- vvf_read_csv(file.path(run$dir, "s1_features.csv"))
   vif <- vvf_read_csv(file.path(run$dir, "s2_vif.csv"))[family == "outcome"]
   st <- vvf_read_csv(file.path(run$dir, "s2_stability.csv"))[family == "outcome"]
-  meta <- jsonlite::read_json(file.path(run$dir, "run_meta.json"))
   q <- function(f, fam) {
     v <- s1[feature == f & family == fam, q_bh]
     if (!length(v) || !is.finite(v)) "n/a" else sprintf("%.3f", v)
@@ -43,6 +71,7 @@ vvf_ledger_results <- function(run) {
   out <- lapply(feats, function(f) {
     sr <- st[feature == f]
     list(s1 = sprintf("%s / %s / %s", q(f, "outcome"), q(f, "spread"), q(f, "total")),
+         s1_q_outcome = s1[feature == f & family == "outcome", q_bh],
          s2 = sprintf("VIF %s; signs %s; x season p %s", vif_note(f),
                       if (nrow(sr) && isTRUE(sr$sign_consistent)) "stable" else "not stable",
                       if (nrow(sr)) sprintf("%.3f", sr$int_p) else "n/a"))
@@ -50,9 +79,16 @@ vvf_ledger_results <- function(run) {
   list(by_feature = setNames(out, feats), sha = meta$result_sha256)
 }
 
-vvf_render_ledger <- function(registry = vvf_registry(), runs = VVF_LEDGER_RUNS, disclosures = vvf_disclosures()) {
+vvf_render_ledger <- function(registry = vvf_registry(), runs = VVF_LEDGER_RUNS, disclosures = vvf_disclosures(),
+                              input_checks = vvf_ledger_input_checks()) {
   res <- lapply(seq_len(nrow(runs)), function(i) vvf_ledger_results(runs[i]))
-  names(res) <- runs$anchor
+  # the close anchor's feature results, merged across its S1-S2 and S3-S5 runs
+  close <- Reduce(function(a, b) {
+    for (f in names(b$by_feature)) a[[f]] <- c(a[[f]], b$by_feature[[f]])
+    a
+  }, res[runs$anchor == "close"], list())
+  s4_close <- unlist(lapply(res[runs$anchor == "close"], `[[`, "s4_status"))[1]
+  chk <- input_checks
   lines <- c(
     "# Variable ledger",
     "",
@@ -89,21 +125,41 @@ vvf_render_ledger <- function(registry = vvf_registry(), runs = VVF_LEDGER_RUNS,
           "spread and total (F tests on the residual against the line). q < 0.05 is a signal; anything else is",
           "\"no evidence\" at the MDE in the run's `s1_features.csv`. S2 shows the VIF step (VIF <= 5, the",
           "declared-first feature kept), whether the effect's sign is the same in every season, and the",
-          "feature x season LR test, all for the outcome family. The opener anchor has no run yet: its inputs",
-          "come from D1's archive (A4)."),
+          "feature x season LR test, all for the outcome family. S3 is the walk-forward skill of anchor + b x",
+          "over the anchor alone, with its week-block bootstrap 95% CI. Admission takes S3 first, then S1's",
+          "outcome q, then the run's S4 status of record (reports/2026-10-28/a3-research, section 5); a",
+          "variable that passes all three is only a candidate until Confirm under G3. The opener anchor has no",
+          "run yet: its inputs come from D1's archive (A4)."),
     "",
     "## Features",
     "",
     vvf_md_table(c("Variable", "Group", "Definition", "Source", "known_at", "Params", "S1 close (q: outcome / spread / total)",
-                   "S2 close (outcome)", "Defects", "Unit test"),
+                   "S2 close (outcome)", "S3 close (skill [CI])", "Admission", "Defects", "Unit test"),
                  lapply(which(registry$kind == "feature"), function(i) {
                    r <- registry[i]
-                   got <- res$close$by_feature[[r$name]]
+                   got <- close[[r$name]]
                    c(paste0("`", r$name, "`"), r$group, r$definition, r$source,
                      paste0(r$known_at, if (r$posthoc) " (post-hoc)" else ""), r$n_params,
-                     if (is.null(got)) (if (r$posthoc) "not screened (post-hoc)" else "not screened") else got$s1,
-                     if (is.null(got)) "-" else got$s2, vvf_defect_ids(r$defects[[1]]), r$unit_test)
+                     if (is.null(got$s1)) (if (r$posthoc) "not screened (post-hoc)" else "not screened") else got$s1,
+                     got$s2 %||% "-", got$s3 %||% "-",
+                     if (is.null(got$s3)) "-" else vvf_admission(got$s1_q_outcome, got$s3_verdict, s4_close),
+                     vvf_defect_ids(r$defects[[1]]), r$unit_test)
                  })),
+    "",
+    "## Input tables",
+    "",
+    paste("The tables every stage reads, with each key (PK) and reference (FK), from `backtest/vvf/input_schema.R`.",
+          "The checks below run on the committed inputs each time the ledger is rendered: unique keys, references",
+          "that resolve, each team row's team one of its game's two franchises, at most two team rows per game,",
+          "and no sealed season. Any violation would show here as a count above 0."),
+    "",
+    "```mermaid",
+    vvf_render_erd(),
+    "```",
+    "",
+    vvf_md_table(c("Check", "Table", "Detail", "Violations"), lapply(seq_len(nrow(chk)), function(i) {
+      c(chk$check[i], chk$table[i], chk$detail[i], chk$violations[i])
+    })),
     "",
     "## Engine variables, settings and market inputs",
     "",
