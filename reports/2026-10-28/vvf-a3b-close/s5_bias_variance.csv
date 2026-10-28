@@ -1,0 +1,3 @@
+target,n,mse,bias,variance
+"margin vs closing spread_line",1372,163.13,-0.519315,162.86
+"total vs closing total_line",1372,177.554,0.195335,177.516

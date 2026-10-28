@@ -1,0 +1,5 @@
+model,slope,slope_lo,slope_hi,intercept,intercept_lo,intercept_hi,label
+"C0",1.04702,0.894073,1.19997,-0.0698847,-0.184802,0.0450324,"slope consistent with 1"
+"C1",1.01784,0.84003,1.19566,-0.00584865,-0.118069,0.106372,"slope consistent with 1"
+"C2",1.06394,0.889948,1.23793,-0.132981,-0.245711,-0.0202515,"slope consistent with 1"
+"E1",1.10107,0.919403,1.28273,-0.070389,-0.182614,0.0418363,"slope consistent with 1"
