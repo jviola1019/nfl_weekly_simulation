@@ -120,10 +120,14 @@ vvf_control_shuffle <- function(d, features, decision, eval_seasons, registry = 
 }
 
 #' The anchor null's data: every labelled y redrawn as Bernoulli(p_anchor);
-#' every other column, the unlabelled rows and the anchor attribute are kept
+#' every other column, the unlabelled rows and the anchor attribute are kept.
+#' A labelled row with no anchor has no null to draw from and becomes
+#' unlabelled; no stage scores a row without an anchor.
 vvf_resample_y <- function(d, seed = VVF_NULL_SEED) {
   x <- copy(d)
-  i <- which(!is.na(x$y))
+  i <- which(!is.na(x$y) & is.finite(x$p_anchor))
+  no_anchor <- which(!is.na(x$y) & !is.finite(x$p_anchor))
+  if (length(no_anchor)) set(x, no_anchor, "y", NA_integer_)
   vvf_seeded(seed, function() set(x, i, "y", as.integer(stats::rbinom(length(i), 1L, x$p_anchor[i]))))
   setattr(x, "vvf_anchor", attr(d, "vvf_anchor"))
   x

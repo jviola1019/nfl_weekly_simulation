@@ -147,3 +147,11 @@ test_that("the S4 status counts only the gating controls", {
   expect_true("shuffled_labels" %in% v4$VVF_S4_GATING_SPEC)
   expect_false("shuffled_labels" %in% v4$VVF_S4_GATING_AMENDED)
 })
+
+test_that("the anchor null leaves a labelled row without an anchor unlabelled, with no warning", {
+  d <- sim_s4(seed = 9)
+  d[5, `:=`(lp_anchor = NA_real_, p_anchor = NA_real_)]
+  expect_no_warning(r <- v4$vvf_resample_y(d))
+  expect_true(is.na(r$y[5]))
+  expect_false(anyNA(r$y[-5]))
+})
