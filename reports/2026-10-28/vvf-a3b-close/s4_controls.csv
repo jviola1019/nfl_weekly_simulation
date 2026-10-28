@@ -5,4 +5,4 @@ control,passed,gates,gates_amended,detail
 "anchor_null",TRUE,FALSE,TRUE,"anchor null; 0 claims; 1 intervals wholly above 0, 2 wholly below, of 36"
 "permuted_x",TRUE,FALSE,FALSE,"permuted_x null; 0 claims; 0 intervals wholly above 0, 2 wholly below, of 36"
 "anchor_copy",TRUE,TRUE,TRUE,"skill 0"
-"reproducibility",TRUE,TRUE,TRUE,"result_sha256 f783cebd138d4df2 and f783cebd138d4df2"
+"reproducibility",TRUE,TRUE,TRUE,"results_sha256 of the 9 result files: 6596847a1d1c4f3a and 6596847a1d1c4f3a"

@@ -95,6 +95,9 @@ vvf_s3_screen <- function(d, features, decision, eval_seasons, registry = vvf_re
   sk <- vvf_s3_skill(x, cols, order = cols, ref = "p_anchor", B = B, seed = seed)
   sk[, feature := features]
   setcolorder(sk, "feature")
+  # the refit's fallbacks go into the table, never only an attribute (review I-3)
+  sk[, `:=`(weeks_skipped_min_train = vapply(features, function(f) meta[[f]]$weeks_skipped_min_train, integer(1), USE.NAMES = FALSE),
+            weeks_constant = vapply(features, function(f) meta[[f]]$weeks_constant, integer(1), USE.NAMES = FALSE))]
   sk[, `:=`(anchor = anchor, decision = decision)]
   list(skill = sk, predictions = x, meta = meta, anchor = anchor, decision = decision)
 }

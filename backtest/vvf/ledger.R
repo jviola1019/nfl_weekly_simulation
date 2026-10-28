@@ -26,10 +26,7 @@ vvf_admission <- function(s1_q_outcome, s3_verdict, s4_status) {
 
 #' The schema checks on the committed inputs, for the ledger's ERD section
 vvf_ledger_input_checks <- function() {
-  v1 <- vvf_load_v1_inputs(max_season = VVF_MAX_INPUT_SEASON)
-  v2 <- vvf_load_inputs()
-  vvf_check_inputs(c(v1[c("games", "team_games", "qb_games", "espn_open_close")],
-                     v2[c("game_context", "venues", "injuries_team", "injuries_qb")]))
+  vvf_check_inputs(vvf_schema_tables(vvf_load_v1_inputs(max_season = VVF_MAX_INPUT_SEASON), vvf_load_inputs()))
 }
 
 vvf_md_cell <- function(x) {
@@ -51,6 +48,7 @@ vvf_defect_ids <- function(ds) if (length(ds)) paste(vapply(ds, `[[`, "", "id"),
 vvf_ledger_results <- function(run) {
   meta <- jsonlite::read_json(file.path(run$dir, "run_meta.json"))
   if (file.exists(file.path(run$dir, "s3_skill.csv"))) {
+    if (is.null(meta$s4_status)) stop(sprintf("vvf_ledger_results: the S3 run %s has no s4_status", run$dir), call. = FALSE)
     s3 <- vvf_read_csv(file.path(run$dir, "s3_skill.csv"))
     out <- lapply(seq_len(nrow(s3)), function(i) {
       list(s3 = sprintf("%.4f [%.4f, %.4f]", s3$skill[i], s3$skill_lo[i], s3$skill_hi[i]), s3_verdict = s3$verdict[i])

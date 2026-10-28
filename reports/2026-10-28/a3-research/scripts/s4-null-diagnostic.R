@@ -10,7 +10,7 @@ e <- environment()
 for (f in c("common.R", "candidates/market.R", "candidates/elo.R", "candidates/epa_glm.R", "blends.R",
             "calibrators.R", "metrics.R", "controls.R")) sys.source(file.path("backtest", f), envir = e)
 for (f in c("common.R", "features.R", "registry.R", "provenance.R", "s1_screen.R", "s3_skill.R", "s4_controls.R",
-            "s5_curves.R", "s5_scores.R", "s5_anova.R", "reproduce_v2.R")) sys.source(file.path("backtest", "vvf", f), envir = e)
+            "s5_curves.R", "s5_scores.R", "s5_anova.R", "reproduce_v2.R", "input_schema.R")) sys.source(file.path("backtest", "vvf", f), envir = e)
 source(file.path("backtest", "vvf", "run_a3b_close.R"), local = e)   # defines vvf_a3b_table(); its main block does not run
 
 tab <- vvf_a3b_table()

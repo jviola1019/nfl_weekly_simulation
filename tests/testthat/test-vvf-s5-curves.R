@@ -40,6 +40,7 @@ predict_h <- function(sim) {
 }
 
 test_that("the one-SE choice of the validation curve recovers a planted half-life of 3", {
+  withr::local_dir(PROJECT_ROOT)                    # the curve guards its seasons against config.R's seal
   grid <- c(Inf, 8, 6, 4, 3, 2, 1)                  # simplest (most smoothing) first
   for (seed in 1:2) {
     sim <- planted(seed)
@@ -53,6 +54,7 @@ test_that("the one-SE choice of the validation curve recovers a planted half-lif
 })
 
 test_that("the one-SE rule prefers the simpler setting when two are within one SE", {
+  withr::local_dir(PROJECT_ROOT)
   sim <- planted(3)
   ev <- sim$d[season %in% 2003:2005]
   same <- function(h, seasons) predict_h(sim)(3, seasons)   # every setting predicts the same
@@ -106,4 +108,17 @@ test_that("an over-fitted model shows a larger in-sample against walk-forward ga
   expect_equal(simple$season, 2019:2020)
   expect_true(all(complex$gap > simple$gap))
   expect_true(all(complex$gap > 0))
+})
+
+test_that("the validation curve guards its tuning seasons and, given evaluation seasons, requires them to follow (review I-2)", {
+  withr::local_dir(PROJECT_ROOT)
+  sim <- planted(4)
+  ev <- sim$d[season %in% 2003:2005]
+  expect_error(v5c$vvf_validation_curve(c(8, 3), predict_h(sim), ev, seasons = c(2005L, 2025L), B = 200L), "sealed-season guard")
+  expect_error(v5c$vvf_validation_curve(c(8, 3), predict_h(sim), ev, seasons = 2003:2005, eval_seasons = 2005:2006, B = 200L),
+               "must all follow")
+  expect_error(v5c$vvf_validation_curve(c(8, 3), predict_h(sim), ev, seasons = 2003:2005, eval_seasons = 2025L, B = 200L),
+               "sealed-season guard")
+  ok <- v5c$vvf_validation_curve(c(8, 3), predict_h(sim), ev, seasons = 2003:2005, eval_seasons = 2006:2007, B = 200L)
+  expect_equal(nrow(ok), 2L)
 })

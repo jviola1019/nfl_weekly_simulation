@@ -36,8 +36,8 @@ A post-hoc variable is refused at every decision point.
 
 | Anchor | Decision | Stages | Window | Run | result_sha256 |
 |---|---|---|---|---|---|
-| close | close | S1, S2 | Tune 2018-2022 | `reports/2026-10-22/vvf-v2-repro` | 8d276fc5fdfd4985ba1323506aa8a52353ffc27556b21a06d0aae6056badbeb5 |
-| close | close | S3, S4, S5 | Tune 2018-2022 | `reports/2026-10-28/vvf-a3b-close` | 7a43ce265582ea4bb433aee0d957a95ccc75e366709f5ec1556a9325345302fd |
+| close | close | S1, S2 | Tune 2018-2022 | `reports/2026-10-22/vvf-v2-repro` | 997f4984787013511ed16f15aa49437181ec2247aff24f74a05e0bab4a1f0e91 |
+| close | close | S3, S4, S5 | Tune 2018-2022 | `reports/2026-10-28/vvf-a3b-close` | 49875172bfc5b5696a1bd3a88cd9338941176c516b6f14e2b57f26dcd9d07c3b |
 
 S1 columns are the BH q-values within each family: outcome (moneyline, LR test with the anchor as offset), spread and total (F tests on the residual against the line). q < 0.05 is a signal; anything else is "no evidence" at the MDE in the run's `s1_features.csv`. S2 shows the VIF step (VIF <= 5, the declared-first feature kept), whether the effect's sign is the same in every season, and the feature x season LR test, all for the outcome family. S3 is the walk-forward skill of anchor + b x over the anchor alone, with its week-block bootstrap 95% CI. Admission takes S3 first, then S1's outcome q, then the run's S4 status of record (reports/2026-10-28/a3-research, section 5); a variable that passes all three is only a candidate until Confirm under G3. The opener anchor has no run yet: its inputs come from D1's archive (A4).
 
@@ -132,30 +132,45 @@ erDiagram
 
 | Check | Table | Detail | Violations |
 |---|---|---|---|
+| key complete | games | game_id | 0 |
 | key unique | games | game_id | 0 |
 | no sealed season | games | 2025 | 0 |
+| key complete | team_games | game_id, team | 0 |
 | key unique | team_games | game_id, team | 0 |
+| reference complete | team_games | game_id -> games.game_id | 0 |
 | reference resolves | team_games | game_id -> games.game_id | 0 |
 | team in game | team_games | team is the home or away franchise | 0 |
 | rows per game | team_games | at most 2 | 0 |
 | no sealed season | team_games | 2025 | 0 |
+| key complete | qb_games | game_id, team, qb_id | 0 |
 | key unique | qb_games | game_id, team, qb_id | 0 |
+| reference complete | qb_games | game_id, team -> team_games.game_id, team | 0 |
 | reference resolves | qb_games | game_id, team -> team_games.game_id, team | 0 |
 | no sealed season | qb_games | 2025 | 0 |
+| key complete | espn_open_close | game_id | 0 |
 | key unique | espn_open_close | game_id | 0 |
+| reference complete | espn_open_close | game_id -> games.game_id | 0 |
 | reference resolves | espn_open_close | game_id -> games.game_id | 0 |
 | no sealed season | espn_open_close | 2025 | 0 |
+| key complete | game_context | game_id | 0 |
 | key unique | game_context | game_id | 0 |
+| reference complete | game_context | game_id -> games.game_id | 0 |
 | reference resolves | game_context | game_id -> games.game_id | 0 |
+| reference complete | game_context | stadium_id -> venues.stadium_id | 0 |
 | reference resolves | game_context | stadium_id -> venues.stadium_id | 0 |
 | no sealed season | game_context | 2025 | 0 |
+| key complete | venues | stadium_id | 0 |
 | key unique | venues | stadium_id | 0 |
+| key complete | injuries_team | game_id, team | 0 |
 | key unique | injuries_team | game_id, team | 0 |
+| reference complete | injuries_team | game_id -> games.game_id | 0 |
 | reference resolves | injuries_team | game_id -> games.game_id | 0 |
 | team in game | injuries_team | team is the home or away franchise | 0 |
 | rows per game | injuries_team | at most 2 | 0 |
 | no sealed season | injuries_team | 2025 | 0 |
+| key complete | injuries_qb | game_id, team, gsis_id | 0 |
 | key unique | injuries_qb | game_id, team, gsis_id | 0 |
+| reference complete | injuries_qb | game_id, team -> injuries_team.game_id, team | 0 |
 | reference resolves | injuries_qb | game_id, team -> injuries_team.game_id, team | 0 |
 | no sealed season | injuries_qb | 2025 | 0 |
 
@@ -239,7 +254,8 @@ erDiagram
 | V2-TUNE | v2's close-anchored screen (PR #205) chose nothing on Confirm 2023-24 or the 2025 holdout; it used Tune 2018-22, and this framework reproduces its numbers on the same inputs. | reports/2026-09-30/validation-sprint/REPORT.md (PR #205) |
 | F11B | F11b: nflverse play-by-play files the 2019 Raiders as LV while the schedules say OAK (SD and STL likewise before their moves), so every 2019 Raiders calibration game had no drive inputs and was simulated at 21.5-21.5 on main (16 games in the 2024 week 5 positive control). The owner chose franchise codes on 2026-10-28: the engine fix (PR #223, c1144c8) maps the schedule and the injury table to them, and is not merged. | reports/2026-10-26/f11-bye-week-main (PR #223 comment) |
 | V2-JOINT-DF | The known-answer target changes: v2's moneyline joint test counted df 30 for 29 estimable terms. With df 29, chi-square 26.933 gives p 0.575, where v2 printed 0.627 (design section 4 names p = 0.63). The owner acknowledges it. | reports/2026-10-22/vvf-v2-repro/run_meta.json |
-| JOINT-WALD | Each joint test reports p_test (LR or F, model-based), p_joint_wild (a restricted wild cluster score bootstrap with diagonal studentization, Rademacher, B = 9,999) and p_joint = max(p_test, p_joint_wild), the p of record (A3b). p_wald_robust, the cluster-robust chi-square(k) Wald, is kept for v2 fidelity and is not size-controlled: under a true null with 107 week clusters and 29 to 34 coefficients it rejects 0.30-0.69 of the time at a nominal 5%, where the diagonal score bootstrap rejects 0.041-0.059 (0.054 on one season, where the Wald is undefined). On v2's inputs its p from 1.2e-06 to 0.45 is no evidence beside p_test from 0.22 to 0.58 and p_joint_wild from 0.18 to 0.60: no feature set is jointly significant in any family. It is NA when its covariance is singular. Dropping it is the owner's decision. | reports/2026-10-28/a3-research/RESEARCH.md section 2; reports/2026-10-28/a3-research/joint_size.csv; reports/2026-10-28/a3-research/joint_size_linear.csv; reports/2026-10-22/vvf-v2-repro/s1_joint.csv |
+| JOINT-WALD | Each joint test reports p_test (LR or F, model-based), p_joint_wild (a restricted wild cluster score bootstrap with diagonal studentization, Rademacher, B = 9,999) and p_joint = max(p_test, p_joint_wild), the p of record (A3b). The old cluster-robust chi-square(k) Wald p-value, p_wald_robust, is dropped (decided 2026-10-28 on the research, at the owner's request for a researched choice): under a true null with 107 week clusters and 29 to 34 coefficients its test rejects 0.30-0.69 of the time at a nominal 5%, where the diagonal score bootstrap rejects 0.041-0.059 (0.054 on one season, where the Wald is undefined). Its statistic, wald_robust, stays as v2's known answer, NA when its covariance is singular. On v2's inputs the old p ran from 1.2e-06 to 0.45, beside p_test from 0.22 to 0.58 and p_joint_wild from 0.18 to 0.60: no feature set is jointly significant in any family. | reports/2026-10-28/a3-research/RESEARCH.md section 2; reports/2026-10-28/a3-research/joint_size.csv; reports/2026-10-28/a3-research/joint_size_linear.csv; reports/2026-10-22/vvf-v2-repro/s1_joint.csv |
 | CLUSTER-UNIT | The cluster unit is the season-week (backtest/common.R wk), kept on the research's evidence: residuals against the close show no within-cluster correlation at any candidate unit (ICC 0.0000 by season-week, week of season, game day and team-season, except 0.0006 for totals by team-season), and the median design effect of clustering is 1.004-1.064 at every unit. One season has 22 clusters, under 30, so the wild bootstrap gives its p-value there and no sandwich CI is reported; the pooled 2023-24 opener window has 44. | reports/2026-10-28/a3-research/RESEARCH.md section 3; reports/2026-10-28/a3-research/cluster_icc.csv; reports/2026-10-28/a3-research/cluster_design_effects.csv; backtest/common.R |
-| A3-FLEX | primetime uses the final, post-flex kickoff and is classed schedule. The NFL announces a weeks 5-17 Sunday-night flex no later than 12 days before the game and week 18's primetime games no later than 6 days before, so a flex is public at the close and at a weeks 5-17 opener; week 18's can follow its opener. Of 1,372 Tune games 51 (3.7%) changed and 19 were late (a date or venue change, or weeks 17-18); neither predicts the moneyline or ATS against the close (p 0.33-0.81), and dropping the changed games changes 0 of 108 S1 verdicts. No adjustment and no feature; A4 retests at the opener. | reports/2026-10-28/a3-research/RESEARCH.md section 4; reports/2026-10-28/a3-research/late_tests.csv; reports/2026-10-28/a3-research/late_s1_sensitivity.csv; backtest/vvf/registry.R primetime |
+| A3-FLEX | primetime uses the final, post-flex kickoff and is classed schedule. The NFL announces a weeks 5-17 Sunday-night flex no later than 12 days before the game and week 18's primetime games no later than 6 days before (its undated procedures text, read 2026-10-28), so every flex is public at the close; at the opener a weeks 5-17 flex is public if the opener posts less than 12 days ahead (not verified), and week 18's can follow it. Of 1,372 Tune games 51 (3.7%) changed and 19 were late (a date or venue change, or weeks 17-18); neither predicts the moneyline or ATS against the close (p 0.33-0.81), and dropping the changed games changes 0 of 108 S1 verdicts. No adjustment and no feature; A4 retests at the opener. | reports/2026-10-28/a3-research/RESEARCH.md section 4; reports/2026-10-28/a3-research/late_tests.csv; reports/2026-10-28/a3-research/late_s1_sensitivity.csv; backtest/vvf/registry.R primetime |
 | S4-NULL | The spec's shuffled-labels control fails by construction for S3's anchor-offset model: permuting y breaks the anchor, and a feature that tracks it then beats it (7 of 36 intervals wholly above 0 on Tune; skill correlates 0.954 with \|cor(x, anchor)\|; a claim in 5 of 5 replicates). Proposed, for the owner to sign: the anchor null, y redrawn as Bernoulli(p_anchor) (consistency resampling), gates in its place, with the permuted-x null reported; each passes when S3's claim rule claims no feature (0 of 5 replicates claimed under each). Until then s4_status follows the spec, and s4_status_amended is reported beside it. | reports/2026-10-28/a3-research/RESEARCH.md section 1; reports/2026-10-28/a3-research/s4_nulls.csv; reports/2026-10-28/a3-research/s4-null-diagnostic.csv; backtest/vvf/s4_controls.R |
+| A3-MOVE-LOOK | The A3 research (2026-10-28) compared the opener-to-close movement of the 2023-2024 games whose schedule changed with the rest, from D1's archive (ESPN BET): 18 changed games moved no more (permutation p 0.48-0.66). Those seasons are nfl_preclose_v1's Tune and Confirm windows. The look scores no model; no model, feature or threshold was chosen from it, and the late-change recommendation rests on the Tune tests against the close. | reports/2026-10-28/a3-research/RESEARCH.md section 4; reports/2026-10-28/a3-research/late_movement.csv; reports/2026-10-28/a3-research/scripts/late-movement.R; final review I-9 |

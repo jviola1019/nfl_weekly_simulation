@@ -25,10 +25,11 @@ VVF_INPUT_SCHEMA <- list(
   list(name = "injuries_qb", source = "backtest/vvf/data/injuries_qb.csv", key = c("game_id", "team", "gsis_id"),
        refs = list(vvf_ref(c("game_id", "team"), "injuries_team"))))
 
-#' One row per check: each key is unique, each reference resolves (rows with a
-#' missing reference are skipped), each team row's team is one of its game's
-#' two franchises, no game has more than max_per_game team rows, and no row
-#' carries a sealed season (by its season column, else its game_id).
+#' One row per check: each key is complete and unique, each reference is
+#' complete and resolves, each team row's team is one of its game's two
+#' franchises, no game has more than max_per_game team rows, and no row carries
+#' a sealed season (by its season column, else its game_id). A missing key or
+#' reference value is a violation, never skipped.
 #' `tables` is a named list of data.tables holding every schema table.
 vvf_check_inputs <- function(tables, schema = VVF_INPUT_SCHEMA, sealed = vvf_sealed_seasons()) {
   missing <- setdiff(vapply(schema, `[[`, "", "name"), names(tables))
@@ -39,13 +40,16 @@ vvf_check_inputs <- function(tables, schema = VVF_INPUT_SCHEMA, sealed = vvf_sea
   out <- list()
   for (t in schema) {
     d <- tables[[t$name]]
+    out[[length(out) + 1L]] <- row("key complete", t$name, paste(t$key, collapse = ", "),
+                                   sum(!stats::complete.cases(d[, t$key, with = FALSE])))
     out[[length(out) + 1L]] <- row("key unique", t$name, paste(t$key, collapse = ", "), sum(duplicated(d[, t$key, with = FALSE])))
     for (r in t$refs) {
-      x <- d[stats::complete.cases(d[, r$cols, with = FALSE]), r$cols, with = FALSE]
+      what <- sprintf("%s -> %s.%s", paste(r$cols, collapse = ", "), r$table, paste(r$table_cols, collapse = ", "))
+      done <- stats::complete.cases(d[, r$cols, with = FALSE])
+      out[[length(out) + 1L]] <- row("reference complete", t$name, what, sum(!done))
       parent <- unique(tables[[r$table]][, r$table_cols, with = FALSE])
-      bad <- x[!parent, on = stats::setNames(r$table_cols, r$cols)]
-      out[[length(out) + 1L]] <- row("reference resolves", t$name, sprintf("%s -> %s.%s", paste(r$cols, collapse = ", "), r$table,
-                                                                       paste(r$table_cols, collapse = ", ")), nrow(bad))
+      bad <- d[done, r$cols, with = FALSE][!parent, on = stats::setNames(r$table_cols, r$cols)]
+      out[[length(out) + 1L]] <- row("reference resolves", t$name, what, nrow(bad))
     }
     if (!is.null(t$team)) {
       j <- merge(d[, c("game_id", t$team), with = FALSE], games, by = "game_id")
@@ -59,6 +63,32 @@ vvf_check_inputs <- function(tables, schema = VVF_INPUT_SCHEMA, sealed = vvf_sea
     if (!is.null(s)) out[[length(out) + 1L]] <- row("no sealed season", t$name, paste(sealed, collapse = ", "), sum(s %in% sealed))
   }
   rbindlist(out)
+}
+
+#' The checks, run before any stage: stops on any violation, naming each, and
+#' returns the check table invisibly
+vvf_assert_inputs <- function(tables, schema = VVF_INPUT_SCHEMA) {
+  chk <- vvf_check_inputs(tables, schema)
+  bad <- chk[is.na(violations) | violations > 0L]
+  if (nrow(bad)) {
+    stop(sprintf("input check failed: %s", paste(sprintf("%s %s (%s): %s", bad$table, bad$check, bad$detail, bad$violations),
+                                                 collapse = "; ")), call. = FALSE)
+  }
+  invisible(chk)
+}
+
+#' The v1 and VVF input tables the schema covers, as one named list. A run
+#' that cuts v1's games at `max_season` checks every table cut there too (by
+#' its season column, else its game_id), so a later game's rows are not
+#' orphans; a row with no season is kept, so a missing key is still reported.
+vvf_schema_tables <- function(inp_v1, inp, max_season = NULL) {
+  tabs <- c(inp_v1[c("games", "team_games", "qb_games", "espn_open_close")],
+            inp[c("game_context", "venues", "injuries_team", "injuries_qb")])
+  if (is.null(max_season)) return(tabs)
+  lapply(tabs, function(d) {
+    s <- if ("season" %in% names(d)) d$season else if ("game_id" %in% names(d)) suppressWarnings(as.integer(substr(d$game_id, 1L, 4L)))
+    if (is.null(s)) d else d[is.na(s) | s <= max_season]
+  })
 }
 
 #' The schema as a Mermaid erDiagram: one relation per reference (one-to-one

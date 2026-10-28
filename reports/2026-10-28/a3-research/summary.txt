@@ -7,9 +7,11 @@ diagnostic: largest y-shuffle skills: lp_anchor 0.100, home_dog 0.058, d_e1 0.03
 null 'y within week (spec)': 5 replicates x 36 features (B = 1000); intervals wholly above 0 per replicate: mean 6.6, max 9; wholly below 0: mean 0.4; replicates with a claim: 5; claims in all: 20; replicates failing the spec's 'every interval includes 0': 5
 null 'x permuted within week': 5 replicates x 36 features (B = 1000); intervals wholly above 0 per replicate: mean 0.0, max 0; wholly below 0: mean 3.4; replicates with a claim: 0; claims in all: 0; replicates failing the spec's 'every interval includes 0': 4
 null 'y drawn from the anchor (consistency resampling)': 5 replicates x 36 features (B = 1000); intervals wholly above 0 per replicate: mean 0.6, max 2; wholly below 0: mean 2.4; replicates with a claim: 0; claims in all: 0; replicates failing the spec's 'every interval includes 0': 5
-power: planted beta 0.05 per SD of rest_diff: detected 1 of 5, mean skill 0.00153
-power: planted beta 0.10 per SD of rest_diff: detected 1 of 5, mean skill 0.00244
-power: planted beta 0.20 per SD of rest_diff: detected 3 of 5, mean skill 0.00782
+power: planted beta 0.05 per SD of rest_diff: detected 0 of 20 (exact 95% CI 0.00-0.17), mean skill 0.00020
+power: planted beta 0.10 per SD of rest_diff: detected 3 of 20 (exact 95% CI 0.03-0.38), mean skill 0.00205
+power: planted beta 0.20 per SD of rest_diff: detected 11 of 20 (exact 95% CI 0.32-0.77), mean skill 0.00892
+power: planted beta 0.30 per SD of rest_diff: detected 15 of 20 (exact 95% CI 0.51-0.91), mean skill 0.01904
+power: planted beta 0.40 per SD of rest_diff: detected 19 of 20 (exact 95% CI 0.75-1.00), mean skill 0.02765
 
 ## 2. The joint test (null size at alpha = 0.05; 1,000 draws, 999 Rademacher draws each)
 outcome, 107 week clusters, k 29-34, week SD 0-0.2: lr              size 0.053-0.073
@@ -29,6 +31,7 @@ tot_resid, 107 week clusters, k 29-34, week SD 0-2 points: wald_f          size 
 tot_resid, 107 week clusters, k 29-34, week SD 0-2 points: score_boot_full size 0.038-0.047
 tot_resid, 107 week clusters, k 29-34, week SD 0-2 points: score_boot_diag size 0.041-0.046
 Monte Carlo 95% band for a true size of 0.05 with 1,000 draws: 0.036-0.064
+Monte Carlo 95% band for a true size of 0.05 with 500 draws (the one-season row): 0.031-0.069
 
 ## 3. The cluster unit
 ICC e_out     by season-week    (107 groups): 0.0000 (F 0.846, p 0.864)

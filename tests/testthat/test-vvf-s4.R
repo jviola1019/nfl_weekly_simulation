@@ -155,3 +155,8 @@ test_that("the anchor null leaves a labelled row without an anchor unlabelled, w
   expect_true(is.na(r$y[5]))
   expect_false(anyNA(r$y[-5]))
 })
+
+test_that("a gating control that did not run is refused, never read as passed (review M-2)", {
+  expect_error(v4$vvf_s4_report(list(canary = list(passed = FALSE)), gating = "placebo"), "unknown gating control: placebo")
+  expect_identical(v4$vvf_s4_report(list(canary = list(passed = TRUE)), gating = "canary")$status, "complete")
+})

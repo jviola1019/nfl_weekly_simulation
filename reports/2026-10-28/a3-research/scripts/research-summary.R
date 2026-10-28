@@ -23,7 +23,9 @@ for (i in seq_len(nrow(s))) say("null '%s': %d replicates x %d features (B = 100
                                 s$null[i], s$reps[i], nrow(dg), s$mean_above[i], s$max_above[i], s$mean_below[i], s$reps_with_claim[i], s$claims[i], s$reps_spec_fail[i])
 pw <- rd("s4_power.csv")
 p <- pw[, .(detected = sum(claim), reps = .N, mean_skill = mean(skill)), by = beta]
-for (i in seq_len(nrow(p))) say("power: planted beta %.2f per SD of rest_diff: detected %d of %d, mean skill %.5f", p$beta[i], p$detected[i], p$reps[i], p$mean_skill[i])
+p[, c("ci_lo", "ci_hi") := as.list(stats::binom.test(detected, reps)$conf.int), by = beta]
+for (i in seq_len(nrow(p))) say("power: planted beta %.2f per SD of rest_diff: detected %d of %d (exact 95%% CI %.2f-%.2f), mean skill %.5f",
+                                p$beta[i], p$detected[i], p$reps[i], p$ci_lo[i], p$ci_hi[i], p$mean_skill[i])
 
 say("\n## 2. The joint test (null size at alpha = 0.05; 1,000 draws, 999 Rademacher draws each)")
 jo <- rd("joint_size.csv")[set != "situational, one season"]
@@ -35,6 +37,8 @@ li <- rd("joint_size_linear.csv")
 for (fm in unique(li$family)) for (t in unique(li$test)) say("%s, 107 week clusters, k 29-34, week SD 0-2 points: %-15s size %s", fm, t, rng(li[family == fm & test == t, size]))
 mc <- sqrt(0.05 * 0.95 / 1000)
 say("Monte Carlo 95%% band for a true size of 0.05 with 1,000 draws: %s-%s", f3(0.05 - 1.96 * mc), f3(0.05 + 1.96 * mc))
+mc5 <- sqrt(0.05 * 0.95 / 500)
+say("Monte Carlo 95%% band for a true size of 0.05 with 500 draws (the one-season row): %s-%s", f3(0.05 - 1.96 * mc5), f3(0.05 + 1.96 * mc5))
 
 say("\n## 3. The cluster unit")
 ic <- rd("cluster_icc.csv")

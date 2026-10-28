@@ -12,23 +12,28 @@
 # the anchor null in place of the label shuffle (reports/2026-10-28/a3-research).
 # The learning curve and the fit gap score the anchor plus every feature, the
 # high-variance end of the trade-off, beside the anchor on the same games.
-# Nothing after 2022 is loaded: the v1 games are cut at 2022 before the base
-# models run, and every loader guards the sealed season.
+# S5's validation curve is C2's half-life over the amendment's grid and v1's 16.
+# The engine's settings (RECENCY_HALFLIFE, GLMM_BLEND_W, SOS_STRENGTH, N_RECENT,
+# SHRINKAGE) need C3's walk-forward and wait for G2.
+# The input checks (input_schema.R) run before any stage. The v1 games are cut
+# at 2022 before the base models run; the VVF inputs load through 2024 and the
+# features are cut at 2022; every loader guards the sealed season.
 # =============================================================================
 
 VVF_A3B_RESULT_FILES <- c("s3_skill.csv", "s5_murphy.csv", "s5_calibration.csv", "s5_bias_variance.csv",
                           "s5_team_effects.csv", "s5_loss_anova.csv", "s5_curve_c2_halflife.csv",
                           "s5_learning_curve.csv", "s5_fit_gap.csv")
-VVF_A3B_C2_GRID <- c(16, 8, 4)   # v1's C2 half-life grid, simplest (longest half-life) first
+VVF_A3B_C2_GRID <- c(Inf, 16, 8, 6, 4, 3, 2, 1)   # the amendment's half-lives and v1's 16, simplest (no decay) first
 VVF_A3B_MODELS <- c(C0 = "p_c0", C1 = "p_c1", C2 = "p_c2", E1 = "p_e1")
 VVF_A3B_N_TRAIN <- 2:8           # the table starts in 2010, so 8 seasons is the most 2018 allows
+VVF_A3B_CONFIRM <- 2023:2024     # where a Tune choice is evaluated, under G3; never scored here
 VVF_A3B_AMENDMENT <- "proposed 2026-10-28, unsigned"
 
 #' The close-anchored table for every predicted season through 2022 (S3 trains
-#' on the seasons before Tune), with the v1 and VVF inputs it came from
-vvf_a3b_table <- function() {
-  inp_v1 <- vvf_load_v1_inputs(max_season = VVF_V2_MAX_SEASON)
-  inp <- vvf_load_inputs()
+#' on the seasons before Tune), with the v1 and VVF inputs it came from. The
+#' input checks run first and stop on any violation.
+vvf_a3b_table <- function(inp_v1 = vvf_load_v1_inputs(max_season = VVF_V2_MAX_SEASON), inp = vvf_load_inputs()) {
+  vvf_assert_inputs(vvf_schema_tables(inp_v1, inp, VVF_V2_MAX_SEASON))
   base <- vvf_base_predictions(inp_v1, VVF_V2_MAX_SEASON)
   full <- vvf_anchor_features(vvf_build_features(base, inp, VVF_V2_MAX_SEASON), "close")
   list(full = full, inp_v1 = inp_v1, inp = inp)
@@ -54,8 +59,9 @@ vvf_a3b_c2_at <- function(inp_v1) {
 #' fit_predict(train, target) for the anchor plus every feature: an unpenalized
 #' logit with the anchor as offset, centred and scaled on the training rows,
 #' with constant and aliased columns dropped. A missing value predicts at the
-#' training mean.
-vvf_a3b_joint_fit <- function(features) {
+#' training mean. If `log` (an environment) is given, each call adds to its
+#' counts: fits, fits_converged, train_rows_dropped, target_cells_imputed.
+vvf_a3b_joint_fit <- function(features, log = NULL) {
   function(train, target) {
     X <- as.matrix(train[, ..features])
     ok <- stats::complete.cases(X)
@@ -69,21 +75,39 @@ vvf_a3b_joint_fit <- function(features) {
     fit <- stats::glm.fit(cbind(1, Z[, cols, drop = FALSE]), train$y[ok], offset = train$lp_anchor[ok],
                           family = stats::binomial())
     Zt <- sweep(sweep(as.matrix(target[, ..features])[, keep, drop = FALSE], 2, m[keep]), 2, s[keep], "/")[, cols, drop = FALSE]
+    imputed <- sum(!is.finite(Zt))
     Zt[!is.finite(Zt)] <- 0
+    if (!is.null(log)) {
+      add <- function(k, v) assign(k, (if (exists(k, envir = log, inherits = FALSE)) get(k, envir = log) else 0L) + as.integer(v), envir = log)
+      add("fits", 1L)
+      add("fits_converged", isTRUE(fit$converged))
+      add("train_rows_dropped", sum(!ok))
+      add("target_cells_imputed", imputed)
+    }
     stats::plogis(target$lp_anchor + drop(cbind(1, Zt) %*% fit$coefficients))
   }
 }
 
 #' The learning curve (2 to 8 training seasons) and the fit gap of the joint
-#' model, each with the anchor's log loss on the same games
+#' model, each with the anchor's log loss on the same games and each row's fit
+#' diagnostics (fits, fits_converged, train_rows_dropped, target_cells_imputed)
 vvf_a3b_bias_variance <- function(full, features = VVF_V2_FEATURES, eval_seasons = VVF_V2_TUNE, n_train = VVF_A3B_N_TRAIN) {
   d <- full[is.finite(lp_anchor)]
-  fp <- vvf_a3b_joint_fit(features)
   ev <- d[season %in% eval_seasons & !is.na(y)]
-  lc <- vvf_learning_curve(fp, d, eval_seasons, n_train)
+  diag <- function(log) data.table(fits = log$fits, fits_converged = log$fits_converged,
+                                   train_rows_dropped = log$train_rows_dropped, target_cells_imputed = log$target_cells_imputed)
+  lc <- rbindlist(lapply(n_train, function(n) {
+    log <- new.env()
+    cbind(vvf_learning_curve(vvf_a3b_joint_fit(features, log), d, eval_seasons, n), diag(log))
+  }))
   lc[, logloss_anchor := mean(bt_logloss_vec(ev$p_anchor, ev$y))]
-  fg <- vvf_fit_gap(d, fp, eval_seasons)
+  fg <- rbindlist(lapply(eval_seasons, function(s) {
+    log <- new.env()
+    cbind(vvf_fit_gap(d, vvf_a3b_joint_fit(features, log), s), diag(log))
+  }))
   fg <- merge(fg, ev[, .(logloss_anchor = mean(bt_logloss_vec(p_anchor, y))), by = season], by = "season")
+  setcolorder(lc, c("n_train_seasons", "n", "logloss", "brier", "logloss_anchor"))
+  setcolorder(fg, c("season", "logloss_in", "logloss_wf", "gap", "logloss_anchor"))
   list(learning_curve = lc[], fit_gap = fg[])
 }
 
@@ -108,7 +132,9 @@ vvf_a3b_results <- function(tab, out_dir) {
     c(list(target = "total vs closing total_line"), vvf_bias_variance(x$total_line, x$total))))
   teams <- rbind(vvf_team_effects(x), vvf_team_effects(x, family = "spread", response = "ats_resid"))
   la <- rbind(vvf_loss_anova(x, "p_e1", "p_c0", by = "season"), vvf_loss_anova(x, "p_e1", "p_c0", by = "part"))
-  curve <- vvf_validation_curve(VVF_A3B_C2_GRID, vvf_a3b_c2_at(tab$inp_v1), y, seasons = VVF_V2_TUNE)
+  la[, q_bh := stats::p.adjust(p, method = "BH")]   # BH over the four ANOVA tests (review I-5)
+  curve <- vvf_validation_curve(VVF_A3B_C2_GRID, vvf_a3b_c2_at(tab$inp_v1), y, seasons = VVF_V2_TUNE,
+                                eval_seasons = VVF_A3B_CONFIRM)
   bvt <- vvf_a3b_bias_variance(tab$full)
   rnd <- function(t) t[, lapply(.SD, function(v) if (is.numeric(v)) signif(v, 6) else v)]
   tabs <- list(s3, murphy, calib, bv, teams, la, curve, bvt$learning_curve, bvt$fit_gap)
@@ -144,7 +170,7 @@ if (sys.nframe() == 0L) {
   for (f in c("common.R", "candidates/market.R", "candidates/elo.R", "candidates/epa_glm.R", "blends.R",
               "calibrators.R", "metrics.R", "controls.R")) sys.source(file.path("backtest", f), envir = e)
   for (f in c("common.R", "features.R", "registry.R", "provenance.R", "s1_screen.R", "s3_skill.R", "s4_controls.R",
-              "s5_curves.R", "s5_scores.R", "s5_anova.R", "reproduce_v2.R")) sys.source(file.path("backtest", "vvf", f), envir = e)
+              "s5_curves.R", "s5_scores.R", "s5_anova.R", "reproduce_v2.R", "input_schema.R")) sys.source(file.path("backtest", "vvf", f), envir = e)
   t0 <- Sys.time()
   tab <- vvf_a3b_table()
   sha <- vvf_a3b_results(tab, out_dir)
@@ -164,7 +190,8 @@ if (sys.nframe() == 0L) {
     anchor_null = null_detail(ctl$anchor_null),
     permuted_x = null_detail(ctl$permuted_x),
     anchor_copy = sprintf("skill %s", format(ctl$anchor_copy$skill)),
-    reproducibility = sprintf("result_sha256 %s and %s", substr(ctl$reproducibility$sha[1], 1, 16), substr(ctl$reproducibility$sha[2], 1, 16)))
+    reproducibility = sprintf("results_sha256 of the %d result files: %s and %s", length(VVF_A3B_RESULT_FILES),
+                              substr(ctl$reproducibility$sha[1], 1, 16), substr(ctl$reproducibility$sha[2], 1, 16)))
   rep$table[, `:=`(gates_amended = control %in% VVF_S4_GATING_AMENDED, detail = detail[control])]
   vvf_write_csv(rep$table, file.path(out_dir, "s4_controls.csv"))
   files <- c(VVF_A3B_RESULT_FILES, "s4_controls.csv")

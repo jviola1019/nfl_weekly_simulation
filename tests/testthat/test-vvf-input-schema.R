@@ -54,3 +54,38 @@ test_that("the ERD names every table and relation in the schema", {
   expect_true(any(grepl("^  games \\|\\|--o\\{ team_games : ", erd)))       # two team rows per game
   expect_true(all(grepl("^[ -~]*$", erd)))
 })
+
+test_that("a missing key or reference counts as a violation, never as a blank (review M-1)", {
+  withr::local_dir(PROJECT_ROOT)
+  base <- vvf_test_inputs()
+  expect_false(anyNA(vi$vvf_check_inputs(base)$violations))
+  na_key <- data.table::copy(base)
+  na_key$team_games[1, game_id := NA_character_]
+  r <- vi$vvf_check_inputs(na_key)
+  expect_equal(r[table == "team_games" & check == "key complete", violations], 1L)
+  na_ref <- data.table::copy(base)
+  na_ref$game_context[1, stadium_id := NA_character_]
+  r <- vi$vvf_check_inputs(na_ref)
+  expect_equal(r[table == "game_context" & check == "reference complete" & grepl("^stadium_id", detail), violations], 1L)
+})
+
+test_that("vvf_assert_inputs passes the committed inputs and stops on any violation (review I-1)", {
+  withr::local_dir(PROJECT_ROOT)
+  base <- vvf_test_inputs()
+  expect_equal(sum(vi$vvf_assert_inputs(base)$violations), 0L)
+  dup <- data.table::copy(base)
+  dup$venues <- rbind(dup$venues, dup$venues[1])
+  expect_error(vi$vvf_assert_inputs(dup), "input check failed: venues key unique")
+})
+
+test_that("a run checks its tables cut at its own season, so a later game is never an orphan", {
+  withr::local_dir(PROJECT_ROOT)
+  v1 <- vi$vvf_load_v1_inputs(max_season = 2022L)
+  v2 <- vi$vvf_load_inputs()
+  uncut <- vi$vvf_check_inputs(vi$vvf_schema_tables(v1, v2))
+  expect_gt(uncut[table == "team_games" & check == "reference resolves", violations], 0L)   # 2023-24 rows, games cut at 2022
+  cut <- vi$vvf_schema_tables(v1, v2, max_season = 2022L)
+  expect_lte(max(cut$game_context$season), 2022L)
+  expect_lte(max(as.integer(substr(cut$team_games$game_id, 1, 4))), 2022L)
+  expect_equal(sum(vi$vvf_assert_inputs(cut)$violations), 0L)
+})

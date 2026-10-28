@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-10-28T06:14:32Z",
+  "generated_utc": "2026-10-28T18:58:47Z",
   "purpose": "VVF port fidelity: v2's close-anchored screen (PR #205) rerun on the ported inputs",
   "tune_seasons": [2018, 2019, 2020, 2021, 2022],
   "max_season_loaded": 2022,
@@ -39,5 +39,5 @@
     "car": "3.1.3"
   },
   "result_files": ["s1_features.csv", "s1_joint.csv", "s2_vif.csv", "s2_stability.csv"],
-  "result_sha256": "8d276fc5fdfd4985ba1323506aa8a52353ffc27556b21a06d0aae6056badbeb5"
+  "result_sha256": "997f4984787013511ed16f15aa49437181ec2247aff24f74a05e0bab4a1f0e91"
 }

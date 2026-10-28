@@ -202,6 +202,8 @@ vvf_control_repro <- function(run) {
 
 #' One row per control; a failed gating control voids the run
 vvf_s4_report <- function(controls, gating = names(controls)) {
+  unknown <- setdiff(gating, names(controls))
+  if (length(unknown)) stop(sprintf("vvf_s4_report: unknown gating control: %s", paste(unknown, collapse = ", ")), call. = FALSE)
   tab <- data.table(control = names(controls), passed = vapply(controls, function(x) isTRUE(x$passed), logical(1)))
   tab[, gates := control %in% gating]
   ok <- all(tab[gates == TRUE, passed])

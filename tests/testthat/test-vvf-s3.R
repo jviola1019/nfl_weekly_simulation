@@ -93,3 +93,14 @@ test_that("S3 refuses a close anchor at an opener decision and a table with a se
   s[1, season := 2025L]
   expect_error(v3$vvf_s3_screen(s, "rest_diff", "open_isa", 2020L, B = 99L), "sealed-season guard")
 })
+
+test_that("the skill table records each feature's skipped and constant weeks, never only an attribute (review I-3)", {
+  withr::local_dir(PROJECT_ROOT)
+  d <- sim_s3(seasons = 2018:2020, beta = 0, seed = 10)
+  d[, `:=`(rest_diff = z, turf = 0L)]
+  s <- v3$vvf_s3_screen(d, c("rest_diff", "turf"), "open_isa", 2018:2020, B = 500L)
+  expect_identical(s$skill$weeks_skipped_min_train, c(s$meta$rest_diff$weeks_skipped_min_train, s$meta$turf$weeks_skipped_min_train))
+  expect_gt(s$skill[feature == "rest_diff", weeks_skipped_min_train], 0L)
+  expect_identical(s$skill$weeks_constant, c(s$meta$rest_diff$weeks_constant, s$meta$turf$weeks_constant))
+  expect_gt(s$skill[feature == "turf", weeks_constant], 0L)
+})

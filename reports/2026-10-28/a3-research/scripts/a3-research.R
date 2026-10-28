@@ -73,6 +73,32 @@ if (section == "s4") {
 }
 
 # ---------------------------------------------------------------------------------------------
+# S3's power, extended on review (2026-10-28): 20 replicates at each planted effect on rest_diff
+# (standardized on Tune), y redrawn as Bernoulli(plogis(lp_anchor + beta z)); exact binomial CIs
+if (section == "power") {
+  B <- 1000L; R <- as.integer(if (length(args) > 3) args[4] else 20)
+  z <- (full$rest_diff - mean(tn$rest_diff, na.rm = TRUE)) / stats::sd(tn$rest_diff, na.rm = TRUE)
+  z[!is.finite(z)] <- 0
+  model_y <- function(d, seed, beta) {
+    x <- copy(d)
+    seeded(seed, function() {
+      i <- which(!is.na(x$y) & is.finite(x$lp_anchor))
+      set(x, i, "y", as.integer(stats::rbinom(length(i), 1, stats::plogis(x$lp_anchor[i] + beta * z[i]))))
+    })
+    setattr(x, "vvf_anchor", attr(d, "vvf_anchor")); x
+  }
+  pw <- rbindlist(lapply(c(0.05, 0.10, 0.20, 0.30, 0.40), function(beta) rbindlist(lapply(seq_len(R), function(r) {
+    sk <- vvf_s3_screen(model_y(full, 20261200L + 1000L * round(beta * 100) + r, beta), "rest_diff", "close", tune, B = B)$skill
+    data.table(beta = beta, rep = r, skill = sk$skill, lo = sk$skill_lo, dm_p = sk$dm_p_better,
+               claim = grepl("^incremental", sk$verdict))
+  }))))
+  fwrite(pw, file.path(out, "s4_power.csv"))
+  s <- pw[, .(detected = sum(claim), reps = .N, mean_skill = mean(skill)), by = beta]
+  s[, c("ci_lo", "ci_hi") := as.list(stats::binom.test(detected, reps)$conf.int), by = beta]
+  print(s)
+}
+
+# ---------------------------------------------------------------------------------------------
 if (section == "joint") {
   R <- as.integer(if (length(args) > 3) args[4] else 1000); Bw <- 999L
   d <- tn[!is.na(y) & is.finite(lp_anchor)]

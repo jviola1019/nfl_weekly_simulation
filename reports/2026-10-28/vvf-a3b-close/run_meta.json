@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-10-28T06:45:46Z",
+  "generated_utc": "2026-10-28T19:11:55Z",
   "purpose": "A3b close-anchored run: S3, S4 controls and S5 diagnostics on v2's Tune window",
   "seasons_scored": [2018, 2019, 2020, 2021, 2022],
   "anchor": "close",
@@ -9,7 +9,7 @@
   "s4_amendment": "proposed 2026-10-28, unsigned",
   "placebo_rate": 0.055,
   "r_version": "R version 4.5.1 (2025-06-13 ucrt)",
-  "runtime_sec": 625.309357881546,
+  "runtime_sec": 1077.24318695068,
   "result_files": ["s3_skill.csv", "s5_murphy.csv", "s5_calibration.csv", "s5_bias_variance.csv", "s5_team_effects.csv", "s5_loss_anova.csv", "s5_curve_c2_halflife.csv", "s5_learning_curve.csv", "s5_fit_gap.csv", "s4_controls.csv"],
-  "result_sha256": "7a43ce265582ea4bb433aee0d957a95ccc75e366709f5ec1556a9325345302fd"
+  "result_sha256": "49875172bfc5b5696a1bd3a88cd9338941176c516b6f14e2b57f26dcd9d07c3b"
 }

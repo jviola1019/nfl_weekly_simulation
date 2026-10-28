@@ -3,7 +3,7 @@
 # (PR #205, reports/2026-09-30/validation-sprint §1). The fixtures are v2's
 # committed screen CSVs, copied byte for byte from 759dd1c.
 
-vr2 <- vvf_test_env(c("common.R", "features.R", "registry.R", "provenance.R", "s1_screen.R", "s2_structure.R",
+vr2 <- vvf_test_env(c("common.R", "features.R", "registry.R", "provenance.R", "s1_screen.R", "s2_structure.R", "input_schema.R",
                       "reproduce_v2.R"), v1_files = VVF_TEST_V1_FILES)
 fixture_dir <- file.path(PROJECT_ROOT, "tests", "testthat", "fixtures", "vvf")
 repro <- withr::with_dir(PROJECT_ROOT, {
@@ -67,4 +67,12 @@ test_that("the committed reproduction outputs match their result hash and a fres
   m <- merge(f, committed, by = c("family", "feature"), suffixes = c("", "_c"))
   expect_equal(nrow(m), 108L)
   for (cc in c("estimate", "p_test", "p_robust", "q_bh")) expect_equal(m[[cc]], m[[paste0(cc, "_c")]], tolerance = 1e-5)
+})
+
+test_that("the reproduction's table build stops on a planted input violation before S1 (review I-1)", {
+  withr::local_dir(PROJECT_ROOT)
+  v1 <- vr2$vvf_load_v1_inputs(max_season = vr2$VVF_V2_MAX_SEASON)
+  v2 <- vr2$vvf_load_inputs()
+  v2$injuries_team <- rbind(v2$injuries_team, v2$injuries_team[1])
+  expect_error(vr2$vvf_v2_table(inp_v1 = v1, inp = v2), "input check failed: injuries_team key unique")
 })

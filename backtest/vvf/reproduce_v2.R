@@ -17,11 +17,12 @@ VVF_V2_FAMILY_MAP <- c(ml = "outcome", ats = "spread", tot = "total")
 VVF_V2_FIXTURES <- file.path("tests", "testthat", "fixtures", "vvf")
 VVF_V2_RESULT_FILES <- c("s1_features.csv", "s1_joint.csv", "s2_vif.csv", "s2_stability.csv")
 
-#' The close-anchored Tune table: v1 base predictions and features through 2022
-vvf_v2_table <- function() {
-  inp_v1 <- vvf_load_v1_inputs(max_season = VVF_V2_MAX_SEASON)
+#' The close-anchored Tune table: v1 base predictions and features through 2022.
+#' The input checks (input_schema.R) run first and stop on any violation.
+vvf_v2_table <- function(inp_v1 = vvf_load_v1_inputs(max_season = VVF_V2_MAX_SEASON), inp = vvf_load_inputs()) {
+  vvf_assert_inputs(vvf_schema_tables(inp_v1, inp, VVF_V2_MAX_SEASON))
   base <- vvf_base_predictions(inp_v1, VVF_V2_MAX_SEASON)
-  d <- vvf_anchor_features(vvf_build_features(base, vvf_load_inputs(), VVF_V2_MAX_SEASON), "close")
+  d <- vvf_anchor_features(vvf_build_features(base, inp, VVF_V2_MAX_SEASON), "close")
   x <- d[season %in% VVF_V2_TUNE]
   setattr(x, "vvf_anchor", "close")
   list(d = x, base = base)
@@ -89,7 +90,7 @@ if (sys.nframe() == 0L) {
   e <- environment()
   for (f in c("common.R", "candidates/market.R", "candidates/elo.R", "candidates/epa_glm.R", "blends.R",
               "calibrators.R", "metrics.R", "controls.R")) sys.source(file.path("backtest", f), envir = e)
-  for (f in c("common.R", "features.R", "registry.R", "provenance.R", "s1_screen.R", "s2_structure.R")) {
+  for (f in c("common.R", "features.R", "registry.R", "provenance.R", "s1_screen.R", "s2_structure.R", "input_schema.R")) {
     sys.source(file.path("backtest", "vvf", f), envir = e)
   }
   tab <- vvf_v2_table()

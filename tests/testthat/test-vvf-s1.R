@@ -193,7 +193,7 @@ test_that("the joint wild score bootstrap holds its size where the cluster-robus
   r <- t(vapply(seq_len(200), function(s) {
     d <- sim_joint(40, 10, 15, week_sd = 0.2, seed = 7000 + s)
     j <- vs$vvf_s1_joint(d, "outcome", paste0("f", 1:15), "y", B = 199L, seed = s)
-    c(wild = j$p_joint_wild, wald = j$p_wald_robust)
+    c(wild = j$p_joint_wild, wald = stats::pchisq(j$wald_robust, j$k, lower.tail = FALSE))   # the old chi2(k) p, computed here
   }, numeric(2)))
   expect_gte(mean(r[, "wild"] < 0.05), 0.01)
   expect_lte(mean(r[, "wild"] < 0.05), 0.10)
@@ -203,13 +203,13 @@ test_that("the joint wild score bootstrap holds its size where the cluster-robus
 test_that("a joint test with more coefficients than clusters returns a wild p and no Wald", {
   d <- sim_joint(10, 30, 15, seed = 71)
   j <- vs$vvf_s1_joint(d, "outcome", paste0("f", 1:15), "y", B = 199L)
-  expect_true(is.na(j$wald_robust)); expect_true(is.na(j$p_wald_robust))
+  expect_true(is.na(j$wald_robust)); expect_false("p_wald_robust" %in% names(j))
   expect_true(is.finite(j$p_joint_wild))
   expect_equal(j$p_joint, max(j$p_test, j$p_joint_wild))
   expect_match(j$joint_wild_method, "diagonal")
   d[, r := stats::rnorm(.N)]
   jl <- vs$vvf_s1_joint(d, "spread", paste0("f", 1:15), "r", B = 199L)
-  expect_true(is.na(jl$p_wald_robust)); expect_true(is.finite(jl$p_joint_wild))
+  expect_true(is.na(jl$wald_robust)); expect_true(is.finite(jl$p_joint_wild))
 })
 
 test_that("a planted joint effect is detected", {
@@ -217,4 +217,12 @@ test_that("a planted joint effect is detected", {
   j <- vs$vvf_s1_joint(d, "outcome", paste0("f", 1:15), "y", B = 999L)
   expect_lt(j$p_joint, 0.01)
   expect_lt(j$p_joint_wild, 0.01)
+})
+
+test_that("the joint table drops the old chi-square Wald p and keeps the statistic as v2's known answer (Task 14)", {
+  d <- sim_joint(40, 20, 6, seed = 73)
+  j <- vs$vvf_s1_joint(d, "outcome", paste0("f", 1:6), "y", B = 199L)
+  expect_false("p_wald_robust" %in% names(j))
+  expect_true(all(c("wald_robust", "k", "p_test", "p_joint_wild", "p_joint") %in% names(j)))
+  expect_true(is.finite(j$wald_robust))
 })

@@ -102,7 +102,7 @@ test_that("the disclosures carry the review's open questions: the joint Wald, th
 test_that("the research settles the joint test, the cluster unit, late changes and the S4 null, citing committed evidence", {
   withr::local_dir(PROJECT_ROOT)
   ds <- vr$vvf_disclosures()
-  ids <- c("JOINT-WALD", "CLUSTER-UNIT", "A3-FLEX", "S4-NULL")
+  ids <- c("JOINT-WALD", "CLUSTER-UNIT", "A3-FLEX", "S4-NULL", "A3-MOVE-LOOK")
   expect_true(all(ids %in% ds$id))
   for (i in ids) {
     src <- ds[id == i, source]
@@ -112,4 +112,5 @@ test_that("the research settles the joint test, the cluster unit, late changes a
   }
   expect_match(ds[id == "JOINT-WALD", text], "p_joint")
   expect_match(ds[id == "S4-NULL", text], "consistency resampling")
+  expect_match(ds[id == "A3-MOVE-LOOK", text], "no model, feature or threshold")
 })

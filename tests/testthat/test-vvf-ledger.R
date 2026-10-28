@@ -75,5 +75,14 @@ test_that("the ledger draws the input ERD and shows its checks against the data"
   expect_identical(txt[(i + 1L):(i + length(erd))], erd)
   expect_identical(txt[i + length(erd) + 1L], "```")
   expect_true(any(txt == "| reference resolves | injuries_qb | game_id, team -> injuries_team.game_id, team | 0 |"))
-  expect_false(any(grepl("^\\| (key unique|reference resolves|team in game|rows per game|no sealed season) \\|.* \\| [1-9][0-9]* \\|$", txt)))
+  expect_false(any(grepl(paste0("^\\| (key complete|key unique|reference complete|reference resolves|team in game|rows per game|",
+                                "no sealed season) \\|.* \\| ([1-9][0-9]*|-) \\|$"), txt)))
+})
+
+test_that("an S3 run without an S4 status is refused, never read as void (review M-18)", {
+  dir <- withr::local_tempdir()
+  data.table::fwrite(data.table::data.table(feature = "rest_diff", skill = 0, skill_lo = -0.001, skill_hi = 0.001,
+                                            verdict = "no incremental skill"), file.path(dir, "s3_skill.csv"))
+  jsonlite::write_json(list(result_sha256 = "x"), file.path(dir, "run_meta.json"), auto_unbox = TRUE)
+  expect_error(vl$vvf_ledger_results(data.table::data.table(dir = dir)), "has no s4_status")
 })

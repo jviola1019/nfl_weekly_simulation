@@ -7,11 +7,13 @@
 # the same games, so the noise that matters is the bootstrap SE of each
 # setting's loss minus the best setting's loss (week blocks, bt_boot_counts).
 # The chosen setting is the simplest whose mean log loss is within one such SE
-# of the best. On the planted half-life test this recovers the truth; the SE of
-# the best setting's own mean, the textbook form, chose one step smoother in all
-# five dry-run seeds.
+# of the best. This is a variant of the textbook rule, which uses the SE of the
+# best setting's own mean (Hastie, Tibshirani and Friedman, 2009, section 7.10);
+# on the planted half-life test it recovers the truth.
 # Validation is walk-forward only, never random k-fold, and nested: tune inside
-# the tuning seasons, evaluate later seasons (vvf_assert_nested).
+# the tuning seasons, evaluate later seasons. vvf_validation_curve() guards its
+# tuning seasons and, given evaluation seasons, requires them nested
+# (vvf_assert_nested).
 # =============================================================================
 
 VVF_S5_B <- 10000L
@@ -20,8 +22,12 @@ VVF_S5_SEED <- 20261024L
 #' Validation curve over `grid`, ordered from the simplest setting (most
 #' smoothing or shrinkage) to the most complex. predict_fun(value, seasons)
 #' returns data.table(game_id, p): walk-forward predictions for `seasons`.
-#' `d` holds the evaluated games (game_id, wk, y).
-vvf_validation_curve <- function(grid, predict_fun, d, seasons, B = VVF_S5_B, seed = VVF_S5_SEED) {
+#' `d` holds the evaluated games (game_id, wk, y). `seasons` are the tuning
+#' seasons, never sealed; `eval_seasons`, where the chosen setting will be
+#' evaluated, must all follow them.
+vvf_validation_curve <- function(grid, predict_fun, d, seasons, eval_seasons = NULL, B = VVF_S5_B, seed = VVF_S5_SEED) {
+  vvf_guard_seasons(seasons, VVF_MAX_INPUT_SEASON, "validation curve seasons")
+  if (!is.null(eval_seasons)) vvf_assert_nested(seasons, eval_seasons)
   x <- d[!is.na(y), .(game_id, wk, y)]
   P <- vapply(grid, function(v) {
     p <- predict_fun(v, seasons)

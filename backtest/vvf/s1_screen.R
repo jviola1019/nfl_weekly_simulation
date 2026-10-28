@@ -159,9 +159,12 @@ vvf_wild_p_joint_score <- function(X, resid, w, cluster, B = VVF_WILD_B, seed = 
 }
 
 #' Joint test of a feature set: the model-based test (p_test), the wild score
-#' bootstrap (p_joint_wild) and p_joint = max of the two, the p of record; the
-#' week-clustered robust Wald is kept for v2 fidelity, NA when its covariance
-#' is singular. Aliased (perfectly collinear) features are reported and not counted.
+#' bootstrap (p_joint_wild) and p_joint = max of the two, the p of record. The
+#' week-clustered robust Wald statistic is kept as v2's known answer, NA when
+#' its covariance is singular; its chi-square(k) p-value is not reported: it
+#' rejects 0.30-0.69 of the time at a nominal 5% under a true null with k 29-34
+#' over 107 clusters (reports/2026-10-28/a3-research, section 2).
+#' Aliased (perfectly collinear) features are reported and not counted.
 vvf_s1_joint <- function(dat, family, features, response, B = VVF_WILD_B, seed = VVF_WILD_SEED) {
   keep <- features[vapply(features, function(f) length(unique(dat[[f]][is.finite(dat[[f]])])) > 1L, logical(1))]
   x <- dat[stats::complete.cases(dat[, ..keep])]
@@ -200,7 +203,7 @@ vvf_s1_joint <- function(dat, family, features, response, B = VVF_WILD_B, seed =
   p_wild <- vvf_wild_p_joint_score(as.matrix(x[, ..est]), resid, wt, x$wk, B, seed)
   data.table(family = family, n = nrow(x), n_clusters = uniqueN(x$wk), k_entered = length(keep), k = length(est),
              test = test, stat = stat, df = df, p_test = p,
-             wald_robust = w, p_wald_robust = stats::pchisq(w, df = length(est), lower.tail = FALSE),
+             wald_robust = w,
              p_joint_wild = p_wild, joint_wild_method = sprintf("wild score bootstrap, diagonal, Rademacher, B = %d", B),
              p_joint = max(p, p_wild),
              features = paste(est, collapse = " "), aliased = paste(aliased, collapse = " "))
