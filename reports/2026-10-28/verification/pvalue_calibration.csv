@@ -1,0 +1,7 @@
+test,draws,rate_05,rate_01,band_lo,band_hi,ks_p
+"S3 DM p, sign-flipped real loss differences",2000,0.049,0.005,0.038,0.063,0.110818893911432
+"S1 LR p, 500 placebo features on the Tune design",500,0.042,0.01,0.026,0.076,0.363768811887149
+"S1 robust p (cluster sandwich z), 500 placebos",500,0.048,0.006,0.026,0.076,0.214598479258711
+"S1 p = max(LR, robust), 500 placebos (conservative)",500,0.04,0.006,0.026,0.076,0.0598838398449709
+"joint wild p, 300 null draws (k = 29, G = 107)",300,0.0433333333333333,0.00666666666666667,0.02,0.0833333333333333,0.558902230055023
+"joint LR p, the same draws (k = 29)",300,0.0433333333333333,0.00666666666666667,0.02,0.0833333333333333,0.668464467618041

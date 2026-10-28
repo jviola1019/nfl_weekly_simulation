@@ -1,0 +1,10 @@
+item,research,replication,tolerance
+"CR Wald size, situational, 107 clusters (car::linearHypothesis, hand sandwich)",0.399,0.396666666666667,0.0848172741839774
+"season-week ICC (nlme REML),  e_out",0,3.70111213771205e-09,0.01
+"season-week ICC (nlme REML),  ats_resid",0,1.3402364542212e-08,0.01
+"season-week ICC (nlme REML),  tot_resid",0,7.64568491041124e-09,0.01
+late-change rows matched to their game and bullet,77,77,0
+"S4 anchor null claims, seed +101",0,0,0
+"S4 permuted_x null claims, seed +101",0,0,0
+"S4 anchor null claims, seed +102",0,0,0
+"S4 permuted_x null claims, seed +102",0,0,0
