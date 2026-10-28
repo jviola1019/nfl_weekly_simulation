@@ -37,3 +37,24 @@ test_that("withdrawn claims do not appear in README, CLAUDE.md or GETTING_STARTE
   }
   expect_equal(hits, character())
 })
+
+# Backticked repo paths in the main docs (a token with a slash whose first segment is a tracked
+# source directory); placeholders such as <date> or test-*.R are not paths and are skipped
+DOC_PATH_ROOTS <- c("R", "backtest", "contracts", "docs", "reports", "scripts", "sports", "tests", "web", ".github")
+doc_missing_paths <- function(txt, root = PROJECT_ROOT, roots = DOC_PATH_ROOTS) {
+  m <- unlist(regmatches(txt, gregexpr("`[A-Za-z0-9_.-]+/[A-Za-z0-9_./-]*`", txt)))
+  p <- unique(gsub("`", "", m, fixed = TRUE))
+  p <- p[sub("/.*", "", p) %in% roots]
+  p[!file.exists(file.path(root, sub("/$", "", p)))]
+}
+
+test_that("every repo path the main docs cite exists", {
+  expect_identical(doc_missing_paths(c("see `backtest/vvf/no_such_file.R` and `R/utils.R`", "`bundles/` `reports/<date>/x.md`")),
+                   "backtest/vvf/no_such_file.R")
+  missing <- character()
+  for (doc in c("CLAUDE.md", "README.md", "GETTING_STARTED.md")) {
+    gone <- doc_missing_paths(readLines(file.path(PROJECT_ROOT, doc), warn = FALSE, encoding = "UTF-8"))
+    if (length(gone)) missing <- c(missing, paste0(doc, ": ", gone))
+  }
+  expect_identical(missing, character())
+})
