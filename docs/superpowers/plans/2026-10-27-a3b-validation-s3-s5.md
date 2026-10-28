@@ -262,6 +262,60 @@ p <- (1 + sum(rowSums(sweep((W %*% Sg)^2, 2, dg, "/")) >= t0)) / (B + 1)
 - [ ] **Commands verified:** run each command the new docs cite: the run usage line and `write_variable_ledger.R`.
 - [ ] **Gates** (fresh HOME): the docs-truth and hygiene tests, the full suite and integrity, each exiting 0. Commit: `docs(vvf): A3b in the changelog, the file inventory and the handoff, with a docs path check`.
 
+## Revision 2 (2026-10-28): the final review's fix pass, and the owner's verification request
+
+The whole-branch review (Haiku, 1c48ed4..cd0d658) found no Critical issue, 9 Important ones and 18 Minor ones. The owner then asked to:
+- verify the model p-values, Brier and log loss, the research and the blends;
+- research the old p-values and choose whether to keep or drop them.
+
+Each code fix below gets a test that fails first; each doc fix comes from a committed file.
+
+### Task 13: the fix pass
+
+| # | Finding | Fix | Test |
+|---|---|---|---|
+| I-1 | The input checks never run before a stage | `vvf_a3b_table()` calls `vvf_check_inputs()` and stops on any violation | a planted duplicate venue stops the table build |
+| I-2 | Nothing calls the nested guard | `vvf_validation_curve(..., eval_seasons = NULL)` guards its own seasons and calls `vvf_assert_nested()`. The run passes Confirm 2023–2024. | a sealed tuning season, or evaluation seasons that overlap the tuning seasons, stop the curve |
+| I-3 | S3's fallbacks are silent | `vvf_s3_screen()`'s skill table gains `weeks_skipped_min_train` and `weeks_constant` | the counts appear in the table |
+| I-4 | The joint fit records no diagnostics | the learning curve and fit gap gain `converged`, `rows_dropped` and `cells_imputed` | the columns hold their counts on a planted NA |
+| I-5 | One ANOVA p is reported out of four | the run adds BH `q_bh` over the four loss-ANOVA tests, and the docs report every test | `q_bh` equals `p.adjust` |
+| I-6 | The power claim is overstated | power at β 0.05–0.40, 20 replicates each, with exact binomial CIs | – (research) |
+| I-7 | "The only test defined on one season" is false | the LR is defined, and has size 0.116 | – (docs) |
+| I-8 | The S5 scope is undisclosed | C2's curve runs the amendment's half-lives plus v1's 16 (∞, 16, 8, 6, 4, 3, 2, 1). The engine's settings are disclosed as waiting for G2. | the curve has 8 rows, simplest first |
+| I-9 | The movement look uses 2023–24 | kept as a secondary look and disclosed (A3-MOVE-LOOK). The late-change recommendation rests on the Tune tests. | the disclosure test |
+| M-1, M-2, M-18 (re-graded: silent failures) | NA counts, an unknown gating name, a missing S4 status | the checks count NA keys; `vvf_s4_report()` stops on an unknown gating name; the ledger stops on a missing status | one each |
+| M-3, M-4, M-9, M-11 to M-15 (re-graded: doc errors) | labels, header, comment and research wording | corrected from the committed files | – |
+
+The other minors go to the ledger as deferred.
+
+### Task 14: the old p-values, researched and decided
+
+- **Research:** the literature (Cameron and Miller, 2015; Imbens and Kolesár, 2016; Pustejovsky and Tipton, 2018; MacKinnon, Nielsen and Webb, 2023), and the size study.
+- **The decision:** `vvf_s1_joint()` drops `p_wald_robust` and keeps `wald_robust` and its `k` as v2's known answer.
+  - S1's per-feature `p_robust` stays: k = 1, and its size is verified by the placebo control.
+  - The headline's `outcome_joint_p_v2_df` stays as the known answer for v2's df error.
+- **Tests:** `p_wald_robust` is absent; the size test computes the Wald's p itself.
+- **Then:** regenerate the v2 reproduction and the ledger.
+
+### Task 15: the re-run and the independent verification
+
+- **The re-run:** `run_a3b_close.R` with Tasks 13–14. Every result file the fixes do not touch must be byte-identical to `7a43ce26`'s.
+- **The verification:** `reports/2026-10-28/verification/verify.R` recomputes the following with code paths independent of `backtest/vvf`. It writes `checks.csv` (check, n, max difference, tolerance, passed) and `VALIDATION_REPORT.md`:
+  - S1: the per-feature LR and F p-values (anova), the robust p (lmtest and sandwich), and BH;
+  - the joint test: the LR (anova), the Wald (car::linearHypothesis), and the wild p (a loop implementation);
+  - S3: the walk-forward predictions, the Brier skill, and the DM-HLN p (exactly the paired one-sided t-test at h = 1), with BH;
+  - S5: the loss ANOVA F, the team-effect LR, and the calibration fits;
+  - every model's Brier and log loss, the Murphy identity, and E1 = the logit mean of C1 and C2;
+  - the calibration of the p-values under the null: DM, S1 placebos and the wild joint p, with a KS test and rejection rates;
+  - the research, replicated: the joint size with car's Wald, the ICC with nlme, the late-change matching, and the S4 nulls on new seeds;
+  - the blends: #205's 30 and #209's 9 candidates, with Brier, log loss, skill, DM p and BH recomputed from their committed per-game files. Their market probability is checked against VVF's close.
+- **Gates:** after Task 16, the full suite and integrity (fresh HOME), plus every check in `checks.csv` passing.
+
+### Task 16: docs
+
+- CHANGELOG, RESEARCH (§1 power, §2 the decision, §4 and §5 scope), HANDOFF, and the ledger regenerated.
+- The deferred minors go in the PR.
+
 ## Owner checkpoints
 
 1. **Amend spec §4's shuffled-labels control.** The proposal: the anchor null, with the permuted-x null reported, each judged by S3's claim rule. The evidence is `reports/2026-10-28/a3-research/RESEARCH.md`. Until the owner signs, the run's `s4_status` of record is `void` under the spec's control.
