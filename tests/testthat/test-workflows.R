@@ -81,10 +81,18 @@ test_that("weekly-sim ingests only after the bundle is built and only when the D
   expect_false(grepl("secrets.", paste(unlist(jobs$simulate), collapse = " "), fixed = TRUE))
 })
 
-test_that("odds-capture's game-day runs start about 3 h 45 min before kickoff (owner A0, 2026-10-19)", {
+test_that("odds-capture's game-day runs start 4.5 h or more before kickoff, off the hour (GitHub started them up to 3 h 57 min late)", {
   crons <- vapply(wf_on(wf_read("odds-capture.yml"))$schedule, `[[`, "", "cron")
-  expect_identical(crons, c("0 18 * * 2", "0 18 * * 4", "30 20 * * 4", "0 18 * * 6",
-                            "15 13 * * 0", "20 16 * * 0", "35 20 * * 0", "30 20 * * 1"))
+  expect_identical(crons, c("17 17 * * 2", "13 17 * * 4", "41 19 * * 4", "17 17 * * 6", "37 8 * * 0",
+                            "47 11 * * 0", "29 15 * * 0", "47 19 * * 0", "41 19 * * 1"))
+  # no run at the top of the hour, when GitHub's scheduler is most loaded
+  expect_false(any(sub(" .*$", "", crons) == "0"))
+  # each game-day run against the EDT kickoff it serves (EST adds an hour): at least 4 h 30 min of slack
+  serves <- data.frame(cron = c("41 19 * * 4", "37 8 * * 0", "47 11 * * 0", "29 15 * * 0", "47 19 * * 0", "41 19 * * 1"),
+                       kickoff_min = c(24 * 60 + 15, 13 * 60 + 30, 17 * 60, 20 * 60 + 5, 24 * 60 + 20, 24 * 60 + 15))
+  expect_true(all(serves$cron %in% crons))
+  start_min <- vapply(strsplit(serves$cron, " "), function(p) as.numeric(p[2]) * 60 + as.numeric(p[1]), numeric(1))
+  expect_true(all(serves$kickoff_min - start_min >= 4 * 60 + 30), info = paste(serves$cron, serves$kickoff_min - start_min))
 })
 
 test_that("capture-archive keeps the raw captures past their 90-day artifact life, and only it can write", {
