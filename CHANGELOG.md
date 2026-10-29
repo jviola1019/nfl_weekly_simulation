@@ -4,6 +4,18 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### The odds capture starts 4 h 30 min or more before every kickoff (owner, 2026-10-29: "Do this")
+
+- **The problem.** A0's 3 h 45 min buffer was not enough. From 2026-10-19 to 10-27, GitHub started every scheduled run 2 h 12 min to 3 h 57 min late (`reports/2026-10-28/feasibility/capture_delays.csv`, #227).
+  - On 2026-10-25 the 13:15Z early-games run started at 17:03Z, after the 13:30Z international game and the seven 17:00Z games had kicked off. Those games' last capture was Saturday's.
+  - Monday Night Football's run on 2026-10-26 started 14 minutes before kickoff.
+- **Now** (`odds-capture.yml`):
+  - every game-day run starts 4 h 30 min or more before the kickoff it serves (TNF, the Sunday windows, SNF, MNF);
+  - every run is at a minute off the hour, since GitHub's scheduler is busiest at the top of the hour;
+  - a Sunday-morning run (08:37Z) covers the 9:30 a.m. ET international games.
+  - `tests/testthat/test-workflows.R` pins the schedule and checks each game-day run's slack.
+- **Exact pre-kickoff prices** come from Kalshi's hourly candles (`kalshi_candles.R`, #227), so the captures are now needed for ESPN's data and the decision-time snapshots.
+
 ### A0: the odds capture sees every game before the close, on time, and is kept (owner, 2026-10-19)
 
 - **Every upcoming game's line is captured mid-week.**

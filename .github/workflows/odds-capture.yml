@@ -5,22 +5,28 @@ name: Odds capture
 # ESPN game odds are captured for every game within CAPTURE_ESPN_GAME_HORIZON_HOURS
 # (9 days), so the Tue/Thu/Sat runs record each upcoming game's line; prop lists use
 # the 36 h CAPTURE_HORIZON_HOURS.
-# GitHub starts scheduled runs late (about 2.2 h on 2026-10-18), so the game-day runs
-# are set about 3 h 45 min before kickoff (owner A0, 2026-10-19). Exact pre-kickoff
-# prices come from Kalshi hourly candles and ESPN's labelled close. Times are UTC;
-# after the switch to EST (early November) kickoffs move 1 h later.
+# GitHub starts scheduled runs late: 2 h 12 min to 3 h 57 min from 2026-10-19 to
+# 10-27, and on 2026-10-25 the 13:15Z run started at 17:03Z, after 8 kickoffs
+# (reports/2026-10-28/feasibility/capture_delays.csv, #227). So each game-day run is
+# set 4 h 30 min or more before the kickoff it serves, at a minute off the hour
+# (GitHub's scheduler is busiest at the top of the hour), with a Sunday-morning run for
+# the 9:30 a.m. ET international games. Exact pre-kickoff prices come from Kalshi's
+# hourly candles (reports/2026-10-28/feasibility/kalshi_candles.R) and ESPN's labelled
+# close. Times are UTC; after the switch to EST (early November) kickoffs move 1 h
+# later, which only adds slack.
 # The artifacts expire after 90 days: capture-archive.yml packs them into releases.
 
 on:
   schedule:
-    - cron: "0 18 * * 2"    # Tue: early-week lines for every upcoming game
-    - cron: "0 18 * * 4"    # Thu: midweek snapshot
-    - cron: "30 20 * * 4"   # Thu: TNF (00:15Z Fri)
-    - cron: "0 18 * * 6"    # Sat: pre-Sunday snapshot
-    - cron: "15 13 * * 0"   # Sun: early games (17:00Z)
-    - cron: "20 16 * * 0"   # Sun: late games (20:05Z / 20:25Z)
-    - cron: "35 20 * * 0"   # Sun: SNF (00:20Z Mon)
-    - cron: "30 20 * * 1"   # Mon: MNF (00:15Z Tue)
+    - cron: "17 17 * * 2"   # Tue: early-week lines for every upcoming game
+    - cron: "13 17 * * 4"   # Thu: midweek snapshot
+    - cron: "41 19 * * 4"   # Thu: TNF (00:15Z Fri), 4 h 34 min ahead
+    - cron: "17 17 * * 6"   # Sat: pre-Sunday snapshot
+    - cron: "37 8 * * 0"    # Sun: international games (13:30Z), 4 h 53 min ahead
+    - cron: "47 11 * * 0"   # Sun: early games (17:00Z), 5 h 13 min ahead
+    - cron: "29 15 * * 0"   # Sun: late games (20:05Z / 20:25Z), 4 h 36 min ahead
+    - cron: "47 19 * * 0"   # Sun: SNF (00:20Z Mon), 4 h 33 min ahead
+    - cron: "41 19 * * 1"   # Mon: MNF (00:15Z Tue), 4 h 34 min ahead
   workflow_dispatch:
 
 permissions:
