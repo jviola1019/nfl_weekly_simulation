@@ -1,0 +1,32 @@
+       id                                                                                      test pairs games mean_price_gap mean_payout_gap estimate         p protection_triggered sure_profits best_sure_profit
+   <char>                                                                                    <char> <num> <num>          <num>           <num>    <num>     <num>                <num>        <num>            <num>
+1:     A3                   protection premium priced right on average (payout gap - price gap = 0) 12200    43      -0.003472         0.00626 0.009732 8.850e-08                  321            5         0.005275
+2:     A4                                first TD <= team first TD <= anytime TD at the bid and ask    NA   107             NA              NA       NA        NA                   NA            0        -0.001386
+3:     A5 the binary ladder's implied mean predicts the stat beyond the scalar's (slope on the gap)   842    75             NA              NA 0.809300 9.932e-05                   NA           NA               NA
+4:     A6                                  a higher rung's bid above a lower rung's ask, after fees    NA    NA             NA              NA       NA        NA                   NA            3         0.013360
+   wrong_side_quotes all_pairs taker_pnl_per_pair taker_lo taker_hi maker_pnl_per_pair maker_lo maker_hi yes_buyer_saving players wrong_order_mids mean_gap mse_scalar mse_ladder  bets     roi    roi_lo  roi_hi bets_w67
+               <num>     <num>              <num>    <num>    <num>              <num>    <num>    <num>            <num>   <num>            <num>    <num>      <num>      <num> <num>   <num>     <num>   <num>    <num>
+1:              7007     12970            -0.0432 -0.04682 -0.03937           0.004961 0.002177 0.008059         0.009732      NA               NA       NA         NA         NA    NA      NA        NA      NA       NA
+2:                NA        NA                 NA       NA       NA                 NA       NA       NA               NA    2244              206       NA         NA         NA    NA      NA        NA      NA       NA
+3:                NA        NA                 NA       NA       NA                 NA       NA       NA               NA      NA               NA   -1.731      601.5      584.6   120 0.01659 -0.005751 0.03523       20
+4:                NA        NA                 NA       NA       NA                 NA       NA       NA               NA      NA               NA       NA         NA         NA    NA      NA        NA      NA       NA
+   roi_w67 ladders rung_pairs
+     <num>   <num>      <num>
+1:      NA      NA         NA
+2:      NA      NA         NA
+3: 0.01947      NA         NA
+4:      NA    9652     204900
+              series pairs mean_e_scalar mean_e_ladder mean_realized mse_scalar mse_ladder
+              <char> <num>         <num>         <num>         <num>      <num>      <num>
+1:    KXNFLLADDERREC   305         4.145         4.092         4.049      4.599      4.508
+2: KXNFLLADDERRECYDS   357        47.860        45.350        45.280    969.900    927.100
+3: KXNFLLADDERRSHYDS   180        52.150        49.130        50.010    882.300    888.300
+           base pairs games mean_price_gap mean_payout_gap protected_cheaper taker_pnl maker_pnl
+         <char> <num> <num>          <num>           <num>             <num>     <num>     <num>
+1: KXNFLPASSTDS   341    42     -0.0002199        0.000000            0.4780  -0.05113 -0.004787
+2: KXNFLPASSYDS   731    42     -0.0041790        0.000000            0.6088  -0.05064 -0.001222
+3:     KXNFLREC  3266    42     -0.0025080        0.008086            0.5579  -0.04509  0.005741
+4:  KXNFLRECYDS  3969    42     -0.0048610        0.007118            0.6253  -0.04610  0.006817
+5:  KXNFLRSHYDS  2061    42     -0.0022080        0.007943            0.5463  -0.04787  0.004761
+6:      KXNFLTD  1837    43     -0.0039250        0.002923            0.5275  -0.02392  0.004062
+A3 pairs where the protection triggered (protected fair price, unprotected settled): 321; A6 sure profits by series: KXNFLTEAMTOTAL 2

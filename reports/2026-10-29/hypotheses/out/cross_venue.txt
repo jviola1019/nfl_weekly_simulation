@@ -1,0 +1,4 @@
+       id                                                                    test games locks min_combined_cost median_combined_cost brier_dk brier_kalshi estimate      p mean_abs_gap hours_before
+   <char>                                                                  <char> <num> <num>             <num>                <num>    <num>        <num>    <num>  <num>        <num>        <num>
+1:     F1     one side on DraftKings, the other on Kalshi: combined cost below $1    28     0              1.02                1.036       NA           NA       NA     NA           NA           NA
+2:     F2 DraftKings' no-vig price against Kalshi's mid (paired Brier, two-sided)    28    NA                NA                   NA   0.2449       0.2472 -0.00239 0.2849     0.007363        18.75

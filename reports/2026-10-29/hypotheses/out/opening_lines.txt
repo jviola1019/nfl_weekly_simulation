@@ -1,0 +1,9 @@
+       id                                                           test games clusters estimate      lo    hi      p  moved sd_move_bps clv_bps clv_lo clv_hi r2_train   q_bh
+   <char>                                                         <char> <num>    <num>    <num>   <num> <num>  <num>  <num>       <num>   <num>  <num>  <num>    <num>  <num>
+1:     H1            the open-to-close move overreacts (coefficient < 0)   463       31 0.537300 -0.3478 1.422 0.8877 0.9287       495.3      NA     NA     NA       NA 0.8877
+2:     H2 the move is predictable from the opener (fit 2023, score 2024)   271       18 0.004918      NA    NA 0.4679     NA          NA   40.24 -26.11  104.4 0.005854 0.8877
+                Estimate Std. Error     t value  Pr(>|t|)
+(Intercept)  0.018471422 0.03717309  0.49690302 0.6198380
+lg(p_open)  -0.015662465 0.02996759 -0.52264679 0.6018354
+home_fav    -0.004456188 0.04889271 -0.09114217 0.9274767
+fav_dist     0.102542790 0.14869561  0.68961546 0.4912864

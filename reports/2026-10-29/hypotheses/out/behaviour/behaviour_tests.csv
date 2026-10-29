@@ -1,0 +1,9 @@
+id,hypothesis,side,n,games,flagged,estimate,lo,hi,p_greater,p_less,p_two,p,q_bh
+B1,teammates of an absent prop player are underpriced,greater,51839,107,41327,0.11881,-0.060775,0.2984,0.096235,0.90376,0.19247,0.096235,0.38494
+B1r,teammates of a player absent after playing the previous game are underpriced (ruling),greater,51839,107,36298,-0.125,-0.28212,0.032123,0.94114,0.058858,0.11772,0.94114,0.94114
+B1s,position-group teammates of a player who played last game and took no snap now are underpriced (ruling),greater,51839,107,16798,0.11996,-0.037338,0.27725,0.066757,0.93324,0.13351,0.066757,0.38494
+B2,Questionable players who played are underpriced,greater,51839,107,1736,-0.25495,-0.61069,0.1008,0.92085,0.079152,0.1583,0.92085,0.94114
+B3,the last day's move overreacts,less,67123,107,-103.17,0.016457,-0.31119,0.3441,0.46043,0.53957,0.92086,0.53957,0.86331
+B4,a recalibration of the 24 h price beats it out of sample (two-sided),two,20621,28,,-0.00091257,,,,,,0.35753,0.792
+B5,"thin markets are miscalibrated (slope differs, thin vs thick)",two,58959,107,,0.024244,-0.032156,0.080644,0.198,0.802,0.396,0.396,0.792
+B6,contracts under 20 cents: YES overpriced (seen),less,43718,107,43718,0.032612,-0.065032,0.13026,0.25465,0.74535,0.5093,0.74535,0.94114

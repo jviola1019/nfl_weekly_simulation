@@ -1,0 +1,2 @@
+snapshot_utc,week,games,first_kick_utc,venues,quotes,two_sided_markets,arbitrages,best_arb_cents,closest_two_sided_cost,median_best_two_sided_cost,middles,middles_ev_positive,best_middle_ev_cents,sides_vs_pinnacle,sides_ev_positive_vs_pinnacle,sides_ev_over_2pct_vs_pinnacle,sides_vs_pinnacle_main,sides_ev_positive_vs_pinnacle_main,sides_ev_positive_proportional_only,tie_rate_2015_2024,action_network_books
+20261029T204852Z,8,14,2026-10-30T00:15Z,8,5512,1658,0,,1,1.043,2817,0,-0.9801,1318,13,2,588,7,22,0.003431,BetMGM|BetRivers|Consensus|DraftKings|FanDuel|Open

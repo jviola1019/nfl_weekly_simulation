@@ -1,0 +1,6 @@
+group,id,group,n,games,flagged,estimate,lo,hi,p_greater,p_less,p_two,hypothesis,side
+game prop,B3,game prop,21518,107,-174.43,-0.19779,-0.84714,0.45156,0.7264,0.2736,0.5472,,
+player scalar,B3,player scalar,2112,74,51.554,-0.46371,-0.76674,-0.16069,0.99841,0.0015948,0.0031896,,
+player,B3,player,38518,107,26.719,0.072285,-0.24137,0.38594,0.32434,0.67566,0.64867,,
+game line,B3,game line,4975,107,-7.017,0.5703,-1.9263,3.0669,0.32578,0.67422,0.65156,,
+,B5,,58959,107,29479,0.031292,-0.056413,0.119,0.24045,0.75955,0.48089,thin markets: calibration-in-the-large differs,two
