@@ -1,0 +1,15 @@
+kickoff_utc equals the ET game day and time (DST-aware)    n  6732  violations    0  largest gap 0 min
+games without a game time sit at 1 p.m. ET on their game day n   259  violations    0  seasons 1999; 1 p.m. EDT is 17:00Z, EST 18:00Z
+Warning messages:
+1: In .check_tzones(e1, e2) : 'tzone' attributes are inconsistent
+2: In .check_tzones(e1, e2) : 'tzone' attributes are inconsistent
+games near the DST changes keep their UTC offset           n   698  violations    0  March and early November games (EDT -4h, EST -5h)
+each game falls between August 1 and March 1 of its season n  6991  violations    0  January and February games belong to the season before
+no season after 2024 (the 2025 holdout is sealed)          n  6991  violations    0  seasons 1999-2024
+weeks are ordered: week w + 1 starts after week w ends     n   550  violations    0  a rescheduled game (2020 COVID, 2022 BUF-CIN) can end its week late
+games played after the next week's cutoff (walk-forward excludes them from that week's training) n  6991  violations    0  S3 and S5 train on kickoff < cutoff, so a late game is never seen early; listed, not an error
+rest days equal the days since the team's previous game    n 13153  violations   34  within a season; a season's first game has no previous game
+every venue's time zone is a valid Olson name              n    48  violations    0  FRA00 Europe/Berlin; GER00 Europe/Berlin; LON00 Europe/London; LON01 Europe/London; LON02 Europe/London
+late-change rows carry the schedule's kickoff              n    77  violations    0  flex-games.csv against games.csv
+
+10 checks; 1 with violations
