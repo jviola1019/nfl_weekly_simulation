@@ -1,0 +1,52 @@
+        base calibration brier_change brier_q logloss_change logloss_q
+      <char>      <char>        <num>   <num>          <num>     <num>
+ 1:      GBM    isotonic     1.08e-03   0.930       8.96e-03     0.412
+ 2:      GBM       platt     1.10e-04   0.930       4.53e-04     0.588
+ 3:      GBM      spline     6.54e-05   0.930       2.61e-04     0.699
+ 4:   GLMNET    isotonic     5.50e-04   0.930       5.60e-03     0.519
+ 5:   GLMNET       platt     1.43e-04   0.930       5.21e-04     0.519
+ 6:   GLMNET      spline     7.36e-05   0.930       2.39e-04     0.699
+ 7:  LR_C1C2    isotonic     6.12e-04   0.930       6.73e-03     0.519
+ 8:  LR_C1C2       platt     1.13e-04   0.930       4.64e-04     0.572
+ 9:  LR_C1C2      spline     5.39e-05   0.930       2.40e-04     0.699
+10:    LR_E1    isotonic     1.10e-03   0.930       7.92e-03     0.412
+11:    LR_E1       platt     1.23e-04   0.930       4.85e-04     0.572
+12:    LR_E1      spline     5.90e-05   0.930       2.26e-04     0.699
+13:      XGB    isotonic    -2.12e-04   0.930       3.08e-03     0.699
+14:      XGB       platt     1.24e-05   0.957       2.29e-04     0.699
+15:      XGB      spline    -5.67e-05   0.930      -4.27e-05     0.941
+16: XGB_FREE    isotonic     8.75e-04   0.930       5.10e-03     0.519
+17: XGB_FREE       platt     1.47e-04   0.930       2.57e-04     0.699
+18: XGB_FREE      spline     1.49e-04   0.930       2.60e-04     0.699
+19:       e1    isotonic     1.60e-03   0.930       8.17e-03     0.412
+20:       e1       platt     9.09e-05   0.930       7.40e-04     0.699
+21:       e1      spline     9.27e-05   0.930       7.55e-04     0.699
+        base calibration brier_change brier_q logloss_change logloss_q
+    skill_vs_close slope_raw slope_cal
+             <num>     <num>     <num>
+ 1:      -5.92e-03     1.020     0.870
+ 2:      -1.34e-03     1.020     1.020
+ 3:      -1.13e-03     1.020     1.020
+ 4:      -2.29e-03     0.986     0.870
+ 5:      -3.61e-04     0.986     0.996
+ 6:      -3.41e-05     0.986     0.998
+ 7:      -5.49e-03     0.994     0.872
+ 8:      -3.13e-03     0.994     0.999
+ 9:      -2.85e-03     0.994     1.000
+10:      -5.31e-03     0.983     0.871
+11:      -6.82e-04     0.983     0.996
+12:      -3.80e-04     0.983     0.998
+13:       1.76e-04     1.030     0.911
+14:      -8.89e-04     1.030     1.020
+15:      -5.62e-04     1.030     1.020
+16:      -1.28e-02     1.090     0.930
+17:      -9.34e-03     1.090     1.050
+18:      -9.35e-03     1.090     1.050
+19:      -4.75e-02     1.100     0.791
+20:      -4.03e-02     1.100     0.920
+21:      -4.03e-02     1.100     0.919
+    skill_vs_close slope_raw slope_cal
+
+calibrated variants: 21; Brier better than their own model: 2 (BH q < 0.05: 0); worse with q < 0.05: 0
+log loss better: 1 (q < 0.05: 0); worse with q < 0.05: 0; any calibrated variant with positive Brier skill against the close: 1
+raw slopes 0.98-1.10; calibrated 0.79-1.05

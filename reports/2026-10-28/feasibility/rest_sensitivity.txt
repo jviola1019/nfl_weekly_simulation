@@ -1,0 +1,20 @@
+Tune games whose rest differs: 25 of 1372
+Key: <family, feature>
+     family    feature p_nflverse p_played q_nflverse q_played verdict_changed
+     <char>     <char>      <num>    <num>      <num>    <num>          <lgcl>
+ 1: outcome   away_bye     0.6090   0.6850      0.826    0.863           FALSE
+ 2: outcome away_short     0.8260   0.8480      0.826    0.863           FALSE
+ 3: outcome   home_bye     0.5690   0.5050      0.826    0.863           FALSE
+ 4: outcome home_short     0.4520   0.5560      0.826    0.863           FALSE
+ 5: outcome  rest_diff     0.8090   0.8630      0.826    0.863           FALSE
+ 6:  spread   away_bye     0.0618   0.0755      0.309    0.378           FALSE
+ 7:  spread away_short     0.6840   0.5770      0.973    0.962           FALSE
+ 8:  spread   home_bye     0.9820   0.9840      0.982    0.984           FALSE
+ 9:  spread home_short     0.7780   0.8180      0.973    0.984           FALSE
+10:  spread  rest_diff     0.2960   0.3090      0.739    0.773           FALSE
+11:   total   away_bye     0.7240   0.7370      0.851    0.921           FALSE
+12:   total away_short     0.7450   0.3920      0.851    0.917           FALSE
+13:   total   home_bye     0.8510   0.9520      0.851    0.952           FALSE
+14:   total home_short     0.6050   0.4290      0.851    0.917           FALSE
+15:   total  rest_diff     0.6790   0.5500      0.851    0.917           FALSE
+verdicts changed: 0 of 15 (the q-values here are BH over these five features only)

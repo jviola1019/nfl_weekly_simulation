@@ -68,7 +68,8 @@ if (section == "s4") {
     sk <- vvf_s3_screen(d, "rest_diff", "close", tune, B = B)$skill
     data.table(beta = beta, rep = r, skill = sk$skill, lo = sk$skill_lo, claim = grepl("^incremental", sk$verdict))
   }))))
-  fwrite(pw, file.path(out, "s4_power.csv"))
+  # the first 5-replicate look, superseded by the power section; its own file, so running s4 after power cannot overwrite s4_power.csv
+  fwrite(pw, file.path(out, "s4_power_initial.csv"))
   print(pw[, .(detected = sum(claim), of = .N, mean_skill = signif(mean(skill), 3)), by = beta])
 }
 

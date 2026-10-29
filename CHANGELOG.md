@@ -4,6 +4,30 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Feasibility research (2026-10-28 to 29): can a model beat the market, with significance?
+
+- **The report:** `reports/2026-10-28/feasibility/FEASIBILITY.md`. Every number in it comes from a script in its folder.
+- **Games against the close:** no feasible sample can confirm an accuracy edge (`power.R`).
+  - On every game with a closing moneyline (4,997, 2006–2024), the smallest detectable Brier skill is 0.39%.
+  - The best blend's +0.068% would need 20,836 games.
+- **Games against the opener:** in 2023 the close beat the opener by 2.29% of its Brier (p 0.077; `opener_ceiling.csv`). Closing-line value is the test.
+- **Kalshi props.** All 191 series in the captures are inventoried, and the 74 single-game series are scored.
+  - **Outcomes:** Kalshi's own settlements (`kalshi_settled.R`). They agree with an nflverse rebuild on 10,506 of 10,506 contracts.
+  - **Prices:** the close at kickoff, from Kalshi's hourly candles (`kalshi_candles.R`).
+  - **The data:** 2026 weeks 1–7, 88,439 contracts and 107 games (`props_close.R`).
+  - **Close to calibrated.** Player props' slope is 0.958 (0.917–0.999), and none of the 67 series fitted alone departs after BH.
+  - The scalar ladders' pooled compression (1.12, Bonferroni 0.017) does not carry out of sample.
+  - **No recalibration edge.** Traded walk-forward after the spread and fee, a taker loses 15.7% (−30.1% to −1.7%).
+  - **No sure profits.** No exclusive set offers one at kickoff: 0 of 1,661 events.
+- **Corrected: the first version's favorite–longshot finding** (slope 1.15) was an artifact. Kalshi's `occurrence_datetime` is the kickoff plus 3 hours, so 74% of that probe's "pre-kickoff" quotes were mid-game (`props/props_cutoff_check.csv`).
+- **Dates:**
+  - **Schedule checks** (`dates_audit.R`): of ten, only nflverse's rest days differ, on 34 team-games. REST-FLEX is recorded on the five rest features (`backtest/vvf/registry.R`), and 0 of 15 S1 verdicts change.
+  - **Capture timing** (`capture_delays.R`): the capture workflow starts 2 h 12 min to 3 h 57 min late. On 2026-10-25, 8 games kicked off before their game-day capture ran.
+- **Calibrators:** none of #205's 21 calibrated variants improves significantly on its own model (`calibrators.R`).
+- **The A3 research reproduces from scratch:** 11 of 11 outputs are identical (`rerun_research.sh`).
+  - Fixed: `a3-research.R s4` no longer overwrites `s4_power.csv`. It writes `s4_power_initial.csv`.
+- **Literature re-checked:** one claim was corrected, the sports horizons in arXiv 2602.19520.
+
 ### A3b: incremental skill, the S4 controls and diagnostics (VVF S3–S5), with the owner's research of 2026-10-28
 
 - **S3, incremental skill** (`backtest/vvf/s3_skill.R`).

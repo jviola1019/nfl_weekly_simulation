@@ -1,0 +1,13 @@
+item,value
+settled contracts read,103015
+  in single-game series,102466
+"  with an outcome (binary, tie share or scalar payout)",100973
+"  settled at the pre-game fair price (no outcome, excluded)",1493
+  with an outcome and a two-sided close at kickoff,96356
+  of them with spread <= 0.10 (fitted),88439
+weeks,1 2 3 4 5 6 7
+games fitted,107
+player-games fitted,2900
+series fitted on their own,67
+series set aside: fewer than 10 events or non-events,KXNFLDSTTD (8 events); KXNFLEQBTTS (8 events); KXNFLESCALATORRSHYDS (9 events); KXNFLOT (9 events); KXNFLSFTY (1 events); KXNFLTIE (1 events)
+exclusive series,KXNFL1H KXNFL1HFT KXNFL1Q KXNFL2H KXNFL2Q KXNFL3Q KXNFL4Q KXNFLFIRSTTDTEAM KXNFLGAME KXNFLMOSTRSHYDS KXNFLRACE KXNFLWINMARGIN

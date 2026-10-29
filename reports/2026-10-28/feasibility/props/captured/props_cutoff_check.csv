@@ -1,0 +1,3 @@
+cutoff,in_game_quotes,contracts,player_games,games,mean_y,mean_mid,brier,slope,slope_lo,slope_hi,p_slope,citl,citl_lo,citl_hi,p_citl,median_spread,median_hours_before,slope_lo_pg,slope_hi_pg,median_abs_move_bps,sd_move_bps_player_game,events,events_occurrence_after_kickoff,games_affected,max_gap_minutes
+occurrence time only (the first version),6300,8564,639,28,0.30652,0.30601,0.097799,1.1569,1.0637,1.25,0.001839,0.0047306,-0.12418,0.13364,0.94054,0.01,1.3208,1.0727,1.241,450,1046.9,2569,2569,58,200
+the last capture before the scheduled kickoff,0,8849,633,28,0.28659,0.2949,0.13966,1.0075,0.91379,1.1012,0.87054,-0.059017,-0.21217,0.09414,0.43604,0.01,16.89,0.9331,1.0819,125,259.3,2569,2569,58,200

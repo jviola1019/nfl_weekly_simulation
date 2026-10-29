@@ -79,6 +79,13 @@ vvf_feature_rows <- function() {
   starter <- vvf_defect("A3-STARTER", "Uses the game's actual starting QB (C2's QB EPA features), unknown at the opener",
                         "PC-C2 rebuilds C2 on IS-A with the previous starter", "A4", "master plan 2026-10-19, Context")
   sched <- "backtest/data/games.csv (nflverse schedule) via vvf_build_features"
+  rest <- vvf_defect("REST-FLEX",
+                     paste("nflverse's home_rest and away_rest follow the original schedule for late-season games moved to Saturday",
+                           "(2019, 2021) and count the cancelled 2022 BUF-CIN game (6 days where BUF and CIN rested 15): 34",
+                           "team-games differ from the days actually rested, 25 games in Tune; rerun with played-date rest, S1",
+                           "changes 0 of 15 verdicts"),
+                     "Rebuild rest from each team's previous played game, point in time, with G1's features", "G1",
+                     "reports/2026-10-28/feasibility/dates_checks.csv; reports/2026-10-28/feasibility/rest_sensitivity.csv")
   rbindlist(list(
     f("d_c1", "model vs market", "logit(C1 Elo walk-forward) - lp_anchor; a team's rating moves only when it plays, so it uses results through the team's previous game",
       paste0(VVF_SRC_ANCHOR, "; vvf_base_predictions (bt_elo_run)"), "results_w-1", VVF_TEST_FEAT),
@@ -89,11 +96,11 @@ vvf_feature_rows <- function() {
     f("lp_anchor", "market shape", "logit of the no-vig anchor price (v2's lp_c0 when the anchor is the close)", VVF_SRC_ANCHOR, "anchor", VVF_TEST_FEAT),
     f("home_dog", "market shape", "1 if the anchor prices the home team below 0.5", VVF_SRC_ANCHOR, "anchor", VVF_TEST_FEAT),
     f("big_fav", "market shape", "1 if |p_anchor - 0.5| > 0.3", VVF_SRC_ANCHOR, "anchor", VVF_TEST_FEAT),
-    f("rest_diff", "schedule", "home rest days - away rest days", sched, "schedule"),
-    f("home_short", "schedule", "1 if the home team has 6 or fewer rest days", sched, "schedule"),
-    f("away_short", "schedule", "1 if the away team has 6 or fewer rest days", sched, "schedule"),
-    f("home_bye", "schedule", "1 if the home team has 13 or more rest days", sched, "schedule"),
-    f("away_bye", "schedule", "1 if the away team has 13 or more rest days", sched, "schedule"),
+    f("rest_diff", "schedule", "home rest days - away rest days", sched, "schedule", defects = list(rest)),
+    f("home_short", "schedule", "1 if the home team has 6 or fewer rest days", sched, "schedule", defects = list(rest)),
+    f("away_short", "schedule", "1 if the away team has 6 or fewer rest days", sched, "schedule", defects = list(rest)),
+    f("home_bye", "schedule", "1 if the home team has 13 or more rest days", sched, "schedule", defects = list(rest)),
+    f("away_bye", "schedule", "1 if the away team has 13 or more rest days", sched, "schedule", defects = list(rest)),
     f("thursday", "schedule", "1 for a Thursday game", "backtest/vvf/data/game_context.csv (weekday) via vvf_build_features", "schedule"),
     f("div", "schedule", "1 for a division game", sched, "schedule"),
     f("neutral_site", "schedule", "1 when the schedule's location is Neutral", sched, "schedule"),

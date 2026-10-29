@@ -1,0 +1,5 @@
+group,contracts,games,sd_bps,sd_logit,median_abs_bps,p90_abs_bps,share_moved,median_hours_between,units,sd_bps_unit,icc_within_game,picks_100bps,picks_100bps_8_candidates,picks_50bps,picks_50bps_8_candidates
+game line,1300,28,682.4,0.41781,200,950,0.92923,146.55,28,154.94,,366,596,1462,2382
+game prop,7193,28,1096.8,0.73016,200,1650,0.91005,114.56,28,121.45,,945,1539,3777,6153
+player,15919,28,724,0.56774,200,800,0.92097,68.067,696,542.15,0.022438,412,671,1646,2682
+player scalar,686,28,759.03,0.64536,84.75,300,0.9344,68.071,144,513.62,0.72427,453,737,1809,2947
