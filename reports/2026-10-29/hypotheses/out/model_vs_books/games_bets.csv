@@ -1,0 +1,10 @@
+model,book,bets,wins,units,roi,mean_claimed_ev
+raw,consensus close,8,2,-0.3,-0.0375,0.3704
+raw,DraftKings,8,2,-0.35,-0.04375,0.3584
+raw,Kalshi close,8,2,-0.6065,-0.07581,0.3531
+blend,consensus close,11,4,-0.1272,-0.01156,0.08808
+blend,DraftKings,11,4,-0.1772,-0.01611,0.08314
+blend,Kalshi close,11,5,1.045,0.09498,0.08576
+final,consensus close,10,3,-1.927,-0.1927,0.05662
+final,DraftKings,9,3,-1.027,-0.1141,0.05232
+final,Kalshi close,9,2,-5.808,-0.6453,0.06828

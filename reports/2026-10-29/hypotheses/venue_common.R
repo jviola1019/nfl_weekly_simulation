@@ -67,6 +67,23 @@ fetch <- function(name, url) {
   txt <- rawToChar(r$body); Encoding(txt) <- "UTF-8"; txt
 }
 js <- function(txt) if (is.null(txt)) NULL else jsonlite::parse_json(txt)
+# Smarkets: contracts and quotes for many markets, `size` markets a request with a pause between requests (Smarkets
+# answered 429 to 40-market requests at one a second, 2026-10-29); offline, every chunk saved for the stamp is re-read.
+# Files are <prefix>contracts_NN and <prefix>quotes_NN.
+sm_details <- function(prefix, ids, size = 100, pause = 2) {
+  chunks <- split(ids, ceiling(seq_along(ids) / size))
+  n <- if (offline) length(Sys.glob(file.path(raw, sprintf("%scontracts_*__%s.json.gz", prefix, stamp)))) else length(chunks)
+  ct <- list(); qt <- list()
+  for (k in seq_len(n)) {
+    path_ids <- if (offline) "" else paste(chunks[[k]], collapse = ",")
+    a <- js(fetch(sprintf("%scontracts_%02d", prefix, k), sprintf("https://api.smarkets.com/v3/markets/%s/contracts/", path_ids)))
+    if (!offline) Sys.sleep(pause)
+    b <- js(fetch(sprintf("%squotes_%02d", prefix, k), sprintf("https://api.smarkets.com/v3/markets/%s/quotes/", path_ids)))
+    if (!offline) Sys.sleep(pause)
+    ct <- c(ct, a$contracts %||% list()); qt <- c(qt, b %||% list())
+  }
+  list(contracts = ct, quotes = qt)
+}
 # each venue's parser runs on its own, so one venue's schema drift is logged without losing the others (rows: the caller's)
 parse_venue <- function(name, f) {
   n0 <- length(rows)

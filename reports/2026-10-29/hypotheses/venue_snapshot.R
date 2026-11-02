@@ -150,7 +150,7 @@ if (!is.null(pm)) parse_venue("polymarket", function() for (e in pm) {
 })
 
 # Smarkets: the events in the week's kickoff window (paged), their moneyline (draw no bet), handicap and over/under
-# markets, then those markets' contracts and quotes, 40 markets a request
+# markets, then those markets' contracts and quotes (sm_details, venue_common.R)
 iso <- function(t) format(t, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
 sm_get <- function(name, path) js(fetch(name, paste0("https://api.smarkets.com/v3", path)))
 sm_ev <- list(); path <- sprintf("/events/?type=american_football_match&state=upcoming&start_datetime_min=%s&start_datetime_max=%s&limit=50",
@@ -168,14 +168,7 @@ for (e in sm_ev) {   # "Away at Home"; college events match no NFL team
 if (length(sm_games)) {
   smk <- sm_get("smarkets_markets", sprintf("/events/%s/markets/", paste(names(sm_games), collapse = ",")))
   keep <- Filter(function(x) (x$market_type$name %||% "") %in% c("WINNER_DNB", "HANDICAP", "OVER_UNDER") && identical(x$state, "open"), smk$markets %||% list())
-  ids <- vapply(keep, function(x) as.character(x$id), "")
-  sm_ct <- list(); sm_qt <- list()
-  for (k in seq_along(split(ids, ceiling(seq_along(ids) / 40)))) {
-    chunk <- split(ids, ceiling(seq_along(ids) / 40))[[k]]
-    a <- sm_get(sprintf("smarkets_contracts_%02d", k), sprintf("/markets/%s/contracts/", paste(chunk, collapse = ",")))
-    b <- sm_get(sprintf("smarkets_quotes_%02d", k), sprintf("/markets/%s/quotes/", paste(chunk, collapse = ",")))
-    sm_ct <- c(sm_ct, a$contracts %||% list()); sm_qt <- c(sm_qt, b %||% list())
-  }
+  det <- sm_details("smarkets_", vapply(keep, function(x) as.character(x$id), "")); sm_ct <- det$contracts; sm_qt <- det$quotes
   if (length(sm_ct)) parse_venue("smarkets", function() {
     mt <- rbindlist(lapply(keep, function(x) data.table(mid = as.character(x$id), event_id = as.character(x$event_id), type = x$market_type$name, mname = x$name %||% "")))
     top <- function(q, side) { v <- vapply(q[[side]] %||% list(), function(l) num(l$price), 1); if (!length(v)) NA_real_ else if (side == "offers") min(v) else max(v) }

@@ -1,0 +1,7 @@
+comparison,mean_abs_gap_pp
+simulator raw vs consensus at decision,7.957
+blend vs consensus at decision,2.018
+final (shown) vs consensus at decision,0.6054
+DraftKings vs consensus close,0.684
+Kalshi close vs consensus close,0.6716
+consensus at decision vs consensus close,2.939

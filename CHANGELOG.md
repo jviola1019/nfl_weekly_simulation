@@ -4,6 +4,27 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Value hypotheses, every venue, and our model against the books (2026-10-29 to 2026-11-02)
+
+- **The report:** `reports/2026-10-29/hypotheses/HYPOTHESES.md`. Families A–H were fixed in `PLAN.md` (`d9367fd`) before 2026 week 8; K and M were added at the owner's later requests.
+- **Families A–H:** only A3 (protected contracts underpriced, q 4×10⁻⁷) and A5 (the binary ladder beats the scalar's mean, q 2.5×10⁻⁴) survive BH, and neither pays a taker.
+  - **Family C (makers and takers):** makers net +0.75¢ a contract before kickoff (−2.86 to +4.36, q 0.68) over 2.58 million Kalshi trades. Only a 4.6¢ edge was detectable.
+  - **Kalshi's liquidity incentives** paid on 19 NFL markets, none of them game lines or props.
+- **Track K1, every venue at once** (`VENUE_SURVEY.md`, `venue_probe.R`, `venue_snapshot.R`, `props_snapshot.R`, `venue_persistence.R`):
+  - **Venues:** 11 are readable without a key; 8 refused.
+  - **Game lines in week 8:** no arbitrage, line shopping worth 0.7–1.4¢ per $1, and 20 of 2,172 sides beat Pinnacle's no-vig price.
+  - **Props:** 5 small arbitrages, all through Smarkets (best +1.39¢).
+  - **Confidentiality:** raw sportsbook responses and per-venue prices stay private; only aggregates are committed.
+- **Family M, our model against the books** (`model_vs_books.R`), on the week-7 run made before kickoff:
+  - **Moneyline:** the shown C3 probability is worse than every closing price (Brier 0.2488 against Kalshi's 0.2268 and the consensus close's 0.2310), and its bets lose.
+  - **Spreads and totals:** on Kalshi's ladders the model adds no information.
+  - **Props:** the props module has never priced a market (none of its 570 props has a market line or odds). Its projected means show a weak, insignificant signal against Kalshi's close (0.26, one-sided p 0.066).
+- **Defect found, not fixed:** `load_player_projections()` averages three seasons equally although its comment says "recency weighting", and it has no week filter (`sports/nfl/props/data_sources.R:62-158`).
+- **Recommendation (§14):**
+  - stop trying to make the game model beat the close;
+  - give props one pre-registered season-long test;
+  - pursue timing (CLV) and price-relative betting against a sharp reference.
+
 ### Feasibility research (2026-10-28 to 29): can a model beat the market, with significance?
 
 - **The report:** `reports/2026-10-28/feasibility/FEASIBILITY.md`. Every number in it comes from a script in its folder.

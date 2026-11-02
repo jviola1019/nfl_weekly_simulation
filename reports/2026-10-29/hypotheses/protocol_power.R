@@ -15,6 +15,7 @@ gw <- unique(merge(st[, .(series, event_ticker)], props_event_games(st$event_tic
 per_week <- function(s) gw[series %in% s & week %in% 6:7, uniqueN(game_id) / 2]
 rd <- function(...) fread(file.path(o, ...))
 cs <- rd("consistency", "consistency_tests.csv"); bh <- rd("behaviour", "behaviour_tests.csv"); kn <- rd("key", "key_numbers.csv")
+mv <- rd("model_vs_books", "props_tests.csv"); gp <- rd("projection", "projection_tests.csv")[id == "G1"]
 cl <- fread(file.path("reports", "2026-10-28", "feasibility", "props", "close", "close_calibration.csv"))
 ca <- rd("classic", "classic_anomalies.csv")[period == "after the study (test)"]
 z <- stats::qnorm(0.95)
@@ -30,6 +31,12 @@ rows <- list(
   data.table(protocol = "props", id = "P-B1s", hypothesis = "position-group teammates of an absent player are underpriced",
              effect = bh[id == "B1s", estimate], se = (bh[id == "B1s", hi] - bh[id == "B1s", lo]) / (2 * stats::qt(0.975, bh[id == "B1s", games] - 1)),
              games_seen = bh[id == "B1s", games], games_new = 11 * per_week(names(LADDERS))),
+  # the props module's information test can start only at week 9 (no week-8 run exists), so 10 weeks
+  data.table(protocol = "props", id = "P-MOD", hypothesis = "the props module's projected means add information to Kalshi's close (weeks 9-18)",
+             effect = mv[forecast == "props module", coef], se = (mv[forecast == "props module", hi] - mv[forecast == "props module", lo]) / (2 * stats::qt(0.975, mv[forecast == "props module", games] - 1)),
+             games_seen = mv[forecast == "props module", games], games_new = 10 * per_week(names(LADDERS))),
+  data.table(protocol = "props", id = "P-G", hypothesis = "Family G's public projection adds information to Kalshi's close",
+             effect = gp$estimate, se = (gp$hi - gp$lo) / (2 * stats::qt(0.975, gp$games - 1)), games_seen = gp$games, games_new = 11 * per_week(names(LADDERS))),
   data.table(protocol = "props", id = "P-INT", hypothesis = "the interception ladder is compressed (slope > 1)",
              effect = cl[series == "KXNFLPASSINT", slope] - 1, se = (cl[series == "KXNFLPASSINT", slope_hi] - cl[series == "KXNFLPASSINT", slope_lo]) / (2 * stats::qt(0.975, cl[series == "KXNFLPASSINT", games] - 1)),
              games_seen = cl[series == "KXNFLPASSINT", games], games_new = 11 * per_week("KXNFLPASSINT")),

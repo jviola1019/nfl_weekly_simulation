@@ -1,0 +1,13 @@
+model,book,brier_diff,lo,hi
+raw,cons_dec,-0.006104,-0.07528,0.05267
+raw,cons_close,0.01267,-0.05833,0.07842
+raw,dk,0.0125,-0.05978,0.07546
+raw,kalshi_close,0.01687,-0.0536,0.081
+blend,cons_dec,-0.002884,-0.02149,0.01281
+blend,cons_close,0.01589,-0.01249,0.0485
+blend,dk,0.01572,-0.01195,0.04754
+blend,kalshi_close,0.02009,-0.00818,0.05388
+final,cons_dec,-0.00102,-0.006676,0.003677
+final,cons_close,0.01775,-0.002773,0.04482
+final,dk,0.01758,-0.002362,0.0412
+final,kalshi_close,0.02196,0.0003564,0.05103

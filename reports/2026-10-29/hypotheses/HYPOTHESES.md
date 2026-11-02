@@ -3,7 +3,8 @@
 2026-10-29. The owner asked for more information on different hypotheses of gaining value or profit.
 
 How to read this report:
-- **Every hypothesis was fixed before testing** in `PLAN.md`, committed as `d9367fd` at 19:26Z on 2026-10-29, before 2026 week 8 kicked off.
+- **Every hypothesis in families A–H was fixed before testing** in `PLAN.md`, committed as `d9367fd` at 19:26Z on 2026-10-29, before 2026 week 8 kicked off.
+- **K and M came later, at the owner's requests** of 2026-10-29 (every venue, arbitrage and price gaps) and 2026-11-02 (does our model beat any book). They are measurements, not pre-registered tests.
 - **Every number** comes from `out/<family>/` or `out/verdicts.csv`, written by the script named beside it.
 - **Deviations from the plan** are listed as rulings in §10.
 
@@ -19,12 +20,17 @@ How to read this report:
 | **F. Kalshi against DraftKings** | Cross-venue locks and accuracy | No locks (the cheapest pair cost $1.020); equally accurate. |
 | **G. A public projection** | Recency-weighted player means against the props | A trace of information (coefficient 0.09, p 0.054). Betting it loses 3.8%. |
 | **H. Opening lines** | Overreaction and predictable moves, 2023–24 | Neither (p 0.89 and 0.47). |
+| **K. Every venue at once** (§12) | Arbitrage, middles and price gaps across 11 venues, week 8 | Game lines: no arbitrage, and 20 of 2,172 sides beat Pinnacle's no-vig price. Props: 5 small arbitrages, all through Smarkets (best +1.39¢ per $1). |
+| **M. Our model against the books** (§13) | The week-7 run against four books' prices | The model is worse than every closing price, and its bets lose. Its props projections show a weak, insignificant signal (p 0.066). |
 
 So:
 - **No hypothesis gives a taker an edge** after multiple testing and costs.
 - **The two real mispricings are inside Kalshi**, between related contracts. They pay only as a better choice of contract, or from the maker side if resting orders fill at the mid, which these data cannot show (§4):
   - **Protected contracts.** A protected YES pays at least the unprotected YES, yet is priced 0.35¢ lower on average. Its protection paid +0.63¢. Choosing it over the unprotected contract is worth +0.97¢ per contract to a YES buyer (A3).
   - **Scalar ladders.** Kalshi's scalar ladders price a player's mean about 2.5–3 yards above what the binary ladder on the same stat implies, and the binary ladder is the one that matches the results (A5).
+- **Our game model does not beat the market or any single book** (§13).
+- **Prices differ little between venues** (§12). The line moves 2.9 points between Tuesday and the close, four times more than books differ from each other. Timing matters more than the choice of book.
+- **What is worth pursuing, and how to test it**, is §14.
 
 ## 1. Published NFL line anomalies (Family E; `classic_anomalies.R`, `out/classic/`)
 
@@ -178,9 +184,9 @@ These are real sources of value in the literature or Kalshi's rules. This data c
 - **Kalshi's Liquidity Incentive Program.**
   - It pays $1–$1,000 per market per day for resting orders near the best price, scored every second, even when they don't fill.
   - It runs until 2027-01-01, for most US members.
-  - Each market page shows whether that market pays.
+  - On 2026-10-29 it paid on 19 NFL markets out of 5,863 programs, all of them season or novelty markets. No NFL game line or player prop paid (`kalshi_incentives.R`, `out/incentives/`).
 - **Speed in-game.** A sub-minute feed plus a win-probability model; §5 shows a minute-level public model has no edge.
-- **Line shopping across books.** DraftKings and Kalshi never crossed (§6). More books would need track K's venue survey, and a 2025-free history would need track H.
+- **Line shopping across books.** DraftKings and Kalshi never crossed (§6). Track K's survey now covers 11 venues (§12). A 2025-free price history would need track H.
 
 ## 10. Rulings: where the run departs from PLAN.md
 
@@ -192,7 +198,13 @@ These are real sources of value in the literature or Kalshi's rules. This data c
 3. **A3 and A5.** The first run had no spread limit. Contracts quoted 0 / 0.99, with a mid of 0.495, inflated the scalar means, so both use the 10¢ limit like every other test. A3's sure-profit count still uses every executable quote, because a wide quote cannot create a false arbitrage.
 4. **A5.** The receptions mean uses the discrete sum over k of P(Y ≥ k). The trapezoid first used overstated it by about 0.5 catch.
 5. **A1.** The shape-only variant, centred on Kalshi's own median, was not in the plan. It is labelled exploratory.
-6. **E.**
+6. **K1's snapshot schedule.** Snapshots were planned up to Thursday night's kickoff. Only three ran, all before 21:30Z: the loop was stopped to switch script versions and not restarted before the session ended.
+7. **K1's prices.**
+   - **Kalshi's moneyline.** Kalshi settled 2026's only tie at $0.50 on both teams' contracts, so NO on one team is the same bet as YES on the other. The snapshot prices each side by the cheaper of the two. Regenerating both snapshots changed no summary number.
+   - **Smarkets' commission** is an assumed 2%, from third-party guides.
+   - **Polymarket's fee** is from its documentation.
+8. **M's props test** uses Family G's dispersion model around the module's projected means. The module outputs a probability only at its own line, so its own distribution cannot be recovered.
+9. **E.**
    - Regular season only.
    - A warm visitor is a team whose home games that season were mostly indoors, or averaged 60°F or warmer.
    - Where nflverse has no odds, the return uses −110. The share recorded is in `classic_anomalies.csv`.
@@ -213,6 +225,134 @@ The protocol drafts are `PROTOCOL_props_v1_DRAFT.md` and `PROTOCOL_market_v1_DRA
 
   Each has the power it would reach by the end of the 2026 season.
 
+## 12. Every venue at once (track K1; `venue_snapshot.R`, `props_snapshot.R`, `VENUE_SURVEY.md`)
+
+The owner asked to test every betting site and sportsbook for arbitrage and price disparities. `VENUE_SURVEY.md` lists the venues that can be read without a key. The keyless set is Action Network's six books, Pinnacle, Bovada, Polymarket, Smarkets and Kalshi; DraftKings, Caesars, BetMGM and Fanatics refuse direct requests.
+
+Three snapshots were taken before week 8's Thursday game:
+- **Game lines** (20:48Z and 21:07Z, up to 11 venues, 6,948 quotes):
+  - **No arbitrage.** The cheapest two-sided pair cost exactly $1.00.
+  - **No middle with a positive EV.**
+  - **Line shopping** beats the median venue by a mean of 0.7–1.4¢ per $1.
+  - **Few prices beat Pinnacle.** 20 of 2,172 sides beat its no-vig price under both devigs, and 2 by more than 2%. Of the 13 at 20:48Z, 12 were still positive 18 minutes later.
+- **Player props** (21:22Z: Kalshi, Smarkets and Pinnacle, 677 props at two venues or more):
+  - **Five arbitrages**, the best +1.39¢ per $1.
+  - **All through Smarkets**, a UK exchange that does not take US customers, under an assumed 2% commission.
+
+## 13. Our model against the books (Family M; `model_vs_books.R`, `out/model_vs_books/`)
+
+The owner asked whether our model beats any book.
+- **The cleanest test** is the 2026 week-7 run: code `4c1c377`, written 2026-10-20 19:45Z, before any week-7 game. Its outputs are copied to `out/model_vs_books/inputs/`.
+- **No other 2026 week has a forecast made in advance**, and a retroactive run is not point-in-time (below).
+- **Fourteen games is a measurement, not a test with power.**
+
+**Moneyline** (Brier score on the 14 results; lower is better):
+
+| Forecast | Brier | Mean distance from the consensus close |
+|---|---|---|
+| Kalshi's close (hourly candle at kickoff) | 0.2268 | 0.67 points |
+| Consensus close (nflverse) | 0.2310 | – |
+| DraftKings (ESPN's feed, last capture before kickoff) | 0.2312 | 0.68 points |
+| Simulator, raw | 0.2437 | 8.4 points |
+| GLMM blend | 0.2469 | 4.4 points |
+| C3 final, the number the app shows | 0.2488 | 3.2 points |
+| Consensus on Tuesday, the run's market input | 0.2498 | 2.9 points |
+
+- **Every version of the model is worse than every closing price.** The shown number trails Kalshi's close by 0.022 in Brier (95% CI 0.0004 to 0.051).
+- **Its bets lose at every book.**
+  - The raw simulator claimed an average edge of 35–37% and won 2 of its 8 bets at each book.
+  - The shown number won 3 of 10 at the consensus close, −1.93 units (`games_bets.csv`).
+
+**Spreads and totals**, priced from the simulated margin and total distributions:
+- **Against the consensus close at −110**, its 10 spread picks lost 6.18 units and its 10 total picks lost 2.36. Its spread Brier is 0.294, worse than a coin's 0.25.
+- **On Kalshi's ladders at the close**, it scores worse than Kalshi and adds no information:
+
+| Ladder | Contracts | Brier: model vs Kalshi | Coefficient (95% CI) |
+|---|---|---|---|
+| Spreads | 353 | 0.188 vs 0.173 | −0.30 (−2.71 to +2.12) |
+| Totals | 266 | 0.184 vs 0.174 | −0.11 (−1.94 to +1.73) |
+
+**The model's disagreements are its own error.**
+- The raw simulator sits a mean 8.0 points from the Tuesday consensus it was given.
+- The books sit 0.7 points from each other.
+- The line moved 2.9 points between Tuesday and the close.
+- The 70% shrinkage toward the market keeps the shown number a mean 0.6 points from the market.
+
+**Props: one weak signal.**
+- **The props module has never seen a market price.**
+  - None of its 570 week-7 props has a market line or odds (`line_source = model`, `odds_source = missing`).
+  - Its yardage and reception lines are its own projections, and every recommendation is PASS.
+- **Its projected means were tested against Kalshi's close** on 2,485 matched contracts (140 players, 14 games), with Family G's dispersion model:
+
+| Measure | Props module | Family G's projection (same contracts) |
+|---|---|---|
+| Information beyond Kalshi's close | 0.26 (−0.09 to +0.61), one-sided p 0.066 | 0.03 (−0.62 to +0.68), p 0.46 |
+| Brier (Kalshi: 0.1439) | 0.1495 | 0.1525 |
+
+- **Betting its disagreements at Kalshi's taker prices** returns −0.7% (−9.3% to +9.5%) on 2,034 bets.
+- **By stat**, the module is worse than Kalshi on passing yards, rushing yards, receptions and touchdowns, and slightly better on receiving yards (`props_by_stat.csv`).
+- **Two defects in its projection** (`sports/nfl/props/data_sources.R:62-158`):
+  - It averages every game of three seasons equally, though its comment says "recency weighting".
+  - It has no week filter, so a retroactive run sees later games. Week 7 is its only clean test.
+
+**Together with the earlier evidence:**
+- **Against the close nothing beats the market.** The best of 39 blends reaches +0.068% Brier skill, and the smallest detectable skill on all 4,997 games with a closing moneyline is 0.39% (`reports/2026-10-28/feasibility/FEASIBILITY.md`).
+- **Kalshi's props are calibrated at kickoff:** slope 0.958 over 88,439 contracts.
+
+## 14. Is the model worth pursuing? What to pursue instead
+
+**The game model, for moneylines, spreads, totals and team totals: not as a source of edge.**
+- **It is worse than the close** wherever it has been measured. The books it would bet against sit a mean 0.7 points from the close.
+- **Its edges are mostly its own error.** Because the books barely differ, it makes nearly the same bets at each one: 8, 8 and 8 for the raw simulator, and 10, 9 and 9 for the shown number (`games_bets.csv`).
+- **Keep it** as the product's explanation layer (distributions, scenarios) and as a prior.
+- **Stop trying to make it beat the close.** The best of 39 blends would need 20,836 games to confirm, about four times every NFL game with a closing moneyline (FEASIBILITY.md).
+
+**Props: worth one bounded, pre-registered test, and no more until it passes.**
+- **Two different projections point the same way:** Family G over weeks 2–7 (0.09, p 0.054) and the module in week 7 (0.26, p 0.066). Neither is significant, and they share week 7.
+- **The steps:**
+  1. Give the projection a week filter and real recency weighting.
+  2. Give the module market prices: Kalshi's ladders, Smarkets and Pinnacle, all keyless, through `props_snapshot.R`'s parsers.
+  3. Register the information test for weeks 9–18 in `PROTOCOL_props_v1_DRAFT.md`, with a stopping rule: if the coefficient's interval includes 0 at season's end, stop.
+  4. Track closing-line value against Kalshi's close as the leading indicator. +100 bps needs about 412 player-game picks (FEASIBILITY.md).
+- **Its power** (`out/protocol_power.csv`):
+  - Weeks 9–18, 140 games, would detect the week-7 coefficient of 0.26 almost surely. A one-week estimate is probably inflated, though.
+  - At Family G's smaller 0.09, 154 games give 76% power, and 80% needs 175 games.
+- **Team totals and totals deserve a place in it.**
+  - Team totals are the game market with the largest line-shopping gain, and their spread of prices across venues is second only to the moneyline's (§12).
+  - In the first snapshot, 7 of the 13 sides that beat Pinnacle were team-total unders, at Kalshi, BetRivers, BetMGM and Polymarket. In the second, team-total unders and game-total overs made up 13 of the 20.
+
+**Concepts that do not need a better forecast**, ranked by the evidence:
+1. **Timing: beat the move, not the result.**
+   - The line moves 2.9 points from Tuesday to the close, about four times the gap between books.
+   - A model of where the line will go, from injury news, weather and early sharp money, is worth more than another model of who wins.
+   - The test is `nfl_preclose_v1` for games (designed, awaiting signature) and closing-line value for props.
+2. **Price-relative betting.**
+   - Bet a book or exchange only when it beats a sharp reference: Pinnacle's no-vig price, or the consensus.
+   - [Kaunitz, Zhong and Kreiner (2017)](https://pdf.arxiv.org/pdf/1710.02824) made this pay against 32 soccer bookmakers, until the books limited their accounts.
+   - Exchanges such as Kalshi match traders against each other, so a winner costs the venue nothing.
+   - Our snapshot found 20 such sides, 2 of them by more than 2%. It needs a prospective series scored by CLV and by results.
+3. **Line shopping, always.** It is small but certain: 0.7–1.4¢ per $1 against the median venue.
+4. **Exchange structure, A3 and A5.** These pay only from the maker side and need a small live test of fill rates (owner decision, real money).
+5. **A model trained to differ from the market.** [Hubáček and Šír (2023)](https://econpapers.repec.org/RePEc:eee:intfor:v:39:y:2023:i:2:p:691-719) beat markets with deliberately "bad" forecasters whose errors are uncorrelated with the market's. This needs a long price history (track H's openers).
+6. **Not recommended:**
+   - published line anomalies (§1);
+   - in-game betting on public data (§5);
+   - recalibrating Kalshi's prop prices, which loses 15.7% traded (FEASIBILITY.md).
+
+**The testing program, week 9 onward:**
+- **At each decision point (Tuesday and Friday):**
+  - run `run_week.R`;
+  - take `venue_snapshot.R` and `props_snapshot.R` snapshots at the same times, and an hour before each kickoff;
+  - keep Kalshi's candle at kickoff as the close.
+- **Score:**
+  - closing-line value for every claimed edge;
+  - Brier and log loss of the model against each venue at decision time;
+  - the props information test;
+  - the persistence of sides that beat Pinnacle (`venue_persistence.R`).
+- **Sign the two protocols:** `nfl_preclose_v1` (games against the opener) and `nfl_props_v1` (props).
+- **Track H's historical openers** would power the opener test from thousands of games instead of hundreds.
+- **Where the snapshots run is owner checkpoint 3.** They hold sportsbook prices, so they cannot go into the public repository's workflow artifacts.
+
 ## Sources
 
 **Studies tested:**
@@ -230,6 +370,13 @@ The protocol drafts are `PROTOCOL_props_v1_DRAFT.md` and `PROTOCOL_market_v1_DRA
 - Bürgi, Deng and Whelan, "Makers and Takers: The Economics of the Kalshi Prediction Market" ([IDEAS, CEPR DP 20631](https://ideas.repec.org/p/cpr/ceprdp/20631.html)).
 - [Kalshi's Liquidity Incentive Program](https://help.kalshi.com/incentive-programs/liquidity-incentive-program).
 - Kalshi's rule filings at the [CFTC](https://www.cftc.gov/filings/orgrules/rules10142633445.pdf).
+
+**Venues and value betting:**
+- Kaunitz, Zhong and Kreiner, "Beating the bookies with their own numbers – and how the online sports betting market is rigged" ([arXiv 1710.02824](https://pdf.arxiv.org/pdf/1710.02824)).
+- Hubáček and Šír, "Beating the market with a bad predictive model", *International Journal of Forecasting* 2023 ([RePEc](https://econpapers.repec.org/RePEc:eee:intfor:v:39:y:2023:i:2:p:691-719)).
+- Hubáček, Šourek and Železný, "Exploiting sports-betting market using machine learning", *International Journal of Forecasting* 2019 ([RePEc](https://econpapers.repec.org/RePEc:eee:intfor:v:35:y:2019:i:2:p:783-796)).
+- Whelan, "The truth about closing line value" ([blog](https://www.karlwhelan.com/?p=2595)).
+- [Polymarket's fees](https://docs.polymarket.com/trading/fees), [SX Bet's best-odds endpoint](https://docs.sx.bet/api-reference/get-best-odds-v3.md) and Kalshi's `IncentiveProgram` ([SDK docs](https://cdn.jsdelivr.net/npm/kalshi-typescript@3.11.0/docs/IncentiveProgram.md)).
 
 **Context:**
 - On key numbers: [Action Network](https://www.actionnetwork.com/nfl/nfl-key-betting-numbers-spread-margins-of-victory-line-value), and the [margin-of-victory data, 1999–2025](https://www.deucescracked.com/blog/nfl-margin-of-victory-data-1999-2025).

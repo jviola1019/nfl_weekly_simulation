@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0.0",
+  "bundle_kind": "weekly",
+  "cycle_id": "2026-w07-sim-20261020T194510Z",
+  "season": 2026,
+  "week": 7,
+  "model_label": "Game simulator C3 (unvalidated)",
+  "generated_utc": "2026-10-20T19:45:11Z",
+  "data_asof_utc": "2026-10-20T19:45:10Z",
+  "code_git_sha": "4c1c37788c0ac7052d26cbf0ecba11d1d3c213e9",
+  "code_dirty": false,
+  "config_hash": "2d6a6c8396050ebe8f646077bba0b26c7bf9baf2ceb65003db7f8bc8869ea4c1",
+  "config": {
+    "engine": "NFLsimulation.R (Monte Carlo: negative binomial scores, Gaussian copula)",
+    "candidates": {
+      "C0": "no-vig market",
+      "C3": "simulator two-way home win probability; p_home_final after the production pipeline's shrinkage toward the no-vig market (unshrunk where a game has no market)"
+    },
+    "shrinkage": 0.7,
+    "market_source": "nflverse consensus close: moneylines devigged proportionally (the spread mapped to a probability where a game has no moneyline)",
+    "calibration_method": "spline",
+    "distribution_mass": 0.999
+  },
+  "seed": 471,
+  "n_sims": 100000,
+  "renv_lock_sha256": "6f0288babdb084ab5142bb6a00010d71bbd3b2b4333d801f7ed366a8ff41e429",
+  "files": [
+    {
+      "name": "teams.json",
+      "sha256": "225d156d67369e7884f5ee5d94602329d759cb670628ee5f7345883868e29fdc",
+      "rows": 32
+    },
+    {
+      "name": "games.json",
+      "sha256": "29154f67fe0e0bac3840a2ab021bcdee73f1a5e14211fdbb9e608ad82b50f5a9",
+      "rows": 14
+    },
+    {
+      "name": "game_predictions.json",
+      "sha256": "80f124d66bb01ddcfc803f0add41bf46cc45896c0be0bf39a34e70918be161f8",
+      "rows": 28
+    },
+    {
+      "name": "score_distributions.json",
+      "sha256": "c537459d940790ccfa561c2e35b68be980f2d35501cd57940e499bd963fd37ca",
+      "rows": 28
+    },
+    {
+      "name": "source_status.json",
+      "sha256": "55ca789aac90429b6231abec637a464cfbd824fd60a73a1160446aec29b44563",
+      "rows": 4
+    }
+  ],
+  "qa": {
+    "ok": true,
+    "failures": []
+  }
+}

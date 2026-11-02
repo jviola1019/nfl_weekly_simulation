@@ -64,6 +64,45 @@ The survey reads prices. It does not establish that the owner can trade at a ven
 - The gamma API prices Polymarket's international exchange, which does not serve US users. Polymarket US is a separate exchange, not surveyed.
 - Kalshi is a CFTC-regulated exchange.
 
-## Results
+## Results, week 8 (2026-10-29)
 
-RESULTS
+Three snapshots were taken before Thursday night's kickoff. The repeat snapshots planned for later that evening were not taken: the loop was stopped to switch script versions and not restarted before the session ended.
+
+| Snapshot | Venues | Quotes | Two-sided markets | Arbitrages | Cheapest two-sided pair | Middles with EV > 0 | Sides beating Pinnacle's no-vig price (> 2%) |
+|---|---|---|---|---|---|---|---|
+| Game lines, 20:48Z | 8 | 5,512 | 1,658 | 0 | $1.000 | 0 of 2,817 | 13 (2) |
+| Game lines, 21:07Z | 11 | 6,948 | 1,839 | 0 | $1.000 | 0 of 6,318 | 20 (2) |
+| Player props, 21:22Z | 3 | 11,300 | 3,959 | **5** (best +1.39¢ per $1) | $0.986 | 1 middle costs under $1 | – |
+
+Files: `out/venues/snapshots.csv`, `snapshot_summary__*`, `out/props/props_summary__*`.
+
+**Game lines: no arbitrage, and small price differences.** From the 21:07Z snapshot:
+- **The venues agree closely.**
+  - Each venue's no-vig probability sits a mean 0.2–0.75 points from the median venue at the same line.
+  - The exceptions are Pinnacle's team totals, at 1.0 points, and Smarkets, at 0.8–1.4.
+  - Across venues, the median range of no-vig prices is 2.3 points on the moneyline, 1.8 on spreads, 1.5 on totals and 2.0 on team totals.
+- **Line shopping is worth about a cent per dollar.**
+  - The best price beats the median venue's by a mean of 1.30¢ per $1 of payout on moneylines, 0.69¢ on spreads and totals, and 1.42¢ on team totals.
+  - The 90th percentile is 1.4–2.5¢.
+- **The best prices are mostly at Pinnacle and the exchanges.**
+  - On spread and total lines quoted by three venues or more, Pinnacle has the best price 34% of the time, Kalshi 23–27% and Polymarket 22–29%.
+  - Each US book has it 3% of the time or less. Many of those lines are alternates that only Pinnacle and the exchanges quote.
+  - On moneylines, DraftKings has the best price on 21% of sides.
+- **The books' main lines differ a little.** They differ in 11 of 14 games on the spread and 9 of 14 on the total, by a mean of half a point.
+- **Few prices beat Pinnacle's.**
+  - Of 2,172 sides quoted at the same line as Pinnacle, 20 beat its no-vig price under both the proportional and the power devig. Two do so by more than 2%.
+  - Another 25 look positive only under the proportional devig, which overstates longshots.
+  - Of the 13 positive sides at 20:48Z, 12 were still positive at 21:07Z. The other closed when its book moved (`out/venues/persistence.csv`).
+
+**Player props: small arbitrages exist, all through Smarkets.**
+- 677 player-stat props were quoted at two venues or more, and 267 at all three of Kalshi, Smarkets and Pinnacle.
+- Five over/under pairs cost less than $1, the best by 1.39¢. Every one had Smarkets on one side, and three were worth under 0.2¢, inside the uncertainty of the commission assumption.
+- The largest was a backup quarterback's passing touchdowns. When a player does not play, books void the bet and Kalshi settles at the pre-game fair price, so even an arbitrage can carry that risk.
+- No-vig prices across venues have a median range of 0.5–2.2 points by stat, and a 90th percentile of up to 4.5 points (receiving yards).
+
+**Smarkets rate-limited the props run.** It answered 429 on 4 of its quote chunks after the capture layer's back-off. Both scripts now request 100 markets at a time with a 2-second pause.
+
+**What the snapshots can and cannot say.**
+- They show prices at one moment, not whether a bet could be filled or for how much. Pinnacle's limits are in each response; book limits and exchange depth are not.
+- One evening of one week is far too little to say whether the positive sides are real value or noise.
+- A prospective series of snapshots over weeks 9–18, with closing-line value as the measure, is in HYPOTHESES.md §14.

@@ -48,7 +48,7 @@ if (length(ks)) parse_venue("kalshi", function() {
   }
 })
 
-# Smarkets: the week's events, their player markets, and those markets' contracts and quotes, 40 markets a request
+# Smarkets: the week's events, their player markets, and those markets' contracts and quotes (sm_details, venue_common.R)
 iso <- function(t) format(t, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
 sm_get <- function(name, path) js(fetch(name, paste0("https://api.smarkets.com/v3", path)))
 sm_ev <- list(); path <- sprintf("/events/?type=american_football_match&state=upcoming&start_datetime_min=%s&start_datetime_max=%s&limit=50",
@@ -66,13 +66,7 @@ for (e in sm_ev) {
 if (length(sm_games)) {
   smk <- sm_get("smarkets_markets", sprintf("/events/%s/markets/", paste(names(sm_games), collapse = ",")))
   keep <- Filter(function(x) (x$market_type$name %||% "") %in% STATS$smarkets && identical(x$state, "open"), smk$markets %||% list())
-  ids <- vapply(keep, function(x) as.character(x$id), ""); chunks <- split(ids, ceiling(seq_along(ids) / 40))
-  sm_ct <- list(); sm_qt <- list()
-  for (k in seq_along(chunks)) {
-    a <- sm_get(sprintf("smarkets_pcontracts_%02d", k), sprintf("/markets/%s/contracts/", paste(chunks[[k]], collapse = ",")))
-    b <- sm_get(sprintf("smarkets_pquotes_%02d", k), sprintf("/markets/%s/quotes/", paste(chunks[[k]], collapse = ",")))
-    sm_ct <- c(sm_ct, a$contracts %||% list()); sm_qt <- c(sm_qt, b %||% list())
-  }
+  det <- sm_details("smarkets_p", vapply(keep, function(x) as.character(x$id), "")); sm_ct <- det$contracts; sm_qt <- det$quotes
   if (length(sm_ct)) parse_venue("smarkets", function() {
     mt <- rbindlist(lapply(keep, function(x) data.table(mid = as.character(x$id), event_id = as.character(x$event_id), type = x$market_type$name,
                                                         player = x$market_type$param$PLAYER_NAME %||% NA_character_, total = num(x$market_type$param$TOTAL))))
