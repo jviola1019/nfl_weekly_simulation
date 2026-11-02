@@ -1,0 +1,8 @@
+check,value
+"SBR games parsed, 2018-2021",1088
+matched to nflverse games,1087
+with an opening and a closing spread,1084
+SBR close within 0.5 points of nflverse's closing spread (share),0.862
+median |SBR close - nflverse close| (points),0
+SBR closing moneyline no-vig within 2 points of nflverse's (share),0.9043
+exchange-rate lines (nflverse 2006-2024 games with a spread and both moneylines),5010
