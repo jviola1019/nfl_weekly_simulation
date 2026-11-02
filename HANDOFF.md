@@ -2,7 +2,11 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec. To verify everything and finish the remaining work in a full local environment (VS Code), use `docs/handoff/2026-09-29-vscode-prompt.md`.
 
-## Current state — A8 (feat/a8-local-app)
+## D1 done - 2026-10-27 (feat/d1-odds-layer, draft PR, awaiting the owner)
+
+The keyless odds layer is in `R/odds/` (see CHANGELOG, "D1"). **Objective:** one HTTP layer, three providers, the `odds_snapshots` shape, the closing rule, the 2023–2024 ESPN opener/closer archive, forward capture on the same code. **Done:** all of it, tests with recorded fixtures only; the live smoke (`scripts/odds_live_smoke.R`) and a live capture passed on 2026-10-27. **Not done:** player alias tables (snapshots carry `player_key`), Kalshi spread/total series, owner sign-off of the terms matrix; the raw ESPN responses are not committed (16.4 MB as received; sha256 in `backtest/data/odds_archive/SOURCES.json`). **Confirmed facts:** the archive has 570 games, no 2025 row; complete ESPN BET moneyline opener-and-closer pairs cover 205 of 285 games of 2023 and 284 of 285 of 2024; every request is floored at 1 per second per domain (`CAPTURE_MIN_INTERVAL_SEC` is 1). **Open risks:** ESPN's endpoints are undocumented; the openers/closers carry no timestamp. **Next target:** G3 reads the archive and appends 2025 only in its Holdout build, after the freeze.
+
+## Previous state — A8 (feat/a8-local-app)
 
 2026-10-13. Branch `feat/a8-local-app` (base `4f9aad3`; `main` at `28e4ed7`, with #210, merged in on 2026-10-13), draft PR #212 against `main` (never merged by the agent). The final whole-branch review returned "with fixes"; the fix wave below applied them and the owner's four decisions, and every gate was re-run on the merged branch.
 

@@ -1,0 +1,3450 @@
+{
+  "built_utc": "2026-10-27T04:18:22Z",
+  "seasons": [2023, 2024],
+  "max_season": 2024,
+  "script": "backtest/build_odds_archive.R",
+  "games": 570,
+  "source_status": "stale",
+  "source_detail": "570 of 570 games fetched; 1 game(s) fetched with no ESPN BET or DraftKings line: 2024_02_PIT_DEN; 5 game(s) missing a moneyline, spread or total: 2023_01_MIA_LAC, 2023_02_KC_JAX, 2023_02_LAC_TEN, 2023_03_HOU_JAX, 2023_05_GB_LV; 37 market block(s) dropped (a side, a line or a readable price missing): 2023_01_MIA_LAC, 2023_02_KC_JAX, 2023_02_LAC_TEN, 2023_03_HOU_JAX, 2023_05_GB_LV; 14 line-only row(s) kept (a spread or total line with no price)",
+  "raw": [
+    {
+      "file": "espn_game_odds__401547353.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547353/competitions/401547353/odds",
+      "sha256": "a056db2ef603a1fa280ae7a8c5c6abe751a8036718fdba5401c872a5882303ce",
+      "bytes": 28181
+    },
+    {
+      "file": "espn_game_odds__401547406.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547406/competitions/401547406/odds",
+      "sha256": "50acbfda1f8c0864ae2f1152477285203988c7550b0e037f5d464c34264c6a80",
+      "bytes": 26855
+    },
+    {
+      "file": "espn_game_odds__401547403.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547403/competitions/401547403/odds",
+      "sha256": "04dd65c55e38e528b14d29b88624c014a391e468da55e5ee0ac2ad798171278e",
+      "bytes": 31338
+    },
+    {
+      "file": "espn_game_odds__401547397.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547397/competitions/401547397/odds",
+      "sha256": "6a4844adc82b7b4b35cd27e5fc74339793918a4cfcd2d3370200724a25f3ac7b",
+      "bytes": 29218
+    },
+    {
+      "file": "espn_game_odds__401547396.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547396/competitions/401547396/odds",
+      "sha256": "84d0c076afec4aed161f67d68214e3e3be4cd643c92dba7d7c24f4dfec231bd4",
+      "bytes": 31385
+    },
+    {
+      "file": "espn_game_odds__401547404.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547404/competitions/401547404/odds",
+      "sha256": "cb78e70598af3c57adbbdc6d36e4fa9170e85327f16fe0520452ddb9ee31022c",
+      "bytes": 28156
+    },
+    {
+      "file": "espn_game_odds__401547405.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547405/competitions/401547405/odds",
+      "sha256": "939a1a0a74689f584cfdb4737548ef2e43f75d4ac62ec2abf079f6bf41ab00ef",
+      "bytes": 31313
+    },
+    {
+      "file": "espn_game_odds__401547398.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547398/competitions/401547398/odds",
+      "sha256": "78419a4e1d6d5e7fb5c2e5d4d92ddc6260923e802cc59cce4d183e4baea56f9c",
+      "bytes": 29478
+    },
+    {
+      "file": "espn_game_odds__401547399.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547399/competitions/401547399/odds",
+      "sha256": "8ef3496e81889d1cfbca6437ecafcbddf65df1f96abba49e7802229a2b562e58",
+      "bytes": 31133
+    },
+    {
+      "file": "espn_game_odds__401547407.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547407/competitions/401547407/odds",
+      "sha256": "1a26c11194e2f4a7cdebd0508586e5175bd6c4e82bbecc8feab857c4b6a8729f",
+      "bytes": 31170
+    },
+    {
+      "file": "espn_game_odds__401547408.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547408/competitions/401547408/odds",
+      "sha256": "6f7a0417529a0a526b6645e45f792ed860648f3db71c20a508a45b5c4259adc4",
+      "bytes": 29615
+    },
+    {
+      "file": "espn_game_odds__401547400.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547400/competitions/401547400/odds",
+      "sha256": "725d6efd34ee3f8a5dba90023bbb898d373d2bd5cf20104efa98caf4e6a321fb",
+      "bytes": 28344
+    },
+    {
+      "file": "espn_game_odds__401547401.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547401/competitions/401547401/odds",
+      "sha256": "bb6fd82bf4e125485d0a2d531497e2fe9c02ae0a78ee2431cea208249310485b",
+      "bytes": 30663
+    },
+    {
+      "file": "espn_game_odds__401547402.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547402/competitions/401547402/odds",
+      "sha256": "e3597f2488bd1ee1de30276b438cf1caad7f65810fbaa3d35cc306f98c353b7e",
+      "bytes": 31463
+    },
+    {
+      "file": "espn_game_odds__401547409.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547409/competitions/401547409/odds",
+      "sha256": "ce44d0c60ac98ec2a63adb88a53fcb628f07a17a05b4349ba9b6238c5368e01d",
+      "bytes": 27969
+    },
+    {
+      "file": "espn_game_odds__401547352.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547352/competitions/401547352/odds",
+      "sha256": "473715280d35e0725a23904dcaeea80a187bb130bd48085164351485e61041ea",
+      "bytes": 29721
+    },
+    {
+      "file": "espn_game_odds__401547410.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547410/competitions/401547410/odds",
+      "sha256": "f5c324677d028ac833526ba76f992ed3d1e42dc8aa0b84797dac47cac46280e9",
+      "bytes": 24601
+    },
+    {
+      "file": "espn_game_odds__401547412.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547412/competitions/401547412/odds",
+      "sha256": "2e94751d43a362780403970d26943259caf8845073af2ea3b8858e525fd5d1c1",
+      "bytes": 22972
+    },
+    {
+      "file": "espn_game_odds__401547420.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547420/competitions/401547420/odds",
+      "sha256": "d0840e486632f84709462e4e843c803873559a87318b7343dbf367ee0bc85ffa",
+      "bytes": 21573
+    },
+    {
+      "file": "espn_game_odds__401547417.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547417/competitions/401547417/odds",
+      "sha256": "5cbfa0c07e8a4e94b91b88327a30b858d0aefbd464f4829b5401ac3314c90c97",
+      "bytes": 22060
+    },
+    {
+      "file": "espn_game_odds__401547419.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547419/competitions/401547419/odds",
+      "sha256": "7cb792d1745c0782cfba451bf3401127d4941ffc51c675a3ddc020bb8b28f799",
+      "bytes": 21944
+    },
+    {
+      "file": "espn_game_odds__401547413.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547413/competitions/401547413/odds",
+      "sha256": "90050052c78fccf976805642b83f68fe32b6b4e48e42a0c4c7e4377b5f0d7186",
+      "bytes": 21279
+    },
+    {
+      "file": "espn_game_odds__401547414.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547414/competitions/401547414/odds",
+      "sha256": "b7bc3556325b7db42a9537b0a7e4011bfe18603ceda62ef5957f942997883d46",
+      "bytes": 23108
+    },
+    {
+      "file": "espn_game_odds__401547411.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547411/competitions/401547411/odds",
+      "sha256": "c402a5345b86f90f538ad4564fcddb38cb9d044bd1dd3add8a7db7083e530676",
+      "bytes": 20396
+    },
+    {
+      "file": "espn_game_odds__401547418.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547418/competitions/401547418/odds",
+      "sha256": "196e963082b8b5f9ce6268eb0df89e1c33219cf77616047ec698c5f57f24b5c8",
+      "bytes": 23021
+    },
+    {
+      "file": "espn_game_odds__401547421.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547421/competitions/401547421/odds",
+      "sha256": "e21290814f91ae6c719b345fac9cd34a3482e398086a0537596ae929b7d11132",
+      "bytes": 23149
+    },
+    {
+      "file": "espn_game_odds__401547422.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547422/competitions/401547422/odds",
+      "sha256": "233c5bc6df9943b02cd9bda6bfe5ff33d194a8315048813b0cade237032ec41f",
+      "bytes": 22926
+    },
+    {
+      "file": "espn_game_odds__401547415.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547415/competitions/401547415/odds",
+      "sha256": "5a0ee7c2fb33ae4216624061af93319ba64a1352e9c4158cdf518d29fbc9dd2d",
+      "bytes": 23160
+    },
+    {
+      "file": "espn_game_odds__401547416.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547416/competitions/401547416/odds",
+      "sha256": "d4187c22523da4060541f3ea2a30eed4de934129dfa620d285bf090487662cc2",
+      "bytes": 20349
+    },
+    {
+      "file": "espn_game_odds__401547423.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547423/competitions/401547423/odds",
+      "sha256": "2c0a4d4263724d03da1c106b71d29cbb0ed3ba36ade237dba969fe36777e31f1",
+      "bytes": 22086
+    },
+    {
+      "file": "espn_game_odds__401547425.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547425/competitions/401547425/odds",
+      "sha256": "545d645d20b1995ec70e3e566aa8ee239439fb5597bb813b2f8b4601cdf0e758",
+      "bytes": 22923
+    },
+    {
+      "file": "espn_game_odds__401547424.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547424/competitions/401547424/odds",
+      "sha256": "1da4f8f34e8f9d61574a169abfce2b43402d9424b76d2cf21ee9ce07d2353d6b",
+      "bytes": 23123
+    },
+    {
+      "file": "espn_game_odds__401547426.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547426/competitions/401547426/odds",
+      "sha256": "cf77a6fd08f92cfb1755771f3d4836c3b8d528ae13ab6182bb87e5b88c0f17c7",
+      "bytes": 23678
+    },
+    {
+      "file": "espn_game_odds__401547433.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547433/competitions/401547433/odds",
+      "sha256": "509780193c0677af1574f1ca81391c8b19ab1fff563fe66785acc57d01d0e1db",
+      "bytes": 23276
+    },
+    {
+      "file": "espn_game_odds__401547431.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547431/competitions/401547431/odds",
+      "sha256": "fbd2a4bcd32d356525dc90518207b002623a854c2309319a03243ae75dc8368b",
+      "bytes": 20503
+    },
+    {
+      "file": "espn_game_odds__401547429.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547429/competitions/401547429/odds",
+      "sha256": "440a1359c4dca8baa9cc370b10fbcc2d21c69403dcd7dbbcdd4216a52dd15eb8",
+      "bytes": 23138
+    },
+    {
+      "file": "espn_game_odds__401547435.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547435/competitions/401547435/odds",
+      "sha256": "7f6adf0c13d29f69104fb9fdca46e94d5feb87e131634c0a823ca03dab1f3db4",
+      "bytes": 22952
+    },
+    {
+      "file": "espn_game_odds__401547427.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547427/competitions/401547427/odds",
+      "sha256": "b0d0b0dc18e14aeb7085ba5f47af96980fb5d272d5b7a75cd0b31d8798b49f13",
+      "bytes": 23184
+    },
+    {
+      "file": "espn_game_odds__401547436.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547436/competitions/401547436/odds",
+      "sha256": "17ad5fecdb2c8a8e6072b4a85c1db02a2f636c4cd41a7d19cfa3de3bea299cc6",
+      "bytes": 20685
+    },
+    {
+      "file": "espn_game_odds__401547430.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547430/competitions/401547430/odds",
+      "sha256": "a05021de212b3728ddc674e6b205bffd93f803bcd0fe765a57109f8a0f341796",
+      "bytes": 23365
+    },
+    {
+      "file": "espn_game_odds__401547434.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547434/competitions/401547434/odds",
+      "sha256": "90a65dd5f26135ef9c798dfffbc7104e8b7af5c3056384e9f9b6127034de2205",
+      "bytes": 23605
+    },
+    {
+      "file": "espn_game_odds__401547428.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547428/competitions/401547428/odds",
+      "sha256": "2062ff699b7a5cff5df746a79c282b5acb0adf42efa6ea02171be963d37e3b55",
+      "bytes": 23754
+    },
+    {
+      "file": "espn_game_odds__401547432.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547432/competitions/401547432/odds",
+      "sha256": "3bf4fe9c9c1ea8e904eebb2f0707aef0a4303bbfd6062d1d9568ac91540dc25d",
+      "bytes": 23642
+    },
+    {
+      "file": "espn_game_odds__401547438.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547438/competitions/401547438/odds",
+      "sha256": "82570469251ff5b4d049c94e8363ff14113b10db98e5ea3dea1013f37d7f5def",
+      "bytes": 23252
+    },
+    {
+      "file": "espn_game_odds__401547437.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547437/competitions/401547437/odds",
+      "sha256": "a63a36e9bca457f4bd7313ba029ac981cde50872cb67d49f9bcd2b48b72896c1",
+      "bytes": 23362
+    },
+    {
+      "file": "espn_game_odds__401547439.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547439/competitions/401547439/odds",
+      "sha256": "21e41f06997c90ce5cd4fdc023650ae214e6dcb4b5ab6a85bd2fa8d9b068e48d",
+      "bytes": 20897
+    },
+    {
+      "file": "espn_game_odds__401547440.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547440/competitions/401547440/odds",
+      "sha256": "7c701292f6ddd4da3179eabc1e4143c0cc9faf42acba3e6b484008feb0b3faf2",
+      "bytes": 23142
+    },
+    {
+      "file": "espn_game_odds__401547441.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547441/competitions/401547441/odds",
+      "sha256": "7ddc1ed802b9599cbb4421993565f53044d8b281cd94a84d0cfe1351e254ad4c",
+      "bytes": 22992
+    },
+    {
+      "file": "espn_game_odds__401547442.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547442/competitions/401547442/odds",
+      "sha256": "0628d45abe6ae41e6dac77df7f67c34bdbf8507d54ff81cd2e71e58ccd4305ce",
+      "bytes": 24736
+    },
+    {
+      "file": "espn_game_odds__401547227.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547227/competitions/401547227/odds",
+      "sha256": "d464ba3fcea535346dd93ecea97fadf5ebe985d219b2c6fc8fcd64217f65ffd1",
+      "bytes": 25047
+    },
+    {
+      "file": "espn_game_odds__401547445.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547445/competitions/401547445/odds",
+      "sha256": "18b0a8b126c1c52486937d52c10cf5d1a9b3e94ea953fc5468456eb37ebefa61",
+      "bytes": 25070
+    },
+    {
+      "file": "espn_game_odds__401547452.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547452/competitions/401547452/odds",
+      "sha256": "5ed4954aa4470093cede6578b93a3e918ec7c39ffcd5c71872fd24d77042800b",
+      "bytes": 25081
+    },
+    {
+      "file": "espn_game_odds__401547444.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547444/competitions/401547444/odds",
+      "sha256": "1e5651f3cfc0645ee3c404f6dee8c169bdcf212ec48a7297592e7a8ded989362",
+      "bytes": 24777
+    },
+    {
+      "file": "espn_game_odds__401547449.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547449/competitions/401547449/odds",
+      "sha256": "b0fa82bcc4cf1242afaefa4b62e859a9523200d877f696b682892e686387b715",
+      "bytes": 24987
+    },
+    {
+      "file": "espn_game_odds__401547443.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547443/competitions/401547443/odds",
+      "sha256": "72600551cc836555ea40a4cd87b6a42150702b78a46100cd85cd8c57d25d04de",
+      "bytes": 24716
+    },
+    {
+      "file": "espn_game_odds__401547448.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547448/competitions/401547448/odds",
+      "sha256": "f0295f5a0a7e5ee17a63b2c2259588e837b0a9181c182c98f2bf47b34eea902c",
+      "bytes": 24802
+    },
+    {
+      "file": "espn_game_odds__401547446.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547446/competitions/401547446/odds",
+      "sha256": "d996e6194194211b9687193c1286731b720774338caaecf3aafdc5c58d4f1dca",
+      "bytes": 23437
+    },
+    {
+      "file": "espn_game_odds__401547450.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547450/competitions/401547450/odds",
+      "sha256": "804d89ef67abccf84e1eff5be849931246d28e8184f838f9f5c637f96067776d",
+      "bytes": 24878
+    },
+    {
+      "file": "espn_game_odds__401547451.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547451/competitions/401547451/odds",
+      "sha256": "252931a1aebd6c08c8d6c81a1f69ff97683f90d73b59f4d9ba9d1fd28c6f14a0",
+      "bytes": 22266
+    },
+    {
+      "file": "espn_game_odds__401547447.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547447/competitions/401547447/odds",
+      "sha256": "09368f8bb5c2b234e692d3822bb9927040d27afff185fbb253c8070e5d751e74",
+      "bytes": 22083
+    },
+    {
+      "file": "espn_game_odds__401547454.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547454/competitions/401547454/odds",
+      "sha256": "2444ca6f633143a7717a6b686013c4c2ea3dff95228f7d002d9130fe601d2e8a",
+      "bytes": 25139
+    },
+    {
+      "file": "espn_game_odds__401547453.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547453/competitions/401547453/odds",
+      "sha256": "fe30760c33d7c1abd5e59fa3c493e5b3d08cdabd35f481decde95911095eae43",
+      "bytes": 24983
+    },
+    {
+      "file": "espn_game_odds__401547455.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547455/competitions/401547455/odds",
+      "sha256": "d7b2fdbced1dbf007107d01761f826692e35b3174356030f7d2e0c873258ec92",
+      "bytes": 23400
+    },
+    {
+      "file": "espn_game_odds__401547456.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547456/competitions/401547456/odds",
+      "sha256": "8f5476f7ff24ccc5e76782fa588357a9a1157b12a34f788920d534accc1dae82",
+      "bytes": 24901
+    },
+    {
+      "file": "espn_game_odds__401547457.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547457/competitions/401547457/odds",
+      "sha256": "d27c8de78645cbcb63346b359e0ab8c3eb5890769424d2644753a02666095ef0",
+      "bytes": 21719
+    },
+    {
+      "file": "espn_game_odds__401547228.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547228/competitions/401547228/odds",
+      "sha256": "d406e90a7d6d19f39efb764a908f3f5618588d9f1e943f15db29e7a3759d3301",
+      "bytes": 24367
+    },
+    {
+      "file": "espn_game_odds__401547460.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547460/competitions/401547460/odds",
+      "sha256": "c3b868241f3cf8f2f5a53b133ed5fd202bf4df2b756a381ff63092b2d9cea301",
+      "bytes": 24342
+    },
+    {
+      "file": "espn_game_odds__401547464.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547464/competitions/401547464/odds",
+      "sha256": "7302188c0db16acbca360e07b71bca674be019e392cd10789d4baa4e0d52f161",
+      "bytes": 24431
+    },
+    {
+      "file": "espn_game_odds__401547463.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547463/competitions/401547463/odds",
+      "sha256": "be3dcd6bfbb5fd962d5e57bce5e976304e901cdaa991c69980af1617b7276881",
+      "bytes": 24443
+    },
+    {
+      "file": "espn_game_odds__401547459.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547459/competitions/401547459/odds",
+      "sha256": "2c0f304d7b0bcd7e804789d9aaf83aea44aac74ea7110ec312b5bd9dcafc171a",
+      "bytes": 24566
+    },
+    {
+      "file": "espn_game_odds__401547465.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547465/competitions/401547465/odds",
+      "sha256": "9c7949b9fe7265f3a23152436ca55f84bb2217ae9ca0b88a3e05d811fbc9dece",
+      "bytes": 24224
+    },
+    {
+      "file": "espn_game_odds__401547458.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547458/competitions/401547458/odds",
+      "sha256": "581cb3b758d337538c81ed652d9a42d0a6570445b39ba8e18f75cff86554db50",
+      "bytes": 24579
+    },
+    {
+      "file": "espn_game_odds__401547466.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547466/competitions/401547466/odds",
+      "sha256": "786b09f36ee1ee122eaee008af3c976a82efac13f3562b0afa1388a5402221fa",
+      "bytes": 24478
+    },
+    {
+      "file": "espn_game_odds__401547467.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547467/competitions/401547467/odds",
+      "sha256": "ed4a9fad75f7d270f87aba4b5f983747bb7da79370e58acd788e02bf0df796fe",
+      "bytes": 24435
+    },
+    {
+      "file": "espn_game_odds__401547462.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547462/competitions/401547462/odds",
+      "sha256": "bd17cac8d6d0b772371d69602e54209327b8a18bf878355442a6027039373c72",
+      "bytes": 24301
+    },
+    {
+      "file": "espn_game_odds__401547461.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547461/competitions/401547461/odds",
+      "sha256": "3e7c72710a7fce3b289f60c57d6f74e7e7279377fcafb214555779ead917ffb4",
+      "bytes": 24572
+    },
+    {
+      "file": "espn_game_odds__401547354.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547354/competitions/401547354/odds",
+      "sha256": "9eccbe4ac92ec099003f7aa82c76187a26df3072d58ee10e85502b6d6d5b6575",
+      "bytes": 24422
+    },
+    {
+      "file": "espn_game_odds__401547468.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547468/competitions/401547468/odds",
+      "sha256": "3a9a17762a1c28237cc50037493339c6c0f377459047e6fe2497b8d51ab83c20",
+      "bytes": 21753
+    },
+    {
+      "file": "espn_game_odds__401547469.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547469/competitions/401547469/odds",
+      "sha256": "d3054968eca9d213303000d6bb07346cf01727d62f8852bb4d42179554ca0e39",
+      "bytes": 41656
+    },
+    {
+      "file": "espn_game_odds__401547229.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547229/competitions/401547229/odds",
+      "sha256": "5595736d228797cc667ed9d44cdf7e8696fc414f8b3f256c31f15b3b41ae23fd",
+      "bytes": 43783
+    },
+    {
+      "file": "espn_game_odds__401547473.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547473/competitions/401547473/odds",
+      "sha256": "bb16d0e24981270b8ba94896adc5c9175881b09780c53f9c23c105a7201aa002",
+      "bytes": 43642
+    },
+    {
+      "file": "espn_game_odds__401547472.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547472/competitions/401547472/odds",
+      "sha256": "27d36788d2c30c11978340d9324a98471c28aef9e50a6c9d275c861b1a77e71c",
+      "bytes": 42493
+    },
+    {
+      "file": "espn_game_odds__401547475.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547475/competitions/401547475/odds",
+      "sha256": "4bbfec3f1a3ce2075d7dec14e081be8f5f373c14f3eea46d96dc688dd5eb5e98",
+      "bytes": 42923
+    },
+    {
+      "file": "espn_game_odds__401547477.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547477/competitions/401547477/odds",
+      "sha256": "62b817152993d78783a8069fa75c0a03108652886b2ed4a7b58b912dacff63ef",
+      "bytes": 42344
+    },
+    {
+      "file": "espn_game_odds__401547471.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547471/competitions/401547471/odds",
+      "sha256": "56aef16746328d913a964d8b0b5f28908f829a92058e18f42668be37142ee64a",
+      "bytes": 44204
+    },
+    {
+      "file": "espn_game_odds__401547476.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547476/competitions/401547476/odds",
+      "sha256": "de21a49c5356eabb21d10048626d0c22a94e1baa49389ce81803f66bf4fcc0cc",
+      "bytes": 44778
+    },
+    {
+      "file": "espn_game_odds__401547470.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547470/competitions/401547470/odds",
+      "sha256": "5437a1fbb0c7381a953ae169e3967a9493f18298e7edfd23ca0417663bcf0088",
+      "bytes": 40003
+    },
+    {
+      "file": "espn_game_odds__401547474.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547474/competitions/401547474/odds",
+      "sha256": "3ce63132a34fc4f8d5d81150d8df4fdb7a9091d70eaf5189a0d67f9cb26aba28",
+      "bytes": 40865
+    },
+    {
+      "file": "espn_game_odds__401547479.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547479/competitions/401547479/odds",
+      "sha256": "7cdaa2f0efcb6dc381569235c738ab4b6de1e1e774dba6168491d902f52ee0f3",
+      "bytes": 43496
+    },
+    {
+      "file": "espn_game_odds__401547478.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547478/competitions/401547478/odds",
+      "sha256": "484f9227a82b15996e4eecba4f4586cd40fb3885cfb61a79b645a6a4d5bdfb93",
+      "bytes": 43924
+    },
+    {
+      "file": "espn_game_odds__401547480.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547480/competitions/401547480/odds",
+      "sha256": "c0e72bb078f959fb1d37dd4e8112deab50137eb0865c9157e95840de5488ab12",
+      "bytes": 42752
+    },
+    {
+      "file": "espn_game_odds__401547481.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547481/competitions/401547481/odds",
+      "sha256": "7c33bf1efd69edbb979211184d36b4bf35d632b44534f2cc6331523d8b677ad3",
+      "bytes": 43608
+    },
+    {
+      "file": "espn_game_odds__401547482.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547482/competitions/401547482/odds",
+      "sha256": "5bf405ee053fdec9ab71232defb726e0fd0bae70348dce23e3553b9b18c1f89e",
+      "bytes": 43378
+    },
+    {
+      "file": "espn_game_odds__401547483.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547483/competitions/401547483/odds",
+      "sha256": "f166f3a4c5a5994f16be719f9027bfa0f61c3c452d3eece3b7c48f9f1be36cd9",
+      "bytes": 50760
+    },
+    {
+      "file": "espn_game_odds__401547491.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547491/competitions/401547491/odds",
+      "sha256": "a764b77040db5ff640b437f06a377331c19535e34522ce288bd7b8ac144f80c8",
+      "bytes": 50671
+    },
+    {
+      "file": "espn_game_odds__401547485.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547485/competitions/401547485/odds",
+      "sha256": "082696f4034909fac8c10de8b59737d18501efb237e383d64233de6ce185851b",
+      "bytes": 50668
+    },
+    {
+      "file": "espn_game_odds__401547484.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547484/competitions/401547484/odds",
+      "sha256": "e53133db09a37a8f92c7c02fd2fc33387fd7f81214af0f0053a7beb70e751332",
+      "bytes": 50553
+    },
+    {
+      "file": "espn_game_odds__401547489.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547489/competitions/401547489/odds",
+      "sha256": "77d8556f9a569e3b8d49c7308a14e43508a1694a63a16c0aaeb9383570f70f21",
+      "bytes": 50639
+    },
+    {
+      "file": "espn_game_odds__401547490.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547490/competitions/401547490/odds",
+      "sha256": "d99c54c3d2317e3f2fea35311471461a33f8455009684a8aeea58dae3f3c96f3",
+      "bytes": 45001
+    },
+    {
+      "file": "espn_game_odds__401547486.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547486/competitions/401547486/odds",
+      "sha256": "3bef8e8c5bfbf42736834831f503091f5ba7a76473075901452d72234bec38bd",
+      "bytes": 47524
+    },
+    {
+      "file": "espn_game_odds__401547493.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547493/competitions/401547493/odds",
+      "sha256": "bd6b0da70284f6fb01298198774d5b0104b806737fb602ff6eefff01beb8af5b",
+      "bytes": 50841
+    },
+    {
+      "file": "espn_game_odds__401547492.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547492/competitions/401547492/odds",
+      "sha256": "6908902e76a1c42b04592951130e6e25c239d9044e526b5384a9aadf263871dd",
+      "bytes": 49433
+    },
+    {
+      "file": "espn_game_odds__401547487.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547487/competitions/401547487/odds",
+      "sha256": "8c5f2a4e5243521ad4ae85862c861125c05e67dac6eae299acd3bd747aeae8f1",
+      "bytes": 50533
+    },
+    {
+      "file": "espn_game_odds__401547488.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547488/competitions/401547488/odds",
+      "sha256": "92e2c0e1a73c98240ddf3e50c9e7e3a810ee672cda1104a32df3bc5c3865f724",
+      "bytes": 50744
+    },
+    {
+      "file": "espn_game_odds__401547494.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547494/competitions/401547494/odds",
+      "sha256": "bcd18093704c786761f8fbad43b33e3e2085d1287dda97a70d93b418bfa0b327",
+      "bytes": 50424
+    },
+    {
+      "file": "espn_game_odds__401547495.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547495/competitions/401547495/odds",
+      "sha256": "87f01b790529342f4b0a13bc0c3b152fcadb8381caec4486fb1c020d9918811e",
+      "bytes": 50175
+    },
+    {
+      "file": "espn_game_odds__401547496.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547496/competitions/401547496/odds",
+      "sha256": "32a4a5d76762c990337890f288999415e003d2e774b7dbb83aa0cd5dac0953af",
+      "bytes": 52437
+    },
+    {
+      "file": "espn_game_odds__401547500.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547500/competitions/401547500/odds",
+      "sha256": "80aa0affbcbc211ba3cd60c4c38a11bfc12a8974e0ade23051610d2b3e00d69f",
+      "bytes": 52565
+    },
+    {
+      "file": "espn_game_odds__401547504.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547504/competitions/401547504/odds",
+      "sha256": "4075f6ba6a62b649656021ff4a5e1104da269aa626ab8d3adf9c1282b5937986",
+      "bytes": 52025
+    },
+    {
+      "file": "espn_game_odds__401547499.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547499/competitions/401547499/odds",
+      "sha256": "896a4f4dee4cec548818593bb9814b53ac4b8f438d4f3216008b9ed6955c474d",
+      "bytes": 48198
+    },
+    {
+      "file": "espn_game_odds__401547505.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547505/competitions/401547505/odds",
+      "sha256": "ac171e7e6e89931c4bc726f0dbf38376ad096ab83a6a879401ed3509ac21b9cf",
+      "bytes": 51924
+    },
+    {
+      "file": "espn_game_odds__401547506.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547506/competitions/401547506/odds",
+      "sha256": "6c1ed231c68b504a745284efacf4ef20c0752d1dbdc34f59206f5e74f4b342c2",
+      "bytes": 51199
+    },
+    {
+      "file": "espn_game_odds__401547497.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547497/competitions/401547497/odds",
+      "sha256": "cc0a7a3168b65853843675f2ca08a16299aa44b1163a3daa0de036c8902ccdf0",
+      "bytes": 52819
+    },
+    {
+      "file": "espn_game_odds__401547507.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547507/competitions/401547507/odds",
+      "sha256": "b5c6eff5b8241e8d0c0a3d8c3d968659ebab7c0c762afec700c2a6b12203f1b8",
+      "bytes": 52201
+    },
+    {
+      "file": "espn_game_odds__401547498.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547498/competitions/401547498/odds",
+      "sha256": "6fe6b10b05c47208f307869381d09c232fc51c74bc53abe155504d89ccd9a0f9",
+      "bytes": 52441
+    },
+    {
+      "file": "espn_game_odds__401547508.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547508/competitions/401547508/odds",
+      "sha256": "6e39cf4bfd4b95efeed19df0af6e38efa87f095e4b1e971bde6b74d81841f3ec",
+      "bytes": 49647
+    },
+    {
+      "file": "espn_game_odds__401547509.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547509/competitions/401547509/odds",
+      "sha256": "e659ae02c7dbf07812e536a45895964b247081cb5d6e84af2d55d9f08a4aa271",
+      "bytes": 52175
+    },
+    {
+      "file": "espn_game_odds__401547501.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547501/competitions/401547501/odds",
+      "sha256": "73c6cfa64ffbef3ab5574066e5b3619e1f830a416c965f43878d9af0a5ab8db5",
+      "bytes": 52132
+    },
+    {
+      "file": "espn_game_odds__401547503.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547503/competitions/401547503/odds",
+      "sha256": "bffddc68f7426c7a94214a8aacbc5cfb899c4f3faa46630f83d965573e9a087a",
+      "bytes": 52286
+    },
+    {
+      "file": "espn_game_odds__401547502.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547502/competitions/401547502/odds",
+      "sha256": "0e680e37e0e0979555a272e17837b028a31a3ce0950986dedd2013e13ee58b61",
+      "bytes": 52282
+    },
+    {
+      "file": "espn_game_odds__401547510.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547510/competitions/401547510/odds",
+      "sha256": "7f9e522e8b10a93dfea742b469d3cec77ad9f4f998ed261852a58f4263e67b34",
+      "bytes": 52616
+    },
+    {
+      "file": "espn_game_odds__401547511.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547511/competitions/401547511/odds",
+      "sha256": "ab3136669fe36a34598ac4f51445ccb9afc469412594e4128ebc1976aed3ba92",
+      "bytes": 49310
+    },
+    {
+      "file": "espn_game_odds__401547512.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547512/competitions/401547512/odds",
+      "sha256": "8de16938d1047164d04f08c1784d1ce188411f2b20e07af70fe5516d23e2a953",
+      "bytes": 54701
+    },
+    {
+      "file": "espn_game_odds__401547230.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547230/competitions/401547230/odds",
+      "sha256": "92944bb7fc4d4eb7f44a8587b4eed220193d6035ed98906d06c1189c1f701c3c",
+      "bytes": 51452
+    },
+    {
+      "file": "espn_game_odds__401547514.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547514/competitions/401547514/odds",
+      "sha256": "a089dc6c4a73dbe020850b58e5a12bc7f957a3479562800deb0c62820119f393",
+      "bytes": 54331
+    },
+    {
+      "file": "espn_game_odds__401547516.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547516/competitions/401547516/odds",
+      "sha256": "1094a4ecf41f731b4018e0cd9507db9f5820efe0cc961f49ebb6a66faf6515cf",
+      "bytes": 54548
+    },
+    {
+      "file": "espn_game_odds__401547519.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547519/competitions/401547519/odds",
+      "sha256": "bd0a822f0966ab4e1c80d317f0a1c7576b44cd079bb1607e29865cb414a28800",
+      "bytes": 54722
+    },
+    {
+      "file": "espn_game_odds__401547518.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547518/competitions/401547518/odds",
+      "sha256": "51ab4fb1e3b7eccf55adbb62a5e5a0ead9a4cf248445b1e2057ea15f2b89ea8c",
+      "bytes": 54881
+    },
+    {
+      "file": "espn_game_odds__401547513.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547513/competitions/401547513/odds",
+      "sha256": "51055a27763525a7f37ee7d7ba79979debac5511072bedde205780f8e677e243",
+      "bytes": 51958
+    },
+    {
+      "file": "espn_game_odds__401547515.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547515/competitions/401547515/odds",
+      "sha256": "8c454f4d6f22439647382ec63316935e83a62229eabb0422e8d55396260b9c03",
+      "bytes": 54861
+    },
+    {
+      "file": "espn_game_odds__401547520.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547520/competitions/401547520/odds",
+      "sha256": "b0d0d78ef9086cec7abcd14a4b04d542e20bbfbf50e66193f13c82ae2fbe5d59",
+      "bytes": 51823
+    },
+    {
+      "file": "espn_game_odds__401547517.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547517/competitions/401547517/odds",
+      "sha256": "efdba224905d2c172a208a80f6db794f9c11978d1daf52a8e6d8073fdbdfb046",
+      "bytes": 54862
+    },
+    {
+      "file": "espn_game_odds__401547522.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547522/competitions/401547522/odds",
+      "sha256": "9b08fcebf09d85be8e1816d60bdaf6d3a6364075b677d4cd83463afd527575ec",
+      "bytes": 54802
+    },
+    {
+      "file": "espn_game_odds__401547521.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547521/competitions/401547521/odds",
+      "sha256": "e8508872ffd11c9faf08d168af0f980bb8c9e4f1a76e2b47fa3c4063f6884ac9",
+      "bytes": 51931
+    },
+    {
+      "file": "espn_game_odds__401547523.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547523/competitions/401547523/odds",
+      "sha256": "e85c1e842d0fdfcc1bd531a55bfc39899c6b47633a54593401a07d1e2528aae2",
+      "bytes": 55009
+    },
+    {
+      "file": "espn_game_odds__401547524.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547524/competitions/401547524/odds",
+      "sha256": "5af2525f6a7181a79ec06ea18b72f9e8647b3dd9880fcf0ffbb82858cc46f82a",
+      "bytes": 54662
+    },
+    {
+      "file": "espn_game_odds__401547525.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547525/competitions/401547525/odds",
+      "sha256": "3b0e9160086188dba1e977701bf384da036b1d5a6c7e67aa59d3fe82c7b50b30",
+      "bytes": 54470
+    },
+    {
+      "file": "espn_game_odds__401547231.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547231/competitions/401547231/odds",
+      "sha256": "1af4ef053d05cddbe4488e6ced1244fe069f1e49cf87a01f61717387dafc5556",
+      "bytes": 52411
+    },
+    {
+      "file": "espn_game_odds__401547531.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547531/competitions/401547531/odds",
+      "sha256": "fa00fc2ffc5737b752b3631469366c8bc9b16b6820e70b4662af4bcf78308be9",
+      "bytes": 53979
+    },
+    {
+      "file": "espn_game_odds__401547527.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547527/competitions/401547527/odds",
+      "sha256": "e20af7c8aa1e73752d0b8128ce377596f2c4ebc284fae2d8556bcc4b7b1ef562",
+      "bytes": 54385
+    },
+    {
+      "file": "espn_game_odds__401547526.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547526/competitions/401547526/odds",
+      "sha256": "0a23ed850b3d0896b7af298e1aa5e141b2a1679ac3ef57e7ffc87ff2a21f5f7e",
+      "bytes": 54550
+    },
+    {
+      "file": "espn_game_odds__401547533.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547533/competitions/401547533/odds",
+      "sha256": "70f705494613abc39a235bc8dc59f429390d6871b2e7ae8c5c553a1c5187a71b",
+      "bytes": 54341
+    },
+    {
+      "file": "espn_game_odds__401547532.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547532/competitions/401547532/odds",
+      "sha256": "522937483419e2409a053f0599334aa9675a9ba0b3ed8d94f5685420e1a2e020",
+      "bytes": 52937
+    },
+    {
+      "file": "espn_game_odds__401547528.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547528/competitions/401547528/odds",
+      "sha256": "dd6b81c9600a9816704b3d54c260d16b6f97a740fe7ce29b666b4691b6c5acf0",
+      "bytes": 53168
+    },
+    {
+      "file": "espn_game_odds__401547529.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547529/competitions/401547529/odds",
+      "sha256": "90297f959dbe39bc8380aee2e99e352843d2b5213975f8fd77e9fceed2fa2b8c",
+      "bytes": 54157
+    },
+    {
+      "file": "espn_game_odds__401547530.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547530/competitions/401547530/odds",
+      "sha256": "e767bd067bf1fa5ffcd6c9e98a96fc9c856f22ffd0a3bd824848c29c4d27fc7a",
+      "bytes": 54360
+    },
+    {
+      "file": "espn_game_odds__401547534.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547534/competitions/401547534/odds",
+      "sha256": "d017966bddb9c11e2b55c8415afa655ac6f74f3e0301c5f5cadd308c3565f03d",
+      "bytes": 54670
+    },
+    {
+      "file": "espn_game_odds__401547535.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547535/competitions/401547535/odds",
+      "sha256": "c957d5521f3a744fabab2dfd4a6fda6df25d87b490c08a4e501136fd42f14dd7",
+      "bytes": 51325
+    },
+    {
+      "file": "espn_game_odds__401547536.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547536/competitions/401547536/odds",
+      "sha256": "1a2e901eb6feac884b9a4a89f731e92d44ce49f19906335b12faaa8b271f3602",
+      "bytes": 51836
+    },
+    {
+      "file": "espn_game_odds__401547537.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547537/competitions/401547537/odds",
+      "sha256": "d35f31c5e4e8f41488aa9fdf48b0a4ecc333f5fcec4b19df8f30ae164038272c",
+      "bytes": 54547
+    },
+    {
+      "file": "espn_game_odds__401547538.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547538/competitions/401547538/odds",
+      "sha256": "ff45ccd682192e5e90fd6c5971d816a2cef87d10609c46925ba4153baf577c2b",
+      "bytes": 54457
+    },
+    {
+      "file": "espn_game_odds__401547540.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547540/competitions/401547540/odds",
+      "sha256": "677494980271d1f87fa72593b316372a2ab0be12bec63c39859ad493d62db80a",
+      "bytes": 54499
+    },
+    {
+      "file": "espn_game_odds__401547546.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547546/competitions/401547546/odds",
+      "sha256": "996fc946515c3c6f0f159a4183ae5273a01f45418a9f4a773a8b410fdd40af54",
+      "bytes": 54341
+    },
+    {
+      "file": "espn_game_odds__401547545.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547545/competitions/401547545/odds",
+      "sha256": "05b689b9e462219053929315830e57bf7aaed7f1cb192c807fce0c7c7ac2205f",
+      "bytes": 54511
+    },
+    {
+      "file": "espn_game_odds__401547547.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547547/competitions/401547547/odds",
+      "sha256": "b8ae332f4ca34f66169a1abd8956b60a86bf9bf55cb00d93e7f12cfa0282897b",
+      "bytes": 54134
+    },
+    {
+      "file": "espn_game_odds__401547542.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547542/competitions/401547542/odds",
+      "sha256": "adcfea9ee6fc8342c0347e76146897c476bacf9f4c89ada9ae3bbac65323afb1",
+      "bytes": 51807
+    },
+    {
+      "file": "espn_game_odds__401547548.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547548/competitions/401547548/odds",
+      "sha256": "f8ff79434fb0ec2c55498e6a3167ac8fe79213b67e8840c091e1ab5f3dbf23ac",
+      "bytes": 51790
+    },
+    {
+      "file": "espn_game_odds__401547539.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547539/competitions/401547539/odds",
+      "sha256": "2e41997a05b9240f1bdb85e7546ef33620b2e7605aad3a4b0fe0d11a56aceb33",
+      "bytes": 54645
+    },
+    {
+      "file": "espn_game_odds__401547541.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547541/competitions/401547541/odds",
+      "sha256": "57edf221602236bfbf6ef70911092777907ab0610a55ed0768a1df882bebcea0",
+      "bytes": 54460
+    },
+    {
+      "file": "espn_game_odds__401547549.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547549/competitions/401547549/odds",
+      "sha256": "5dbb4f00010ff1ac7bb7e038e393b6743ae97604abd36f67c6e696f4b60d7ab8",
+      "bytes": 54783
+    },
+    {
+      "file": "espn_game_odds__401547543.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547543/competitions/401547543/odds",
+      "sha256": "d2767394f9b76712e7347c1113463581c9d9c6ba56aa5cb339f49f956f59ffb4",
+      "bytes": 54338
+    },
+    {
+      "file": "espn_game_odds__401547544.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547544/competitions/401547544/odds",
+      "sha256": "159cfc78bae6c658bea41d7f87470c451c5307ce829e80bac7afd74e6b8b4529",
+      "bytes": 54000
+    },
+    {
+      "file": "espn_game_odds__401547550.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547550/competitions/401547550/odds",
+      "sha256": "47bb4224a25f7614c09c87da083c67c694b6a49bec4b4580f394205e53b8f70e",
+      "bytes": 54657
+    },
+    {
+      "file": "espn_game_odds__401547345.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547345/competitions/401547345/odds",
+      "sha256": "f6e686ffecf1a76bec83a1bcb3e71264bed130d5bbc5edbce854b99a89fde019",
+      "bytes": 52121
+    },
+    {
+      "file": "espn_game_odds__401547552.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547552/competitions/401547552/odds",
+      "sha256": "2074534f54c16e8963f2e4c018ef30bd005c06f79ee268d8045ecb4e48aa16ac",
+      "bytes": 54534
+    },
+    {
+      "file": "espn_game_odds__401547551.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547551/competitions/401547551/odds",
+      "sha256": "232ad581ea9791a65c0b027248a0c312747ec9632c47d552bc4e06b9f6d1c4a5",
+      "bytes": 51771
+    },
+    {
+      "file": "espn_game_odds__401547553.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547553/competitions/401547553/odds",
+      "sha256": "a717fb35c26965f997c9c349a07542883df4815d8465e0532948b3ebc48b72d9",
+      "bytes": 54055
+    },
+    {
+      "file": "espn_game_odds__401547242.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547242/competitions/401547242/odds",
+      "sha256": "9b3c32fbd43eccbdaa424e807d2aeb27a21b567b6870cca288baeba506fcafe4",
+      "bytes": 51034
+    },
+    {
+      "file": "espn_game_odds__401547561.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547561/competitions/401547561/odds",
+      "sha256": "c0d94956ed496a9c3788eb680430dd584555cd17e3b599104b0b9b33ea4818f1",
+      "bytes": 54510
+    },
+    {
+      "file": "espn_game_odds__401547555.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547555/competitions/401547555/odds",
+      "sha256": "e2bfb20692750ec7935e76cb248771348df39f3d1e4458d44e87bb3d3c16567b",
+      "bytes": 54215
+    },
+    {
+      "file": "espn_game_odds__401547560.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547560/competitions/401547560/odds",
+      "sha256": "c6902787730860294a3206c94037bf2fbabec03cff9fa44a79b973db58e1a769",
+      "bytes": 54257
+    },
+    {
+      "file": "espn_game_odds__401547559.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547559/competitions/401547559/odds",
+      "sha256": "5767f1cfbac7977e9ade4c2fe57dc934c644ad2e736d4a445ff88dfd7f9d318a",
+      "bytes": 54103
+    },
+    {
+      "file": "espn_game_odds__401547554.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547554/competitions/401547554/odds",
+      "sha256": "c49e6a389972dd509d2f504430cd7e30d08f0c09594f598c3b6f8ece9aa8920c",
+      "bytes": 54416
+    },
+    {
+      "file": "espn_game_odds__401547556.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547556/competitions/401547556/odds",
+      "sha256": "bcf5b906a9c25c7ae9db0414fb7b2ae0d11b8c856c9308e3f69faa130c3c3d34",
+      "bytes": 54522
+    },
+    {
+      "file": "espn_game_odds__401547563.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547563/competitions/401547563/odds",
+      "sha256": "e69008b4c150c316454f34dfadf1da9febf445a704569c44306e9220ade2face",
+      "bytes": 54618
+    },
+    {
+      "file": "espn_game_odds__401547562.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547562/competitions/401547562/odds",
+      "sha256": "4547e7caa49b13da8d23909386730ea11076d59242937d9eecb393843f3e97b5",
+      "bytes": 53768
+    },
+    {
+      "file": "espn_game_odds__401547558.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547558/competitions/401547558/odds",
+      "sha256": "b28c65c9205e6c80f33cc1037dc1852b597fcfc0a9a820df58e3dd90b7ff10b7",
+      "bytes": 49808
+    },
+    {
+      "file": "espn_game_odds__401547557.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547557/competitions/401547557/odds",
+      "sha256": "0dd1baa40d5fca44388d48c5dbb545a9aa1bcf9cd6a64395c8b4ca0e01c069f8",
+      "bytes": 56356
+    },
+    {
+      "file": "espn_game_odds__401547564.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547564/competitions/401547564/odds",
+      "sha256": "9c9f469b07d49b64e82f9ea6395799fee0b03cbe50d34e819114a89b270c8bc9",
+      "bytes": 54254
+    },
+    {
+      "file": "espn_game_odds__401547565.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547565/competitions/401547565/odds",
+      "sha256": "f8509fdc4beec6ad473872b932a691a04e8857fcdb41eaf53559432009124f27",
+      "bytes": 54482
+    },
+    {
+      "file": "espn_game_odds__401547566.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547566/competitions/401547566/odds",
+      "sha256": "fac01e88bf760902e61737bdc414fb6c6a1ce4cf7c7af7be70b8c5752024fe2f",
+      "bytes": 54519
+    },
+    {
+      "file": "espn_game_odds__401547568.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547568/competitions/401547568/odds",
+      "sha256": "7c3bc1808febf59ff1b5340e8ee8c9f436fae03f0eb6e48e9728baa06a5b0ffb",
+      "bytes": 59453
+    },
+    {
+      "file": "espn_game_odds__401547573.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547573/competitions/401547573/odds",
+      "sha256": "e87024b48f7706a3a8e69ccc8a80dc26545fa2be8724d0e6374fd7d87ad3c4c7",
+      "bytes": 54471
+    },
+    {
+      "file": "espn_game_odds__401547571.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547571/competitions/401547571/odds",
+      "sha256": "bff3cac540e840264ed01ab6a51fc83db0b7ea4cd3b11939a58d7d8185a28dfe",
+      "bytes": 54217
+    },
+    {
+      "file": "espn_game_odds__401547572.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547572/competitions/401547572/odds",
+      "sha256": "680f7bf281752a52cf0780a22890fa2f401298a65cd5b059968bbfda62fddcd0",
+      "bytes": 53855
+    },
+    {
+      "file": "espn_game_odds__401547570.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547570/competitions/401547570/odds",
+      "sha256": "527109f6b0c2a821eb39174fc65490306a77bb76743ee8ddff19dc96a905b28e",
+      "bytes": 54184
+    },
+    {
+      "file": "espn_game_odds__401547567.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547567/competitions/401547567/odds",
+      "sha256": "415b8a8462ce0bf05c22990d7fd7b202e3c6877394f0766e219aff207d792f31",
+      "bytes": 54605
+    },
+    {
+      "file": "espn_game_odds__401547574.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547574/competitions/401547574/odds",
+      "sha256": "a070a67611524cbb7163c849d10ee7bd58bb657f53519970466a872a90e40231",
+      "bytes": 51779
+    },
+    {
+      "file": "espn_game_odds__401547569.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547569/competitions/401547569/odds",
+      "sha256": "9ac5d39cf491751e23a6e0c3b8fb1ee2ab141b564ac2186725f4e3d00485d0c3",
+      "bytes": 54390
+    },
+    {
+      "file": "espn_game_odds__401547575.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547575/competitions/401547575/odds",
+      "sha256": "53593e096964ce1e833fd3d437e8b123af6656dd19e7890c371b4c9474c1b4bc",
+      "bytes": 54246
+    },
+    {
+      "file": "espn_game_odds__401547276.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547276/competitions/401547276/odds",
+      "sha256": "088b6c04a68d829a06265654bef6f6813be4716bf878d51f6971e90c66a6e908",
+      "bytes": 50828
+    },
+    {
+      "file": "espn_game_odds__401547576.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547576/competitions/401547576/odds",
+      "sha256": "9a8ceeb4b269e4a1f29fde7d461c265c4ceaa31185a149f88299b8c0cd08ca0f",
+      "bytes": 54198
+    },
+    {
+      "file": "espn_game_odds__401547577.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547577/competitions/401547577/odds",
+      "sha256": "aeebdff1d2d876cb06242ff0fbc15bfe56ed2ca1ea22bf23e854299e30a08305",
+      "bytes": 54557
+    },
+    {
+      "file": "espn_game_odds__401547578.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547578/competitions/401547578/odds",
+      "sha256": "ea7f691b202d43af3da43f39e3f43ebbea5756e6087e5faf24e570abb3b8572f",
+      "bytes": 50236
+    },
+    {
+      "file": "espn_game_odds__401547587.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547587/competitions/401547587/odds",
+      "sha256": "806c07d210eb627cf299a6a2810cbd961c379ab7ba7e755cdc7dbfdc3e4e3c35",
+      "bytes": 59068
+    },
+    {
+      "file": "espn_game_odds__401547586.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547586/competitions/401547586/odds",
+      "sha256": "7a5c814f3c559e9d6ab91d0fc10a9ff37fb644e89d77c6d9a4a4fb4699495089",
+      "bytes": 59270
+    },
+    {
+      "file": "espn_game_odds__401547582.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547582/competitions/401547582/odds",
+      "sha256": "839aa28f9ca3f070b38ce4422e1bf29e87b09154b1a5ada80cc500890419ab93",
+      "bytes": 54564
+    },
+    {
+      "file": "espn_game_odds__401547580.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547580/competitions/401547580/odds",
+      "sha256": "aac8b1e436244189dfad7e67b03734865bb5e8210a38a19264ba1e7757248b54",
+      "bytes": 50272
+    },
+    {
+      "file": "espn_game_odds__401547581.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547581/competitions/401547581/odds",
+      "sha256": "27078f5ccb78ecc7564f8e132cab1795587a308be484cf34348e9a6d1e8c8e52",
+      "bytes": 54167
+    },
+    {
+      "file": "espn_game_odds__401547585.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547585/competitions/401547585/odds",
+      "sha256": "111379152f76dbfab4e402f517506efbf545ca2329d0e5943580d78f7a2c8487",
+      "bytes": 54150
+    },
+    {
+      "file": "espn_game_odds__401547579.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547579/competitions/401547579/odds",
+      "sha256": "21db0e2b938b7c451d6c337407e78cf0f58a3a6f81e005d381d9494fae35d903",
+      "bytes": 54421
+    },
+    {
+      "file": "espn_game_odds__401547588.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547588/competitions/401547588/odds",
+      "sha256": "f350eb2fa5a916bf6a3b229f41158f65853ebe76dd5635fcb9e74ac5a29833e5",
+      "bytes": 51431
+    },
+    {
+      "file": "espn_game_odds__401547589.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547589/competitions/401547589/odds",
+      "sha256": "be4c4fbe37b90773a0bac902354ff228d0eb875ea3ac4eb01206336f59490e63",
+      "bytes": 54480
+    },
+    {
+      "file": "espn_game_odds__401547583.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547583/competitions/401547583/odds",
+      "sha256": "f30fa56729c65871fcd6d6449325862549df1d8755289cf5fbc57561fe70203c",
+      "bytes": 54123
+    },
+    {
+      "file": "espn_game_odds__401547584.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547584/competitions/401547584/odds",
+      "sha256": "59b0dd0bb5fe11311d3e9d6a055947f1a5e458a34487c37bad584052a0a453ac",
+      "bytes": 59447
+    },
+    {
+      "file": "espn_game_odds__401547590.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547590/competitions/401547590/odds",
+      "sha256": "db88a7df2699157e054c768ed477eb566e19aeba3a047b313a3e5f6241c68f13",
+      "bytes": 54147
+    },
+    {
+      "file": "espn_game_odds__401547591.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547591/competitions/401547591/odds",
+      "sha256": "bfba41333ebd947574a05c648b75d35915634c8b24b2bac3ae3e53f9fb8be80d",
+      "bytes": 54538
+    },
+    {
+      "file": "espn_game_odds__401547592.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547592/competitions/401547592/odds",
+      "sha256": "26f3cc6c0005e4d40b379231a74c173873f153bbd1badbf569341afc048981b9",
+      "bytes": 54783
+    },
+    {
+      "file": "espn_game_odds__401547593.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547593/competitions/401547593/odds",
+      "sha256": "277137bb54fbf0d5be78bfa1a10841f2aca66b0937311bd720240628409c5fbf",
+      "bytes": 51307
+    },
+    {
+      "file": "espn_game_odds__401547604.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547604/competitions/401547604/odds",
+      "sha256": "bf20bc20d6781b8cbae79a5476969a6e0a7e06d4851de8d8fb78e198d07ba99f",
+      "bytes": 54703
+    },
+    {
+      "file": "espn_game_odds__401547607.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547607/competitions/401547607/odds",
+      "sha256": "38e2f98ff7b0e61fb2aad3d8cf42c2e9fc80c4723af39bf2840fafb77942c427",
+      "bytes": 59711
+    },
+    {
+      "file": "espn_game_odds__401547606.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547606/competitions/401547606/odds",
+      "sha256": "1247d0a2230ac8a37d3483c46dcf7579709538acf40d4230e67685f4e39dfdb6",
+      "bytes": 54620
+    },
+    {
+      "file": "espn_game_odds__401547603.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547603/competitions/401547603/odds",
+      "sha256": "58e82aa810d9c80b054346fa337f085334623fcdae690294e649333b97abcaba",
+      "bytes": 54548
+    },
+    {
+      "file": "espn_game_odds__401547605.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547605/competitions/401547605/odds",
+      "sha256": "3d782df759c02adcec0f6b765ec3df52fdc2d63565eef8ebc919d6f75e5ef0a0",
+      "bytes": 54513
+    },
+    {
+      "file": "espn_game_odds__401547595.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547595/competitions/401547595/odds",
+      "sha256": "e79adb43d1641d5f802c18d86ff62025e8e3448230f5321b9f3521aba565a054",
+      "bytes": 54614
+    },
+    {
+      "file": "espn_game_odds__401547608.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547608/competitions/401547608/odds",
+      "sha256": "34c1581862cb9b61fc70fe3585a0a09619bc064d723eacee1a1cf834864ba0af",
+      "bytes": 54394
+    },
+    {
+      "file": "espn_game_odds__401547599.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547599/competitions/401547599/odds",
+      "sha256": "688c354c49098bd9b85ff582380703c273510e2d00849db6b6cef05e18029efd",
+      "bytes": 54381
+    },
+    {
+      "file": "espn_game_odds__401547594.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547594/competitions/401547594/odds",
+      "sha256": "4a1d73835ece15e596f3aadb1b352a544f4f528dc31ddf257cce2df9de892c68",
+      "bytes": 54715
+    },
+    {
+      "file": "espn_game_odds__401547598.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547598/competitions/401547598/odds",
+      "sha256": "65a3af4c67f6cc517c5b7912fc00b06cb83a5473371104caa5a6e04a027ca915",
+      "bytes": 54585
+    },
+    {
+      "file": "espn_game_odds__401547596.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547596/competitions/401547596/odds",
+      "sha256": "b6db896456487ac397a68e814a7d460731f755cc625a5147b41706dbbb6cdb72",
+      "bytes": 54685
+    },
+    {
+      "file": "espn_game_odds__401547597.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547597/competitions/401547597/odds",
+      "sha256": "a0a2d8b96a9c9cde8af4f88cc5e8a1a2ac8621ac098a0cb8e493e6b7a67e9351",
+      "bytes": 51758
+    },
+    {
+      "file": "espn_game_odds__401547600.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547600/competitions/401547600/odds",
+      "sha256": "eaa6034a2f0d230fd493ef755a6c65f3b4fd05166af4d32fd0f35d0d902ee48b",
+      "bytes": 54694
+    },
+    {
+      "file": "espn_game_odds__401547602.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547602/competitions/401547602/odds",
+      "sha256": "2ec9cbe259fb2304a71afc79cf4f37657324c6d8fb5fde82f44cd34a8674386b",
+      "bytes": 59323
+    },
+    {
+      "file": "espn_game_odds__401547601.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547601/competitions/401547601/odds",
+      "sha256": "66d2543d37364968188b3e2a040bc11f787d8df4b3dc9f2192478b26f35b952f",
+      "bytes": 54308
+    },
+    {
+      "file": "espn_game_odds__401547609.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547609/competitions/401547609/odds",
+      "sha256": "5245fcc0cb9fe87896eb6dafb844f5fe693d0b73bfc14f844fc5b040e37aa8bf",
+      "bytes": 49696
+    },
+    {
+      "file": "espn_game_odds__401547610.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547610/competitions/401547610/odds",
+      "sha256": "071298616c04b79e031303b2bce3b6e9c52aa707f2d0577e69fbf77d7a5d7996",
+      "bytes": 55100
+    },
+    {
+      "file": "espn_game_odds__401547611.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547611/competitions/401547611/odds",
+      "sha256": "cf9125560266ba606df927051799821a3c1c322ec9bdc9bbebc35fade4e92226",
+      "bytes": 50433
+    },
+    {
+      "file": "espn_game_odds__401547612.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547612/competitions/401547612/odds",
+      "sha256": "17cedd08e61dc6d1381d36f0ddaf487f33ba024254d0d8967eeb7835242c97a3",
+      "bytes": 50079
+    },
+    {
+      "file": "espn_game_odds__401547618.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547618/competitions/401547618/odds",
+      "sha256": "17b1d281af993326b8b709e32415cfa91292125364a4c60f013987ca61cb1baa",
+      "bytes": 50097
+    },
+    {
+      "file": "espn_game_odds__401547617.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547617/competitions/401547617/odds",
+      "sha256": "b2acc12c3d8d76bce53203c57621b2675ad81a6d169ea2aa02dcd1436777e474",
+      "bytes": 45844
+    },
+    {
+      "file": "espn_game_odds__401547616.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547616/competitions/401547616/odds",
+      "sha256": "7f2b96b33b4a4927e5afd0c575cf6b39f4d3c83d6dfd698c4cb0c1a476c9d2eb",
+      "bytes": 45590
+    },
+    {
+      "file": "espn_game_odds__401547614.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547614/competitions/401547614/odds",
+      "sha256": "a4b5d6292a6010b0a956e1d170343c1c9b89c607a109ce7998274ec5e1060287",
+      "bytes": 50168
+    },
+    {
+      "file": "espn_game_odds__401547613.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547613/competitions/401547613/odds",
+      "sha256": "c8d8c976d2cf737ce565a865f31f601cb03a5b98acea23430706165e1f14fd60",
+      "bytes": 47409
+    },
+    {
+      "file": "espn_game_odds__401547615.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547615/competitions/401547615/odds",
+      "sha256": "9e3523364b380ec4ae5d6458717916ea7ec87ca551da2baa8b2b6c0c914b4d14",
+      "bytes": 50123
+    },
+    {
+      "file": "espn_game_odds__401547619.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547619/competitions/401547619/odds",
+      "sha256": "93eff2f3b86c071dd839c6c568264825258a405e3dd5d0ea9fc75bf85f9c8087",
+      "bytes": 55197
+    },
+    {
+      "file": "espn_game_odds__401547620.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547620/competitions/401547620/odds",
+      "sha256": "edabaec9d50e0129c0c85f8139f81aa339cb0d3085b5a633db847daf42fb04ac",
+      "bytes": 49851
+    },
+    {
+      "file": "espn_game_odds__401547621.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547621/competitions/401547621/odds",
+      "sha256": "b2045e8b5d681b402d09f7325f92a7215249d31bc4b4a9d3cb314d5446dd8826",
+      "bytes": 49863
+    },
+    {
+      "file": "espn_game_odds__401547351.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547351/competitions/401547351/odds",
+      "sha256": "c04be13f6e9e29df722e3cdc1feb9135f12903a32f6af3936a3cce7682b3ab7c",
+      "bytes": 44146
+    },
+    {
+      "file": "espn_game_odds__401547241.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547241/competitions/401547241/odds",
+      "sha256": "eb243ac737fd109e0fb0a35b227ba9dbefd9a112173eea70f6b3fe917c3ad260",
+      "bytes": 46898
+    },
+    {
+      "file": "espn_game_odds__401547622.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547622/competitions/401547622/odds",
+      "sha256": "7f79c7ae3bb6b8ea54840cbb4decca05be88b2f7813cf9e13147e6b0aa334db3",
+      "bytes": 50186
+    },
+    {
+      "file": "espn_game_odds__401547623.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547623/competitions/401547623/odds",
+      "sha256": "7e951eb71e8e32688cfcc247be62eb9205cfcf3b9a8a820e5fa288a5e3f73ac4",
+      "bytes": 50356
+    },
+    {
+      "file": "espn_game_odds__401547624.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547624/competitions/401547624/odds",
+      "sha256": "3153168aeea4fd8ca5d76de11b6c4af49cf34ac968f4c59ecbdc38defd0bfc1a",
+      "bytes": 49916
+    },
+    {
+      "file": "espn_game_odds__401547633.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547633/competitions/401547633/odds",
+      "sha256": "1bebbac7f2285e2403fc80cf2e3ae134511d7443f585299f517eadfa419fed86",
+      "bytes": 49985
+    },
+    {
+      "file": "espn_game_odds__401547627.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547627/competitions/401547627/odds",
+      "sha256": "e690b7ee68b48e673675b7ae6abf6a3582bf4cb9cfbf42369bb8e12c0bf9b1fc",
+      "bytes": 50252
+    },
+    {
+      "file": "espn_game_odds__401547629.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547629/competitions/401547629/odds",
+      "sha256": "40c9be9af0722a867f7fd45c7e1d9fda105974c460572c511c99855ab46137d3",
+      "bytes": 50363
+    },
+    {
+      "file": "espn_game_odds__401547632.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547632/competitions/401547632/odds",
+      "sha256": "013bd9995820368e14189aa39dce06c37a3df06d260a59a89f3dd115d6f786e3",
+      "bytes": 49839
+    },
+    {
+      "file": "espn_game_odds__401547628.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547628/competitions/401547628/odds",
+      "sha256": "f44aff170f4c0d61c827fc6f1346f825e6c73ab06a98d59f54ff5b9cc9898c7a",
+      "bytes": 52481
+    },
+    {
+      "file": "espn_game_odds__401547625.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547625/competitions/401547625/odds",
+      "sha256": "f86541350cbba2efa022d08b924d163ddb81119f05b23b7768e2e1e8ef1381d8",
+      "bytes": 49588
+    },
+    {
+      "file": "espn_game_odds__401547626.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547626/competitions/401547626/odds",
+      "sha256": "c29c5373abd18f54bb17f6595ced6bb3db0a57f9b91435580385bc20e89da867",
+      "bytes": 50065
+    },
+    {
+      "file": "espn_game_odds__401547634.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547634/competitions/401547634/odds",
+      "sha256": "57398bcbb759f112e0ee17c1e6c8b7a12a5a3f68833e22d141fd6fef0c7071be",
+      "bytes": 55120
+    },
+    {
+      "file": "espn_game_odds__401547635.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547635/competitions/401547635/odds",
+      "sha256": "549c674c2a11d6479299b20e67a89ef926b678c677503a592aa72287cc3a3f35",
+      "bytes": 52161
+    },
+    {
+      "file": "espn_game_odds__401547631.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547631/competitions/401547631/odds",
+      "sha256": "24a01c2b0142829cf641ede8c07fb69e65172ebd455ee3b4537f1cb233050154",
+      "bytes": 50055
+    },
+    {
+      "file": "espn_game_odds__401547636.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547636/competitions/401547636/odds",
+      "sha256": "f952cf4898c64cab15668b3e6ba055f0a0f04ff226e8389ecc68886a2cce6ad2",
+      "bytes": 50032
+    },
+    {
+      "file": "espn_game_odds__401547235.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547235/competitions/401547235/odds",
+      "sha256": "6aedf5df64cb2c0047763dcb5f095e665de2598a1e6ef2a814894ad2caeac866",
+      "bytes": 46780
+    },
+    {
+      "file": "espn_game_odds__401547630.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547630/competitions/401547630/odds",
+      "sha256": "76a4f57f531bb17fd511f290e65ee3c63b7cb37e686db1d9bc7c268f16b7d077",
+      "bytes": 55331
+    },
+    {
+      "file": "espn_game_odds__401547637.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547637/competitions/401547637/odds",
+      "sha256": "6e9dcd6bf7d62203e304450f19b2a25facbe25727abab99b39a81ad995485f4c",
+      "bytes": 50686
+    },
+    {
+      "file": "espn_game_odds__401547639.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547639/competitions/401547639/odds",
+      "sha256": "88f887a55fd1b811fc06a5f498b7b4747ac8c56d53d140404ab37b01b47068f5",
+      "bytes": 51334
+    },
+    {
+      "file": "espn_game_odds__401547644.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547644/competitions/401547644/odds",
+      "sha256": "c93b5b5eadca85ab9d7c07fa81fa6d7cc1032d9a1caac114d500ef8045157012",
+      "bytes": 51513
+    },
+    {
+      "file": "espn_game_odds__401547649.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547649/competitions/401547649/odds",
+      "sha256": "55e1bb15b2aad3cf5458f595638449ca58d6641148db30020bfe4b707fb4739d",
+      "bytes": 51287
+    },
+    {
+      "file": "espn_game_odds__401547641.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547641/competitions/401547641/odds",
+      "sha256": "bf541a7e4daac4b4be923c6c6120a1fed5d8146574ed01ab3c0e1a7ffa4c4bc5",
+      "bytes": 49641
+    },
+    {
+      "file": "espn_game_odds__401547652.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547652/competitions/401547652/odds",
+      "sha256": "35738f8253bfc0c129d2486117a548378969ea149cd61ba72e908270106572a2",
+      "bytes": 51486
+    },
+    {
+      "file": "espn_game_odds__401547642.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547642/competitions/401547642/odds",
+      "sha256": "d71874863061807a1ee2cd820293cea5be35cbf0c736763acdbfdabce022c228",
+      "bytes": 51402
+    },
+    {
+      "file": "espn_game_odds__401547648.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547648/competitions/401547648/odds",
+      "sha256": "c1eadaa221d1fd5af89130b4499a2cc34f7556394a7208c73b5ddfcfb42e476a",
+      "bytes": 51753
+    },
+    {
+      "file": "espn_game_odds__401547640.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547640/competitions/401547640/odds",
+      "sha256": "13151cac2ca412de62c51d7e4f5090510a11e7f5db55c90254113ae7bcd20efc",
+      "bytes": 56393
+    },
+    {
+      "file": "espn_game_odds__401547643.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547643/competitions/401547643/odds",
+      "sha256": "19cdc5f2f128d51412fb6a7eb521e1008b08a561eb1e80d939b623d102e7d96e",
+      "bytes": 56331
+    },
+    {
+      "file": "espn_game_odds__401547653.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547653/competitions/401547653/odds",
+      "sha256": "20535c68eab8c6864f32a62348ceef5bac514552dc94287a01bb508f422d8bd9",
+      "bytes": 53862
+    },
+    {
+      "file": "espn_game_odds__401547646.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547646/competitions/401547646/odds",
+      "sha256": "80e7931cb981a03223aef96757e2ead555906295bd61157b1a5d36f1ca3fdfe9",
+      "bytes": 53813
+    },
+    {
+      "file": "espn_game_odds__401547645.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547645/competitions/401547645/odds",
+      "sha256": "a7d9fc7e22e085390d3cdab89252297e03efd55bf08c983a9734a75c32a371ad",
+      "bytes": 51571
+    },
+    {
+      "file": "espn_game_odds__401547651.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547651/competitions/401547651/odds",
+      "sha256": "1ec0e3771eed95fe4e263c0e0b95cd331345eb1ddda927dd3f3c086d50b856d8",
+      "bytes": 55898
+    },
+    {
+      "file": "espn_game_odds__401547650.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547650/competitions/401547650/odds",
+      "sha256": "64a86197ec3b2fe24f7a261b246934bb5234a16f7f56b2f1e98215860d7c6cc8",
+      "bytes": 56138
+    },
+    {
+      "file": "espn_game_odds__401547638.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547638/competitions/401547638/odds",
+      "sha256": "f22ccb2dfa7160000d75f41d79bc82f966dd9382f19372efa2dc7f5353b612a6",
+      "bytes": 51190
+    },
+    {
+      "file": "espn_game_odds__401547647.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547647/competitions/401547647/odds",
+      "sha256": "e2e103dbc5e4758ab9c1dc04bf19ee18bb30b80fdecefaec32d585321333e739",
+      "bytes": 51478
+    },
+    {
+      "file": "espn_game_odds__401547749.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547749/competitions/401547749/odds",
+      "sha256": "bba7295f979a532503b34b06a347b2757ee029b32d2090747ef571b2534afedf",
+      "bytes": 50926
+    },
+    {
+      "file": "espn_game_odds__401547750.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547750/competitions/401547750/odds",
+      "sha256": "32950a6389b21273243c67c406132b26866ac795e5d5890f1ffa4522e21086ba",
+      "bytes": 46905
+    },
+    {
+      "file": "espn_game_odds__401547752.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547752/competitions/401547752/odds",
+      "sha256": "77ba4ace199fd6b2f317875d916528a796e49f77446d9977e2e91ea9e36f0d8d",
+      "bytes": 50819
+    },
+    {
+      "file": "espn_game_odds__401547753.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547753/competitions/401547753/odds",
+      "sha256": "c74cfa61d310172dcd6b8dc7148f056efb221f7d3ef57e3a52f512214e0565b0",
+      "bytes": 50744
+    },
+    {
+      "file": "espn_game_odds__401547751.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547751/competitions/401547751/odds",
+      "sha256": "03b38dd2249213c848e03aff2b3132b79db50362373671ab0a94190e533c5a0c",
+      "bytes": 51237
+    },
+    {
+      "file": "espn_game_odds__401547754.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547754/competitions/401547754/odds",
+      "sha256": "a5cd421c175a68fd9ccdeca84e017f79b5740aa296ea01187437c85b2543605a",
+      "bytes": 50707
+    },
+    {
+      "file": "espn_game_odds__401547755.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547755/competitions/401547755/odds",
+      "sha256": "29faec66779ae18c3d16230495ece7a931f41112abd495deeccdfe3e5cf32f2b",
+      "bytes": 50733
+    },
+    {
+      "file": "espn_game_odds__401547756.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547756/competitions/401547756/odds",
+      "sha256": "c6153962504bd8dc1fcd19d898752ce4761867814a979c507e8d11f5e289faa4",
+      "bytes": 51118
+    },
+    {
+      "file": "espn_game_odds__401547757.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547757/competitions/401547757/odds",
+      "sha256": "60c9d77eee81632364dd835cc03a79cae6eabb9aec88f8f43f261596d76a5425",
+      "bytes": 50635
+    },
+    {
+      "file": "espn_game_odds__401547758.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547758/competitions/401547758/odds",
+      "sha256": "12322cf97155380003be2a2aa16eea1078d9fcecb5f3f9fdbff55696a21cb58e",
+      "bytes": 50807
+    },
+    {
+      "file": "espn_game_odds__401547379.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547379/competitions/401547379/odds",
+      "sha256": "90dfd8601052f6aff085632546877c69fde1d4c1a30fe479453cd32a5190029a",
+      "bytes": 50984
+    },
+    {
+      "file": "espn_game_odds__401547380.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547380/competitions/401547380/odds",
+      "sha256": "df9c75c26964c6e8b42fa594d0ff22bf33271b77197f39b53bd3554d357fa152",
+      "bytes": 51012
+    },
+    {
+      "file": "espn_game_odds__401547378.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401547378/competitions/401547378/odds",
+      "sha256": "47e237af909a5aec23148024c64704022aae08223d3178bf75fa0c8e5c2c62bd",
+      "bytes": 37801
+    },
+    {
+      "file": "espn_game_odds__401671789.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671789/competitions/401671789/odds",
+      "sha256": "b8b25ba94d8e39faa5b3b9a5a56794fce953f152e5b08dd03de0cfd2171ae19e",
+      "bytes": 15531
+    },
+    {
+      "file": "espn_game_odds__401671805.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671805/competitions/401671805/odds",
+      "sha256": "71367ea2412c50e6998750e890ba5feee5b93a4e933d38e9af902e7a17674bcd",
+      "bytes": 15573
+    },
+    {
+      "file": "espn_game_odds__401671617.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671617/competitions/401671617/odds",
+      "sha256": "93caca81273cb3359a58ecebe498281eae3f56e7ad47c91a7b8b2871acb191ea",
+      "bytes": 15529
+    },
+    {
+      "file": "espn_game_odds__401671734.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671734/competitions/401671734/odds",
+      "sha256": "f2dd0077050728b4825bfbac80bf85b52d8154984b89cb9b2a61bdf6509a8fad",
+      "bytes": 15105
+    },
+    {
+      "file": "espn_game_odds__401671861.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671861/competitions/401671861/odds",
+      "sha256": "0669868355d1e10804af5340c52aaf807886de4e753e67c2ff1b1cfb5e02b126",
+      "bytes": 15539
+    },
+    {
+      "file": "espn_game_odds__401671849.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671849/competitions/401671849/odds",
+      "sha256": "5dea0a808f9cf2ba461e14ccabcecb81bf85fcaac37d1a0cbda1aa09d0f5d01b",
+      "bytes": 15539
+    },
+    {
+      "file": "espn_game_odds__401671712.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671712/competitions/401671712/odds",
+      "sha256": "aee3a58b6435fa99ffc6bb7bd5fc335ca71c756d1b4364e086fd5ec36a1f5628",
+      "bytes": 15091
+    },
+    {
+      "file": "espn_game_odds__401671628.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671628/competitions/401671628/odds",
+      "sha256": "438cf26deafebaf209c5c530bc838cc7ae48660fe4d7e9448433da1ba50637eb",
+      "bytes": 15564
+    },
+    {
+      "file": "espn_game_odds__401671744.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671744/competitions/401671744/odds",
+      "sha256": "d67c79efda3524325b91fc9f7fd5d42519b29e0bb57009bdc8c98765b667d637",
+      "bytes": 15522
+    },
+    {
+      "file": "espn_game_odds__401671719.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671719/competitions/401671719/odds",
+      "sha256": "647e921e4c6c1c1c7ccfcbdbecba3d5eda490a9aee23d1a515bd50e7a0964325",
+      "bytes": 15595
+    },
+    {
+      "file": "espn_game_odds__401671664.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671664/competitions/401671664/odds",
+      "sha256": "8ab1901d5210991d894a8b995354484f84d5a863c12ba980a4b1d98f69bf4152",
+      "bytes": 15595
+    },
+    {
+      "file": "espn_game_odds__401671659.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671659/competitions/401671659/odds",
+      "sha256": "6d333ff5bc8fa01dcf96bf278e2a90dbec68232045e5f5d33ce68836f17d4a3c",
+      "bytes": 13109
+    },
+    {
+      "file": "espn_game_odds__401671761.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671761/competitions/401671761/odds",
+      "sha256": "c1a27b56324ed5520b0c3ed5253119fb8e5bc18301d1d0f77abcc1cfc7e37c5e",
+      "bytes": 14886
+    },
+    {
+      "file": "espn_game_odds__401671770.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671770/competitions/401671770/odds",
+      "sha256": "0f2fd38fe5c2a76d19680cf88f51714c3e13920c6daca69a5c37878195f47e08",
+      "bytes": 12854
+    },
+    {
+      "file": "espn_game_odds__401671792.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671792/competitions/401671792/odds",
+      "sha256": "31c0a794eab6d8c0dd31fb5fcfb3770446b09d7e9fe65cfde4660227b4f53407",
+      "bytes": 15555
+    },
+    {
+      "file": "espn_game_odds__401671696.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671696/competitions/401671696/odds",
+      "sha256": "852c762100b8da0421f302f58e51d93375ce375b3f90c29ec14499ac5f8ba558",
+      "bytes": 15073
+    },
+    {
+      "file": "espn_game_odds__401671807.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671807/competitions/401671807/odds",
+      "sha256": "f0024026838e1522e56a84a6daf98c6b6710cbdd93eca3e5c17c65b0a902251a",
+      "bytes": 9382
+    },
+    {
+      "file": "espn_game_odds__401671635.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671635/competitions/401671635/odds",
+      "sha256": "512433c2dff37de0431c157c7601bda7e7c2f9ee99b08eb9b3fa40b1d75194f2",
+      "bytes": 13343
+    },
+    {
+      "file": "espn_game_odds__401671723.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671723/competitions/401671723/odds",
+      "sha256": "5aebb3e9bf5d359fea390b3dd9e02a4964b6ced6f2f4fdb2f459eebad266daec",
+      "bytes": 13370
+    },
+    {
+      "file": "espn_game_odds__401671652.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671652/competitions/401671652/odds",
+      "sha256": "e2969e7407619121141e5a7793cc2c5d19bc3a9dd0acefabf49a4c149e990eed",
+      "bytes": 12817
+    },
+    {
+      "file": "espn_game_odds__401671624.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671624/competitions/401671624/odds",
+      "sha256": "9f56c2ca8293e945701fd03a3e1d70534f9b8af233099756e76336035ca6217f",
+      "bytes": 13351
+    },
+    {
+      "file": "espn_game_odds__401671709.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671709/competitions/401671709/odds",
+      "sha256": "67e994571c719f79f8fc2a25e6206079217d0b7ed9ad589c071941bb983aa26c",
+      "bytes": 12828
+    },
+    {
+      "file": "espn_game_odds__401671716.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671716/competitions/401671716/odds",
+      "sha256": "9b02b7185040dc11af6f3b4bc4e311a5e162b5e4500b9adf52c135d990286b60",
+      "bytes": 13318
+    },
+    {
+      "file": "espn_game_odds__401671636.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671636/competitions/401671636/odds",
+      "sha256": "ead41a6cbeb3b7ce418970a6e0f72eb99b671546abbf481bb13d0b9800ebdc9f",
+      "bytes": 13379
+    },
+    {
+      "file": "espn_game_odds__401671702.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671702/competitions/401671702/odds",
+      "sha256": "58995d48f3e67351aba7772aaba2d772e5a9e8ed853b8f383a750e3d5b18f78c",
+      "bytes": 13313
+    },
+    {
+      "file": "espn_game_odds__401671645.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671645/competitions/401671645/odds",
+      "sha256": "38ebc8e8ecc5e61fa8637c54f4d7df80680abaebdb1f1dd21e4cb6be86dfbafc",
+      "bytes": 13357
+    },
+    {
+      "file": "espn_game_odds__401671721.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671721/competitions/401671721/odds",
+      "sha256": "940e555eb766e47589b9d5f60a402cd2c74e5b5200db3e7dfa191e882452275e",
+      "bytes": 13338
+    },
+    {
+      "file": "espn_game_odds__401671754.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671754/competitions/401671754/odds",
+      "sha256": "5f5e9e55f619fdf0cecd5a659dc5911386382fcfa89fe9fb9c0296c0e711a324",
+      "bytes": 12833
+    },
+    {
+      "file": "espn_game_odds__401671670.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671670/competitions/401671670/odds",
+      "sha256": "d57a23ab48d4f6e7b542704d61661c2fc91413b69c233efa8341da2462a35e82",
+      "bytes": 15578
+    },
+    {
+      "file": "espn_game_odds__401671668.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671668/competitions/401671668/odds",
+      "sha256": "af8692754511aee814a85591e3b6ed25f316f93f9744aeca49a14653eaf5565e",
+      "bytes": 6218
+    },
+    {
+      "file": "espn_game_odds__401671786.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671786/competitions/401671786/odds",
+      "sha256": "4f426f132c92df68b9a70943ba90a26b7a27aaf4433d0664b1b9bfdf28fd0ed3",
+      "bytes": 13387
+    },
+    {
+      "file": "espn_game_odds__401671691.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671691/competitions/401671691/odds",
+      "sha256": "10bcdc5ea9187d1b44c9cafbf1626085f279ae99c303d4eff6df40ec1e31e1f6",
+      "bytes": 15556
+    },
+    {
+      "file": "espn_game_odds__401671808.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671808/competitions/401671808/odds",
+      "sha256": "d248d7d0c8655f98d6715a14dfdb64710f3967060a0be696a35b3f673d6b5e8c",
+      "bytes": 7153
+    },
+    {
+      "file": "espn_game_odds__401671865.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671865/competitions/401671865/odds",
+      "sha256": "44f298dc4d32f2627913e349fd2d560c4a7d339ec7012dec18e617e5786e6b09",
+      "bytes": 13377
+    },
+    {
+      "file": "espn_game_odds__401671741.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671741/competitions/401671741/odds",
+      "sha256": "0e4d2cab8216238a6904c191bffe97b1aa66ba8fd4e62ee55ca4e27a48ab3964",
+      "bytes": 12783
+    },
+    {
+      "file": "espn_game_odds__401671823.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671823/competitions/401671823/odds",
+      "sha256": "c6b4f10e329860121403350746aed17171a13f1012848d09f6644cf3c4a8d089",
+      "bytes": 12814
+    },
+    {
+      "file": "espn_game_odds__401671646.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671646/competitions/401671646/odds",
+      "sha256": "49a15741f56c18fea5c822c50bc0aac3f6113938f53444b31bff0722bd11c911",
+      "bytes": 12816
+    },
+    {
+      "file": "espn_game_odds__401671632.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671632/competitions/401671632/odds",
+      "sha256": "6b881ff3f8c2dbf63518ac63c8bdb722e486fbf4777635c7dff423e294acccd1",
+      "bytes": 12826
+    },
+    {
+      "file": "espn_game_odds__401671855.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671855/competitions/401671855/odds",
+      "sha256": "d049f9ba20794a040ebe0e10bf140b2defaddf580359a9f45699c61902b63602",
+      "bytes": 13313
+    },
+    {
+      "file": "espn_game_odds__401671736.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671736/competitions/401671736/odds",
+      "sha256": "09db2c29bc494c5f48bf1373d9c352eea66b065ebe17a57b18b5721f34e48930",
+      "bytes": 13358
+    },
+    {
+      "file": "espn_game_odds__401671658.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671658/competitions/401671658/odds",
+      "sha256": "50f55994f4fbcf390fb784327b8bba2275592b42463a24ff9fa494f160e55371",
+      "bytes": 12836
+    },
+    {
+      "file": "espn_game_odds__401671662.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671662/competitions/401671662/odds",
+      "sha256": "2390eabc0f4f2727037145fa41bfbecd00ee9f688877c0b08f8cf9cf3cff96b5",
+      "bytes": 12869
+    },
+    {
+      "file": "espn_game_odds__401671763.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671763/competitions/401671763/odds",
+      "sha256": "dc43b2282c0267dbd9ecc8ceb75f36f71e03fffd52813ea50a535531c6a6d9b2",
+      "bytes": 13376
+    },
+    {
+      "file": "espn_game_odds__401671771.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671771/competitions/401671771/odds",
+      "sha256": "e9382a96739e7272d4597132c2a9e7c5ae3efc1206d7566b0841335708b3b0c7",
+      "bytes": 13367
+    },
+    {
+      "file": "espn_game_odds__401671772.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671772/competitions/401671772/odds",
+      "sha256": "2286a2f7bc87beaddf0eb3b36ec316a1f9259cd461204804b088f3147bb3dc6e",
+      "bytes": 13337
+    },
+    {
+      "file": "espn_game_odds__401671793.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671793/competitions/401671793/odds",
+      "sha256": "2b70b5a62d84073c956ad428b39ccffbd91d4b860464c89598769b6d8af32f68",
+      "bytes": 13274
+    },
+    {
+      "file": "espn_game_odds__401671682.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671682/competitions/401671682/odds",
+      "sha256": "aa3f82e822c2627ae70ad7b00291e44172ef7db0c46e4f1a57c8a07c1204e16d",
+      "bytes": 12856
+    },
+    {
+      "file": "espn_game_odds__401671490.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671490/competitions/401671490/odds",
+      "sha256": "210f0d9733d6cb8e027dca6392e20d26fab17261424b9427e53b91820e7e3d96",
+      "bytes": 13325
+    },
+    {
+      "file": "espn_game_odds__401671812.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671812/competitions/401671812/odds",
+      "sha256": "f0c4666b2e0fa0c4e3a9a3be86fc635f0ab3cc0332578412c4cab7b43182bea2",
+      "bytes": 13349
+    },
+    {
+      "file": "espn_game_odds__401671745.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671745/competitions/401671745/odds",
+      "sha256": "50609fb82c761475477ee53c6a0d700f7935fb588e55af41f1b8a391ec59c790",
+      "bytes": 13313
+    },
+    {
+      "file": "espn_game_odds__401671622.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671622/competitions/401671622/odds",
+      "sha256": "e4d71bb36427edf49b7bc78f6d3a0df714872708896d0e31fb998d01a827b2f7",
+      "bytes": 13365
+    },
+    {
+      "file": "espn_game_odds__401671857.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671857/competitions/401671857/odds",
+      "sha256": "eb33ae4194da6adba80e5385a91b828fe363bdfdd249d665fc448b8f7eaa6e44",
+      "bytes": 13340
+    },
+    {
+      "file": "espn_game_odds__401671871.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671871/competitions/401671871/odds",
+      "sha256": "fc8df900b37e69e8070a4feee12340042c5bd95d725618226136d4d96039344b",
+      "bytes": 13347
+    },
+    {
+      "file": "espn_game_odds__401671643.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671643/competitions/401671643/odds",
+      "sha256": "4c2bd7859c570f701b2e534a52bec9e781694fe5afb9996d0d110aa7e497f530",
+      "bytes": 13368
+    },
+    {
+      "file": "espn_game_odds__401671727.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671727/competitions/401671727/odds",
+      "sha256": "246713d31c0f887c752f8abac4a65d0688cd370cb37d17ca6e0d6ba3c86e2669",
+      "bytes": 13343
+    },
+    {
+      "file": "espn_game_odds__401671740.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671740/competitions/401671740/odds",
+      "sha256": "64a73257e3a344fab22fffba5bd83f3e0ea788f010e6bee08b0c980054ab95f4",
+      "bytes": 13355
+    },
+    {
+      "file": "espn_game_odds__401671867.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671867/competitions/401671867/odds",
+      "sha256": "cbf38cd9afe09e52ae102d94f5e486e7b6b5af1ef1ba227ef660b28a8e01c3e7",
+      "bytes": 13348
+    },
+    {
+      "file": "espn_game_odds__401671758.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671758/competitions/401671758/odds",
+      "sha256": "a8b829e96bd9ac474836da94bc270b9fe1ccfd663a9657ddd563315a12fb42e1",
+      "bytes": 13368
+    },
+    {
+      "file": "espn_game_odds__401671755.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671755/competitions/401671755/odds",
+      "sha256": "4d4e63bb541b047f1446483e995bfcb486018103d6df73cfe50ef82a73242ccd",
+      "bytes": 12876
+    },
+    {
+      "file": "espn_game_odds__401671672.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671672/competitions/401671672/odds",
+      "sha256": "529e7e20e3f0e83383ad8fb93f0ca41f3a7564c6482b38a5727fc0207d534137",
+      "bytes": 13355
+    },
+    {
+      "file": "espn_game_odds__401671674.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671674/competitions/401671674/odds",
+      "sha256": "3720f459fdc0a1c7134bbab22dd7dbaa453f172c512f2d09c9820b1076e97976",
+      "bytes": 13358
+    },
+    {
+      "file": "espn_game_odds__401671783.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671783/competitions/401671783/odds",
+      "sha256": "e0d8921d48cb60531b85a1b90726a3df7c4479766158cab8765c826e2a43e7e1",
+      "bytes": 13358
+    },
+    {
+      "file": "espn_game_odds__401671683.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671683/competitions/401671683/odds",
+      "sha256": "260cc87137b98a25a4886512dfffa365857dfdfc37e0a19a048ac5ba11acba40",
+      "bytes": 12829
+    },
+    {
+      "file": "espn_game_odds__401671491.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671491/competitions/401671491/odds",
+      "sha256": "623e64590c2d8d2151f518aa9dcd27ba5b6cced7b26874e341a1f2eca4dfe200",
+      "bytes": 13385
+    },
+    {
+      "file": "espn_game_odds__401671815.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671815/competitions/401671815/odds",
+      "sha256": "18c0795ef0003ccd485c879c5a6f09ccf1be47dfc13cd1177093c502c7d9128e",
+      "bytes": 13321
+    },
+    {
+      "file": "espn_game_odds__401671804.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671804/competitions/401671804/odds",
+      "sha256": "eabd6d911acc045f5f967cb3cddaf427f5f542eabbd49018daa7e065f3ce2f24",
+      "bytes": 15577
+    },
+    {
+      "file": "espn_game_odds__401671626.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671626/competitions/401671626/odds",
+      "sha256": "a8eea80e8df09f01603e183de95a25c8c7556392e41cb0ff30424fe6a910778b",
+      "bytes": 13296
+    },
+    {
+      "file": "espn_game_odds__401671859.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671859/competitions/401671859/odds",
+      "sha256": "2017e88d87bc1c85594659dfd65a46d1f7eafc62cb63d9477c628d5e450b5014",
+      "bytes": 13404
+    },
+    {
+      "file": "espn_game_odds__401671872.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671872/competitions/401671872/odds",
+      "sha256": "645805a850f134b92203fcf823bc62d72abfbe46d178b6a4d7e499ef093d721c",
+      "bytes": 12852
+    },
+    {
+      "file": "espn_game_odds__401671718.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671718/competitions/401671718/odds",
+      "sha256": "aef2871cb6e8e878d7572b837e51fde4d27f8c59b9cd9f3310b04842bb49443b",
+      "bytes": 12900
+    },
+    {
+      "file": "espn_game_odds__401671633.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671633/competitions/401671633/odds",
+      "sha256": "8d043ed4ed7c4fe83e9be532f5ad4092431d20776ebdd1e46f646a3f66399477",
+      "bytes": 13345
+    },
+    {
+      "file": "espn_game_odds__401671700.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671700/competitions/401671700/odds",
+      "sha256": "5f8c995196769aeb79d0d111fcd5de31fcf6b4979f7859d499423cb109eb5c83",
+      "bytes": 13359
+    },
+    {
+      "file": "espn_game_odds__401671756.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671756/competitions/401671756/odds",
+      "sha256": "da297c19ea6aa1cd857b59591101b079e99fe078ca2482311675ab63b9cb0d1b",
+      "bytes": 13362
+    },
+    {
+      "file": "espn_game_odds__401671747.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671747/competitions/401671747/odds",
+      "sha256": "3f8f3e65157da884f6bb36b91088ac5e21e7a4be84e60de8a6c6bbfb0d8c4d0c",
+      "bytes": 12820
+    },
+    {
+      "file": "espn_game_odds__401671679.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671679/competitions/401671679/odds",
+      "sha256": "2acfcf990f530b691c1d808f5db807af4b15f2db0f98ed63536b7537742a6b29",
+      "bytes": 13355
+    },
+    {
+      "file": "espn_game_odds__401671680.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671680/competitions/401671680/odds",
+      "sha256": "a0eb96bf3d0470338b73df3ea5857e6c3a3a06b7abea3728faab1fd1b9dd4b6e",
+      "bytes": 13326
+    },
+    {
+      "file": "espn_game_odds__401671784.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671784/competitions/401671784/odds",
+      "sha256": "01884057aaa4672dd5766ecd3413fe9f13b50cde48e928d79efcba113eaaa5e0",
+      "bytes": 13351
+    },
+    {
+      "file": "espn_game_odds__401671687.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671687/competitions/401671687/odds",
+      "sha256": "e5722d27061595ef3bb9a442d6314c08ec0dc6300469df6ae9432e041d60b252",
+      "bytes": 12823
+    },
+    {
+      "file": "espn_game_odds__401671819.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671819/competitions/401671819/odds",
+      "sha256": "7fb1649f1025d55edab1d14d0c8eb2ee380cc1f7a931be327bec13ade357f1dc",
+      "bytes": 13311
+    },
+    {
+      "file": "espn_game_odds__401671802.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671802/competitions/401671802/odds",
+      "sha256": "4df65061d11c9ad52be709eae380c6557882f76b4ede9bc902acc83e287f6885",
+      "bytes": 15554
+    },
+    {
+      "file": "espn_game_odds__401671722.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671722/competitions/401671722/odds",
+      "sha256": "a9332acf1f31cebbc53304a5358f9340ea4d9db482fd8c5c2c69d2d27c772ea1",
+      "bytes": 12886
+    },
+    {
+      "file": "espn_game_odds__401671714.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671714/competitions/401671714/odds",
+      "sha256": "cb0929382832449fe1fe28dd8d47e04bd7fa95c783598ae647f5f259b4f2de04",
+      "bytes": 13332
+    },
+    {
+      "file": "espn_game_odds__401671619.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671619/competitions/401671619/odds",
+      "sha256": "d6bbf83ab03aba7160a073517c4132c4f0e7732e0d2c71c782aa1352457587fc",
+      "bytes": 12839
+    },
+    {
+      "file": "espn_game_odds__401671820.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671820/competitions/401671820/odds",
+      "sha256": "9db75660e44012db5b5132db794e82be86bb99c795d77a3ae64abb17618a4a3f",
+      "bytes": 13355
+    },
+    {
+      "file": "espn_game_odds__401671735.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671735/competitions/401671735/odds",
+      "sha256": "81a2db5c342becec00d7335b433194233a095975b93bb8f33217c785add60a2d",
+      "bytes": 12826
+    },
+    {
+      "file": "espn_game_odds__401671625.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671625/competitions/401671625/odds",
+      "sha256": "dff6b5119269d2794f153eb7b01956ba7f155cbdbd08b78bb8ad98c10bad2b60",
+      "bytes": 13401
+    },
+    {
+      "file": "espn_game_odds__401671655.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671655/competitions/401671655/odds",
+      "sha256": "992c5256f503f43b21af527d089ccdd4cbc300a77ab1e5fff1a609589523f39f",
+      "bytes": 12819
+    },
+    {
+      "file": "espn_game_odds__401671657.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671657/competitions/401671657/odds",
+      "sha256": "a6281b376a1651d8b3459f7b210469aea18aab1fbf7b7fd46ebca250e9122037",
+      "bytes": 12797
+    },
+    {
+      "file": "espn_game_odds__401671769.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671769/competitions/401671769/odds",
+      "sha256": "705588efeff93b81a30adf133c737b646c7d6fae1fdbf7fdeb3e714ea80dd4aa",
+      "bytes": 13345
+    },
+    {
+      "file": "espn_game_odds__401671764.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671764/competitions/401671764/odds",
+      "sha256": "ab6b8105bf7a3abb6554b120ddb8ce58cc8c7cd2edeebd5c930ef10d51293700",
+      "bytes": 12856
+    },
+    {
+      "file": "espn_game_odds__401671791.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671791/competitions/401671791/odds",
+      "sha256": "4c4b53c2e6206ef9dd335aee534f64a99a0e3d1420ec227961b31b3a34fc6b32",
+      "bytes": 13371
+    },
+    {
+      "file": "espn_game_odds__401671684.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671684/competitions/401671684/odds",
+      "sha256": "ab2982f56b0f57481f6809f248ac7eae82174d0d7db9e14667815feb349dfdc6",
+      "bytes": 13301
+    },
+    {
+      "file": "espn_game_odds__401671816.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671816/competitions/401671816/odds",
+      "sha256": "f0dd543345ea3ddc4df336e1508fb53566627a847aebf85c04606c2a1141a39a",
+      "bytes": 12788
+    },
+    {
+      "file": "espn_game_odds__401671801.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671801/competitions/401671801/odds",
+      "sha256": "42fa77eea826902d18af2dc333c1dfa1b82de6268fc481d73c80b6bc643f7489",
+      "bytes": 15568
+    },
+    {
+      "file": "espn_game_odds__401671853.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671853/competitions/401671853/odds",
+      "sha256": "568d58832872d38da7175c014a7211a54535b9f165aa7803581f22f7cd5822d4",
+      "bytes": 12877
+    },
+    {
+      "file": "espn_game_odds__401671724.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671724/competitions/401671724/odds",
+      "sha256": "e78d6af20aab0cb891d97973f834c3162f2c2b760ce46ec85439a39a0db5df63",
+      "bytes": 13074
+    },
+    {
+      "file": "espn_game_odds__401671644.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671644/competitions/401671644/odds",
+      "sha256": "7c5eb0a1edc7d75027e7e679135561c7947472c00449cd40843156678224c19b",
+      "bytes": 13289
+    },
+    {
+      "file": "espn_game_odds__401671864.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671864/competitions/401671864/odds",
+      "sha256": "6d07b9e42e1b924bcb5bab8f462161e42579edc0489776c62bd0d8431ca83c1f",
+      "bytes": 13341
+    },
+    {
+      "file": "espn_game_odds__401671710.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671710/competitions/401671710/odds",
+      "sha256": "bef99b51633a9e841c7b2ed2258bec5be32b57bec34791bb020c8e5f342f7068",
+      "bytes": 12849
+    },
+    {
+      "file": "espn_game_odds__401671730.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671730/competitions/401671730/odds",
+      "sha256": "4904919d50a3a95ed58814301fe122868859dd3343479d2315c42317c29854b7",
+      "bytes": 12875
+    },
+    {
+      "file": "espn_game_odds__401671616.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671616/competitions/401671616/odds",
+      "sha256": "a694fd72582273a3ec1c5ec62da5b381332e173bd92d5861920c5953a4e32f02",
+      "bytes": 12823
+    },
+    {
+      "file": "espn_game_odds__401671640.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671640/competitions/401671640/odds",
+      "sha256": "c21d793ce8a51a6f6967053ddce82c1cdcae3b7c68bcf1a26c4eaea7754daad4",
+      "bytes": 12826
+    },
+    {
+      "file": "espn_game_odds__401671663.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671663/competitions/401671663/odds",
+      "sha256": "83332fed6d18bc45d4f8f46ddbbc3a210942320e0aaabbf6c46dd59dc001ce09",
+      "bytes": 13097
+    },
+    {
+      "file": "espn_game_odds__401671777.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671777/competitions/401671777/odds",
+      "sha256": "b7bee5b8b63c1b5fdd257521b8a5f22e9fc3565ee8718dbc8b5bd4e27d8dc2e8",
+      "bytes": 15095
+    },
+    {
+      "file": "espn_game_odds__401671785.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671785/competitions/401671785/odds",
+      "sha256": "d6571e2a02a270ffbb3f5369163714e77246ed31acb219c45d14bddf035fbb76",
+      "bytes": 13150
+    },
+    {
+      "file": "espn_game_odds__401671695.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671695/competitions/401671695/odds",
+      "sha256": "3c2852cfeebd75515b70aff03924b43fbeeaf16b8989ac76e8486a9144a758de",
+      "bytes": 13104
+    },
+    {
+      "file": "espn_game_odds__401671699.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671699/competitions/401671699/odds",
+      "sha256": "a5f3ead444a7540aaa5ae09b722f6ebd81f93e5d7954a6c7ff1ce90c36901591",
+      "bytes": 12832
+    },
+    {
+      "file": "espn_game_odds__401671817.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671817/competitions/401671817/odds",
+      "sha256": "7fdc4de60aee51ae5c8a2523e78705ba66333d9faaacf6df6a4ef7d78184a642",
+      "bytes": 12575
+    },
+    {
+      "file": "espn_game_odds__401671850.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671850/competitions/401671850/odds",
+      "sha256": "63cc602e437b58640ce27dab6ba0b63fe44d02539350dff8bfcc5345879ee590",
+      "bytes": 12627
+    },
+    {
+      "file": "espn_game_odds__401671739.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671739/competitions/401671739/odds",
+      "sha256": "9b30cb90cc3942cd153955f476573f82f7b67d6ee00f95518a4ff07547e40554",
+      "bytes": 13310
+    },
+    {
+      "file": "espn_game_odds__401671852.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671852/competitions/401671852/odds",
+      "sha256": "7711ee47bb4c6602a09b16ba51720efeaee8d98cd7921ba31af0cc9550b5402e",
+      "bytes": 12804
+    },
+    {
+      "file": "espn_game_odds__401671707.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671707/competitions/401671707/odds",
+      "sha256": "23deb2b7f64227844f0f4e2d2703d95348c80c7c60eac390a2687246de0d73d3",
+      "bytes": 13123
+    },
+    {
+      "file": "espn_game_odds__401671856.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671856/competitions/401671856/odds",
+      "sha256": "99f3c024575435216d5ac75752e65b7760a071492a9bef138ee48f4d985f0330",
+      "bytes": 12630
+    },
+    {
+      "file": "espn_game_odds__401671618.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671618/competitions/401671618/odds",
+      "sha256": "26843d71148743043de6aa88ebb1839bad12a32cdadc677e40aa800ccc02d69f",
+      "bytes": 12870
+    },
+    {
+      "file": "espn_game_odds__401671667.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671667/competitions/401671667/odds",
+      "sha256": "7ae67b47ca133f29a9a7c4d991b04ab815b2189a7c36012e6553dd017d2ecaad",
+      "bytes": 12877
+    },
+    {
+      "file": "espn_game_odds__401671720.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671720/competitions/401671720/odds",
+      "sha256": "80d1ce00726077f81487d81a6b0496fcaf62460a1763574d87d33823d03fa1ff",
+      "bytes": 12889
+    },
+    {
+      "file": "espn_game_odds__401671760.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671760/competitions/401671760/odds",
+      "sha256": "0603cb14c51d2de0d818cd336c6d8e22f302c7bd218efea3090e8abcf33c1f01",
+      "bytes": 12824
+    },
+    {
+      "file": "espn_game_odds__401671750.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671750/competitions/401671750/odds",
+      "sha256": "3f51accdd8d341b46dcab7959e5b88680c73aafd9b8f211e7c86375d8372b49d",
+      "bytes": 12819
+    },
+    {
+      "file": "espn_game_odds__401671600.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671600/competitions/401671600/odds",
+      "sha256": "52aa7d8020fd57092a8e92f2e3a353b23759a1d9ce41675fa468fa8d86b48677",
+      "bytes": 12870
+    },
+    {
+      "file": "espn_game_odds__401671599.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671599/competitions/401671599/odds",
+      "sha256": "a4f0ebc3307e20d440736f7daf328287fc91e10e5029b356fe687254b84ec3a2",
+      "bytes": 13345
+    },
+    {
+      "file": "espn_game_odds__401671671.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671671/competitions/401671671/odds",
+      "sha256": "d880d21743685f6cc55e53af4d38238bbf5d7c99ae195e1677868a4e293e2b5f",
+      "bytes": 13368
+    },
+    {
+      "file": "espn_game_odds__401671795.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671795/competitions/401671795/odds",
+      "sha256": "efea69ac15d9be1a0effd0494d80f717f8859d8a9d38ecb3f37eb3fd5749b8b5",
+      "bytes": 15593
+    },
+    {
+      "file": "espn_game_odds__401671685.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671685/competitions/401671685/odds",
+      "sha256": "1267aceda62def1deeb7354a1f6f6348e30bc257cc449d157e23591ea6160bd9",
+      "bytes": 13361
+    },
+    {
+      "file": "espn_game_odds__401671809.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671809/competitions/401671809/odds",
+      "sha256": "e5df8a4771a3608fa403e8e551a521f89d18c4909e4ff66c77c0d1fd782a0f49",
+      "bytes": 13081
+    },
+    {
+      "file": "espn_game_odds__401671728.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671728/competitions/401671728/odds",
+      "sha256": "5009af4c62d6b66c7c7d1de2345018c65afaa0243438943f2e310e64a4c3ddce",
+      "bytes": 13147
+    },
+    {
+      "file": "espn_game_odds__401671623.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671623/competitions/401671623/odds",
+      "sha256": "b76479b3c7a2c39448ff953da16ceff1f4fe49f735d12205b1085f5092e8923c",
+      "bytes": 12820
+    },
+    {
+      "file": "espn_game_odds__401671629.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671629/competitions/401671629/odds",
+      "sha256": "ea55f02201f87622989557b7aac7e398a02986e09e80206a1aacf34567e4916b",
+      "bytes": 13101
+    },
+    {
+      "file": "espn_game_odds__401671704.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671704/competitions/401671704/odds",
+      "sha256": "b7b41d19c76a48c174c5b5968461b33a8b8797462670574aa283e3be785a3654",
+      "bytes": 12879
+    },
+    {
+      "file": "espn_game_odds__401671493.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671493/competitions/401671493/odds",
+      "sha256": "6ca889a8695ea8bc128c097e6278ba6ee0045785d4d68059c3dbc9f1c5549e90",
+      "bytes": 13344
+    },
+    {
+      "file": "espn_game_odds__401671822.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671822/competitions/401671822/odds",
+      "sha256": "74d413e0b471a0960f2e7c6b89a39dd6de6fae823a7db767c2e252e92c07c68b",
+      "bytes": 13342
+    },
+    {
+      "file": "espn_game_odds__401671650.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671650/competitions/401671650/odds",
+      "sha256": "921243c6baeb0f37c8fd50e81eedbd918dd8d6169c0c7284b8435c1e1cb90823",
+      "bytes": 13328
+    },
+    {
+      "file": "espn_game_odds__401671711.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671711/competitions/401671711/odds",
+      "sha256": "be99acf10ea23eab95f9c47bd5abdccf622edf89732ca1e0b3c29cd1ed8818b5",
+      "bytes": 13312
+    },
+    {
+      "file": "espn_game_odds__401671661.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671661/competitions/401671661/odds",
+      "sha256": "4903ebf81edcd8d00bbf20a2b8e01718e08010d37d9cc96f5ebd770a5dfed90f",
+      "bytes": 12862
+    },
+    {
+      "file": "espn_game_odds__401671797.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671797/competitions/401671797/odds",
+      "sha256": "2e97ae5a804b1a9057645e20ea9aaab9b04e256b63cfc5f8fae867cf6f304bc3",
+      "bytes": 13331
+    },
+    {
+      "file": "espn_game_odds__401671767.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671767/competitions/401671767/odds",
+      "sha256": "caf74817f31b178a1a46fc5583e6485519ede064a58f4bd43f23105bcc8b0970",
+      "bytes": 13367
+    },
+    {
+      "file": "espn_game_odds__401671776.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671776/competitions/401671776/odds",
+      "sha256": "9115d0484b0e8aaed112d04ed6fe9eefc64dc9885a41b60ddfed19a3ec59749d",
+      "bytes": 13337
+    },
+    {
+      "file": "espn_game_odds__401671647.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671647/competitions/401671647/odds",
+      "sha256": "a2cc079808938a1f881299387ddc504f55c14a2e921730b16e2c18dcfa0849ac",
+      "bytes": 13352
+    },
+    {
+      "file": "espn_game_odds__401671688.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671688/competitions/401671688/odds",
+      "sha256": "ec9871977dc0f9e8b73e32304f597505b42389b7e7c4cbfbabb8f50f307f73b2",
+      "bytes": 13339
+    },
+    {
+      "file": "espn_game_odds__401671810.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671810/competitions/401671810/odds",
+      "sha256": "acad56298a13262e483d1baaf2d874f44f0673cdad02764a6ce8f7c174e25f4f",
+      "bytes": 13337
+    },
+    {
+      "file": "espn_game_odds__401671803.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671803/competitions/401671803/odds",
+      "sha256": "5c560d75bf305820897e3bbb961da7d80bb60e3b7a1eff1378789dd64aa0b1cb",
+      "bytes": 15570
+    },
+    {
+      "file": "espn_game_odds__401671733.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671733/competitions/401671733/odds",
+      "sha256": "891e63b7d3212f93a4963701629cd7178de72302a77134d94ff5102521eda762",
+      "bytes": 13298
+    },
+    {
+      "file": "espn_game_odds__401671863.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671863/competitions/401671863/odds",
+      "sha256": "64a43a6f4ec9bad0e8437b104efaab813ae5af5d99cec268963f1020e0f73129",
+      "bytes": 12838
+    },
+    {
+      "file": "espn_game_odds__401671637.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671637/competitions/401671637/odds",
+      "sha256": "5d05db964ac78e289dc10055201674b074d350cae7fcd3061cf7b395a901951e",
+      "bytes": 13317
+    },
+    {
+      "file": "espn_game_odds__401671708.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671708/competitions/401671708/odds",
+      "sha256": "af3140c849f8047927650447ea949264e45865b33e76801a4b05ef6e33d34f35",
+      "bytes": 13085
+    },
+    {
+      "file": "espn_game_odds__401671873.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671873/competitions/401671873/odds",
+      "sha256": "e48383ccf0f6172f6a522fea40691c7eacc8cd44bff9a7889f2d1e8c19dd7135",
+      "bytes": 12823
+    },
+    {
+      "file": "espn_game_odds__401671641.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671641/competitions/401671641/odds",
+      "sha256": "57da294e480381b2228c00b6c64d2db27c5df912e26776de1628d85615a7640a",
+      "bytes": 13401
+    },
+    {
+      "file": "espn_game_odds__401671742.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671742/competitions/401671742/odds",
+      "sha256": "24db29e37a7bbe32e033396744e48d525cb1694939a0dfb2e8ac7af51ff88862",
+      "bytes": 13333
+    },
+    {
+      "file": "espn_game_odds__401671751.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671751/competitions/401671751/odds",
+      "sha256": "fee9fab1a088bb998d92f5f93902c00c0f4477dfa050eafc732b23f86e62c392",
+      "bytes": 12848
+    },
+    {
+      "file": "espn_game_odds__401671678.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671678/competitions/401671678/odds",
+      "sha256": "42add39051bb2574ba9353ffa65194d07ff2ffc7f7e1bc218ab7352e3c66ffa3",
+      "bytes": 12629
+    },
+    {
+      "file": "espn_game_odds__401671676.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671676/competitions/401671676/odds",
+      "sha256": "959c499fd96d1cf81a30519aed78050de1953ea2369200f0f98cc7cd0233068f",
+      "bytes": 12349
+    },
+    {
+      "file": "espn_game_odds__401671787.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671787/competitions/401671787/odds",
+      "sha256": "9b616bb7cf6e9e31eaace70b7d1f296c42b5fd802de0accb55f4041e99084b61",
+      "bytes": 12889
+    },
+    {
+      "file": "espn_game_odds__401671693.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671693/competitions/401671693/odds",
+      "sha256": "9e7e2d8ce26077063f29ef10cfa269cc96b3f91de879fcd6b3e47cde899e51a9",
+      "bytes": 13092
+    },
+    {
+      "file": "espn_game_odds__401671813.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671813/competitions/401671813/odds",
+      "sha256": "7af0df379d3a9774bd68d1d842adb7acac1734cbc8c381c0b38ffc72f7222cf6",
+      "bytes": 12895
+    },
+    {
+      "file": "espn_game_odds__401671630.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671630/competitions/401671630/odds",
+      "sha256": "995e440235df11556ebd8fc98310f93a2c553f6b0acc70ca0417e0fcad4ad133",
+      "bytes": 12831
+    },
+    {
+      "file": "espn_game_odds__401671746.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671746/competitions/401671746/odds",
+      "sha256": "42a24dd02c76909b9c5a1f4fad3b7c7fc1e2d39cec39f1517184726c41248884",
+      "bytes": 12859
+    },
+    {
+      "file": "espn_game_odds__401671869.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671869/competitions/401671869/odds",
+      "sha256": "ddd46c70ad0451e57eab21f67d38e31383dc2ca40dd1d6489f375d6a4a4629f9",
+      "bytes": 12882
+    },
+    {
+      "file": "espn_game_odds__401671782.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671782/competitions/401671782/odds",
+      "sha256": "7f322b41bf16fd7ce347c222ad4dd42ca65a1ce6959e6bc816295152be7c49e9",
+      "bytes": 12549
+    },
+    {
+      "file": "espn_game_odds__401671642.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671642/competitions/401671642/odds",
+      "sha256": "3a30dce62eb6c47e0859010f7d11c7836b4b2c8244b857e2b9f5774d1bb38a70",
+      "bytes": 12847
+    },
+    {
+      "file": "espn_game_odds__401671701.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671701/competitions/401671701/odds",
+      "sha256": "9253e3b872aae59553c509e0c3336c37e68ec3777f9208f1576c0c4d74442bda",
+      "bytes": 12388
+    },
+    {
+      "file": "espn_game_odds__401671851.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671851/competitions/401671851/odds",
+      "sha256": "aca830134685b8696964584f33c5a7654e0c175ec379180d6bb0c19a6ee0f3a0",
+      "bytes": 12824
+    },
+    {
+      "file": "espn_game_odds__401671824.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671824/competitions/401671824/odds",
+      "sha256": "f2b462dc0ed3838217c0747307f52f83d5ef3fc6540ea0ce6c5b5c148c723f2e",
+      "bytes": 12334
+    },
+    {
+      "file": "espn_game_odds__401671748.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671748/competitions/401671748/odds",
+      "sha256": "7f9145c55f36e196457a4c56449c012066f19dd758bb53613c154db13986a2a9",
+      "bytes": 12854
+    },
+    {
+      "file": "espn_game_odds__401671757.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671757/competitions/401671757/odds",
+      "sha256": "dbb9b7aae71e3460947899eb7462fbc7bdd04834855a25c23ec9940092d8de55",
+      "bytes": 12823
+    },
+    {
+      "file": "espn_game_odds__401671665.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671665/competitions/401671665/odds",
+      "sha256": "e889ec377e94fb15cb490a994d0fa7bd04f3843bd07aeaf31cc0c23bb806678c",
+      "bytes": 15056
+    },
+    {
+      "file": "espn_game_odds__401671675.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671675/competitions/401671675/odds",
+      "sha256": "65c840fe13b4086044ec9a966e04d2365eb7f551b3ca50110449127b78644633",
+      "bytes": 12865
+    },
+    {
+      "file": "espn_game_odds__401671694.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671694/competitions/401671694/odds",
+      "sha256": "83d56dc58ae9d1f7d987bd69cebd04bf92fa07f287ba265b2d06247e5f5afa50",
+      "bytes": 13076
+    },
+    {
+      "file": "espn_game_odds__401671875.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671875/competitions/401671875/odds",
+      "sha256": "12dfa971cfb6d95f725d9cbd3e3fb4888523f9cbbc0feb078bc62c53b6df42b5",
+      "bytes": 12852
+    },
+    {
+      "file": "espn_game_odds__401671715.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671715/competitions/401671715/odds",
+      "sha256": "7f45b3cf6136cea6bbe56d4aa17deb95f967f55079ff7d8f56ac5295d360075a",
+      "bytes": 12864
+    },
+    {
+      "file": "espn_game_odds__401671866.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671866/competitions/401671866/odds",
+      "sha256": "f80790f9a65cb73791411ae18e2d744e60220366e846e4beb39eb43e8454cba2",
+      "bytes": 13337
+    },
+    {
+      "file": "espn_game_odds__401671651.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671651/competitions/401671651/odds",
+      "sha256": "044f672eb963bd7802d244dcfcb10b350e078829b7333de1b7720489d9e804c9",
+      "bytes": 12863
+    },
+    {
+      "file": "espn_game_odds__401671870.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671870/competitions/401671870/odds",
+      "sha256": "f65893859057ac28885fd6c3d587c16b788d30cff0bfd983d1f6e4645b3ecf73",
+      "bytes": 13369
+    },
+    {
+      "file": "espn_game_odds__401671847.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671847/competitions/401671847/odds",
+      "sha256": "c2db55b472e36ba81a5527bc933d09ab988083ed14aa682d47ebe0926fdf0973",
+      "bytes": 12633
+    },
+    {
+      "file": "espn_game_odds__401671638.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671638/competitions/401671638/odds",
+      "sha256": "54bfadc808c99e8d8efb4e0f98d3854520cfb2eec8a42b7b92cb17eb73d5acd4",
+      "bytes": 12860
+    },
+    {
+      "file": "espn_game_odds__401671858.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671858/competitions/401671858/odds",
+      "sha256": "343bbfa0c62c7fa477dc8d881a6e2f44328b6c7b2d1f0d7b37cd97b7c09972ce",
+      "bytes": 12871
+    },
+    {
+      "file": "espn_game_odds__401671656.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671656/competitions/401671656/odds",
+      "sha256": "6348f196c6f76d13d8e4983b39e0790a1626723337bcb7188af7ff100aadc72b",
+      "bytes": 12857
+    },
+    {
+      "file": "espn_game_odds__401671775.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671775/competitions/401671775/odds",
+      "sha256": "1346e6ce14a8ef565433c9f2be14e93bd943b14af765a1fe86e9fe1a7a0e778a",
+      "bytes": 13084
+    },
+    {
+      "file": "espn_game_odds__401671768.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671768/competitions/401671768/odds",
+      "sha256": "117e1202e619780d1991654ecb7de74383026f82aa122df8763e2ec632dfdece",
+      "bytes": 12588
+    },
+    {
+      "file": "espn_game_odds__401671794.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671794/competitions/401671794/odds",
+      "sha256": "2b6c5dda8de04ea63c4dce6ffbd331d919bd933d2476426c9ee48784858603f5",
+      "bytes": 12866
+    },
+    {
+      "file": "espn_game_odds__401671689.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671689/competitions/401671689/odds",
+      "sha256": "2c733fdc47f743d636983f768ce5e4ebc2266afa49975ad6fda681aa8d054476",
+      "bytes": 13132
+    },
+    {
+      "file": "espn_game_odds__401671492.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671492/competitions/401671492/odds",
+      "sha256": "37996a7d3d276a64c919132c691a93b7616981604d01ff21a0bc7afd023dc7a9",
+      "bytes": 12849
+    },
+    {
+      "file": "espn_game_odds__401671779.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671779/competitions/401671779/odds",
+      "sha256": "bdc5c50a15d1e635287da7ddbc589e5f70db3fa4fe8045aa7cd9e1290c982a8d",
+      "bytes": 13137
+    },
+    {
+      "file": "espn_game_odds__401671798.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671798/competitions/401671798/odds",
+      "sha256": "ba1bb4c389a0e60b6263fb684475f3ece21e46659de912425dcfb9ca12a533bf",
+      "bytes": 13164
+    },
+    {
+      "file": "espn_game_odds__401671806.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671806/competitions/401671806/odds",
+      "sha256": "ad2316942b34266aa1798909156b4e6752039e470ef4c3a51abb5cf56baa050b",
+      "bytes": 13121
+    },
+    {
+      "file": "espn_game_odds__401671726.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671726/competitions/401671726/odds",
+      "sha256": "623eab4b459fa31c7d3c93cfc3751161653d7e3766b91babba7729bc9b0dcd52",
+      "bytes": 12809
+    },
+    {
+      "file": "espn_game_odds__401671705.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671705/competitions/401671705/odds",
+      "sha256": "5ae43468f35f968644eb07690174f20e4d6812c99fd25c5d651a66695f13f46a",
+      "bytes": 12820
+    },
+    {
+      "file": "espn_game_odds__401671620.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671620/competitions/401671620/odds",
+      "sha256": "091b8fade8e88e162b0cc7f92ce47d557a19daf1eaaab5e73820321e4e1513fb",
+      "bytes": 12847
+    },
+    {
+      "file": "espn_game_odds__401671649.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671649/competitions/401671649/odds",
+      "sha256": "51a160ab27ae32cd235804a123e3aef07d5f4ca18ec8986efb686e9196f31587",
+      "bytes": 12875
+    },
+    {
+      "file": "espn_game_odds__401671627.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671627/competitions/401671627/odds",
+      "sha256": "4db4b1a32923b3b9f2721566ae31779bca1cffe2db228dd0c9ef2d074bf76c38",
+      "bytes": 13097
+    },
+    {
+      "file": "espn_game_odds__401671703.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671703/competitions/401671703/odds",
+      "sha256": "ac471fb31ba02d0607873c40fa727bdd627afbe3159a4f6ededc864a031e88a9",
+      "bytes": 12625
+    },
+    {
+      "file": "espn_game_odds__401671743.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671743/competitions/401671743/odds",
+      "sha256": "e4704bb5b0ef9caeed845d4e5d8e124f07af7f8ecd8b965dc2da80fef1d7b76b",
+      "bytes": 12875
+    },
+    {
+      "file": "espn_game_odds__401671753.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671753/competitions/401671753/odds",
+      "sha256": "3e37c89d2b2ccb9508fd85f9da6059720bc5af8e3174ca43dd5747bf217a36d9",
+      "bytes": 13352
+    },
+    {
+      "file": "espn_game_odds__401671752.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671752/competitions/401671752/odds",
+      "sha256": "de06199734299756a48823e8d57dd1e398b17132dd9db6e7c54d51ae672000b7",
+      "bytes": 13337
+    },
+    {
+      "file": "espn_game_odds__401671666.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671666/competitions/401671666/odds",
+      "sha256": "18b5068830f7310e63422babdf65cfc532fb7876d80efd8b59b7c4d9b7cfef1f",
+      "bytes": 12789
+    },
+    {
+      "file": "espn_game_odds__401671781.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671781/competitions/401671781/odds",
+      "sha256": "79a2b76f551b823f69de57e6bbe29c250a9c3e831dfb7029e5ed19fbbf22e4e6",
+      "bytes": 13387
+    },
+    {
+      "file": "espn_game_odds__401671686.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671686/competitions/401671686/odds",
+      "sha256": "91c7e5b655ce8f2e0b3dcfa194e8e43280597eb2f5ca5da70487c357855edc6e",
+      "bytes": 12635
+    },
+    {
+      "file": "espn_game_odds__401671814.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671814/competitions/401671814/odds",
+      "sha256": "4d2348cb8f78c64a4cf4e762d5bfaca7b080b88b287f75fcfcc8cb3cb0e5228b",
+      "bytes": 12846
+    },
+    {
+      "file": "espn_game_odds__401671648.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671648/competitions/401671648/odds",
+      "sha256": "65c23c05da84e599138a4dbbd136f62797ea92b0467426df82dd429dbe2b40d3",
+      "bytes": 12610
+    },
+    {
+      "file": "espn_game_odds__401671713.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671713/competitions/401671713/odds",
+      "sha256": "ebc8cdeddc3f8afe08fcb98003552393073aa6b4d36a12458a110bd6ab061c1c",
+      "bytes": 12857
+    },
+    {
+      "file": "espn_game_odds__401671631.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671631/competitions/401671631/odds",
+      "sha256": "b4204cc6700ecbd3008eac1ef8fe703b81fabe890224745afb3e60d46f8f0d9b",
+      "bytes": 12809
+    },
+    {
+      "file": "espn_game_odds__401671821.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671821/competitions/401671821/odds",
+      "sha256": "56c7602030d1fc0df1369b656ec211c831a1c92e37efbe25c66e9659aa7211aa",
+      "bytes": 12850
+    },
+    {
+      "file": "espn_game_odds__401671654.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671654/competitions/401671654/odds",
+      "sha256": "698552ca1c8e228b5a074b34b1e77c7c2e0bceb32eec9645ad32006c73839745",
+      "bytes": 12861
+    },
+    {
+      "file": "espn_game_odds__401671601.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671601/competitions/401671601/odds",
+      "sha256": "6707f361b88b3a62fccd0edd8dae5aa817382efa2c30dc79371dd6bf217c39e8",
+      "bytes": 12846
+    },
+    {
+      "file": "espn_game_odds__401671848.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671848/competitions/401671848/odds",
+      "sha256": "635721b871af5641b3c60da81665bfd8a75a35cd27ad1ab48d247ee0b31920ff",
+      "bytes": 13384
+    },
+    {
+      "file": "espn_game_odds__401671660.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671660/competitions/401671660/odds",
+      "sha256": "dd91d6a16e7711c62aee39f54975c89c1a7d64b6a78660bc369a3cbcac071ebc",
+      "bytes": 13094
+    },
+    {
+      "file": "espn_game_odds__401671773.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671773/competitions/401671773/odds",
+      "sha256": "fde4ad68d626946b290daf6ce5d4ec7ca98723060978d8dadc38f860ce1a7ff5",
+      "bytes": 12857
+    },
+    {
+      "file": "espn_game_odds__401671774.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671774/competitions/401671774/odds",
+      "sha256": "288cc91d1e879e5ad4e4d73fc89b08f0d5877fc73eabe287fa96e429683abe0b",
+      "bytes": 12853
+    },
+    {
+      "file": "espn_game_odds__401671788.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671788/competitions/401671788/odds",
+      "sha256": "e0caf07d3899d0d206384f5741dcdbd57a2630d8ad6646deeb89f554fba13646",
+      "bytes": 13354
+    },
+    {
+      "file": "espn_game_odds__401671690.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671690/competitions/401671690/odds",
+      "sha256": "2612df56f943b60681328f10569ed8d8c13abadd354aab16a2ed509ec94475de",
+      "bytes": 12820
+    },
+    {
+      "file": "espn_game_odds__401671818.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671818/competitions/401671818/odds",
+      "sha256": "278dabecbda18ff58728def2c58a4221f9934dbec3b7506bd9196dbe2453945d",
+      "bytes": 13129
+    },
+    {
+      "file": "espn_game_odds__401671639.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671639/competitions/401671639/odds",
+      "sha256": "a7b695c021c79b8959626e8d4af38d0a8b8d789e04f3f9f41609ad654b6a113d",
+      "bytes": 12834
+    },
+    {
+      "file": "espn_game_odds__401671825.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671825/competitions/401671825/odds",
+      "sha256": "c764e20c9c39082beffc4d736292cbbddd48b0422018cc79ee47e2b1502102d6",
+      "bytes": 12862
+    },
+    {
+      "file": "espn_game_odds__401671731.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671731/competitions/401671731/odds",
+      "sha256": "8a82f9d5188d20ea1b2e1a9c4de38b9b6dbd94f56b8b5352ecd19c51858ba444",
+      "bytes": 12871
+    },
+    {
+      "file": "espn_game_odds__401671854.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671854/competitions/401671854/odds",
+      "sha256": "67cff6e1b31647e50acf7cefe2436da0b09bf0420feeb6b7a0c0cbb2310a45f0",
+      "bytes": 12839
+    },
+    {
+      "file": "espn_game_odds__401671860.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671860/competitions/401671860/odds",
+      "sha256": "72e818711f232c7801dd06a0c318727cd8a07193730016d0fd309d3cf212fc7a",
+      "bytes": 12883
+    },
+    {
+      "file": "espn_game_odds__401671706.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671706/competitions/401671706/odds",
+      "sha256": "6e46b77bb46b529eb37fc2a32221f26086434a27b3702054beeb961f25233f6f",
+      "bytes": 12903
+    },
+    {
+      "file": "espn_game_odds__401671737.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671737/competitions/401671737/odds",
+      "sha256": "0edf6c7e722393f906bd003de91d79ab7c71be4421f4609fbe98d9cca07d22bf",
+      "bytes": 13102
+    },
+    {
+      "file": "espn_game_odds__401671681.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671681/competitions/401671681/odds",
+      "sha256": "e9044a855ee25ee0c0c125825d1e1dca11a5b549b9276800335c4a3926ca8532",
+      "bytes": 12830
+    },
+    {
+      "file": "espn_game_odds__401671669.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671669/competitions/401671669/odds",
+      "sha256": "6cae534e0c3af1ae43d18d6efb8f5109fdb45b70549005554c743600f1c36550",
+      "bytes": 12854
+    },
+    {
+      "file": "espn_game_odds__401671677.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671677/competitions/401671677/odds",
+      "sha256": "18dff9e62d6af947a92d4146531190c398a701f80000f1baa043b60439cd6416",
+      "bytes": 13366
+    },
+    {
+      "file": "espn_game_odds__401671766.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671766/competitions/401671766/odds",
+      "sha256": "a4c8c9845111a75440b180678981e35c5f271070569c1dd4303ad2d8fe7cbdec",
+      "bytes": 13097
+    },
+    {
+      "file": "espn_game_odds__401671762.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671762/competitions/401671762/odds",
+      "sha256": "839e595562ab6dfcdb25547e35ba4115a0707b266800a478d96ab91a4d9cc5b5",
+      "bytes": 12851
+    },
+    {
+      "file": "espn_game_odds__401671796.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671796/competitions/401671796/odds",
+      "sha256": "519442c6aee99d4950b0be99dfb83c6c7f5796782f27ba0d2b39c4cd96fe1d32",
+      "bytes": 13030
+    },
+    {
+      "file": "espn_game_odds__401671489.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671489/competitions/401671489/odds",
+      "sha256": "f91b7210213ef3e96c5b68212cf0d65b3daac85ad5cd34a89555e5e92751d77a",
+      "bytes": 12852
+    },
+    {
+      "file": "espn_game_odds__401671697.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671697/competitions/401671697/odds",
+      "sha256": "145e4f06dac1f0bcea49b9238909c7a168f52241ea1ec17fc7cd0095f8e40c15",
+      "bytes": 13122
+    },
+    {
+      "file": "espn_game_odds__401671749.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671749/competitions/401671749/odds",
+      "sha256": "f6343db53e958004017ddf24df50c0f92acab04232ef5d8b697c0202326a7080",
+      "bytes": 12609
+    },
+    {
+      "file": "espn_game_odds__401671780.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671780/competitions/401671780/odds",
+      "sha256": "af05cc7a50d149238b9d9e0ab7a215032422f3ee9b196b9801ee442d874758df",
+      "bytes": 13326
+    },
+    {
+      "file": "espn_game_odds__401671778.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671778/competitions/401671778/odds",
+      "sha256": "3a4ad5660babe9366818501a7289365d73d94ddceba004afff7b9a232dce120e",
+      "bytes": 13116
+    },
+    {
+      "file": "espn_game_odds__401671732.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671732/competitions/401671732/odds",
+      "sha256": "301a4f13ffe25a136726367942f27c746bdd28395f601a137c8d2bf976be1cc3",
+      "bytes": 12819
+    },
+    {
+      "file": "espn_game_odds__401671811.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671811/competitions/401671811/odds",
+      "sha256": "d4739357f37b65d1cff10a89565df6b23463bc2edf8759577bb1c2e737ca7aaf",
+      "bytes": 12824
+    },
+    {
+      "file": "espn_game_odds__401671868.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671868/competitions/401671868/odds",
+      "sha256": "46c8ea28a4ee1625b020d681475637f64fa027c85907c594ba4185f4d7071393",
+      "bytes": 12859
+    },
+    {
+      "file": "espn_game_odds__401671621.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671621/competitions/401671621/odds",
+      "sha256": "46282fcdfbd66396bcfbce2b9be50c18bbc2b829f75cea0cd05658231c20906a",
+      "bytes": 13066
+    },
+    {
+      "file": "espn_game_odds__401671729.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671729/competitions/401671729/odds",
+      "sha256": "b069404343ae6d115f65fd0c89e16a353b3985bbd72affbab5a6fa4b0c868792",
+      "bytes": 12882
+    },
+    {
+      "file": "espn_game_odds__401671717.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671717/competitions/401671717/odds",
+      "sha256": "2020aadff969a694d66baf8a81db8a0d0ce03e7193c8b0d9d7fc4f14e32e8edb",
+      "bytes": 13391
+    },
+    {
+      "file": "espn_game_odds__401671862.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671862/competitions/401671862/odds",
+      "sha256": "2aabe8384e25273d4e37b5bb40aa7eb921bc8030e3c976a9ea10755849944a96",
+      "bytes": 12592
+    },
+    {
+      "file": "espn_game_odds__401671759.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671759/competitions/401671759/odds",
+      "sha256": "501b5ed43234f46d4144591108f07d6e67f7674ab29824f83a931ac05a1ca77e",
+      "bytes": 13361
+    },
+    {
+      "file": "espn_game_odds__401671673.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671673/competitions/401671673/odds",
+      "sha256": "5d3f5b960397a84ce7771289cf8c1c463af8643bcff8f44f2ea9efeb43a61472",
+      "bytes": 12604
+    },
+    {
+      "file": "espn_game_odds__401671494.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671494/competitions/401671494/odds",
+      "sha256": "f18578b95991e940ac4c7fa024a0eb7e3c778c9906f412af8b648b4d0fc491ed",
+      "bytes": 12842
+    },
+    {
+      "file": "espn_game_odds__401671874.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671874/competitions/401671874/odds",
+      "sha256": "7a79d3906cc5bec06533e323fe078c5baf47732b6bf56b74a7e9e889d08dce88",
+      "bytes": 13355
+    },
+    {
+      "file": "espn_game_odds__401671790.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671790/competitions/401671790/odds",
+      "sha256": "2a75139b120e7dcad742d17e5ec3dbddbb34c1330a01359304d712cc7bbeb006",
+      "bytes": 13126
+    },
+    {
+      "file": "espn_game_odds__401671692.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671692/competitions/401671692/odds",
+      "sha256": "605bf3b056baa549423a31beb3a4bd3c3d3e3eae1b74b77aa88cb4591dd551ae",
+      "bytes": 12353
+    },
+    {
+      "file": "espn_game_odds__401671799.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671799/competitions/401671799/odds",
+      "sha256": "74cd9b7489f176a8909d5a21e676688cff0ae8699516e253ac8d66f40de91814",
+      "bytes": 15290
+    },
+    {
+      "file": "espn_game_odds__401671800.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671800/competitions/401671800/odds",
+      "sha256": "b6bb9167ffdc911ff333ee68ad5487b4758c593f879100dbccedecea23f2c2a4",
+      "bytes": 15075
+    },
+    {
+      "file": "espn_game_odds__401671876.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671876/competitions/401671876/odds",
+      "sha256": "1da0843ba485fe2ddf9b9aef283a97dc0f84b80d43254d0532f0316cc254f6d2",
+      "bytes": 13325
+    },
+    {
+      "file": "espn_game_odds__401671832.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671832/competitions/401671832/odds",
+      "sha256": "52044c73f82f7980cc5e08b0cb57bb2eedb58a50e35bb70c3bcf3d516340b9a5",
+      "bytes": 13067
+    },
+    {
+      "file": "espn_game_odds__401671835.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671835/competitions/401671835/odds",
+      "sha256": "3f8a87414a30bd5fed318b211c4131aadce654a3b1ed83bfb872554d6d19eac6",
+      "bytes": 13343
+    },
+    {
+      "file": "espn_game_odds__401671829.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671829/competitions/401671829/odds",
+      "sha256": "7fb6584c847c26775c54e48a4d87b8279e5dbe673d4e4631257e5e04f43a5c37",
+      "bytes": 13381
+    },
+    {
+      "file": "espn_game_odds__401671653.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671653/competitions/401671653/odds",
+      "sha256": "6d7e0af86a78e5445bfc99db8b2b15a9d04f96482037ae197350c34d260d5272",
+      "bytes": 12633
+    },
+    {
+      "file": "espn_game_odds__401671765.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671765/competitions/401671765/odds",
+      "sha256": "357a3e044d6e39453487ef6fe3c18a4ed936b18c58c805d0f0ace155fc039eb4",
+      "bytes": 12874
+    },
+    {
+      "file": "espn_game_odds__401671846.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671846/competitions/401671846/odds",
+      "sha256": "64b4d7ed5a235089bc82a0d96c25b0fb8b2b03000e6b3db2e26953d520e8715d",
+      "bytes": 13082
+    },
+    {
+      "file": "espn_game_odds__401671738.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671738/competitions/401671738/odds",
+      "sha256": "c7bcd993995abfe3b7f5e03a13484f2c31fca5627c2cbf1d4fd03f22dabd4508",
+      "bytes": 12886
+    },
+    {
+      "file": "espn_game_odds__401671495.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671495/competitions/401671495/odds",
+      "sha256": "2869be509fd4b455cafed9a0826cb0f95e30beda47d03c79e2359e0249c23d41",
+      "bytes": 12854
+    },
+    {
+      "file": "espn_game_odds__401671634.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671634/competitions/401671634/odds",
+      "sha256": "e8f957c3b8f293b3042481e374cbafd13a9360a7df85664e89e96bd156212f8f",
+      "bytes": 12847
+    },
+    {
+      "file": "espn_game_odds__401671877.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671877/competitions/401671877/odds",
+      "sha256": "73f80af4c7182a67cd39788f37fa804cc11bc5b1af475a92af07a83156b508fd",
+      "bytes": 12844
+    },
+    {
+      "file": "espn_game_odds__401671725.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671725/competitions/401671725/odds",
+      "sha256": "e7054a3a4212525c90c71d422da4698350fd64857f1652d1a474b0a29fa68125",
+      "bytes": 13371
+    },
+    {
+      "file": "espn_game_odds__401671842.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671842/competitions/401671842/odds",
+      "sha256": "27cf0d722f1b3643808621ea93eb221d541bfd6676b9adf218b9b684f6014c3b",
+      "bytes": 13382
+    },
+    {
+      "file": "espn_game_odds__401671698.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671698/competitions/401671698/odds",
+      "sha256": "9f72f03d1038dc1e298ce909012efa4199d35f52b2cc7b94c2a6634cd9648cde",
+      "bytes": 12347
+    },
+    {
+      "file": "espn_game_odds__401671834.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671834/competitions/401671834/odds",
+      "sha256": "bb0c48ea297a41b42136958aa72a6cf4bda5da1669cb69cf110b32c16affce3d",
+      "bytes": 12637
+    },
+    {
+      "file": "espn_game_odds__401671836.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671836/competitions/401671836/odds",
+      "sha256": "2a009ca0b3363ac3e1be9446426ee2a19e65b3cc4f5cb6dc77cfd6127020f9a3",
+      "bytes": 13325
+    },
+    {
+      "file": "espn_game_odds__401671831.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671831/competitions/401671831/odds",
+      "sha256": "b45b616f4b0d3878cbd30414460cfdd5b3b19a6636784fffce771dab87d6c727",
+      "bytes": 12591
+    },
+    {
+      "file": "espn_game_odds__401671827.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671827/competitions/401671827/odds",
+      "sha256": "a5ef63efeb468ee662d15c14e2faad60a8dd4b728ce3ce29fdf9c5279c3e7d55",
+      "bytes": 12829
+    },
+    {
+      "file": "espn_game_odds__401671844.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671844/competitions/401671844/odds",
+      "sha256": "7b5460b2bb860c61619c4be2026f6c0968e0a2d54dd7d958fd4f45acc088bfa7",
+      "bytes": 12837
+    },
+    {
+      "file": "espn_game_odds__401671826.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671826/competitions/401671826/odds",
+      "sha256": "b38691735999e18448fe9218dcbf704aec86f459596af72f4316ae8e6f466d23",
+      "bytes": 12783
+    },
+    {
+      "file": "espn_game_odds__401671837.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671837/competitions/401671837/odds",
+      "sha256": "cc7f9714140e72eba5f9564f9cb21c0ada066d2b7312af49ac5889b8adca1aab",
+      "bytes": 13365
+    },
+    {
+      "file": "espn_game_odds__401671828.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671828/competitions/401671828/odds",
+      "sha256": "60f066b1915497f460223292b176ecff34ffbcc3866aa28cdd275b9328326704",
+      "bytes": 12796
+    },
+    {
+      "file": "espn_game_odds__401671841.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671841/competitions/401671841/odds",
+      "sha256": "b2835ef04e8fc63c243edd6ae541ff61ec0fb2b4e32729a83dbaa82a04758a4b",
+      "bytes": 12861
+    },
+    {
+      "file": "espn_game_odds__401671840.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671840/competitions/401671840/odds",
+      "sha256": "f6a7dde926dfb211d1e57ac6b60164b6483870815e0685b8f979e713a46366c5",
+      "bytes": 13309
+    },
+    {
+      "file": "espn_game_odds__401671838.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671838/competitions/401671838/odds",
+      "sha256": "e3ef571b3444d490986a26ee3e54b678800f4561f3089e8506cd93e86b9c76fc",
+      "bytes": 12840
+    },
+    {
+      "file": "espn_game_odds__401671839.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671839/competitions/401671839/odds",
+      "sha256": "91dc8ef0ef23c4b06206f8db3c6ca4ddeaf4794de459775166a6280cff7707e3",
+      "bytes": 13349
+    },
+    {
+      "file": "espn_game_odds__401671833.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671833/competitions/401671833/odds",
+      "sha256": "b9bb787072e61cc2a45192f3b31b9d3f10f8013bec357bfbd9f894efdc23e8b3",
+      "bytes": 12846
+    },
+    {
+      "file": "espn_game_odds__401671830.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671830/competitions/401671830/odds",
+      "sha256": "e9d3f74d3980bbd1642f56e3ca223f2f1bb2e324dccd00f8c1b1fa91d655216e",
+      "bytes": 12851
+    },
+    {
+      "file": "espn_game_odds__401671845.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671845/competitions/401671845/odds",
+      "sha256": "8d1c32c6a13930c74c94de19f1bdc4419de105359a438aef1ecb4e573a874711",
+      "bytes": 12842
+    },
+    {
+      "file": "espn_game_odds__401671843.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671843/competitions/401671843/odds",
+      "sha256": "ce1b2f5772cc6f8f8e20efeee110adf2ff4286f85ea338d534235978d6118721",
+      "bytes": 12100
+    },
+    {
+      "file": "espn_game_odds__401671878.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671878/competitions/401671878/odds",
+      "sha256": "a4d0d623ed9e9ea8b29f27017e48b01a6bab72ccadfffe8b1e3ab00635e5b721",
+      "bytes": 13371
+    },
+    {
+      "file": "espn_game_odds__401671879.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671879/competitions/401671879/odds",
+      "sha256": "b99b77c2642f79097992d5ba9efe5fed43c822b4637cd8d0178c4c7733b36b2d",
+      "bytes": 13048
+    },
+    {
+      "file": "espn_game_odds__401671881.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671881/competitions/401671881/odds",
+      "sha256": "96b015c7580aeb6e7d2d82965298451775aa07619e5914cf6d1f91ec4c7197b7",
+      "bytes": 13099
+    },
+    {
+      "file": "espn_game_odds__401671880.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671880/competitions/401671880/odds",
+      "sha256": "e42cc881b370680dc85dfe18acd4ef031ebf134a5b78c45db64a8a538c2f35e3",
+      "bytes": 13121
+    },
+    {
+      "file": "espn_game_odds__401671883.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671883/competitions/401671883/odds",
+      "sha256": "a73d9344c86c143d1f5b0fa3bc8c53ca8441497fea0582509f36fb395a10d03a",
+      "bytes": 13379
+    },
+    {
+      "file": "espn_game_odds__401671882.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671882/competitions/401671882/odds",
+      "sha256": "a81c88f10b68df6cff7c72231fc234b7812ee46156678918c03fcff963174916",
+      "bytes": 13138
+    },
+    {
+      "file": "espn_game_odds__401671884.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671884/competitions/401671884/odds",
+      "sha256": "4ab1acbba4d50afc0f8ad06d632c24d762d0217f4152fc8386e0282a8ad53aac",
+      "bytes": 13080
+    },
+    {
+      "file": "espn_game_odds__401671885.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671885/competitions/401671885/odds",
+      "sha256": "03436c62eb972aacab88b394bfde40b6e8f0af5313da1523867db8d73c45f48f",
+      "bytes": 13078
+    },
+    {
+      "file": "espn_game_odds__401671937.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671937/competitions/401671937/odds",
+      "sha256": "732f55f11cefa95cffd8bbc58bfaa5176b84a838cff7ee49277aa17a98d54b7a",
+      "bytes": 13061
+    },
+    {
+      "file": "espn_game_odds__401671886.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671886/competitions/401671886/odds",
+      "sha256": "0f5881e2e631487c13cbf160af94eb0e2a7f8d4226906b85ad39352ac7497e42",
+      "bytes": 13332
+    },
+    {
+      "file": "espn_game_odds__401671888.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671888/competitions/401671888/odds",
+      "sha256": "ec695f23c86a0fbb580afd18e26d7d95680e2ab65ded2dc7c5b7e8c9556ef61f",
+      "bytes": 13095
+    },
+    {
+      "file": "espn_game_odds__401671887.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671887/competitions/401671887/odds",
+      "sha256": "6c9ccb05f92c06bec55672cf0fb4361bdefa5fa6beff947f5043aa10e4dcacf0",
+      "bytes": 13345
+    },
+    {
+      "file": "espn_game_odds__401671889.json.gz",
+      "url": "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/events/401671889/competitions/401671889/odds",
+      "sha256": "ec48f4f3adaafb7a77cd16d577167c7ca8694ca4b430767781b27673f7dabbdc",
+      "bytes": 12898
+    }
+  ],
+  "fetch_failures": [],
+  "derived": {
+    "odds_archive": {
+      "file": "espn_game_odds.csv",
+      "rows": 6286,
+      "sha256": "f6ef91a51cee36d25c79f9c84c00109143150c4df2974666af9a595582bb10ec"
+    },
+    "event_map": {
+      "file": "event_map.csv",
+      "rows": 570,
+      "sha256": "0c1641a02468eb136aff4b0202ea14c70fc88a303e61e88bdaf482a765bf9e28"
+    },
+    "coverage": {
+      "file": "COVERAGE.csv",
+      "rows": 12,
+      "sha256": "54eddaac834d31cce4ccb53d0e6109d554d0638bcdcbf80384375b9cbb327825"
+    }
+  },
+  "r_version": "R version 4.5.1 (2025-06-13 ucrt)"
+}

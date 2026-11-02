@@ -1,0 +1,41 @@
+{
+ "cursor": "",
+ "markets": [
+  {
+   "ticker": "KXNFLGAME-26OCT12BUFLAR-LAR",
+   "event_ticker": "KXNFLGAME-26OCT12BUFLAR",
+   "title": "Los Angeles R wins",
+   "yes_sub_title": "Los Angeles R",
+   "status": "finalized",
+   "result": "no",
+   "open_time": "2026-09-29T04:06:00Z",
+   "close_time": "2026-10-13T03:48:50Z",
+   "expected_expiration_time": "2026-10-13T03:15:00Z",
+   "last_price_dollars": "0.0100",
+   "volume_fp": "46872394.60",
+   "custom_strike": {
+    "football_team": "422d5fd7-ad18-4c96-902d-6f7c50e4660f"
+   },
+   "strike_type": "structured",
+   "market_type": "binary"
+  },
+  {
+   "ticker": "KXNFLGAME-26OCT12BUFLAR-BUF",
+   "event_ticker": "KXNFLGAME-26OCT12BUFLAR",
+   "title": "Buffalo wins",
+   "yes_sub_title": "Buffalo",
+   "status": "finalized",
+   "result": "yes",
+   "open_time": "2026-09-29T04:06:00Z",
+   "close_time": "2026-10-13T03:48:50Z",
+   "expected_expiration_time": "2026-10-13T03:15:00Z",
+   "last_price_dollars": "0.9900",
+   "volume_fp": "57487787.45",
+   "custom_strike": {
+    "football_team": "f9acd396-ba35-4cae-a431-a44b2af707b0"
+   },
+   "strike_type": "structured",
+   "market_type": "binary"
+  }
+ ]
+}

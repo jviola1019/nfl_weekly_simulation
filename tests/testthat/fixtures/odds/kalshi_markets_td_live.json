@@ -1,0 +1,65 @@
+{
+ "cursor": "",
+ "markets": [
+  {
+   "ticker": "KXNFLTD-26OCT12BUFLAR-BUFJCOOK4-2",
+   "event_ticker": "KXNFLTD-26OCT12BUFLAR",
+   "title": "James Cook III: 2+ touchdowns",
+   "yes_sub_title": "James Cook III: 2+",
+   "status": "finalized",
+   "result": "yes",
+   "open_time": "2026-10-08T01:16:00Z",
+   "close_time": "2026-10-13T03:20:08Z",
+   "expected_expiration_time": "2026-10-13T03:15:00Z",
+   "last_price_dollars": "0.9900",
+   "volume_fp": "873371.17",
+   "custom_strike": {
+    "football_player": "28cbef9d-f049-419b-89d0-5dbf89d38eef",
+    "football_team": "f9acd396-ba35-4cae-a431-a44b2af707b0"
+   },
+   "floor_strike": 1.5,
+   "strike_type": "greater",
+   "market_type": "binary"
+  },
+  {
+   "ticker": "KXNFLTD-26OCT12BUFLAR-BUFJCOOK4-1",
+   "event_ticker": "KXNFLTD-26OCT12BUFLAR",
+   "title": "James Cook III: 1+ touchdowns",
+   "yes_sub_title": "James Cook III: 1+",
+   "status": "finalized",
+   "result": "yes",
+   "open_time": "2026-10-08T01:16:00Z",
+   "close_time": "2026-10-13T01:15:30Z",
+   "expected_expiration_time": "2026-10-13T03:15:00Z",
+   "last_price_dollars": "0.9900",
+   "volume_fp": "405927.72",
+   "custom_strike": {
+    "football_player": "28cbef9d-f049-419b-89d0-5dbf89d38eef",
+    "football_team": "f9acd396-ba35-4cae-a431-a44b2af707b0"
+   },
+   "floor_strike": 0.5,
+   "strike_type": "greater",
+   "market_type": "binary"
+  },
+  {
+   "ticker": "KXNFLTD-26OCT12BUFLAR-BUFJCOOK4-4",
+   "event_ticker": "KXNFLTD-26OCT12BUFLAR",
+   "title": "James Cook III: 4+ touchdowns",
+   "yes_sub_title": "James Cook III: 4+",
+   "status": "finalized",
+   "result": "no",
+   "open_time": "2026-10-13T03:29:00Z",
+   "close_time": "2026-10-13T03:57:18Z",
+   "expected_expiration_time": "2026-10-13T06:15:00Z",
+   "last_price_dollars": "0.0100",
+   "volume_fp": "733.82",
+   "custom_strike": {
+    "football_player": "28cbef9d-f049-419b-89d0-5dbf89d38eef",
+    "football_team": "f9acd396-ba35-4cae-a431-a44b2af707b0"
+   },
+   "floor_strike": 3.5,
+   "strike_type": "greater",
+   "market_type": "binary"
+  }
+ ]
+}

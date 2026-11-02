@@ -1,0 +1,126 @@
+{
+ "count": 1,
+ "pageIndex": 1,
+ "pageSize": 25,
+ "pageCount": 1,
+ "items": [
+  {
+   "provider": {
+    "id": "100",
+    "name": "DraftKings"
+   },
+   "details": "SEA -3",
+   "overUnder": 44.5,
+   "spread": -3.0,
+   "overOdds": -108.0,
+   "underOdds": -112.0,
+   "awayTeamOdds": {
+    "moneyLine": 142,
+    "spreadOdds": 100.0,
+    "open": {
+     "pointSpread": {
+      "american": "+3.5"
+     },
+     "spread": {
+      "american": "-110"
+     },
+     "moneyLine": {
+      "american": "+160"
+     }
+    },
+    "close": {
+     "pointSpread": {
+      "american": "+3"
+     },
+     "spread": {
+      "american": "+100"
+     },
+     "moneyLine": {
+      "american": "+142"
+     }
+    },
+    "current": {
+     "pointSpread": {
+      "american": "+3"
+     },
+     "spread": {
+      "american": "+100"
+     },
+     "moneyLine": {
+      "american": "+142"
+     }
+    }
+   },
+   "homeTeamOdds": {
+    "moneyLine": -170,
+    "spreadOdds": -120.0,
+    "open": {
+     "pointSpread": {
+      "american": "-3.5"
+     },
+     "spread": {
+      "american": "-110"
+     },
+     "moneyLine": {
+      "american": "-192"
+     }
+    },
+    "close": {
+     "pointSpread": {
+      "american": "-3"
+     },
+     "spread": {
+      "american": "-120"
+     },
+     "moneyLine": {
+      "american": "-170"
+     }
+    },
+    "current": {
+     "pointSpread": {
+      "american": "-3"
+     },
+     "spread": {
+      "american": "-120"
+     },
+     "moneyLine": {
+      "american": "-170"
+     }
+    }
+   },
+   "open": {
+    "over": {
+     "american": "-110"
+    },
+    "under": {
+     "american": "-110"
+    },
+    "total": {
+     "american": "44.5"
+    }
+   },
+   "close": {
+    "over": {
+     "american": "-108"
+    },
+    "under": {
+     "american": "-112"
+    },
+    "total": {
+     "american": "44.5"
+    }
+   },
+   "current": {
+    "over": {
+     "american": "-108"
+    },
+    "under": {
+     "american": "-112"
+    },
+    "total": {
+     "american": "44.5"
+    }
+   }
+  }
+ ]
+}
