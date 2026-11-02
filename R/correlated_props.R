@@ -222,52 +222,72 @@ load_game_players <- function(home_team, away_team, season, week = NULL) {
 # DEFENSE AND GAME CONTEXT ADJUSTMENTS
 # =============================================================================
 
-#' Load defense rankings for a season
+#' Defense multipliers from a play-by-play table (pure: no network)
+#'
+#' League average = 1.0. A defense that allows more yards than average gives the
+#' offence facing it a multiplier above 1. The multipliers are built elementwise,
+#' one per team (audit P13: the old `if_else(avg > 0, <32 values>, 1)` could not
+#' recycle and always errored).
+#'
+#' @param pbp Play-by-play with defteam, play_type, week, passing_yards, rushing_yards
+#' @param weeks Optional weeks to include (the caller passes only weeks played before the game)
+#' @return Tibble team, pass_def_multiplier, rush_def_multiplier, recv_def_multiplier; NULL if no rows
+#' @keywords internal
+compute_defense_multipliers <- function(pbp, weeks = NULL) {
+  if (is.null(pbp) || nrow(pbp) == 0) return(NULL)
+  if (!"game_id" %in% names(pbp)) {
+    stop("compute_defense_multipliers: pbp has no game_id, so yards cannot be taken per game", call. = FALSE)
+  }
+  if (!is.null(weeks)) pbp <- pbp[pbp$week %in% weeks, , drop = FALSE]
+  if (nrow(pbp) == 0) return(NULL)
+
+  # Per game, not season totals: mid-season, a team past its bye has played one game fewer,
+  # and a total would make it look like a better defense (final review I5)
+  defense_stats <- pbp %>%
+    dplyr::filter(!is.na(defteam), !is.na(play_type)) %>%
+    dplyr::group_by(defteam) %>%
+    dplyr::summarize(
+      games = dplyr::n_distinct(game_id),
+      pass_yards_allowed = sum(passing_yards, na.rm = TRUE) / games,
+      rush_yards_allowed = sum(rushing_yards, na.rm = TRUE) / games,
+      .groups = "drop"
+    )
+  if (nrow(defense_stats) == 0) return(NULL)
+
+  scale_to_multiplier <- function(allowed, lo, hi) {
+    avg <- mean(allowed, na.rm = TRUE)
+    if (!is.finite(avg) || avg <= 0) return(rep(1, length(allowed)))
+    pmin(pmax(allowed / avg, lo), hi)
+  }
+  pass_mult <- scale_to_multiplier(defense_stats$pass_yards_allowed, 0.80, 1.20)
+
+  tibble::tibble(
+    team = defense_stats$defteam,
+    # Higher yards allowed = easier defense = higher multiplier for the opponent
+    pass_def_multiplier = pass_mult,
+    rush_def_multiplier = scale_to_multiplier(defense_stats$rush_yards_allowed, 0.75, 1.25),
+    recv_def_multiplier = pass_mult   # same as pass for receiving
+  )
+}
+
+#' Load defense rankings for a season (the only definition: audit P13)
 #'
 #' @param season Season year
-#' @return Tibble with team defense multipliers
+#' @param weeks Optional weeks to include (default all: a historical run should pass the
+#'   weeks played before its game so later games do not leak in)
+#' @param pbp Optional play-by-play table (a test seam; default loads the season)
+#' @return Tibble with team defense multipliers; NULL (and a message) when no data
 #' @keywords internal
-load_defense_rankings <- function(season) {
-  tryCatch({
-    # Load play-by-play data for defense rankings (PBP-based approach)
-    pbp <- nflreadr::load_pbp(seasons = season)
-
-    if (is.null(pbp) || nrow(pbp) == 0) return(NULL)
-
-    # Aggregate defensive yards allowed by team
-    defense_stats <- pbp %>%
-      dplyr::filter(!is.na(.data$defteam), !is.na(.data$play_type)) %>%
-      dplyr::group_by(.data$defteam) %>%
-      dplyr::summarize(
-        pass_yards_allowed = sum(.data$passing_yards, na.rm = TRUE),
-        rush_yards_allowed = sum(.data$rushing_yards, na.rm = TRUE),
-        .groups = "drop"
-      )
-
-    # Convert to multipliers (league average = 1.0)
-    avg_pass <- mean(defense_stats$pass_yards_allowed, na.rm = TRUE)
-    avg_rush <- mean(defense_stats$rush_yards_allowed, na.rm = TRUE)
-
-    defense_stats %>%
-      dplyr::transmute(
-        team = .data$defteam,
-        # Higher yards allowed = easier defense = higher multiplier for opponent
-        pass_def_multiplier = dplyr::if_else(
-          avg_pass > 0,
-          pmin(pmax(.data$pass_yards_allowed / avg_pass, 0.80), 1.20),
-          1.0
-        ),
-        rush_def_multiplier = dplyr::if_else(
-          avg_rush > 0,
-          pmin(pmax(.data$rush_yards_allowed / avg_rush, 0.75), 1.25),
-          1.0
-        ),
-        recv_def_multiplier = .data$pass_def_multiplier  # Same as pass for receiving
-      )
-  }, error = function(e) {
-    message(sprintf("  Defense rankings unavailable: %s", e$message))
-    NULL
-  })
+load_defense_rankings <- function(season, weeks = NULL, pbp = NULL) {
+  if (is.null(pbp)) {
+    pbp <- tryCatch(nflreadr::load_pbp(seasons = season), error = function(e) {
+      message(sprintf("  Defense rankings unavailable: %s", e$message))
+      NULL
+    })
+  }
+  ranks <- compute_defense_multipliers(pbp, weeks)
+  if (is.null(ranks)) message("  Defense rankings unavailable: no play-by-play rows")
+  ranks
 }
 
 #' Apply defense adjustments to player projections
@@ -281,14 +301,19 @@ load_defense_rankings <- function(season) {
 #' @param season Season year
 #' @return Adjusted player projections
 #' @keywords internal
-apply_defense_adjustments <- function(players, home_team, away_team, season) {
-  # Load defense rankings (with fallback to neutral)
-  defense_ranks <- tryCatch({
-    load_defense_rankings(season)
-  }, error = function(e) NULL)
+apply_defense_adjustments <- function(players, home_team, away_team, season,
+                                      weeks = NULL, defense_ranks = NULL) {
+  if (is.null(defense_ranks)) {
+    defense_ranks <- tryCatch({
+      load_defense_rankings(season, weeks)
+    }, error = function(e) {
+      message(sprintf("  Defense rankings failed: %s", e$message))
+      NULL
+    })
+  }
 
   if (is.null(defense_ranks) || nrow(defense_ranks) == 0) {
-    # Use neutral defense rankings
+    message("  Defense adjustments NEUTRAL: no rankings, every multiplier is 1.0")
     defense_ranks <- tibble::tibble(
       team = unique(c(home_team, away_team)),
       pass_def_multiplier = 1.0,
