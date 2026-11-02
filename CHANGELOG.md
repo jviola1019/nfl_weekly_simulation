@@ -250,6 +250,15 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - **Started by:** `prospective_loop.sh` in a shell, or by a Windows scheduled task registered with `register_prospective_task.ps1`. The owner runs that script.
   - **Store:** it writes to a private local store outside the system temp folder.
 - **The weekly score now fits the props model's dispersion on every earlier week the store holds** (`weekly_prospective.sh`). Before, it used weeks 1–7 only.
+- **Track H, historical openers:**
+  - **AusSportsBetting** sits behind a Cloudflare bot challenge (HTTP 403), so it is dropped under the owner's rule.
+  - **SBR's archive** is readable but frozen at 2021–22. It has opening spreads only, so it cannot meet the admission rule (no 2023–24 overlap with ESPN).
+- **T2** (`opener_spread_clv.R`, pre-registered in `PLAN.md` at `90f47f6`): C2's picks at SBR's opening spreads, 2018–2021, gain +300 bps (+220 to +403).
+  - **The Elo control fails:** Elo gains +210.
+- **Diagnostic, after T2** (`opener_timing_elo.R`): Elo seeing results through week w−2 against v1's Elo through w−1.
+  - **SBR:** the open-to-close move follows the previous week's Elo update at 0.78 (p 2×10⁻¹⁴). SBR's openers predate those games, so T2 is look-ahead.
+  - **ESPN BET:** the coefficient is 0.04 (p 0.47), and both Elo versions are null. So T1's +90 bps for C2 is not look-ahead on results, which settles T1's open caveat.
+  - **Shared code:** the SBR parsing lives in `sbr_common.R`; T2's outputs are byte-identical after the move.
 
 ### Value hypotheses, every venue, and our model against the books (2026-10-29 to 2026-11-02)
 

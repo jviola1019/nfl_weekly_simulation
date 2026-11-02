@@ -1,0 +1,7 @@
+book,model,games,picks,mean_clv_bps,lo95,hi95,p_one_sided
+SBR spreads 2018-2021,"Elo, results through week w-1 (v1's C1)",1084,787,210.5,135,315.7,0
+SBR spreads 2018-2021,"Elo, results through week w-2",1084,795,105.4,26.49,215.7,0.0018
+SBR spreads 2018-2021,"C2 (v1, IS-B)",1084,760,299.8,220.2,402.7,0
+ESPN BET moneylines 2023-2024,"Elo, results through week w-1 (v1's C1)",489,341,-16.86,-73.9,38.22,0.7181
+ESPN BET moneylines 2023-2024,"Elo, results through week w-2",489,353,-27.4,-88.48,29.42,0.8123
+ESPN BET moneylines 2023-2024,"C2 (v1, IS-B)",489,355,89.56,46.55,134.9,0

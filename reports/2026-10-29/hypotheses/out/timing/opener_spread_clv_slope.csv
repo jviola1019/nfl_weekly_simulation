@@ -1,0 +1,2 @@
+test,games,clusters,estimate,se,lo,hi,p_one_sided
+movement slope: (logit close - logit open) on (logit C2 - logit open),1084,85,0.4503,0.1071,0.2373,0.6633,3.258e-05

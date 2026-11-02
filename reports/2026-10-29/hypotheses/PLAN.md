@@ -107,6 +107,36 @@ The projection uses only 2026 games before the week being priced:
 | H1 | The move from open to close overreacts (Moskowitz 2021) | y ~ offset(logit close) + (logit close − logit open), clustered by season-week | coefficient < 0 |
 | H2 | The move is predictable from the opener | Regress the move on the open price, home and favourite, fit on 2023 and scored on 2024. The test is the correlation of the predicted and actual moves (one-sided > 0), and the CLV of betting the predicted side at the open. |
 
+## Family T2: C2's lead on SBR's opening spreads, 2018–2021 (added 2026-11-02, before any of its numbers were computed)
+
+**Why.** T1 found C2's picks at ESPN BET's opening moneyline gain closing-line value (2023 and 2024). AusSportsBetting's openers are behind a bot challenge, so they are dropped under the owner's rule.
+
+**The data.** SBR's archive has opening and closing point spreads for 2018–2021, seasons T1 never used. These are the seasons v1 scored C2 on as Tune, by accuracy, never by CLV. Raw pages stay private.
+
+**The test.** One pre-specified test, the rest reported:
+
+| ID | Hypothesis | Test |
+|---|---|---|
+| T2 | C2's picks at SBR's opening spread gain closing-line value, 2018–2021 pooled | Mean CLV, one-sided > 0, by v1's season-week block bootstrap (B = 10,000, seed 20260929) |
+
+- **Picks:** v1's rule. C2's p (`predictions.csv`) minus the opener's probability is at least 0.03 either way.
+- **CLV:** 10,000 × (closing probability − opening probability) of the side picked.
+- **Probabilities from spreads:** the market's own exchange rate, applied to SBR's open and close alike.
+  - **Fit:** an isotonic (monotone) fit of the proportional no-vig closing moneyline probability on the closing spread.
+  - **Lines used:** every nflverse game of 2006–2024 with both. Prices only: no outcomes, and no 2025.
+- **Reported, not tested:**
+  - each season;
+  - Elo (C1) as the control, which was null in T1;
+  - the movement slope, (logit close − logit open) on (logit C2 − logit open), clustered by season-week;
+  - CLV measured to nflverse's close instead of SBR's;
+  - CLV by the size of the disagreement;
+  - games where no starting QB changed;
+  - agreement of SBR's closes with nflverse's (spreads within 0.5 points; no-vig probabilities within 2 points).
+- **Caveats, stated in advance:**
+  - when SBR's opener was posted is unknown, so part of any CLV could be look-ahead, as in T1;
+  - C2's hyperparameters were chosen on these seasons by accuracy;
+  - spread CLV and moneyline CLV are close but not identical.
+
 ## Deliverables
 
 - One script per family in this folder, each writing its results to a CSV.

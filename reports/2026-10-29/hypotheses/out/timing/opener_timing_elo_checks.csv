@@ -1,0 +1,4 @@
+check,value
+IS-B Elo equals bt_elo_run (max abs difference),7.772e-16
+"IS-B Elo equals v1's C1 predictions, 2018-2024 (max abs difference)",4.992e-11
+IS-A differs from IS-B (share of 2018-2024 games),0.932
