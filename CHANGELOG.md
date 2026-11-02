@@ -20,6 +20,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - ESPN refuses a `dates=YYYYMMDD-YYYYMMDD` range with HTTP 400 (probed 2026-10-21).
 - **Live check:** at 2026-10-21 05:09Z, an ESPN-only capture into a scratch folder made 17 of 17 requests at 200. It read 2 scoreboards and fetched game odds for 15 games inside 216 h (week 7's 14, plus week 8's Thursday game).
 - **Test:** `test-capture-raw.R`, with a Tuesday run on a stubbed fetch. The default scoreboard lists week 6 final; the capture now requests week 7 and that week's two games, and never the finished game.
+
 ### P13: opponent-defense multipliers apply ("Defense rankings unavailable", owner 2026-10-20)
 
 - **Before:**
@@ -39,6 +40,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - New `tests/testthat/test-props-defense.R` (27 expectations): 32 distinct multipliers inside their bounds; the `weeks` argument leaves out later games; an injected table is applied to the right team; the neutral message; one definition across `R/` and `sports/nfl/props/`; source order cannot change the function.
   - The `KNOWN-DEFECT P13` skip is removed, so the live test runs.
 - **Gates (fresh HOME):** `run_tests.R` gives tests=462, passed=1787, failed=0, errors=0, skipped=0, exit 0. Integrity is 63 passed, 0 failed.
+
 ### P1: props correctness (audit P1-P5, P9, P12-P14; P10 was already done)
 
 - **P14, prop lines are point-in-time.** The quote cache has a game key (`game_id`), a capture time (`captured_at`) and a player id. `get_market_prop_quotes()` uses a quote only if it was captured at or before the game's kickoff and before the run, and only if it is at most `PROP_QUOTE_MAX_AGE_MIN` (120, new default, owner-approved) minutes old at that moment. A 2024 week 16 run can no longer be priced with a 2026 line. A prop with no usable quote stays unpriced: NA odds and EV, recommendation PASS, and its reason in `unpriced_reason` and `Pass Reason`. With the default `PROP_REQUIRE_MARKET_ODDS = TRUE`, `artifacts/baseline_props.csv` keeps only priced rows once any row is priced, so unpriced reasons reach the file only when nothing is priced (an open owner setting in HANDOFF).
@@ -63,6 +65,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - Integrity: 63 passed, 0 failed.
   - `audit_verify.R`: 32 PASS, 0 FAIL.
   - `check_odds_api_callgraph.R`: exit 0.
+
 ### Fixed: player projections no longer see the games after the week they project (2026-11-02)
 
 - **The look-ahead.** `load_player_projections()` (`sports/nfl/props/data_sources.R`) took a `week` argument but never used it. A run for a past week therefore averaged in every later game of that season, including the projected week's own game.
@@ -72,6 +75,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
 - **No change to a run made before its week:** no later games exist at that time. Neither the golden master (game model only) nor any committed output is affected.
 - **The function's comment** said "rolling averages with recency weighting". It now says what the code does: an equal-weight mean over the loaded seasons.
 - **Test:** `tests/testthat/test-props-projection-week.R` (it failed before the fix: 6 games and 50 yards instead of 5 and 30).
+
 ### C1: the week to simulate is the upcoming week, never a fixed 2025 week 22 (owner, 2026-10-20)
 
 - **Before:**
@@ -92,6 +96,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - `test-run-config.R`: the calendar, the target week across a week's kickoffs, the stops, and resolution before `config.R`.
   - `test-workflows.R`: the crons, the optional inputs, and the step order.
   - The suite pins its old context (2025 week 22) in `tests/testthat/setup.R`.
+
 ### Sealed seasons stay out of the market comparison's diagnostics (owner, 2026-10-21; output audit F3)
 
 - **Before:** 2026 production runs calibrate on 2021–2025 and printed 2025 model-against-market results: a by-season row (Brier, log-loss) and rolling windows ending at 2025 week 18. This exposed the sealed holdout season on every run. It also happened in the 2026-10-13 C3 retest runs, and it is disclosed for `nfl_preclose_v1` and `nfl_games_v2`.
@@ -99,6 +104,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
 - **Unchanged:** production still calibrates on 2025, as the owner chose ("keep 2025 in calibration, hide its printout, disclose").
 - **Remaining:** the engine's own pooled calibration summary (`NFLsimulation.R`) still mixes 2025 in as one of five seasons. It shows no per-season figures.
 - **Test:** `tests/testthat/test-compare-to-market-seal.R`. RED was the unused `sealed_seasons` argument and the missing `SEALED_SEASONS`. GREEN checks that sealed rows leave `comp`, `by_season`, `overall` and `rolling`; that with no sealed season every season is kept; and that the default comes from config.
+
 ### Venues by stadium id: real coordinates and roofs for every game (audit M21/S3; output audit F6)
 
 - **Before.** The engine joined a hand-typed table of 29 venues by NAME, and nflverse renames venues while keeping the id. Three kinds of game fell back to league-average weather centred on Kansas, with no roof:
@@ -121,6 +127,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - the roof truth table;
   - the join names unknown ids;
   - the engine no longer joins by name.
+
 ### F11: home field for every team in the calibration backtest; a missing mean stops (engine, owner-gated)
 
 - **The bug.**
@@ -156,6 +163,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - `golden_master.R record 15 2024` (fresh HOME) completes, with no missing mean.
   - The F11 run of `run_week.R 7 2026` finished with exit 0 and `QA: passed`.
   - New tests are in `tests/testthat/test-calibration-hfa.R`. The pinned cache versions are 5L (calibration) and 2L (score) in `test-schedule-context.R`.
+
 ### The odds capture starts 4 h 30 min or more before every kickoff (owner, 2026-10-29: "Do this")
 
 - **The problem.** A0's 3 h 45 min buffer was not enough. From 2026-10-19 to 10-27, GitHub started every scheduled run 2 h 12 min to 3 h 57 min late (`reports/2026-10-28/feasibility/capture_delays.csv`, #227).
@@ -167,6 +175,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - a Sunday-morning run (08:37Z) covers the 9:30 a.m. ET international games.
   - `tests/testthat/test-workflows.R` pins the schedule and checks each game-day run's slack.
 - **Exact pre-kickoff prices** come from Kalshi's hourly candles (`kalshi_candles.R`, #227), so the captures are now needed for ESPN's data and the decision-time snapshots.
+
 ### C2: SQL data checks after every ingest, and an ERD generated from the schema (web only)
 
 - **18 SQL checks** (`web/src/lib/dbcheck/checks.ts`). Each is a query that returns one row per violation, so clean data returns zero rows from all of them. `npm run db-check` runs them against `DATABASE_URL`: errors exit 1, warnings are printed, and a missing URL exits 2.
@@ -205,6 +214,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - `verify_repo_integrity.R`: 63 passed, 0 failed.
   - `npm run local` on the three fixture bundles printed `db-check: 18 checks, 0 error(s), 0 warning(s)`.
 - **Unchanged:** no dependency, migration, contract or R file. Range CHECK constraints in migration 0003 are owner checkpoint 7 and not part of this.
+
 ### B2: one token and component system, context on every number, professional HTML (web app only; no R, contract or schema change)
 
 - **Tokens.** `web/src/app/globals.css` gains a static Tailwind 4 theme: type roles (`heading`, `figure`, `stat`, `title-sm`, `title`, `score`, `hero`, responsive at 40 and 80 rem), spacing roles on a 4 px base (`tight` 4, `snug` 8, `control` 12, `stack` 20, `card` 20, `card-sm` 16, `section` 40, `page-top` 48, gutters 16/32/64), radii and measures. `web/src/test/tokens.test.ts` with `tokenCeilings.json` is a ratchet: a file's arbitrary utilities can only fall (114 became 3; `text-[Npx]`, 43 of them in 16 sizes, became 0), and a spacing role named like a Tailwind display utility fails the test (a first draft's `inline` and `block` turned every `inline-block` into a 20 px square).
@@ -222,6 +232,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
 - **First load.** `publicGates()` reads the promotion gates in one cached query where `evidence()` needed seven, and a page and its metadata share cached queries. Lighthouse 13.5.0 mobile, five interleaved rounds on one machine (2026-10-26, other R jobs running alongside), `main` against this branch, median LCP: home 2.52 s against 2.67 s, game 2.78 s against 2.82 s, evidence 2.85 s against 2.88 s (main's evidence median is over its four runs that recorded an LCP); performance 0.88, 0.89, 0.80 against 0.89, 0.89, 0.80; total blocking time 374, 316, 643 ms against 336, 311, 599 ms. On every page the branch is within 0.25 s of `main`'s LCP and no worse on performance or blocking time. Neither tree meets the 2.5 s gate on any page on that machine; the dry run (2026-10-20, a quieter machine) measured home 2.45 s against 2.44 s.
 - **Owner decisions** (also in the PR): no root `loading.tsx` (React 19 holds a Suspense fallback on screen for a few hundred milliseconds, which moved LCP up by 0.3 to 0.5 s on every page; the file is in the plan's appendix); the theme choice moved from the header to the footer; type sizes consolidated (section titles 22 to 24 px, lead text 17 to 18 px, chips 13 to 14 px, strip team codes 22 to 20 px); `experimental.inlineCss` rejected (the nonce CSP blocks the inlined style); font subsetting left to the owner (`offlineFonts.test.ts` pins the committed font file).
 - **Gates** (the branch, 2026-10-26): typecheck and lint exit 0; vitest 31 files and 192 tests with `REQUIRE_DB_TESTS=1` (baseline 18 and 126); Playwright on the fixtures 112 passed and 60 skipped (baseline 70 and 60), `@sim` 11 passed, the seven run-reading specs 35 passed on the simulator run, `@parity` 60 passed offline and 60 online at zero differing pixels (a wrong baseline fails with 861,285 differing pixels); axe with best-practice rules 0 violations, and review-ui 48 rows with no overflow, console error, serious axe rule or leak, on both trees and both data states; `verify_repo_integrity.R` 63 passed, 0 failed. No dependency added, no file deleted. The other R gates were not run: no R file changed.
+
 ### `nfl_props_v1` signed, and the weekly program on a timer (2026-11-02)
 
 - **Signed before week 9's first kickoff:** `reports/2026-11-02/props-v1/PROTOCOL.md`, registered in `backtest/eval_windows/nfl_props_v1.json` with its sha256 and the scoring code's. It tests P1–P6 (Holm, one-sided 5%) once, on 2026 weeks 9–18.
