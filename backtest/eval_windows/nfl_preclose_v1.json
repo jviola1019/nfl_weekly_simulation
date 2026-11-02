@@ -11,7 +11,11 @@
     "confirmatory": "IS-A: schedule, results before the first kickoff of week w-1, the previous game's starting QB",
     "secondary": "IS-B: v1's C1 and C2 as committed"
   },
-  "candidates": ["PC-C2", "OA[E1]", "LM[E1]"],
+  "candidates": [
+    "PC-C2",
+    "OA[E1]",
+    "LM[E1]"
+  ],
   "correction": "BH across the three",
   "hyperparameters": {
     "c2_halflife": 8,
@@ -19,7 +23,11 @@
     "c1_K": 20,
     "c1_hfa": 30,
     "c1_regress": 0.45,
-    "oa_lambda_grid": [0.1, 1, 10],
+    "oa_lambda_grid": [
+      0.1,
+      1,
+      10
+    ],
     "min_train_with_opener": 100
   },
   "windows": {
@@ -38,12 +46,32 @@
     },
     "prospective": {
       "season": 2026,
-      "weeks": [9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "weeks": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
       "use": "one look after week 18"
     },
     "pilot": {
       "season": 2026,
-      "weeks": [1, 2, 3, 4, 5, 6, 7, 8],
+      "weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
       "use": "computed after signing, reported separately, never pooled"
     }
   },
@@ -55,14 +83,122 @@
   "tuesday_track": {
     "decision": "Tuesday 18:00 UTC",
     "information_set": "IS-B",
-    "candidates": ["C2", "E1"],
+    "candidates": [
+      "C2",
+      "E1"
+    ],
     "price": "Kalshi KXNFLGAME mid, first hourly candle at or after 18:00 UTC; close = last candle at or before kickoff"
   },
   "pick_tau": 0.03,
   "bootstrap_seed": 20260929,
   "bootstrap_B": 10000,
   "s4_null": "anchor null and permuted-x (S4 amendment); the spec's shuffle reported, not gating",
-  "code": [],
+  "code": [
+    {
+      "path": "backtest/preclose/features.R",
+      "sha256": "dda667b118142016b30fd4070e07c3da519e11f05d6caaf682392492015595a4"
+    },
+    {
+      "path": "backtest/preclose/elo.R",
+      "sha256": "cdd7c538290126b947df92dad814c432e3eba78758d41a7bd6c65ec93cc1387c"
+    },
+    {
+      "path": "backtest/preclose/candidates.R",
+      "sha256": "6365f792062bb216152c9c8669c3ae2f85fe5787ca86bbac382c2d90135768ca"
+    },
+    {
+      "path": "backtest/preclose/gates.R",
+      "sha256": "0f379db6df60818c68786d21bc71761becfd528228a4810e3f879eea83d8eb63"
+    },
+    {
+      "path": "backtest/preclose/run_preclose.R",
+      "sha256": "884b703b5f1b982bee900200763b464833c904da362e2a395a31dbff36fc9ac5"
+    },
+    {
+      "path": "backtest/preclose/run_2026.R",
+      "sha256": "df4bd7c206240d0f170e58c4c578d75ce880e87dc1181dd0d1030bff6f7874d2"
+    },
+    {
+      "path": "backtest/preclose/build_history.R",
+      "sha256": "6c6132407f191be4ff5763cb722998cd818eba9f5c8046d3014483c71e4c410d"
+    },
+    {
+      "path": "backtest/preclose/fetch_espn_open_close.R",
+      "sha256": "905326e77a9a2315128387d198e7d495e23ec6c391415df629c3e7eff878ab70"
+    },
+    {
+      "path": "backtest/preclose/fetch_kalshi_tuesday.R",
+      "sha256": "d97e69cb311ed6669eb0fc145432d95b573ef8a2b921eef9f7d7a86266eb108b"
+    },
+    {
+      "path": "backtest/common.R",
+      "sha256": "5613080d98d3ae391f32579e5a96ccc540ca92a5d06b2294bc159b87e7df4447"
+    },
+    {
+      "path": "backtest/metrics.R",
+      "sha256": "3af427a380975f8cdcf42b206af4973fc5f95602c80f17aac2cb7fc8ec597df2"
+    },
+    {
+      "path": "backtest/blends.R",
+      "sha256": "408125ddccc0511883a80bb625fd9e107914a920ef003f93c170a7637295b918"
+    },
+    {
+      "path": "backtest/build_inputs.R",
+      "sha256": "f69213b0fa8ee6062d71e2133d462aab4d5c986df3664a79d3b4b4b31114a16b"
+    },
+    {
+      "path": "backtest/candidates/elo.R",
+      "sha256": "1f4185111be014466857a674fc61c714d74412ddf4c06517602f86ba1c692836"
+    },
+    {
+      "path": "backtest/candidates/epa_glm.R",
+      "sha256": "65dbbdc4e3737d6095e70326267c5e0b0f0aa9ae81acf769cb9d4509193990ad"
+    },
+    {
+      "path": "backtest/candidates/market.R",
+      "sha256": "2633bab472252c6fc243808efdd6cd9dcef706a660a85d8d0e7198cee14ce59a"
+    },
+    {
+      "path": "backtest/vvf/common.R",
+      "sha256": "3f81897683b415661f25fb9c7f258ea1a4201e091cd30f2b66dc38764fe4f463"
+    },
+    {
+      "path": "backtest/vvf/registry.R",
+      "sha256": "7b04fc05f4a8ad4d38193c0420f75948002b84b28a6d0b6121699e09311b9bc2"
+    },
+    {
+      "path": "backtest/vvf/s1_screen.R",
+      "sha256": "57c57af2c303b9e13c7d6529946bc11b3c22ef4e1485f5031d3114431d9c7134"
+    },
+    {
+      "path": "backtest/vvf/s3_skill.R",
+      "sha256": "cca538e7f1a89cc7f8493bf5f2931a64317d5f30a628dfedc9a631b9ef3b2ec4"
+    },
+    {
+      "path": "backtest/vvf/s4_controls.R",
+      "sha256": "df3a6a1ec9ad596271289203798dae2a954545957844271c2f38ba15361bebb7"
+    },
+    {
+      "path": "R/capture_raw.R",
+      "sha256": "c083470eb91722eedb6ae7b0964a4801e07d78cf6391b1600ed00de583679c45"
+    },
+    {
+      "path": "reports/2026-10-28/feasibility/props_common.R",
+      "sha256": "128ef9ada612b6bfb4676668f721e6f88699a837a458ebb889e967a97748e261"
+    },
+    {
+      "path": "tests/testthat/test-preclose.R",
+      "sha256": "0606b81a34c4760f26260eee10dfca50176ad8b9e0e91852c3b357abdb0b9347"
+    }
+  ],
   "code_rule": "registered by sha256 in an amendment before any confirmatory number is read; it may change no choice",
-  "hash_rule": "sha256 of each file as git stores it (CRLF read as LF)"
+  "hash_rule": "sha256 of each file as git stores it (CRLF read as LF)",
+  "amendments": [
+    {
+      "id": 1,
+      "date": "2026-11-02",
+      "what": "registers the scoring code by sha256, before any confirmatory number is read; no choice changes",
+      "rulings": ["IS-T (the Tuesday track): a game not yet played has no known starter, so IS-B's QB is the starter of the team's previous game; results through week w-1 as IS-B", "P4's slope is the scored window's slope of the actual move on LM's predicted move, clustered by season-week", "P6's anchor null and permuted-x null pass when no candidate is claimed (P1 and P2 both pass) on Tune or Confirm", "The Tuesday track's return buys the picked side's YES at its Tuesday ask (the away side at 1 - bid) plus Kalshi's taker fee, held to settlement"]
+    }
+  ]
 }
