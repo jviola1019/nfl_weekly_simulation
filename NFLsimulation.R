@@ -71,6 +71,7 @@ local({
   source(file.path(base_path, "mu_terms.R"))
   source(file.path(base_path, "schedule_context.R"))
   source(file.path(base_path, "sleeper_api.R"))
+  source(file.path(base_path, "stadiums.R"))
 })
 
 load_market_helpers <- local({
@@ -1978,7 +1979,9 @@ week_slate <- sched %>%
     neutral_site,
     home_rest,
     away_rest,
-    venue = as.character(venue)   # <-- only the normalized column
+    venue = as.character(venue),   # <-- only the normalized column
+    stadium_id = as.character(stadium_id),   # the venue key (R/stadiums.R); stable across renames
+    roof = as.character(roof)
   ) %>%
   distinct()
 
@@ -2133,51 +2136,12 @@ if (nrow(dup_sched_keys)) {
   ))
 }
 
-stadium_coords <- tribble(
-  ~venue, ~lat, ~lon, ~dome,
-  "GEHA Field at Arrowhead Stadium", 39.0490, -94.4839, FALSE,
-  "Highmark Stadium",                42.7738, -78.7868, FALSE,
-  "Soldier Field",                   41.8625, -87.6166, FALSE,
-  "Paycor Stadium",                  39.0954, -84.5160, FALSE,
-  "Cleveland Browns Stadium",        41.5061, -81.6995, FALSE,
-  "AT&T Stadium",                    32.7473, -97.0945, TRUE,
-  "Empower Field at Mile High",      39.7439, -105.0201, FALSE,
-  "Ford Field",                      42.3400, -83.0456, TRUE,
-  "Lambeau Field",                   44.5013, -88.0622, FALSE,
-  "NRG Stadium",                     29.6847, -95.4107, TRUE,
-  "Lucas Oil Stadium",               39.7601, -86.1639, TRUE,
-  "EverBank Stadium",                30.3240, -81.6387, FALSE,
-  "Allegiant Stadium",               36.0909, -115.1830, TRUE,
-  "SoFi Stadium",                    33.9535, -118.3391, TRUE,
-  "Hard Rock Stadium",               25.9580, -80.2389, FALSE,
-  "U.S. Bank Stadium",               44.9736, -93.2572, TRUE,
-  "Gillette Stadium",                42.0909, -71.2643, FALSE,
-  "Caesars Superdome",               29.9509, -90.0815, TRUE,
-  "MetLife Stadium",                 40.8136, -74.0745, FALSE,
-  "Lincoln Financial Field",         39.9008, -75.1675, FALSE,
-  "Acrisure Stadium",                40.4468, -80.0158, FALSE,
-  "Levi's Stadium",                  37.4030, -121.9690, FALSE,
-  "Lumen Field",                     47.5952, -122.3316, FALSE,
-  "Raymond James Stadium",           27.9759, -82.5033, FALSE,
-  "Nissan Stadium",                  36.1665, -86.7713, FALSE,
-  "FedExField",                      38.9078, -76.8645, FALSE,
-  "M&T Bank Stadium",                39.2779, -76.6227, FALSE,
-  "Bank of America Stadium",         35.2251, -80.8526, FALSE,
-  "State Farm Stadium",              33.5277, -112.2626, TRUE
-) %>%
-  mutate(venue_key = stringr::str_to_lower(stringr::str_replace_all(venue, "[^a-zA-Z0-9]+", " ")))
-week_slate <- week_slate %>%
-  dplyr::mutate(
-    venue_key = stringr::str_to_lower(stringr::str_replace_all(venue, "[^a-zA-Z0-9]+", " "))
-  ) %>%
-  dplyr::left_join(stadium_coords %>% dplyr::select(venue_key, dome), by = "venue_key")
-
-# guarantee the column exists before coalesce()
-if (!"dome" %in% names(week_slate)) {
-  week_slate <- week_slate %>% mutate(dome = FALSE)
-}
-
-week_slate <- week_slate %>% mutate(dome = coalesce(dome, FALSE))
+# Venues by nflverse stadium_id (R/stadiums.R; audit M21/S3, output audit F6): coordinates,
+# roof type and the dome flag for every game, including renamed and international venues.
+# The old table matched 29 venue NAMES, so renamed venues, Atlanta and every game abroad fell
+# back to league-average weather in Kansas and lost their roof.
+stadium_ref <- load_stadium_reference(file.path("data", "reference", "stadiums.csv"))
+week_slate <- attach_stadiums(week_slate, stadium_ref)
 
 # ============================== TIME ZONES / SIMPLE TRAVEL TAX =============================
 
@@ -3325,7 +3289,7 @@ get_hourly_weather <- function(lat, lon, date_iso, hours = c(13)) {
     )
 }
 
-# make sure stadium_coords is defined above this point and has columns: venue_key, lat, lon, dome
+# week_slate carries lat, lon and dome from attach_stadiums() (R/stadiums.R)
 
 # Default weather conditions for neutral sites / missing stadium data
 # Uses league-average conditions from config.R if available, otherwise sensible defaults
@@ -3392,13 +3356,9 @@ extract_first <- function(x, nm) {
 
 weather_inputs <- week_slate %>%
   mutate(
-    venue_key = stringr::str_to_lower(stringr::str_replace_all(venue, "[^a-zA-Z0-9]+", " ")),
     date_iso  = format(as.Date(game_date), "%Y-%m-%d"),
-    kickoff_local_hour = kickoff_local_hour
-  ) %>%
-  dplyr::left_join(stadium_coords %>% dplyr::select(venue_key, lat, lon, dome), by = "venue_key") %>%
-  mutate(
-    lat = as.numeric(lat),
+    kickoff_local_hour = kickoff_local_hour,
+    lat = as.numeric(lat),   # from attach_stadiums(): the venue of record, by stadium_id
     lon = as.numeric(lon)
   )
 
@@ -3418,12 +3378,12 @@ weather_rows <- weather_inputs %>%
   )
 
 # Notify about games using stadium fallback (once per session)
-# Changed from warning to message: this is expected behavior for venues not in stadium_coords
+# A message, not a warning: it names any game whose stadium_id is not in data/reference/stadiums.csv
 warn_stadium_fallback <- get0("WARN_STADIUM_FALLBACK", envir = .GlobalEnv, ifnotfound = TRUE)
 if (isTRUE(warn_stadium_fallback) && length(.stadium_fallback_games) > 0 && !.stadium_fallback_warned) {
   .stadium_fallback_warned <<- TRUE
   message(sprintf(
-    "ℹ Stadium fallback: %d game(s) using league-average weather (venue not in stadium_coords): %s",
+    "ℹ Stadium fallback: %d game(s) using league-average weather (stadium_id not in data/reference/stadiums.csv): %s",
     length(.stadium_fallback_games),
     paste(.stadium_fallback_games, collapse = ", ")
   ))
