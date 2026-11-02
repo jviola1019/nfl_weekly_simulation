@@ -1,0 +1,12 @@
+file,rows,identical,max_abs_diff,note
+cluster_icc.csv,12,TRUE,0,""
+cluster_design_effects.csv,30,TRUE,0,""
+late_tests.csv,3,TRUE,0,""
+late_s1_sensitivity.csv,108,TRUE,0,""
+late_movement.csv,4,TRUE,0,""
+joint_size.csv,35,TRUE,0,""
+joint_size_linear.csv,60,TRUE,0,""
+s4_power.csv,100,TRUE,0,""
+s4-null-diagnostic.csv,36,TRUE,0,""
+s4_nulls.csv,15,TRUE,0,""
+flex-games.csv,77,TRUE,0,""

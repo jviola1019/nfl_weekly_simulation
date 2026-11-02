@@ -1,0 +1,3 @@
+id,test,contracts,games,estimate,lo,hi,p,brier_kalshi,brier_model,bets,bets_yes,roi,q_bh
+G1,the projection adds information to Kalshi's close (one-sided > 0),24095,75,0.089681,-0.019932,0.19929,0.053653,0.14758,0.15968,,,,0.053653
+G2,betting the projection's disagreements pays after costs,24095,75,,-0.068123,-0.007836,,,,19926,9504,-0.037983,

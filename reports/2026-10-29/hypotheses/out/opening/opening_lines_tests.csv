@@ -1,0 +1,3 @@
+id,test,games,clusters,estimate,lo,hi,p,moved,sd_move_bps,clv_bps,clv_lo,clv_hi,r2_train,q_bh
+H1,the open-to-close move overreacts (coefficient < 0),463,31,0.53732,-0.34779,1.4224,0.88767,0.92873,495.26,,,,,0.88767
+H2,"the move is predictable from the opener (fit 2023, score 2024)",271,18,0.0049175,,,0.46789,,,40.243,-26.109,104.38,0.0058536,0.88767

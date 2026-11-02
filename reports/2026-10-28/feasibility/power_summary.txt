@@ -1,0 +1,12 @@
+# Power against the close (one-sided 5%, 80% power)
+candidates: 39; Tune games: 1365; games with a closing moneyline 2006-2024: 4997
+per-game SD of the Brier difference against the close: median 0.0232, range 0.0014-0.0915
+minimum detectable Brier skill on Tune: median 0.7399%, range 0.0449%-2.9163%
+minimum detectable Brier skill on all 4997 games: median 0.3867%, range 0.0235%-1.5242%
+candidates with positive Tune skill: 7; best S1 +0.0684%, which would need 20,836 games at its own noise (Tune has 1365)
+games needed by each positive-skill candidate: S1    20,836; R1    74,338; O1    63,708; GLMNET   146,467; XGB__isotonic 6,103,414; S1_MIN   725,522; G2_GAPS 9,072,287
+
+# The opener's ceiling (ESPN BET moneyline, 2023, 205 non-tie games with both prices)
+Brier: open 0.22253, close 0.21743; the close beats the open by 0.00510 (week-block 95% CI -0.00107 to 0.01246; paired t p 0.077), 2.29% of the open's Brier
+log loss: open 0.63562, close 0.62464
+open-to-close move of the no-vig home probability: SD 439 bps, mean |move| 321 bps, 91.2% of games moved

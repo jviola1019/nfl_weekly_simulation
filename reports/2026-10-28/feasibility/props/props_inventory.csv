@@ -1,0 +1,192 @@
+series,markets,events,game_events,settled_outcome,fair_price,sample_label,quoted,fitted_contracts,fitted_games,group,status
+KXNFLSPREAD,1117,43,43,761,0,Arizona wins by over 9.5 points,712,712,28,game line,fitted on its own and pooled
+KXNFLTOTAL,810,43,43,544,0,Over 31.5 points,532,532,28,game line,fitted on its own and pooled
+KXNFLGAME,116,58,58,58,0,Arizona,56,56,28,game line,fitted on its own and pooled
+KXNFLTEAMTOTAL,1141,43,43,764,0,Arizona over 10.5 points,754,754,28,game prop,fitted on its own and pooled
+KXNFL1HTEAMTOTAL,899,42,42,618,0,Arizona over 9.5 points,617,613,28,game prop,fitted on its own and pooled
+KXNFL1HSPREAD,612,38,38,457,0,Arizona wins by over 9.5 points,429,429,28,game prop,fitted on its own and pooled
+KXNFL2HSPREAD,603,39,39,448,0,Arizona wins by over 9.5 points,429,429,28,game prop,fitted on its own and pooled
+KXNFL1HTOTAL,515,38,38,376,0,Over 10.5 points,376,376,28,game prop,fitted on its own and pooled
+KXNFL2HTOTAL,533,39,39,394,0,Over 10.5 points,376,371,28,game prop,fitted on its own and pooled
+KXNFL4QSPREAD,413,38,38,305,0,Arizona wins by over 10.5 points,305,305,28,game prop,fitted on its own and pooled
+KXNFL2QSPREAD,414,38,38,309,0,Arizona wins by over 10.5 points,296,296,28,game prop,fitted on its own and pooled
+KXNFL3QSPREAD,413,38,38,305,0,Arizona wins by over 10.5 points,294,293,28,game prop,fitted on its own and pooled
+KXNFL1QSPREAD,385,38,38,284,0,Arizona wins by over 10.5 points,284,284,28,game prop,fitted on its own and pooled
+KXNFLRACE,438,146,146,423,0,Buffalo,420,284,28,game prop,fitted on its own and pooled
+KXNFL1QTOTAL,380,38,38,280,0,Over 10.5 points,280,279,28,game prop,fitted on its own and pooled
+KXNFL2QTOTAL,380,38,38,280,0,Over 10.5 points,280,276,28,game prop,fitted on its own and pooled
+KXNFL3QTOTAL,380,38,38,280,0,Over 10.5 points,280,271,28,game prop,fitted on its own and pooled
+KXNFL4QTOTAL,380,38,38,280,0,Over 10.5 points,280,269,28,game prop,fitted on its own and pooled
+KXNFL1HFT,363,41,41,255,0,Arizona 1H / Arizona game,246,245,28,game prop,fitted on its own and pooled
+KXNFLWINMARGIN,210,30,30,203,0,Buffalo by 15 or more,194,193,28,game prop,fitted on its own and pooled
+KXNFLFG,238,30,30,230,0,Buffalo: 3+,224,160,28,game prop,fitted on its own and pooled
+KXNFLTEAMSACK,300,30,30,290,0,Buffalo: 2+,280,160,28,game prop,fitted on its own and pooled
+KXNFL1H,114,38,38,84,0,Arizona,84,84,28,game prop,fitted on its own and pooled
+KXNFL1Q,114,38,38,84,0,Arizona,84,84,28,game prop,fitted on its own and pooled
+KXNFL2H,117,39,39,87,0,Arizona,84,84,28,game prop,fitted on its own and pooled
+KXNFL2Q,114,38,38,84,0,Arizona,84,84,28,game prop,fitted on its own and pooled
+KXNFL3Q,114,38,38,84,0,Arizona,84,84,28,game prop,fitted on its own and pooled
+KXNFL4Q,114,38,38,84,0,Arizona,84,84,28,game prop,fitted on its own and pooled
+KXNFLBOTH,117,30,30,113,0,35+ points,112,65,21,game prop,fitted on its own and pooled
+KXNFLFIRSTTDTEAM,87,29,29,84,0,Denver,84,62,28,game prop,fitted on its own and pooled
+KXNFLTEAMYDS,300,30,30,290,0,Buffalo: 250+,280,47,15,game prop,pooled only (too few contracts for its own fit)
+KXNFL3QBTTS,29,29,29,28,0,Both teams score,28,28,28,game prop,pooled only (too few contracts for its own fit)
+KXNFL4QBTTS,29,29,29,28,0,Both teams score,28,28,28,game prop,pooled only (too few contracts for its own fit)
+KXNFLOT,40,40,40,28,0,Game goes to overtime,28,28,28,game prop,pooled only (too few contracts for its own fit)
+KXNFLSFTY,30,30,30,29,0,Safety,28,28,28,game prop,pooled only (too few contracts for its own fit)
+KXNFLTIE,41,41,41,29,0,Game to end in a tie,28,28,28,game prop,pooled only (too few contracts for its own fit)
+KXNFL1QBTTS,29,29,29,28,0,Both teams score,28,27,27,game prop,pooled only (too few contracts for its own fit)
+KXNFL2QBTTS,29,29,29,28,0,Both teams score,28,27,27,game prop,pooled only (too few contracts for its own fit)
+KXNFLEQBTTS,29,29,29,28,0,Both teams to score in every quarter,28,26,26,game prop,pooled only (too few contracts for its own fit)
+KXNFLDSTTD,30,30,30,29,0,D/ST touchdown,28,17,17,game prop,pooled only (too few contracts for its own fit)
+KXNFL1HTD,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFL1HWINNER,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFL1QWINNER,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFL1YDPASS,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFL2HTD,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFL2HWINNER,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFL2PTCONV,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFL2QWINNER,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFL2TD,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFL3QWINNER,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFL4DCONV,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFL4DOWNCONV,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFL4QWINNER,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFL60YARDFGS,6,1,0,0,0,10+ field goals,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLANYTD,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLBLOWOUT,7,1,0,0,0,Over 30.5 point differential,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLCOMBO,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLCOMEBACK,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLCOMPETE,1,1,0,0,0,Jake Paul to play in a Pro Football game in the 2026-27 season,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLCPOTY,21,1,0,0,0,Aaron Donald,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLDPOTY,72,1,0,0,0,Abdul Carter,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLDROTY,40,1,0,0,0,Anthony Hill Jr.,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLFANTASYMOST,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLFF40PTS,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLFF50PTS,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLFFH2H,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLFFHIGHSCORE,26,4,0,0,0,44+ points,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLFFPLAYERHIGH,36,1,0,0,0,A.J. Brown: 38+ points in any game,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLFFPTSSEASON,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLFFSEASONTOTAL,36,1,0,0,0,A.J. Brown: 249+ total points this season,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLFFTOP,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLFIRSTPICK,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLFIRSTSTART,5,1,0,0,0,Does not start in the regular season,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLFIRSTTDTIME,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLGAMEFG,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLGAMESACK,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLGAMESPECIALS,24,1,0,0,0,Any player to record 225+ rushing yards in a game,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLGAMETD,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLGAMETO,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLHALLOFFAME,28,1,0,0,0,Antonio Brown,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLHIGHSCORE,4,1,0,0,0,Over 99.5 points scored,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLHIGHSCOREQ,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLHKANE,1,1,0,0,0,Harry Kane to sign with a Pro Football team before 2030,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLHOFINDUCTEES,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLINT,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLLARGELEAD,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLLARGESTLEAD,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLLASTPICKPOS,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLLASTTOWIN,5,1,0,0,0,Houston,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLLEADCHANGE,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLLEASTPENALIZED,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLLONGESTFG,4,1,0,0,0,66+ yards,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLLONGESTPLAY,5,1,0,0,0,85+ yards,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLLONGESTREC,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLLONGESTTD,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLLONGFG,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLMATCHUP,496,3,0,0,0,Baltimore vs Buffalo,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLNBA,300,1,0,0,0,Football: Arizona / Basketball: Oklahoma City,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLNEXTINT,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLNEXTTD,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLNEXTTEAM,462,14,0,0,0,Arizona,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLNONQBPASS,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLNOSCOREQ,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLOPOTY,69,1,0,0,0,A.J. Brown,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLOROTY,40,1,0,0,0,Antonio Williams,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLOTWIN,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLOWNERSTAKE,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLPOTM,300,4,0,0,0,Alex Highsmith,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLPREPACK,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLPREPACK1HFT,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLPREPACK1Q1H,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLPREPACK2ML,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLPREPACK3ML,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLPREPACKSGP,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLPREPACKSGPSPREAD,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLPRIMETIME,32,1,0,0,0,Arizona,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLPROBOWL,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLPROBOWLWIN,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLPROOTY,40,1,0,0,0,Armand Membou,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLREBOOT,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLREDZONEADS,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLREDZONEBRANDADS,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLRETIRE,20,7,0,0,0,Before the 2027-28 season,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLRETURN,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLROLE,1,1,0,0,0,"Before Feb 15, 2027",0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLROTM,151,2,0,0,0,Aiden Fisher,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLSACK,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLSAFETY,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLSBOUTCOME,512,1,0,0,0,Arizona beats Baltimore,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLSEASONPASSTDS,115,5,0,0,0,Aaron Rodgers,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLSEASONPASSYDS,120,4,0,0,0,Aaron Rodgers,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLSEASONREC,169,3,0,0,0,A.J. Brown,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLSEASONRECTD,180,5,0,0,0,A.J. Brown,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLSEASONRECYDS,195,4,0,0,0,A.J. Brown,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLSEASONRSHTD,228,6,0,0,0,Ashton Jeanty,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLSEASONRSHYDS,116,4,0,0,0,Ashton Jeanty,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLSEASONRUSHYDS,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLSELLOUT,1,1,0,0,0,"Reported attendance of at least 60,108 in all home games",0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLSFPRACFIELD,1,1,0,0,0,San Francisco Pro Football Team relocates practice facility before the 2027 preseason,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLSHORTESTTD,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLSTADIUM,2,2,0,0,0,"Before Mar 1, 2027",0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLSTAGEOFELIM,192,32,0,0,0,Conference Championship,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLTEAM1POS,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLTEAM1STDOWNS,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLTEAMDPTS,32,1,0,0,0,Arizona,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLTEAMFG,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLTEAMPTS,64,2,0,0,0,Arizona,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLTEAMTD,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLTEAMTO,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLTIES,3,1,0,0,0,2+ ties,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLTKL,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLTOTALTD,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLTRADE,57,1,0,0,0,Aaron Jones Sr.,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLTSPEC,290,32,0,0,0,Carson Beck records 1000+ passing yards,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLWINNINGSTREAK,0,0,0,0,0,,0,0,0,not a single game's market,no markets in weeks 6-7
+KXNFLWORSTTOFIRST,1,1,0,0,0,Any team to go from worst to first in their division,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLWPMOTY,31,1,0,0,0,Azeez Al-Shaair,0,0,0,not a single game's market,"season, novelty or cross-game market: out of scope"
+KXNFLRECYDS,3433,31,31,3210,36,Jahmyr Gibbs: 15+,2730,2665,28,player,fitted on its own and pooled
+KXNFLRECYDSPROT,3192,31,31,2895,110,Jahmyr Gibbs: 15+,2730,2575,28,player,fitted on its own and pooled
+KXNFLREC,2542,30,30,2468,16,Dalton Kincaid: 1+,2161,2137,28,player,fitted on its own and pooled
+KXNFLRECPROT,2458,30,30,2330,70,Dalton Kincaid: 10+,2161,2052,28,player,fitted on its own and pooled
+KXNFLRSHYDS,1729,31,31,1620,53,Jahmyr Gibbs: 100+,1379,1327,28,player,fitted on its own and pooled
+KXNFLTD,1592,41,41,1396,57,ARI Cardinals D/ST: 1+,1338,1285,28,player,fitted on its own and pooled
+KXNFLRSHYDSPROT,1606,31,31,1476,74,Jahmyr Gibbs: 100+,1382,1273,28,player,fitted on its own and pooled
+KXNFLTDPROT,1569,41,41,1341,89,ARI Cardinals D/ST: 1+,1338,1129,28,player,fitted on its own and pooled
+KXNFLFIRSTTD,816,40,40,703,39,ARI Cardinals D/ST,735,696,28,player,fitted on its own and pooled
+KXNFLTEAMFIRSTTD,769,58,58,718,27,Adam Trautman,738,621,28,player,fitted on its own and pooled
+KXNFLPASSYDS,574,31,31,542,0,Jared Goff: 175+,478,477,28,player,fitted on its own and pooled
+KXNFLPASSYDSPROT,546,31,31,514,0,Jared Goff: 175+,478,467,28,player,fitted on its own and pooled
+KXNFLFFPTS,335,30,30,324,0,BUF Bills D/ST: Over 5.2,310,282,28,player,fitted on its own and pooled
+KXNFLRSHATT,289,30,30,280,0,Josh Allen: 11+,266,260,28,player,fitted on its own and pooled
+KXNFLPASSTDS,254,31,31,236,0,Jared Goff: 1+,225,225,28,player,fitted on its own and pooled
+KXNFLPASSTDSPROT,257,31,31,239,0,Jared Goff: 1+,225,225,28,player,fitted on its own and pooled
+KXNFLRRYDS,337,30,30,325,3,James Cook III: 115+,231,220,28,player,fitted on its own and pooled
+KXNFLLONGREC,331,30,30,322,2,Dalton Kincaid: over 21.5 yards,293,210,27,player,fitted on its own and pooled
+KXNFLMOSTRECYDS,273,29,29,273,0,Ty Johnson,232,187,27,player,fitted on its own and pooled
+KXNFLPASSINT,179,30,30,173,0,Josh Allen: 2+,162,162,28,player,fitted on its own and pooled
+KXNFLPASSCOMP,177,30,30,171,0,Josh Allen: 16+,162,161,28,player,fitted on its own and pooled
+KXNFLPASSATT,177,30,30,171,0,Josh Allen: 28+,162,160,28,player,fitted on its own and pooled
+KXNFLMOSTRSHYDS,123,28,28,123,0,Josh Allen,105,78,24,player,fitted on its own and pooled
+KXNFLLONGRSH,144,30,30,138,1,Josh Allen: over 13.5 yards,122,74,23,player,fitted on its own and pooled
+KXNFLPASSYDSH2H,4,2,2,4,0,Josh Allen,2,2,1,player,pooled only (too few contracts for its own fit)
+KXNFLRECYDSH2H,4,2,2,4,0,Davante Adams,2,2,1,player,pooled only (too few contracts for its own fit)
+KXNFLRSHYDSH2H,4,2,2,4,0,James Cook III,2,2,1,player,pooled only (too few contracts for its own fit)
+KXNFLESCALATORREC,155,30,30,151,0,Dalton Kincaid,143,138,28,player scalar,pooled only (too few contracts for its own fit)
+KXNFLESCALATORRECYDS,156,30,30,151,0,Dalton Kincaid,143,138,28,player scalar,pooled only (too few contracts for its own fit)
+KXNFLLADDERRECYDS,156,30,30,151,0,Dalton Kincaid,143,134,28,player scalar,fitted on its own and pooled
+KXNFLFFPTSLADDER,172,30,30,167,0,Dalton Kincaid,158,121,24,player scalar,fitted on its own and pooled
+KXNFLLADDERREC,155,30,30,151,0,Dalton Kincaid,143,112,24,player scalar,fitted on its own and pooled
+KXNFLESCALATORRSHYDS,75,30,30,72,0,Josh Allen,68,63,28,player scalar,pooled only (too few contracts for its own fit)
+KXNFLLADDERRSHYDS,75,30,30,72,0,Josh Allen,68,63,27,player scalar,pooled only (too few contracts for its own fit)

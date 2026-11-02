@@ -1,0 +1,16 @@
+family,feature,q_nflverse,p_nflverse,verdict_nflverse,q_played,p_played,verdict_played,verdict_changed
+outcome,away_bye,0.8258,0.60857,no evidence (MDE = 0.165 per SD),0.86254,0.68457,no evidence (MDE = 0.165 per SD),FALSE
+outcome,away_short,0.8258,0.8258,no evidence (MDE = 0.165 per SD),0.86254,0.84847,no evidence (MDE = 0.165 per SD),FALSE
+outcome,home_bye,0.8258,0.56887,no evidence (MDE = 0.165 per SD),0.86254,0.50546,no evidence (MDE = 0.165 per SD),FALSE
+outcome,home_short,0.8258,0.45238,no evidence (MDE = 0.165 per SD),0.86254,0.55568,no evidence (MDE = 0.165 per SD),FALSE
+outcome,rest_diff,0.8258,0.80876,no evidence (MDE = 0.165 per SD),0.86254,0.86254,no evidence (MDE = 0.165 per SD),FALSE
+spread,away_bye,0.30905,0.061811,no evidence (MDE = 0.966 per SD),0.37753,0.075507,no evidence (MDE = 0.966 per SD),FALSE
+spread,away_short,0.9726,0.68354,no evidence (MDE = 0.966 per SD),0.96207,0.57724,no evidence (MDE = 0.966 per SD),FALSE
+spread,home_bye,0.9823,0.9823,no evidence (MDE = 0.966 per SD),0.98439,0.98439,no evidence (MDE = 0.966 per SD),FALSE
+spread,home_short,0.9726,0.77808,no evidence (MDE = 0.966 per SD),0.98439,0.81817,no evidence (MDE = 0.966 per SD),FALSE
+spread,rest_diff,0.73898,0.29559,no evidence (MDE = 0.966 per SD),0.77261,0.30905,no evidence (MDE = 0.966 per SD),FALSE
+total,away_bye,0.8513,0.72446,no evidence (MDE = 1.008 per SD),0.92088,0.7367,no evidence (MDE = 1.008 per SD),FALSE
+total,away_short,0.8513,0.74534,no evidence (MDE = 1.008 per SD),0.9175,0.39212,no evidence (MDE = 1.008 per SD),FALSE
+total,home_bye,0.8513,0.8513,no evidence (MDE = 1.008 per SD),0.95187,0.95187,no evidence (MDE = 1.008 per SD),FALSE
+total,home_short,0.8513,0.60499,no evidence (MDE = 1.008 per SD),0.9175,0.42944,no evidence (MDE = 1.008 per SD),FALSE
+total,rest_diff,0.8513,0.67852,no evidence (MDE = 1.008 per SD),0.9175,0.5505,no evidence (MDE = 1.008 per SD),FALSE

@@ -1,0 +1,42 @@
+ats_resid situational k=29 week_sd=0 done
+ats_resid situational k=29 week_sd=1 done
+ats_resid situational k=29 week_sd=2 done
+ats_resid all k=34 week_sd=0 done
+ats_resid all k=34 week_sd=1 done
+ats_resid all k=34 week_sd=2 done
+tot_resid situational k=29 week_sd=0 done
+tot_resid situational k=29 week_sd=1 done
+tot_resid situational k=29 week_sd=2 done
+tot_resid all k=34 week_sd=0 done
+tot_resid all k=34 week_sd=1 done
+tot_resid all k=34 week_sd=2 done
+Key: <family, set, k, G, week_sd_points>
+       family         set     k     G week_sd_points     f score_boot_diag
+       <char>      <char> <int> <int>          <num> <num>           <num>
+ 1: ats_resid         all    34   107              0 0.051           0.059
+ 2: ats_resid         all    34   107              1 0.054           0.047
+ 3: ats_resid         all    34   107              2 0.061           0.045
+ 4: ats_resid situational    29   107              0 0.058           0.055
+ 5: ats_resid situational    29   107              1 0.056           0.051
+ 6: ats_resid situational    29   107              2 0.061           0.052
+ 7: tot_resid         all    34   107              0 0.041           0.046
+ 8: tot_resid         all    34   107              1 0.049           0.043
+ 9: tot_resid         all    34   107              2 0.049           0.041
+10: tot_resid situational    29   107              0 0.042           0.044
+11: tot_resid situational    29   107              1 0.052           0.046
+12: tot_resid situational    29   107              2 0.057           0.046
+    score_boot_full wald_chi2 wald_f
+              <num>     <num>  <num>
+ 1:           0.040     0.649  0.549
+ 2:           0.061     0.656  0.566
+ 3:           0.060     0.658  0.574
+ 4:           0.044     0.512  0.433
+ 5:           0.055     0.512  0.439
+ 6:           0.053     0.514  0.445
+ 7:           0.038     0.659  0.578
+ 8:           0.043     0.690  0.579
+ 9:           0.043     0.685  0.582
+10:           0.047     0.516  0.420
+11:           0.042     0.543  0.448
+12:           0.038     0.542  0.458
+exit=0

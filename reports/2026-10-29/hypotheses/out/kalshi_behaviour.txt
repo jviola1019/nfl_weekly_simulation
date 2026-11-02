@@ -1,0 +1,32 @@
+       id                                                                                              hypothesis     n games    flagged  estimate      lo     hi     p  q_bh
+   <char>                                                                                                  <char> <int> <int>      <num>     <num>   <num>  <num> <num> <num>
+1:     B1                                                      teammates of an absent prop player are underpriced 51839   107 41327.0000  0.119000 -0.0608 0.2980 0.096  0.38
+2:    B1r                   teammates of a player absent after playing the previous game are underpriced (ruling) 51839   107 36298.0000 -0.125000 -0.2820 0.0321 0.940  0.94
+3:    B1s position-group teammates of a player who played last game and took no snap now are underpriced (ruling) 51839   107 16798.0000  0.120000 -0.0373 0.2770 0.067  0.38
+4:     B2                                                         Questionable players who played are underpriced 51839   107  1736.0000 -0.255000 -0.6110 0.1010 0.920  0.94
+5:     B3                                                                          the last day's move overreacts 67123   107  -103.1723  0.016500 -0.3110 0.3440 0.540  0.86
+6:     B4                                    a recalibration of the 24 h price beats it out of sample (two-sided) 20621    28         NA -0.000913      NA     NA 0.360  0.79
+7:     B5                                           thin markets are miscalibrated (slope differs, thin vs thick) 58959   107         NA  0.024200 -0.0322 0.0806 0.400  0.79
+8:     B6                                                         contracts under 20 cents: YES overpriced (seen) 43718   107 43718.0000  0.032600 -0.0650 0.1300 0.750  0.94
+B3 by group:
+           group     n games estimate     lo     hi  p_less
+          <char> <num> <num>    <num>  <num>  <num>   <num>
+1:     game prop 21500   107  -0.1980 -0.847  0.452 0.27400
+2: player scalar  2110    74  -0.4640 -0.767 -0.161 0.00159
+3:        player 38500   107   0.0723 -0.241  0.386 0.67600
+4:     game line  4980   107   0.5700 -1.930  3.070 0.67400
+B5 terciles:
+   tercile contracts volume_median slope slope_lo slope_hi     citl brier
+    <fctr>     <num>         <num> <num>    <num>    <num>    <num> <num>
+1:   thick     29500          5630 0.963    0.912     1.01 -0.00962 0.160
+2:  middle     29500           250 0.992    0.948     1.04 -0.00742 0.139
+3:    thin     29500             0 0.987    0.936     1.04  0.02170 0.119
+B4 (24 h price, weeks 1-5 -> 6-7):
+           group contracts games     skill p_game_t  bets     roi roi_lo  roi_hi
+          <char>     <num> <num>     <num>    <num> <num>   <num>  <num>   <num>
+1:     game prop      6260    28 -0.002110    0.868    58 -0.0153 -0.109  0.0925
+2: player scalar       747    28 -0.002370    0.408    12 -0.0634 -0.181  0.0412
+3:        player     12300    28 -0.001400    0.857   829 -0.3450 -0.492 -0.1770
+4:     game line      1300    28 -0.001170    0.764     0      NA     NA      NA
+5:           all     20600    28 -0.000913    0.821     0      NA     NA      NA
+player contracts at the close: 51839; teammates of an absent player: 41327 (refined: 36298, from 401 absences; snap-count: 16798, from 192 absences); Questionable who played: 1736

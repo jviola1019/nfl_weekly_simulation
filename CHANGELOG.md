@@ -222,6 +222,170 @@ All notable changes to the NFL Prediction Model are documented in this file.
 - **First load.** `publicGates()` reads the promotion gates in one cached query where `evidence()` needed seven, and a page and its metadata share cached queries. Lighthouse 13.5.0 mobile, five interleaved rounds on one machine (2026-10-26, other R jobs running alongside), `main` against this branch, median LCP: home 2.52 s against 2.67 s, game 2.78 s against 2.82 s, evidence 2.85 s against 2.88 s (main's evidence median is over its four runs that recorded an LCP); performance 0.88, 0.89, 0.80 against 0.89, 0.89, 0.80; total blocking time 374, 316, 643 ms against 336, 311, 599 ms. On every page the branch is within 0.25 s of `main`'s LCP and no worse on performance or blocking time. Neither tree meets the 2.5 s gate on any page on that machine; the dry run (2026-10-20, a quieter machine) measured home 2.45 s against 2.44 s.
 - **Owner decisions** (also in the PR): no root `loading.tsx` (React 19 holds a Suspense fallback on screen for a few hundred milliseconds, which moved LCP up by 0.3 to 0.5 s on every page; the file is in the plan's appendix); the theme choice moved from the header to the footer; type sizes consolidated (section titles 22 to 24 px, lead text 17 to 18 px, chips 13 to 14 px, strip team codes 22 to 20 px); `experimental.inlineCss` rejected (the nonce CSP blocks the inlined style); font subsetting left to the owner (`offlineFonts.test.ts` pins the committed font file).
 - **Gates** (the branch, 2026-10-26): typecheck and lint exit 0; vitest 31 files and 192 tests with `REQUIRE_DB_TESTS=1` (baseline 18 and 126); Playwright on the fixtures 112 passed and 60 skipped (baseline 70 and 60), `@sim` 11 passed, the seven run-reading specs 35 passed on the simulator run, `@parity` 60 passed offline and 60 online at zero differing pixels (a wrong baseline fails with 861,285 differing pixels); axe with best-practice rules 0 violations, and review-ui 48 rows with no overflow, console error, serious axe rule or leak, on both trees and both data states; `verify_repo_integrity.R` 63 passed, 0 failed. No dependency added, no file deleted. The other R gates were not run: no R file changed.
+### `nfl_props_v1` signed, and the weekly program on a timer (2026-11-02)
+
+- **Signed before week 9's first kickoff:** `reports/2026-11-02/props-v1/PROTOCOL.md`, registered in `backtest/eval_windows/nfl_props_v1.json` with its sha256 and the scoring code's. It tests P1–P6 (Holm, one-sided 5%) once, on 2026 weeks 9–18.
+  - P1–P4 are Kalshi price relations.
+  - P5 and P6 test our props model.
+- **The props model under test** is the code of commit `4c1c377`, whose week-7 run produced P5's and P6's evidence.
+  - It runs from its own checkout, with that run's package set (`module_packages.csv`, 219 packages; dplyr 1.1.4, where the user library has 1.2.0).
+  - Later fixes (#216, #220, #230) are not part of this test.
+- **The final scorer** (`props_v1_score.R`) copies the exploration's code with only a filter to the scored weeks. It refuses to run unless the registered files are unchanged and committed.
+  - **Known answer:** on weeks 1–7 it reproduces every effect the protocol was built on (P1 0.0097, P2 0.809, P3 1.264, P4 0.120, P5 0.260, P6 0.0428). `tests/testthat/test-props-v1-protocol.R` checks this.
+- **Weekly reports are interim.** The draft ruled out interim looks; the signed text allows labelled interim reports on which nothing is decided.
+- **The weekly program on a timer** (`prospective_dispatch.R`):
+  - **Runs:** each week's runs, snapshots, Kalshi fetch and score, for weeks 9–18.
+  - **Rules:** each step runs once, with deadlines, retries and an atomic lock.
+  - **Started by:** `prospective_loop.sh` in a shell, or by a Windows scheduled task registered with `register_prospective_task.ps1`. The owner runs that script.
+  - **Store:** it writes to a private local store outside the system temp folder.
+- **The weekly score now fits the props model's dispersion on every earlier week the store holds** (`weekly_prospective.sh`). Before, it used weeks 1–7 only.
+
+### Value hypotheses, every venue, and our model against the books (2026-10-29 to 2026-11-02)
+
+- **The report:** `reports/2026-10-29/hypotheses/HYPOTHESES.md`. Families A–H were fixed in `PLAN.md` (`d9367fd`) before 2026 week 8; K and M were added at the owner's later requests.
+- **Families A–H:** only A3 (protected contracts underpriced, q 4×10⁻⁷) and A5 (the binary ladder beats the scalar's mean, q 2.5×10⁻⁴) survive BH, and neither pays a taker.
+  - **Family C (makers and takers):** makers net +0.75¢ a contract before kickoff (−2.86 to +4.36, q 0.68) over 2.58 million Kalshi trades. Only a 4.6¢ edge was detectable.
+  - **Kalshi's liquidity incentives** paid on 19 NFL markets, none of them game lines or props.
+- **Track K1, every venue at once** (`VENUE_SURVEY.md`, `venue_probe.R`, `venue_snapshot.R`, `props_snapshot.R`, `venue_persistence.R`):
+  - **Venues:** 11 are readable without a key; 8 refused.
+  - **Game lines in week 8:** no arbitrage, line shopping worth 0.7–1.4¢ per $1, and 20 of 2,172 sides beat Pinnacle's no-vig price.
+  - **Props:** 5 small arbitrages, all through Smarkets (best +1.39¢).
+  - **Confidentiality:** raw sportsbook responses and per-venue prices stay private; only aggregates are committed.
+- **Family M, our model against the books** (`model_vs_books.R`), on the week-7 run made before kickoff:
+  - **Moneyline:** the shown C3 probability is worse than every closing price (Brier 0.2488 against Kalshi's 0.2268 and the consensus close's 0.2310), and its bets lose.
+  - **Spreads and totals:** on Kalshi's ladders the model adds no information.
+  - **Props:** the props module has never priced a market (none of its 570 props has a market line or odds). Its projected means show a weak, insignificant signal against Kalshi's close (0.26, one-sided p 0.066).
+- **Defect found, not fixed:** `load_player_projections()` averages three seasons equally although its comment says "recency weighting", and it has no week filter (`sports/nfl/props/data_sources.R:62-158`).
+- **Recommendation (§14):**
+  - stop trying to make the game model beat the close;
+  - give props one pre-registered season-long test;
+  - pursue timing (CLV) and price-relative betting against a sharp reference.
+- **Family T, timing (§15, `opener_clv.R`):**
+  - **T1 replicates v1's lead on 2023.** The EPA model C2's picks at ESPN BET's opener gain +85 bps of CLV (141 picks, one-sided p 0.008). This uses D1's 2023 openers and v1's own predictions, rule and bootstrap; 2024 recomputes exactly.
+  - **Pooled** over both seasons it is +90 bps (+47 to +135), and +103 bps where no starter changed, so it is not v1's starter caveat.
+  - **It does not pay at one book:** the flat ROI is −2.6% (−16% to +11%), and ESPN BET's median opening overround is 397 bps.
+  - **Open caveat:** if openers were posted before the previous week's games, part of the CLV is look-ahead. ESPN keeps no line history for 2023–2024, and the 2026 capture archive cannot see an earlier opener until #217 (`opener_timing.R`). Elo's null argues against pure look-ahead.
+  - **Props:** the projections predict Kalshi's last-day drift (Family G 0.032, p 2×10⁻¹⁴; the module 0.043, p 0.0004), but by about a quarter of a cent, below Kalshi's fees.
+- **The forward test** (`weekly_prospective.sh`, `score_week.R`, with the shared props code in `props_frame.R`) runs on weeks 9–18 from a private local store; week 9 is scored on 2026-11-10. Since 2026-11-02 it is `nfl_props_v1`'s data collection (above).
+- **`PROTOCOL_props_v1_DRAFT.md`** gains P6, the module's timing, as a price relation. P5's code is `score_week.R`.
+
+### Feasibility research (2026-10-28 to 29): can a model beat the market, with significance?
+
+- **The report:** `reports/2026-10-28/feasibility/FEASIBILITY.md`. Every number in it comes from a script in its folder.
+- **Games against the close:** no feasible sample can confirm an accuracy edge (`power.R`).
+  - On every game with a closing moneyline (4,997, 2006–2024), the smallest detectable Brier skill is 0.39%.
+  - The best blend's +0.068% would need 20,836 games.
+- **Games against the opener:** in 2023 the close beat the opener by 2.29% of its Brier (p 0.077; `opener_ceiling.csv`). Closing-line value is the test.
+- **Kalshi props.** All 191 series in the captures are inventoried, and the 74 single-game series are scored.
+  - **Outcomes:** Kalshi's own settlements (`kalshi_settled.R`). They agree with an nflverse rebuild on 10,506 of 10,506 contracts.
+  - **Prices:** the close at kickoff, from Kalshi's hourly candles (`kalshi_candles.R`).
+  - **The data:** 2026 weeks 1–7, 88,439 contracts and 107 games (`props_close.R`).
+  - **Close to calibrated.** Player props' slope is 0.958 (0.917–0.999), and none of the 67 series fitted alone departs after BH.
+  - The scalar ladders' pooled compression (1.12, Bonferroni 0.017) does not carry out of sample.
+  - **No recalibration edge.** Traded walk-forward after the spread and fee, a taker loses 15.7% (−30.1% to −1.7%).
+  - **No sure profits.** No exclusive set offers one at kickoff: 0 of 1,661 events.
+- **Corrected: the first version's favorite–longshot finding** (slope 1.15) was an artifact. Kalshi's `occurrence_datetime` is the kickoff plus 3 hours, so 74% of that probe's "pre-kickoff" quotes were mid-game (`props/props_cutoff_check.csv`).
+- **Dates:**
+  - **Schedule checks** (`dates_audit.R`): of ten, only nflverse's rest days differ, on 34 team-games. REST-FLEX is recorded on the five rest features (`backtest/vvf/registry.R`), and 0 of 15 S1 verdicts change.
+  - **Capture timing** (`capture_delays.R`): the capture workflow starts 2 h 12 min to 3 h 57 min late. On 2026-10-25, 8 games kicked off before their game-day capture ran.
+- **Calibrators:** none of #205's 21 calibrated variants improves significantly on its own model (`calibrators.R`).
+- **The A3 research reproduces from scratch:** 11 of 11 outputs are identical (`rerun_research.sh`).
+  - Fixed: `a3-research.R s4` no longer overwrites `s4_power.csv`. It writes `s4_power_initial.csv`.
+- **Literature re-checked:** one claim was corrected, the sports horizons in arXiv 2602.19520.
+
+### A3b: incremental skill, the S4 controls and diagnostics (VVF S3–S5), with the owner's research of 2026-10-28
+
+- **S3, incremental skill** (`backtest/vvf/s3_skill.R`).
+  - Each feature enters as `logit(p) = lp_anchor + b·x_c`, refit every week on the earlier weeks only, and is scored against the anchor alone: paired Brier and log loss, a week-block bootstrap (B = 10,000), DM-HLN and BH over the declared order.
+  - It refuses a close anchor at an opener decision, and a table with a sealed season.
+- **S4, the controls** (`s4_controls.R`): the canary, 200 placebos, the spec's label shuffle, the anchor copy and reproducibility, plus two researched nulls.
+  - The anchor null redraws y from the anchor, by consistency resampling.
+  - The permuted-x null permutes each feature within its week.
+  - Each null passes when S3's own claim rule claims no feature.
+  - The run reports two statuses: `s4_status`, under the spec's controls, is the status of record; `s4_status_amended` is under the proposed amendment, which the owner signs.
+- **S5, the diagnostics** (`s5_curves.R`, `s5_scores.R`, `s5_smoothing.R`, `s5_anova.R`):
+  - validation curves with the one-SE rule on paired differences, a nested-tuning guard, learning curves and the fit gap;
+  - an exact Murphy decomposition, calibration slopes, bias and variance, CRPS, a randomized NB PIT and effective df;
+  - the engine's recency weights checked against an EWMA, and the Kalman steady state;
+  - loss ANOVA by season and part of season, and team effects.
+- **The research** (`reports/2026-10-28/a3-research/RESEARCH.md`; every number is in its `summary.txt`):
+  - **The spec's label shuffle fails by construction.** Over 5 replicates of 36 features, shuffled labels break the anchor offset, so it claimed skill in 5 of 5 replicates. The anchor null and the permuted-x null claimed nothing in 5 of 5.
+  - **S3's power is low** (20 replicates per effect): a planted effect was detected in 11 of 20 at 0.20 log-odds per SD (exact 95% CI 0.32–0.77), 15 of 20 at 0.30 and 19 of 20 at 0.40. So "no skill" is no evidence against effects below about 0.3.
+  - **The inherited cluster-robust joint Wald over-rejects:** 0.30–0.69 at a nominal 5% under a true null, with 107 clusters and 29–34 coefficients. The restricted wild cluster score bootstrap with diagonal studentization holds 0.041–0.059. On one season the Wald and the full score bootstrap are undefined and the LR over-rejects (0.116); the diagonal bootstrap holds 0.054.
+  - **The cluster unit:** the ICC is 0.0000 at every unit (0.0006 for totals by team-season), so the season-week stays.
+  - **Late schedule changes** (Wikipedia, 2018–2024, 77 rows): 51 of 1,372 Tune games changed. Nothing is significant against the close (p 0.33–0.81), and dropping them changes 0 of 108 S1 verdicts. No adjustment. A secondary look at 2023–24 opener-to-close movement is disclosed (A3-MOVE-LOOK).
+- **The joint test's p of record** (`s1_screen.R`) is `p_joint = max(p_test, p_joint_wild)`.
+  - **The old p-values, decided on the research** (owner, 2026-10-28: research and choose). The joint Wald's χ²(k) p-value, `p_wald_robust`, is dropped: its test rejects 0.30–0.69 of true nulls. Its statistic stays as v2's known answer, `NA` when the covariance is singular, where the code used to stop.
+  - S1's per-feature `p_robust` (k = 1; 200 placebos reject 0.055) and the reproduction's v2-df p stay.
+  - The v2 reproduction was regenerated, with its known answers unchanged (χ² 26.9332 on df 29, p 0.5753). On v2's inputs `p_joint_wild` runs 0.18–0.60, where the old p ran from 1.2e-06 to 0.45: no feature set is jointly significant in any family.
+- **The close-anchored run** (`run_a3b_close.R`, `reports/2026-10-28/vvf-a3b-close/`, Tune 2018–2022, 1,365 games, result_sha256 `49875172…`):
+  - **S3** claims none of v2's 36 features. Its fallbacks never fired: 0 skipped and 0 constant weeks.
+  - **S4** is `void` under the spec, because the label shuffle fails: 29 of 36 intervals include 0, with skill up to 0.10025. Under the amendment it is `complete`: the anchor null and the permuted-x null claim 0 features each, and the placebo rate is 0.055.
+  - **Bias and variance.** Adding all 36 features to the close as one logit loses out of sample at every training length: log loss 0.6446 with 2 seasons and 0.6188 at best (6), against the anchor's 0.6097. The in-sample fit beats the walk-forward one by 0.068–0.113 per season, which is over-fitting. All 107 fits per length converged.
+  - **C2's half-life curve** over the amendment's grid and v1's 16 is U-shaped: 0.6348 with no decay, 0.6289 at the best, 8, and 0.6543 at 1. The one-SE rule chooses 16. The engine's settings (RECENCY_HALFLIFE, GLMM_BLEND_W, SOS_STRENGTH, N_RECENT, SHRINKAGE) need C3's walk-forward and wait for G2.
+  - **Calibration** is consistent with a slope of 1 for every model (C0 1.047, 0.894–1.200).
+  - **Murphy:** the close's Brier is 0.211116, against 0.219535 for E1.
+  - **E1's excess loss by part of season:** none survives BH over the four loss-ANOVA tests. Part of season has q 0.084 (Brier) and 0.085 (log loss); by season, q 0.714.
+  - **No team effects:** outcome p 0.424, spread p 0.441.
+  - **Market errors:** the closing lines' own errors have a bias of −0.52 points on the margin and +0.20 on the total.
+- **Admission** (`docs/VARIABLE_LEDGER.md`): S3 first, then S1, then S4, and Confirm under G3. All 36 features are excluded against the close, with no incremental skill on Tune, so the close-anchored model is the market alone.
+- **The input ERD** (`input_schema.R`) declares the eight tables the stages read and their keys and references.
+  - The checks run before every stage (both runs stop on a violation) and at every ledger render, and find 0 violations.
+  - A missing key or reference counts as a violation.
+- **An independent verification** (`reports/2026-10-28/verification/VALIDATION_REPORT.md`; owner, 2026-10-28) recomputes the p-values, Brier and log loss, the research and the blends. It uses base R, hand-written cluster sandwiches, lmtest, car and nlme: **56 of 56 checks pass.**
+  - S3's DM-HLN p is exactly the paired t-test at h = 1.
+  - Every test holds its size under the null: DM 0.049, S1's LR 0.042, its robust p 0.048, and the joint wild p 0.043, at a nominal 5%.
+  - The research replicates: the robust Wald's size is 0.397 (research 0.399), and the REML ICC is 0.00000.
+  - #205's and #209's blends recompute from their per-game files, on the same no-vig close as VVF (4.99e-09). No blend beats it: every q is 1.000.
+- **The final review** (Haiku) found no Critical issue, 9 Important and 18 Minor ones.
+  - Each Important finding is fixed, every code fix with a test that failed first.
+  - 13 minors are fixed, 11 of them re-graded up as silent failures or doc errors.
+  - 5 minors are deferred (see the PR).
+- **Docs:** a docs-truth test checks that every repo path cited in CLAUDE.md, README and GETTING_STARTED exists.
+- **Owner decisions:**
+  - S4-NULL: the spec §4 amendment;
+  - the merge, after #225.
+- **Unchanged:** the engine files, `config.R`, `renv.lock`, the protocols and the 2025 seal.
+
+### A3a: the validation framework, S0–S2 (master plan Track A; spec 2026-10-20 §2, §4–§6)
+
+- **The port** (`backtest/vvf/`; owner decision of 2026-10-20, "Port builder + inputs"). Three things come over from PR #205:
+  - its input builder, `build_inputs.R`, with injectable loaders and the network rules;
+  - its feature builder, `features.R`. `vvf_anchor_features()` makes the anchor-relative columns follow the close today and the opener later;
+  - its sha256-locked inputs, `backtest/vvf/data/`, for the seasons 2009–2024.
+
+  Every loader refuses the 2025 Holdout, and so do the anchor features and both screens, from the table's `season` or `game_id`. VVF code refuses `reports/2026-09-29/clv-power/espn_open_close_2024_2025.csv`. v1's `backtest/build_inputs.R:106` still reads that file and drops 2025 only afterwards; this is disclosed (spec §6). The builder refuses to overwrite locked inputs unless `--overwrite` is given.
+- **S0, the registry** (`registry.R`, `provenance.R`). It has one row per variable, with its `known_at` class and its defects.
+  - `vvf_assert_known_at()` refuses a feature that is not known at the decision point, before any model is fit. Of v2's 36 features, 21 are admissible at IS-A.
+  - `vvf_assert_anchor()` refuses a table whose anchor is not known at the decision. The close is known only at the close; the opener is known at every decision.
+- **S1, the screen** (`s1_screen.R`):
+  - LR and F tests, with the anchor as a parameter;
+  - week-clustered robust p, using a wild cluster bootstrap below 30 clusters, where no sandwich SE or CI is reported beside it;
+  - BH and the MDE;
+  - joint tests whose df counts the estimable terms only.
+- **S2, structure** (`s2_structure.R`): VIF with declared-first precedence, the sign in each period, and feature × period tests.
+  - The first-declared feature over VIF 5 stays, and its most collinear later partner yields (spec §4).
+  - On the Tune window that keeps `rest_diff` and drops `home_bye`.
+- **The known-answer test** (`reproduce_v2.R`, with the results in `reports/2026-10-22/vvf-v2-repro/`). It runs on the ported inputs over the Tune seasons 2018–2022:
+  - The base predictions match v1 within 5.0e-11 over 1,372 games.
+  - The screen matches v2's 108 rows within a relative 4.5e-06.
+  - v2's moneyline joint test counted df 30 for 29 estimable terms. With df 29, χ² 26.933 gives p 0.575; v2 printed 0.627.
+  - All 108 rows read "no evidence". The smallest BH q is 0.147 (spread, `abs_tz_away`).
+  - Each joint test's p of record is `p_test`. The cluster-robust Wald beside it is not size-controlled with 29 to 34 coefficients (disclosure JOINT-WALD).
+- **The ledger** (`docs/VARIABLE_LEDGER.md`). `scripts/write_variable_ledger.R` generates it from the registry and the committed results, and a docs-truth test fails on any hand edit.
+- **F11's diagnosis** (`scripts/diagnose_mu_na.R`). It finds which mean term is NA in the calibration backtest from the call frames, with no engine edit.
+  - Its positive control on main (2024 week 5, `reports/2026-10-26/f11-bye-week-main/`) found 328 calibration games with a missing mean.
+  - `home_hfa` is missing in 171 of them and `away_hfa` in 172, the bye teams' games. That is F11, whose fix is the open PR #223.
+  - 16 are the 2019 Raiders' games: the play-by-play files them under `LV`, while the schedule says `OAK`. That is F11b, an owner decision.
+  - The script stops if a mean term is missing from the engine's table.
+  - The regression check on the fixed main waits for both fixes.
+- **The final review** (Haiku, one per branch) found 1 Critical and 8 Important issues; each is fixed with a test that failed first, or disclosed. Five questions stay with the owner, as ledger disclosures:
+  - JOINT-WALD;
+  - CLUSTER-UNIT;
+  - A3-FLEX;
+  - F11B;
+  - V2-JOINT-DF, the known-answer p moving from 0.63 to 0.575.
+- **Unchanged:** the engine files, `config.R`, `renv.lock` and the protocols. S3–S5 and the controls are A3b.
 
 ### A0: the odds capture sees every game before the close, on time, and is kept (owner, 2026-10-19)
 

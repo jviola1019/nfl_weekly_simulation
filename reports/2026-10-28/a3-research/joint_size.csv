@@ -1,0 +1,36 @@
+set,k,G,week_sd,test,size,n_ok
+situational,29,107,0,lr,0.053,1000
+situational,29,107,0,wald_chi2,0.399,1000
+situational,29,107,0,wald_f,0.304,1000
+situational,29,107,0,score_boot_full,0.059,1000
+situational,29,107,0,score_boot_diag,0.047,1000
+situational,29,107,0.1,lr,0.067,1000
+situational,29,107,0.1,wald_chi2,0.419,1000
+situational,29,107,0.1,wald_f,0.324,1000
+situational,29,107,0.1,score_boot_full,0.054,1000
+situational,29,107,0.1,score_boot_diag,0.041,1000
+situational,29,107,0.2,lr,0.073,1000
+situational,29,107,0.2,wald_chi2,0.403,1000
+situational,29,107,0.2,wald_f,0.328,1000
+situational,29,107,0.2,score_boot_full,0.049,1000
+situational,29,107,0.2,score_boot_diag,0.041,1000
+all,34,107,0,lr,0.053,1000
+all,34,107,0,wald_chi2,0.535,1000
+all,34,107,0,wald_f,0.423,1000
+all,34,107,0,score_boot_full,0.062,1000
+all,34,107,0,score_boot_diag,0.044,1000
+all,34,107,0.1,lr,0.072,1000
+all,34,107,0.1,wald_chi2,0.538,1000
+all,34,107,0.1,wald_f,0.427,1000
+all,34,107,0.1,score_boot_full,0.061,1000
+all,34,107,0.1,score_boot_diag,0.045,1000
+all,34,107,0.2,lr,0.07,1000
+all,34,107,0.2,wald_chi2,0.538,1000
+all,34,107,0.2,wald_f,0.438,1000
+all,34,107,0.2,score_boot_full,0.059,1000
+all,34,107,0.2,score_boot_diag,0.049,1000
+"situational, one season",29,22,0,lr,0.116,500
+"situational, one season",29,22,0,wald_chi2,,0
+"situational, one season",29,22,0,wald_f,,0
+"situational, one season",29,22,0,score_boot_full,,0
+"situational, one season",29,22,0,score_boot_diag,0.054,500

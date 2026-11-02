@@ -24,6 +24,60 @@ The keyless odds layer is in `R/odds/` (see CHANGELOG, "D1"). **Objective:** one
 
 **Context-reset packet:** objective: one token and component system, context on every number, professional HTML, with no slower first load. Done: Tasks 1 to 13 with every gate above. Not done: the owner's merge; the LCP gate on the game page and evidence. Confirmed facts: the gates above. Open risks: LCP on a reference machine; the `id-leaks` flake. Next target: the owner's review of the draft PR and its screenshots; B3 (React Bits) and B4 (editing and offline features) are separate tracks.
 
+## A3b done - 2026-10-28 (feat/a3b-vvf, stacked on feat/a3a-vvf, awaiting the owner)
+
+S3–S5, the S4 controls, the researched nulls and joint test, and the input ERD are in `backtest/vvf/` (see CHANGELOG, "A3b").
+- **Objective:** S3 incremental skill, the S4 controls and the S5 diagnostics, close-anchored on Tune 2018–2022. Then the owner's 2026-10-28 requests:
+  - research the label shuffle, the inherited joint test and the cluster unit;
+  - test late schedule changes;
+  - admit only significant variables;
+  - check bias and variance;
+  - verify the ERD and the docs.
+- **Done:** plan Tasks 1–16. That includes the final review's fix pass (Task 13), the old p-values decision (14) and the independent verification (15, 56 of 56 checks).
+  - `reports/2026-10-28/a3-research/` holds the research.
+  - `reports/2026-10-28/vvf-a3b-close/` holds the run.
+  - The ledger shows S3, each variable's admission and the input ERD.
+- **Confirmed facts:**
+  - Against the close, S3 claims none of v2's 36 features, so all 36 are excluded and the close-anchored model is the market alone.
+  - The spec's label shuffle fails by construction. The researched nulls hold.
+  - The inherited robust joint Wald is oversized (0.30–0.69 at a nominal 5%), so its p-value is dropped (decided 2026-10-28 at the owner's request). The wild score bootstrap holds 0.041–0.059.
+  - The ICC is about 0 at every cluster unit.
+  - Late changes are not significant.
+  - The final review's fix pass is done.
+  - `reports/2026-10-28/verification/` recomputes every p-value, Brier and log loss, the research and the blends independently.
+- **Open risks:** S3's power on Tune is low: a planted effect was detected in 11 of 20 runs at 0.20 log-odds per SD and 19 of 20 at 0.40. "No skill" does not rule out effects below about 0.3.
+- **Owner questions:**
+  - S4-NULL: sign the spec §4 amendment (the anchor null);
+  - the merge, after #225.
+- **Next target:** A4, the opener screen on D1's archive, after #224 and #225.
+
+## A3a done - 2026-10-27 (feat/a3a-vvf, draft PR, awaiting the owner)
+
+The validation framework's S0–S2 are in `backtest/vvf/` (see CHANGELOG, "A3a").
+- **Objective:** S0–S2 on PR #205's ported inputs, with the variable ledger.
+- **Done:**
+  - the port;
+  - the registry and S0;
+  - S1 and S2;
+  - the reproduction of v2's §1;
+  - the generated ledger;
+  - the F11 diagnosis script and its positive control.
+- **Not done:**
+  - Plan Task 10 Step 2, the regression check on the fixed main, after #223 and F11b;
+  - A3b, S3–S5 and the controls. These are built and dry-run in `../nfl-worktrees/a3dry`, and their plan comes next.
+- **Confirmed facts:**
+  - The port reproduces v1 within 5.0e-11 and v2's screen within 4.5e-06.
+  - v2's moneyline joint df was 30 for 29 estimable terms, so p is 0.575, not 0.627.
+  - All 108 screen rows read "no evidence".
+- **Open risks:** F11b, the 2019 Raiders' missing drive inputs. Once #223 merges, it stops any calibration that reaches 2019.
+- **Owner questions** (disclosures in the ledger):
+  - JOINT-WALD: the robust joint Wald is not size-controlled;
+  - CLUSTER-UNIT: season-week or week of season;
+  - A3-FLEX: `primetime`'s flex timing;
+  - V2-JOINT-DF: the known-answer p moves from 0.63 to 0.575;
+  - F11B.
+- **Next target:** A3b.
+
 ## Previous state — A8 (feat/a8-local-app)
 
 2026-10-13. Branch `feat/a8-local-app` (base `4f9aad3`; `main` at `28e4ed7`, with #210, merged in on 2026-10-13), draft PR #212 against `main` (never merged by the agent). The final whole-branch review returned "with fixes"; the fix wave below applied them and the owner's four decisions, and every gate was re-run on the merged branch.

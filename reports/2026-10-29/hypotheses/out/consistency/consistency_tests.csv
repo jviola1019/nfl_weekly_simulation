@@ -1,0 +1,5 @@
+id,test,pairs,games,mean_price_gap,mean_payout_gap,estimate,p,protection_triggered,sure_profits,best_sure_profit,wrong_side_quotes,all_pairs,taker_pnl_per_pair,taker_lo,taker_hi,maker_pnl_per_pair,maker_lo,maker_hi,yes_buyer_saving,players,wrong_order_mids,mean_gap,mse_scalar,mse_ladder,bets,roi,roi_lo,roi_hi,bets_w67,roi_w67,ladders,rung_pairs
+A3,protection premium priced right on average (payout gap - price gap = 0),12205,43,-0.0034719,0.0062597,0.0097317,8.8501e-08,321,5,0.005275,7007,12972,-0.043204,-0.046825,-0.039365,0.0049613,0.0021771,0.0080585,0.0097317,,,,,,,,,,,,,
+A4,first TD <= team first TD <= anytime TD at the bid and ask,,107,,,,,,0,-0.001386,,,,,,,,,,2244,206,,,,,,,,,,,
+A5,the binary ladder's implied mean predicts the stat beyond the scalar's (slope on the gap),842,75,,,0.8093,9.9324e-05,,,,,,,,,,,,,,,-1.7305,601.51,584.64,120,0.016588,-0.0057514,0.03523,20,0.019466,,
+A6,"a higher rung's bid above a lower rung's ask, after fees",,,,,,,,3,0.013364,,,,,,,,,,,,,,,,,,,,,9652,204900

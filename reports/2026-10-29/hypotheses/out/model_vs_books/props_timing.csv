@@ -1,0 +1,3 @@
+id,test,contracts,games,picks,estimate,lo,hi,p_one_sided
+MT1,the module predicts the move from 24 h before kickoff to the close (one-sided > 0),2255,14,,0.04281,0.02158,0.06405,0.0003893
+MT2,"mean CLV (bps) of picks 5+ points from the 24-hour mid, to the close",2255,14,1300,29.19,15.07,44.52,0

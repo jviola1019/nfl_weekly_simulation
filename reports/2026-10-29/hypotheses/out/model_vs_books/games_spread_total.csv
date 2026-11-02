@@ -1,0 +1,3 @@
+market,bets,units,brier_model
+"spread at the consensus close, -110",10,-6.182,0.2943
+"total at the consensus close, -110",10,-2.364,0.2426

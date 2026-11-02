@@ -1,0 +1,16 @@
+            series                                            model contracts games brier_kalshi brier_model     skill p_model_better  bets      roi  roi_lo roi_hi
+            <char>                                           <char>     <int> <int>        <num>       <num>     <num>          <num> <int>    <num>   <num>  <num>
+ 1:    KXNFLSPREAD              2015-2024, nflverse close (primary)      2730   107       0.1707      0.1696  0.006400           0.22  1241  0.01700 -0.1330 0.1660
+ 2: KXNFLTEAMTOTAL              2015-2024, nflverse close (primary)      2885   107       0.1346      0.1341  0.003750           0.26  1158  0.03560 -0.0756 0.1470
+ 3:     KXNFLTOTAL              2015-2024, nflverse close (primary)      2033   107       0.1710      0.1729 -0.011000           0.89   850 -0.15300 -0.3160 0.0138
+ 4:    KXNFLSPREAD            1999-2024, nflverse close (secondary)      2730   107       0.1707      0.1695  0.007020           0.20  1350  0.04680 -0.1720 0.2620
+ 5: KXNFLTEAMTOTAL            1999-2024, nflverse close (secondary)      2885   107       0.1346      0.1342  0.002940           0.31  1357  0.03960 -0.0851 0.1680
+ 6:     KXNFLTOTAL            1999-2024, nflverse close (secondary)      2033   107       0.1710      0.1719 -0.004950           0.76   748 -0.05120 -0.2750 0.1720
+ 7:    KXNFLSPREAD 2015-2024 shape on Kalshi's median (exploratory)      1409    97       0.2022      0.1999  0.011700           0.12   742  0.08570 -0.0651 0.2290
+ 8: KXNFLTEAMTOTAL 2015-2024 shape on Kalshi's median (exploratory)      2885   107       0.1346      0.1347 -0.000714           0.53  1023  0.00263 -0.1100 0.1150
+ 9:     KXNFLTOTAL 2015-2024 shape on Kalshi's median (exploratory)      2033   107       0.1710      0.1733 -0.013200           0.94   863 -0.11800 -0.2760 0.0452
+10:    KXNFLSPREAD   2015-2024, key-number rungs only (descriptive)      1700   107       0.1691      0.1681  0.005910           0.22   753  0.00521 -0.1550 0.1570
+   ladders kalshi_mass_3 model_mass_3 realized_exactly_3
+     <int>         <num>        <num>              <num>
+1:     107    0.08771028    0.0909152         0.08411215
+history: 2623 games 2015-2024, 6695 1999-2024; contracts fitted 7648 in 107 games

@@ -1,0 +1,16 @@
+null,rep,above,below,claims
+y within week (spec),1,6,1,2
+x permuted within week,1,0,4,0
+y drawn from the anchor (consistency resampling),1,0,4,0
+y within week (spec),2,7,1,4
+x permuted within week,2,0,0,0
+y drawn from the anchor (consistency resampling),2,0,1,0
+y within week (spec),3,4,0,3
+x permuted within week,3,0,5,0
+y drawn from the anchor (consistency resampling),3,1,4,0
+y within week (spec),4,7,0,4
+x permuted within week,4,0,5,0
+y drawn from the anchor (consistency resampling),4,2,1,0
+y within week (spec),5,9,0,7
+x permuted within week,5,0,3,0
+y drawn from the anchor (consistency resampling),5,0,2,0

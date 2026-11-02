@@ -1,0 +1,19 @@
+item,value
+price,the last capture before the scheduled kickoff
+contracts with an outcome and a capture but no two-sided candle close (dropped),0
+capture files read,3641
+series captured,191
+series with markets in weeks 6-7,121
+series tied to single games,74
+contracts in single-game series,37175
+"  settled with an outcome (binary, tie share or scalar payout)",32308
+"  settled at the pre-game fair price (no outcome, excluded)",577
+"  not settled in the window (week 8, or voided)",4290
+contracts with a pre-kickoff two-sided quote and an outcome,29669
+  of them with spread <= 0.10 (fitted),26635
+games fitted,28
+"2026 week 6-7 games in the schedule, and those with no fitted contract",28; missing: 
+series fitted on their own,56
+series set aside: fewer than 10 events or non-events,KXNFLESCALATORREC (8 events); KXNFLESCALATORRECYDS (5 events); KXNFLESCALATORRSHYDS (3 events); KXNFLLADDERRSHYDS (8 events); KXNFLMOSTRSHYDS (8 events)
+Kalshi settlements fetched for,2026-10-13 to 2026-10-28 closes
+player stats and snap counts fetched (UTC),2026-10-29T06:03:02Z

@@ -1,0 +1,4 @@
+band,picks,mean_clv_bps,se_bps
+3-5 points,83,44.92,42.26
+5-8 points,109,15.8,48.63
+8+ points,163,161.6,38.49
