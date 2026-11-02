@@ -1,0 +1,68 @@
+{
+  "protocol_id": "nfl_preclose_v1",
+  "protocol_path": "reports/2026-11-02/preclose-v1/PROTOCOL.md",
+  "protocol_sha256": "cc282d7911a4f1e1d3c5fa09abc64f77f27d166c3bda61eab33b1a5e0a620e76",
+  "design": "docs/superpowers/specs/2026-10-20-preclose-validation-design.md (approved 2026-10-20)",
+  "signed": {
+    "date": "2026-11-02",
+    "approval": "the owner, 2026-11-02: complete the listed owner decisions, signing this protocol and 2025 as history (never scored) among them"
+  },
+  "information_set": {
+    "confirmatory": "IS-A: schedule, results before the first kickoff of week w-1, the previous game's starting QB",
+    "secondary": "IS-B: v1's C1 and C2 as committed"
+  },
+  "candidates": ["PC-C2", "OA[E1]", "LM[E1]"],
+  "correction": "BH across the three",
+  "hyperparameters": {
+    "c2_halflife": 8,
+    "c2_lambda": 100,
+    "c1_K": 20,
+    "c1_hfa": 30,
+    "c1_regress": 0.45,
+    "oa_lambda_grid": [0.1, 1, 10],
+    "min_train_with_opener": 100
+  },
+  "windows": {
+    "tune": {
+      "seasons": 2023,
+      "use": "OA's lambda only; every candidate scored"
+    },
+    "confirm": {
+      "seasons": 2024,
+      "use": "secondary evidence"
+    },
+    "holdout": {
+      "seasons": 2025,
+      "sealed": true,
+      "use": "decides; built and scored once with nfl_games_v2 after the owner opens it"
+    },
+    "prospective": {
+      "season": 2026,
+      "weeks": [9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+      "use": "one look after week 18"
+    },
+    "pilot": {
+      "season": 2026,
+      "weeks": [1, 2, 3, 4, 5, 6, 7, 8],
+      "use": "computed after signing, reported separately, never pooled"
+    }
+  },
+  "venues": {
+    "2023-2024": "ESPN BET (D1 archive)",
+    "2026": "DraftKings as ESPN reports it (provider 100)",
+    "2025": "ESPN BET, sealed"
+  },
+  "tuesday_track": {
+    "decision": "Tuesday 18:00 UTC",
+    "information_set": "IS-B",
+    "candidates": ["C2", "E1"],
+    "price": "Kalshi KXNFLGAME mid, first hourly candle at or after 18:00 UTC; close = last candle at or before kickoff"
+  },
+  "pick_tau": 0.03,
+  "bootstrap_seed": 20260929,
+  "bootstrap_B": 10000,
+  "s4_null": "anchor null and permuted-x (S4 amendment); the spec's shuffle reported, not gating",
+  "code": [],
+  "code_rule": "registered by sha256 in an amendment before any confirmatory number is read; it may change no choice",
+  "hash_rule": "sha256 of each file as git stores it (CRLF read as LF)"
+}
