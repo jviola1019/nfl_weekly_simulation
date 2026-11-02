@@ -5,6 +5,7 @@
 # Usage: prospective_loop.sh <store> <checkout for run_week.R> <research checkout> [first week] [last week]
 store=$1; prod=$2; res=$3; first=${4:-9}; last=${5:-18}
 mkdir -p "$store/logs"
+cd "$store" || exit 1   # the dispatcher's R must not start in a checkout whose .Rprofile activates another library
 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) loop started (weeks $first-$last, run_week.R from $prod, scripts from $res)" >> "$store/logs/dispatch.log"
 while true; do
   Rscript "$res/reports/2026-10-29/hypotheses/prospective_dispatch.R" --store="$store" --prod="$prod" --res="$res" \
