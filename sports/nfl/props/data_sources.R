@@ -109,8 +109,15 @@ load_player_projections <- function(season = NULL, week = NULL, min_games = 3) {
   message(sprintf("  Raw player stats: %d rows, %d unique players",
                   nrow(player_stats), length(unique(player_stats$player_id))))
 
-  # Calculate rolling averages with recency weighting
-  # More recent games weighted higher (exponential decay)
+  # Point in time: in the target season only the games before `week` count; earlier seasons count whole.
+  # Without this a run for a past week averaged in the games played after it. week = NULL keeps every game.
+  if (!is.null(week)) {
+    target_season <- season
+    target_week <- week
+    player_stats <- player_stats %>% dplyr::filter(season < target_season | week < target_week)
+  }
+
+  # Per-player means over the loaded seasons, every game weighted equally (no recency weighting)
   projections <- tryCatch({
     # Use 'team' column from nflreadr (renamed to recent_team for consistency)
     team_col <- if ("recent_team" %in% names(player_stats)) "recent_team" else "team"
@@ -238,7 +245,7 @@ get_player_projections_with_fallback <- function(season, week, home_team, away_t
 
   for (fallback_season in fallback_seasons) {
     fallback_projections <- tryCatch({
-      load_player_projections(fallback_season, week = 18, min_games)
+      load_player_projections(fallback_season, week = NULL, min_games)   # a past season counts whole, as before the week filter
     }, error = function(e) NULL)
 
     if (!is.null(fallback_projections) && nrow(fallback_projections) > 0) {
