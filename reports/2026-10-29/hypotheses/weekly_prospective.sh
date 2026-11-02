@@ -41,9 +41,14 @@ case "$mode" in
     (cd "$res" && Rscript "$F/kalshi_settled.R" "$store/kalshi" "$series" --from="$from" --to="$to" > "$store/logs/settled_$stamp.log" 2>&1); log "kalshi_settled exit=$?"
     (cd "$res" && Rscript "$F/kalshi_candles.R" "$store/kalshi" "$store/kalshi/kalshi_settled.csv.gz" > "$store/logs/candles_$stamp.log" 2>&1); log "kalshi_candles exit=$?" ;;
   score)
-    # the earliest saved run is the decision run; earlier weeks' settlements feed props_frame.R's dispersion fit
+    # the earliest saved run is the decision run; earlier weeks' settlements feed props_frame.R's dispersion fit: weeks
+    # 1-7 from the feasibility study, and every week this store's parent holds (wWW/kalshi; props_frame.R keeps only the
+    # weeks before the scored one)
     run=$(ls -d "$store"/run_* 2>/dev/null | sort | head -1)
     early="$res/$F/props/kalshi_settled_w1-5.csv.gz,$res/$F/props/kalshi_settled.csv.gz"
+    for f in "$(dirname "$store")"/w[0-9][0-9]/kalshi/kalshi_settled.csv.gz; do
+      [ -f "$f" ] && [ "$f" != "$store/kalshi/kalshi_settled.csv.gz" ] && early="$early,$f"
+    done
     dflag=""; [ -n "$decision" ] && dflag="--decision=$decision"
     (cd "$res" && Rscript "$H/score_week.R" "$store/score" --week="$week" --run="$run" --snaps="$store/raw" $dflag \
       --settled="$early,$store/kalshi/kalshi_settled.csv.gz" --candles="$store/kalshi/kalshi_candles.csv.gz" > "$store/logs/score_$stamp.log" 2>&1); log "score_week exit=$?" ;;

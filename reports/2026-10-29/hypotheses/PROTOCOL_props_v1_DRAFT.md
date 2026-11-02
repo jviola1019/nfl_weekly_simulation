@@ -1,6 +1,8 @@
-# nfl_props_v1: a pre-registered test of Kalshi prop mispricings (DRAFT, not registered)
+# nfl_props_v1: a pre-registered test of Kalshi prop mispricings (DRAFT, superseded)
 
-**Status:** a draft for the owner, not yet signed. Registering it is an owner step:
+**Superseded on 2026-11-02:** the signed protocol is `reports/2026-11-02/props-v1/PROTOCOL.md`, registered in `backtest/eval_windows/nfl_props_v1.json`. This draft is kept as history.
+
+**Status (as drafted):** a draft for the owner, not yet signed. Registering it is an owner step:
 - an entry in `backtest/eval_windows/` with this file's sha256;
 - this file is then frozen, and any change needs a new version.
 

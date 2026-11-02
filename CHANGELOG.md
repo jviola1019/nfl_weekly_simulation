@@ -4,6 +4,24 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### `nfl_props_v1` signed, and the weekly program on a timer (2026-11-02)
+
+- **Signed before week 9's first kickoff:** `reports/2026-11-02/props-v1/PROTOCOL.md`, registered in `backtest/eval_windows/nfl_props_v1.json` with its sha256 and the scoring code's. It tests P1–P6 (Holm, one-sided 5%) once, on 2026 weeks 9–18.
+  - P1–P4 are Kalshi price relations.
+  - P5 and P6 test our props model.
+- **The props model under test** is the code of commit `4c1c377`, whose week-7 run produced P5's and P6's evidence.
+  - It runs from its own checkout, with that run's package set (`module_packages.csv`, 219 packages; dplyr 1.1.4, where the user library has 1.2.0).
+  - Later fixes (#216, #220, #230) are not part of this test.
+- **The final scorer** (`props_v1_score.R`) copies the exploration's code with only a filter to the scored weeks. It refuses to run unless the registered files are unchanged and committed.
+  - **Known answer:** on weeks 1–7 it reproduces every effect the protocol was built on (P1 0.0097, P2 0.809, P3 1.264, P4 0.120, P5 0.260, P6 0.0428). `tests/testthat/test-props-v1-protocol.R` checks this.
+- **Weekly reports are interim.** The draft ruled out interim looks; the signed text allows labelled interim reports on which nothing is decided.
+- **The weekly program on a timer** (`prospective_dispatch.R`):
+  - **Runs:** each week's runs, snapshots, Kalshi fetch and score, for weeks 9–18.
+  - **Rules:** each step runs once, with deadlines, retries and an atomic lock.
+  - **Started by:** `prospective_loop.sh` in a shell, or by a Windows scheduled task registered with `register_prospective_task.ps1`. The owner runs that script.
+  - **Store:** it writes to a private local store outside the system temp folder.
+- **The weekly score now fits the props model's dispersion on every earlier week the store holds** (`weekly_prospective.sh`). Before, it used weeks 1–7 only.
+
 ### Value hypotheses, every venue, and our model against the books (2026-10-29 to 2026-11-02)
 
 - **The report:** `reports/2026-10-29/hypotheses/HYPOTHESES.md`. Families A–H were fixed in `PLAN.md` (`d9367fd`) before 2026 week 8; K and M were added at the owner's later requests.
@@ -30,7 +48,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - **It does not pay at one book:** the flat ROI is −2.6% (−16% to +11%), and ESPN BET's median opening overround is 397 bps.
   - **Open caveat:** if openers were posted before the previous week's games, part of the CLV is look-ahead. ESPN keeps no line history for 2023–2024, and the 2026 capture archive cannot see an earlier opener until #217 (`opener_timing.R`). Elo's null argues against pure look-ahead.
   - **Props:** the projections predict Kalshi's last-day drift (Family G 0.032, p 2×10⁻¹⁴; the module 0.043, p 0.0004), but by about a quarter of a cent, below Kalshi's fees.
-- **The forward test** (`weekly_prospective.sh`, `score_week.R`, with the shared props code in `props_frame.R`) runs on week 9 from the session's private store. Scoring is on 2026-11-10.
+- **The forward test** (`weekly_prospective.sh`, `score_week.R`, with the shared props code in `props_frame.R`) runs on weeks 9–18 from a private local store; week 9 is scored on 2026-11-10. Since 2026-11-02 it is `nfl_props_v1`'s data collection (above).
 - **`PROTOCOL_props_v1_DRAFT.md`** gains P6, the module's timing, as a price relation. P5's code is `score_week.R`.
 
 ### Feasibility research (2026-10-28 to 29): can a model beat the market, with significance?
