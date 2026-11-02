@@ -56,6 +56,15 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - Integrity: 63 passed, 0 failed.
   - `audit_verify.R`: 32 PASS, 0 FAIL.
   - `check_odds_api_callgraph.R`: exit 0.
+### Fixed: player projections no longer see the games after the week they project (2026-11-02)
+
+- **The look-ahead.** `load_player_projections()` (`sports/nfl/props/data_sources.R`) took a `week` argument but never used it. A run for a past week therefore averaged in every later game of that season, including the projected week's own game.
+  - Found by HYPOTHESES.md §13 on `research/hypotheses`, which could test the props module only on the one week its run was made in advance.
+- **Now** only the target season's games before `week` count. Earlier seasons count whole, and `week = NULL` keeps every game.
+- **The fallback** for a season without data now passes `week = NULL` for the past season. It counts that season whole, exactly as before.
+- **No change to a run made before its week:** no later games exist at that time. Neither the golden master (game model only) nor any committed output is affected.
+- **The function's comment** said "rolling averages with recency weighting". It now says what the code does: an equal-weight mean over the loaded seasons.
+- **Test:** `tests/testthat/test-props-projection-week.R` (it failed before the fix: 6 games and 50 yards instead of 5 and 30).
 
 ### A0: the odds capture sees every game before the close, on time, and is kept (owner, 2026-10-19)
 
