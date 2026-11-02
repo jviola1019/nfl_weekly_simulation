@@ -64,8 +64,35 @@ select_capture_events <- function(events, now, horizon_hours) {
   events[which(keep), , drop = FALSE]
 }
 
-espn_scoreboard_url <- function() {
-  paste0(ESPN_SITE_BASE, "/scoreboard")
+#' The season, season type (1 preseason, 2 regular season, 3 postseason) and week an ESPN
+#' scoreboard response lists; NULL when the response names none
+parse_espn_scoreboard_week <- function(json_text) {
+  sb <- jsonlite::fromJSON(json_text, simplifyVector = FALSE)
+  year <- sb$season$year
+  type <- sb$season$type
+  week <- sb$week$number
+  if (is.null(year) || is.null(type) || is.null(week)) return(NULL)
+  list(year = as.integer(year), type = as.integer(type), week = as.integer(week))
+}
+
+#' The ESPN week after `wk`. ESPN numbers the regular season 1-18 (type 2) and the postseason
+#' 1-5 (type 3: wild card to the Super Bowl, the Pro Bowl in week 4). NULL after the Super Bowl
+#' and for any other season type (the preseason and the off-season are not captured).
+espn_next_week <- function(wk) {
+  last <- switch(as.character(wk$type), `2` = 18L, `3` = 5L, NULL)
+  if (is.null(last)) return(NULL)
+  if (wk$week < last) return(list(year = wk$year, type = wk$type, week = wk$week + 1L))
+  if (wk$type == 2L) return(list(year = wk$year, type = 3L, week = 1L))
+  NULL
+}
+
+#' ESPN's site scoreboard: ESPN's current week, or a named week. ESPN's current week stays on
+#' the week just played until ESPN rolls it over (on Tuesday 2026-10-20 it still listed week 6,
+#' every game final), and ESPN refuses a dates=YYYYMMDD-YYYYMMDD range (HTTP 400, probed
+#' 2026-10-21), so the capture also asks for the next week by number.
+espn_scoreboard_url <- function(week = NULL) {
+  if (is.null(week)) return(paste0(ESPN_SITE_BASE, "/scoreboard"))
+  sprintf("%s/scoreboard?seasontype=%d&week=%d&dates=%d", ESPN_SITE_BASE, week$type, week$week, week$year)
 }
 
 espn_game_odds_url <- function(event_id) {
@@ -200,8 +227,20 @@ run_capture <- function(root, cfg, now = Sys.time(), sources = c("espn", "kalshi
       if (is.null(cfg$game_horizon_hours)) {
         stop("run_capture: cfg$game_horizon_hours is missing (config.R CAPTURE_ESPN_GAME_HORIZON_HOURS)", call. = FALSE)
       }
-      targets <- capture_targets(parse_espn_scoreboard(sb_text), now,
-                                 cfg$game_horizon_hours, cfg$horizon_hours)
+      # ESPN's current week can still be the week just played, so read the next week as well
+      events <- parse_espn_scoreboard(sb_text)
+      sb_week <- parse_espn_scoreboard_week(sb_text)
+      next_week <- if (is.null(sb_week)) NULL else espn_next_week(sb_week)
+      if (!is.null(next_week)) {
+        next_text <- fetch("espn_scoreboard",
+                           sprintf("scoreboard_%d_t%d_w%02d", next_week$year, next_week$type, next_week$week),
+                           espn_scoreboard_url(next_week))
+        if (!is.null(next_text)) {
+          upcoming <- parse_espn_scoreboard(next_text)
+          events <- rbind(events, upcoming[!upcoming$event_id %in% events$event_id, , drop = FALSE])
+        }
+      }
+      targets <- capture_targets(events, now, cfg$game_horizon_hours, cfg$horizon_hours)
       message(sprintf("ESPN: %d game(s) within %sh (game odds), %d within %sh (props)",
                       length(targets$game), cfg$game_horizon_hours,
                       length(targets$props), cfg$horizon_hours))
