@@ -6,11 +6,17 @@
  */
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
+import { cache } from "react";
 import { getDb } from "../../db";
 import * as s from "../../db/schema";
-import { deskCandidate } from "../policy";
+import { deskCandidate, type GateRow } from "../policy";
 
-export async function pointerRun(pointer: "weekly" | "backtest_games") {
+/*
+ * React cache() makes a query that several parts of one page render ask for (the layout, the
+ * page and its generateMetadata) run once per request. Outside a server render it is a plain
+ * call, so the tests below see every query.
+ */
+export const pointerRun = cache(async (pointer: "weekly" | "backtest_games") => {
   const db = getDb();
   const rows = await db
     .select({ run: s.modelRuns })
@@ -18,7 +24,7 @@ export async function pointerRun(pointer: "weekly" | "backtest_games") {
     .innerJoin(s.modelRuns, eq(s.modelRuns.runId, s.publishPointers.runId))
     .where(eq(s.publishPointers.pointer, pointer));
   return rows[0]?.run ?? null;
-}
+});
 
 export interface SlateGame {
   gameId: string;
@@ -37,7 +43,7 @@ export interface SlateGame {
 }
 
 /** Public slate: games of the published weekly run with the no-vig market only. */
-export async function publicSlate(): Promise<{ run: Awaited<ReturnType<typeof pointerRun>>; games: SlateGame[] }> {
+export const publicSlate = cache(async (): Promise<{ run: Awaited<ReturnType<typeof pointerRun>>; games: SlateGame[] }> => {
   const run = await pointerRun("weekly");
   if (!run) return { run: null, games: [] };
   const db = getDb();
@@ -58,7 +64,7 @@ export async function publicSlate(): Promise<{ run: Awaited<ReturnType<typeof po
     .where(and(eq(s.gamePredictions.runId, run.runId), eq(s.gamePredictions.candidate, "C0")))
     .orderBy(asc(s.games.kickoffUtc), asc(s.games.gameId));
   return { run, games: rows };
-}
+});
 
 /** Candidate probabilities for games of the published weekly run (restricted list). */
 export async function candidateLines(runId: string, candidates: string[], gameIds?: string[]) {
@@ -94,11 +100,27 @@ export async function gameDistributions(runId: string, gameId: string): Promise<
   };
 }
 
-export async function publicGame(gameId: string) {
+export const publicGame = cache(async (gameId: string) => {
   const { run, games } = await publicSlate();
   const game = games.find((g) => g.gameId === gameId) ?? null;
   return { run, game };
-}
+});
+
+/**
+ * The promotion gates of the published backtest, as far as the public field-line policy reads
+ * them (candidate and Brier status), in one query. The home and game pages need only this,
+ * not the seven queries of evidence(); with no published backtest it is empty, as
+ * evidence() being null was.
+ */
+export const publicGates = cache(async (): Promise<GateRow[]> => {
+  return getDb()
+    .select({ candidate: s.promotionGates.candidate, brierStatus: s.promotionGates.brierStatus })
+    .from(s.publishPointers)
+    .innerJoin(s.backtestRuns, eq(s.backtestRuns.runId, s.publishPointers.runId))
+    .innerJoin(s.promotionGates, eq(s.promotionGates.btRunId, s.backtestRuns.btRunId))
+    .where(eq(s.publishPointers.pointer, "backtest_games"))
+    .orderBy(asc(s.promotionGates.candidate));
+});
 
 export async function evidence() {
   const db = getDb();

@@ -1,6 +1,7 @@
 "use client";
 
 import { scaleLinear } from "@visx/scale";
+import { DataTable } from "@/components/ui";
 import { candidateLabel } from "@/lib/policy";
 import { signedPct } from "@/lib/format";
 import { ChartFigure, LineKey } from "./ChartFigure";
@@ -48,27 +49,32 @@ export function SkillIntervals({ rows, splitLabel }: { rows: SkillRow[]; splitLa
       title={`Brier skill vs the market, ${splitLabel}`}
       summary={summary}
       legend={
-        <div className="flex flex-wrap gap-x-5">
+        <div className="flex flex-wrap gap-x-stack">
           <LineKey color="var(--market)" label="Market (zero skill)" />
           <LineKey color="var(--ink)" label="Candidate skill, 95% interval" marker />
         </div>
       }
       table={
-        <table className="num w-full text-left">
-          <thead className="text-ink-2">
-            <tr><th className="py-1 pr-4 font-normal">Candidate</th><th className="pr-4 font-normal">Brier</th><th className="pr-4 font-normal">Skill</th><th className="font-normal">95% interval</th></tr>
-          </thead>
-          <tbody>
-            {data.map((d) => (
-              <tr key={d.candidate} className="border-t border-rule">
-                <td className="py-1 pr-4">{candidateLabel(d.candidate)}</td>
-                <td className="pr-4">{d.brier.toFixed(4)}</td>
-                <td className="pr-4">{signedPct(d.skill)}</td>
-                <td>{signedPct(d.skillLo)} to {signedPct(d.skillHi)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <DataTable
+          caption={`Brier skill vs the market, ${splitLabel}, every candidate`}
+          numeric
+          dense
+          columns={[
+            { key: "candidate", header: "Candidate", rowHeader: true },
+            { key: "brier", header: "Brier" },
+            { key: "skill", header: "Skill" },
+            { key: "interval", header: "95% interval" }
+          ]}
+          rows={data.map((d) => ({
+            key: d.candidate,
+            cells: {
+              candidate: candidateLabel(d.candidate),
+              brier: d.brier.toFixed(4),
+              skill: signedPct(d.skill),
+              interval: `${signedPct(d.skillLo)} to ${signedPct(d.skillHi)}`
+            }
+          }))}
+        />
       }
     >
       <ChartTooltip>

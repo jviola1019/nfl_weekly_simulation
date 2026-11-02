@@ -6,6 +6,24 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 
 The keyless odds layer is in `R/odds/` (see CHANGELOG, "D1"). **Objective:** one HTTP layer, three providers, the `odds_snapshots` shape, the closing rule, the 2023–2024 ESPN opener/closer archive, forward capture on the same code. **Done:** all of it, tests with recorded fixtures only; the live smoke (`scripts/odds_live_smoke.R`) and a live capture passed on 2026-10-27. **Not done:** player alias tables (snapshots carry `player_key`), Kalshi spread/total series, owner sign-off of the terms matrix; the raw ESPN responses are not committed (16.4 MB as received; sha256 in `backtest/data/odds_archive/SOURCES.json`). **Confirmed facts:** the archive has 570 games, no 2025 row; complete ESPN BET moneyline opener-and-closer pairs cover 205 of 285 games of 2023 and 284 of 285 of 2024; every request is floored at 1 per second per domain (`CAPTURE_MIN_INTERVAL_SEC` is 1). **Open risks:** ESPN's endpoints are undocumented; the openers/closers carry no timestamp. **Next target:** G3 reads the archive and appends 2025 only in its Holdout build, after the freeze.
 
+## Track B2 (feat/b2-tokens-components): tokens, components, context and professional HTML
+
+2026-10-26. Branch `feat/b2-tokens-components` from `main` at `4c1c377`, draft PR against `main` (never merged by the agent). Web app only: no R, `contracts/` or schema file changed, no dependency added, no file deleted. What changed is in CHANGELOG "B2"; the plan is `docs/superpowers/plans/2026-10-19-b2-tokens-components.md` (13 tasks, each with its RED and GREEN; Tasks 1–3 by subagents with task reviews, Tasks 4–13 inline by the controller; the ledger and its rulings are in `.superpowers/sdd/2026-10-19-b2-tokens-components/progress.md`).
+
+**Gate results (the branch, 2026-10-26):**
+- Web: typecheck and lint exit 0; vitest 31 files, 192 tests with `REQUIRE_DB_TESTS=1` (baseline 18 files, 126 tests); Playwright on the fixtures `112 passed`, `60 skipped` (baseline 70 passed); `@sim` 11 passed and the seven run-reading specs 35 passed on the simulator run; `@parity` offline writes 60 snapshots and online matches all 60 at maxDiffPixels 0 / threshold 0, and a wrong baseline fails (861,285 differing pixels); axe with the best-practice rules finds 0 violations on every page, width and scheme; review-ui 48 rows, overflow 0, errors 0, no serious axe rule, no leaks, on both trees and both data states.
+- R: `verify_repo_integrity.R` exit 0, `Total: 63 passed, 0 failed`. The other R gates were not run: no R file changed.
+- Lighthouse 13.5.0 mobile, five interleaved rounds, one machine (other R jobs running), `main` against the branch, median LCP: home 2.52 s against 2.67 s, game 2.78 s against 2.82 s, evidence 2.85 s against 2.88 s; performance 0.88, 0.89, 0.80 against 0.89, 0.89, 0.80; total blocking time 374, 316, 643 ms against 336, 311, 599 ms. The branch is within 0.25 s of `main` on every page and no worse on performance or blocking time.
+
+**Open items:**
+- The 2.5 s mobile LCP gate is unmet on every page on both trees on the measuring machine (the dry run, on a quieter machine, met it on the home page only). Confirm on CI or a reference machine. The levers left (font subsetting, less chart code on evidence) are owner decisions; `loading.tsx` and `experimental.inlineCss` were measured and rejected.
+- Under heavy machine load (other lanes' R suites), Playwright cases can exceed their 30 s timeout (`offline.spec.ts` passed alone in 12.7 s) and `scripts/local/discover.test.ts` (a synchronous fixture copy) can exceed its 5 s timeout. The dry run saw one `e2e/id-leaks.spec.ts` failure right after a database reset that did not recur. Re-run before investigating.
+- Login and not-found show no run data and carry no run line (the plan's reading of "every page states its run").
+
+**Owner decisions pending:** merge approval; no root `loading.tsx`; the theme choice in the footer; the consolidated type sizes (22 to 24, 17 to 18, 13 to 14 px, strip team codes 22 to 20 px); font subsetting.
+
+**Context-reset packet:** objective: one token and component system, context on every number, professional HTML, with no slower first load. Done: Tasks 1 to 13 with every gate above. Not done: the owner's merge; the LCP gate on the game page and evidence. Confirmed facts: the gates above. Open risks: LCP on a reference machine; the `id-leaks` flake. Next target: the owner's review of the draft PR and its screenshots; B3 (React Bits) and B4 (editing and offline features) are separate tracks.
+
 ## Previous state — A8 (feat/a8-local-app)
 
 2026-10-13. Branch `feat/a8-local-app` (base `4f9aad3`; `main` at `28e4ed7`, with #210, merged in on 2026-10-13), draft PR #212 against `main` (never merged by the agent). The final whole-branch review returned "with fixes"; the fix wave below applied them and the owner's four decisions, and every gate was re-run on the merged branch.

@@ -131,7 +131,7 @@ export function ScoreDistributionPlot({
       {focused ? (
         <div
           role="status"
-          className="pointer-events-none absolute z-10 rounded-[3px] border border-rule bg-surface px-2 py-1 text-sm"
+          className="pointer-events-none absolute z-10 rounded-control border border-rule bg-surface px-2 py-1 text-sm"
           style={{ left: Math.min(Math.max(0, x(focused.x) + 12), Math.max(0, W - 170)), top: 40 }}
         >
           <div className="num font-semibold text-ink">{share(focused.p)} of simulated games</div>

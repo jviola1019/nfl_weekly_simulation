@@ -33,3 +33,19 @@ export async function drawLazyCharts(page: Page) {
   if (n > 0) await expect(page.locator("[data-plot-slot] svg[role=img]")).toHaveCount(n);
   await page.evaluate(() => window.scrollTo(0, 0));
 }
+
+/** The game links on the home page, so a spec works on any published run (the fixture or a run_week.R bundle). */
+export async function gameHrefs(page: Page, limit = 4): Promise<string[]> {
+  await page.goto("/");
+  const hrefs = await page
+    .locator('a[href^="/games/"]')
+    .evaluateAll((els, n) => [...new Set(els.map((e) => e.getAttribute("href") ?? ""))].slice(0, n), limit);
+  expect(hrefs.length, "game links on the home page").toBeGreaterThan(0);
+  return hrefs;
+}
+
+/** The public pages for a run-independent spec: the fixed routes plus the first game of the published run. */
+export async function publicPagesOfRun(page: Page): Promise<string[]> {
+  const [game] = await gameHrefs(page, 1);
+  return ["/", game!, "/props", "/evidence", "/methodology", "/data-health", "/login"];
+}
