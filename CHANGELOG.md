@@ -65,6 +65,26 @@ All notable changes to the NFL Prediction Model are documented in this file.
 - **No change to a run made before its week:** no later games exist at that time. Neither the golden master (game model only) nor any committed output is affected.
 - **The function's comment** said "rolling averages with recency weighting". It now says what the code does: an equal-weight mean over the loaded seasons.
 - **Test:** `tests/testthat/test-props-projection-week.R` (it failed before the fix: 6 games and 50 yards instead of 5 and 30).
+### C1: the week to simulate is the upcoming week, never a fixed 2025 week 22 (owner, 2026-10-20)
+
+- **Before:**
+  - `config.R` defaulted to `SEASON` 2025 and `WEEK_TO_SIM` 22, so a run without arguments simulated a sealed season's Super Bowl.
+  - `AUTO_RESOLVE_WEEK` (FALSE) and four other resolver settings were read by nothing.
+  - `weekly-sim.yml` stayed manual because of that default.
+- **Now:**
+  - With no week given, `run_week.R` takes the earliest week of the nflverse schedule that still has a game to kick off, from `resolve_run_target()` and `resolve_target_week()` in `R/run_config.R`. It prints `Auto-resolved <season> week <w> (<n> games, first kickoff ...)`.
+  - A week given alone means the season in progress.
+  - A schedule that cannot load stops the run and names the command to use.
+  - `config.R` sourced on its own falls back to `nfl_calendar_week()` and says so.
+- **Removed:** the five unread resolver settings (`AUTO_RESOLVE_WEEK`, `TARGET_DATETIME`, `TIMEZONE`, `WEEK_BUFFER_PRE`, `WEEK_BUFFER_POST`). None had a reader in any `.R`, `.yml` or `.ts` file.
+- **Workflow:**
+  - `weekly-sim.yml` runs at the two decision points (Tuesday 18:00Z and Friday 21:00Z) for the resolved week, through `scripts/resolve_week.R`.
+  - A manual run may name a week and season.
+  - The 2025 refusal now checks the resolved season.
+- **Tests:**
+  - `test-run-config.R`: the calendar, the target week across a week's kickoffs, the stops, and resolution before `config.R`.
+  - `test-workflows.R`: the crons, the optional inputs, and the step order.
+  - The suite pins its old context (2025 week 22) in `tests/testthat/setup.R`.
 
 ### A0: the odds capture sees every game before the close, on time, and is kept (owner, 2026-10-19)
 

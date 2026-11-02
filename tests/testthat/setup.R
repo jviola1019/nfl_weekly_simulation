@@ -58,6 +58,11 @@ source_module <- function(module_name) {
   message(sprintf("  Loaded: R/%s.R", module_name))
 }
 
+# A fixed run context for the whole suite (C1, 2026-10-20). Without options, config.R now falls
+# back to the calendar week, so the suite pins the week it was written against (2025 week 22)
+# rather than depend on today's date. Tests that need another context set their own options.
+options(nfl.season = 2025L, nfl.week = 22L)
+
 # Load config.R first (defines all global parameters)
 config_path <- file.path(PROJECT_ROOT, "config.R")
 if (!file.exists(config_path)) stop("Test setup: config.R not found at: ", config_path, call. = FALSE)
