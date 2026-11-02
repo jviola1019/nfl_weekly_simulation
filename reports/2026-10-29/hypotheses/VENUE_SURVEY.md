@@ -106,3 +106,7 @@ Files: `out/venues/snapshots.csv`, `snapshot_summary__*`, `out/props/props_summa
 - They show prices at one moment, not whether a bet could be filled or for how much. Pinnacle's limits are in each response; book limits and exchange depth are not.
 - One evening of one week is far too little to say whether the positive sides are real value or noise.
 - A prospective series of snapshots over weeks 9–18, with closing-line value as the measure, is in HYPOTHESES.md §14.
+- **Week 9's series is scheduled** (HYPOTHESES.md §15; `weekly_prospective.sh`):
+  - snapshots at each decision point and an hour before each kickoff window;
+  - scored by `score_week.R` after Monday night's game, on 2026-11-10.
+  - Its raw responses stay in the session's private store.

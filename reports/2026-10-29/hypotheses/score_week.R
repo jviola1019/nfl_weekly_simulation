@@ -153,6 +153,8 @@ if (length(RUN)) {
     mp <- module_props(k, st, ev, WEEK, fread(file.path(RUN, "baseline_props.csv")), cn)
     outs$props_tests <- mp$tests; outs$props_bets <- mp$bets; outs$props_by_stat <- mp$by_stat; outs$props_timing <- mp$timing
     meta$props_contracts <- nrow(mp$pr)
+    # the matched contracts (Kalshi's prices and our projections only), so the protocol can pool weeks after week 18
+    fwrite(mp$pr[, .(ticker, game_id, stat, kk, bid, ask, mid, yk, p_mod, p_g)], file.path(out, sprintf("w%02d_props_contracts.csv.gz", WEEK)))
   }
 }
 

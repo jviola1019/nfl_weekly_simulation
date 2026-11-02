@@ -24,6 +24,14 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - stop trying to make the game model beat the close;
   - give props one pre-registered season-long test;
   - pursue timing (CLV) and price-relative betting against a sharp reference.
+- **Family T, timing (§15, `opener_clv.R`):**
+  - **T1 replicates v1's lead on 2023.** The EPA model C2's picks at ESPN BET's opener gain +85 bps of CLV (141 picks, one-sided p 0.008). This uses D1's 2023 openers and v1's own predictions, rule and bootstrap; 2024 recomputes exactly.
+  - **Pooled** over both seasons it is +90 bps (+47 to +135), and +103 bps where no starter changed, so it is not v1's starter caveat.
+  - **It does not pay at one book:** the flat ROI is −2.6% (−16% to +11%), and ESPN BET's median opening overround is 397 bps.
+  - **Open caveat:** if openers were posted before the previous week's games, part of the CLV is look-ahead. ESPN keeps no line history for 2023–2024, and the 2026 capture archive cannot see an earlier opener until #217 (`opener_timing.R`). Elo's null argues against pure look-ahead.
+  - **Props:** the projections predict Kalshi's last-day drift (Family G 0.032, p 2×10⁻¹⁴; the module 0.043, p 0.0004), but by about a quarter of a cent, below Kalshi's fees.
+- **The forward test** (`weekly_prospective.sh`, `score_week.R`, with the shared props code in `props_frame.R`) runs on week 9 from the session's private store. Scoring is on 2026-11-10.
+- **`PROTOCOL_props_v1_DRAFT.md`** gains P6, the module's timing, as a price relation. P5's code is `score_week.R`.
 
 ### Feasibility research (2026-10-28 to 29): can a model beat the market, with significance?
 

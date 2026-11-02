@@ -64,8 +64,17 @@ wk_f <- factor(x23$wk[keep]); counts <- bt_boot_counts(nlevels(wk_f), BT_BOOT_B,
 clv_b <- drop(counts %*% as.numeric(tapply(clv, wk_f, sum))) / drop(counts %*% n_w)
 t1 <- data.table(id = "T1", test = "C2's mean CLV at the ESPN BET opener, 2023, is above 0 (one-sided)", picks = sum(keep), mean_clv_bps = mean(clv),
                  lo = stats::quantile(clv_b, 0.05), p_one_sided = mean(clv_b <= 0), games_2023 = nrow(x23), games_2024 = d[season == 2024, .N])
-data_chk <- data.table(check = c("2023 games with an ESPN BET moneyline open and close", "2024 games with one", "D1's 2024 prices identical to v1's inputs (share)"),
-                       value = c(mk[game_id %in% d[season == 2023, game_id], .N], mk[game_id %in% d[season == 2024, game_id], .N], agree_share))
+ovr <- d[, 1 / bt_amer_to_dec(h_open) + 1 / bt_amer_to_dec(a_open) - 1]   # the opener's margin: the two sides' implied probabilities sum to 1 plus this
+data_chk <- data.table(check = c("2023 games with an ESPN BET moneyline open and close", "2024 games with one", "D1's 2024 prices identical to v1's inputs (share)",
+                                 "ESPN BET's median moneyline overround at the open, 2023-2024 (bps of probability over both sides)"),
+                       value = c(mk[game_id %in% d[season == 2023, game_id], .N], mk[game_id %in% d[season == 2024, game_id], .N], agree_share, 10000 * stats::median(ovr)))
+# dose and response (descriptive): C2's CLV by the size of its disagreement with the opener, both seasons pooled
+dr <- d[, .(game_id, season, wk, edge = p_c2 - p_open, p_open, p_close_venue)][abs(edge) >= TAU]
+dr[, `:=`(band = cut(abs(edge), c(TAU, 0.05, 0.08, 1), right = FALSE, labels = c("3-5 points", "5-8 points", "8+ points")),
+          clv = 10000 * fifelse(edge > 0, p_close_venue - p_open, p_open - p_close_venue))]
+dose <- dr[, .(picks = .N, mean_clv_bps = mean(clv), se_bps = stats::sd(clv) / sqrt(.N)), by = band][order(band)]
+fwrite(dose[, lapply(.SD, function(v) if (is.numeric(v)) signif(v, 4) else v)], file.path(out, "opener_clv_by_edge.csv"))
+print(dose)
 fwrite(res[, lapply(.SD, function(v) if (is.numeric(v)) signif(v, 4) else v)], file.path(out, "opener_clv.csv"))
 fwrite(t1[, lapply(.SD, function(v) if (is.numeric(v)) signif(v, 4) else v)], file.path(out, "opener_clv_t1.csv"))
 fwrite(data_chk, file.path(out, "opener_clv_data_checks.csv"))

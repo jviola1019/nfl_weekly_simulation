@@ -15,11 +15,13 @@ Two significant mispricings from the exploration (`HYPOTHESES.md`, 2026 weeks 1�
 | P3 | The interception ladder is compressed | calibration slope > 1 | 1.26 (1.07–1.46) | 0.95 |
 | P4 | Position-group teammates of a player absent by snap counts are underpriced | calibration-in-the-large > 0 | +0.12, p 0.067 | 0.57 |
 | P5 | The props module's projected means add information to Kalshi's close | coefficient of (logit model − logit close) with the close as offset > 0 (HYPOTHESES.md §13) | 0.26 (−0.09 to +0.61), p 0.066, week 7 only | ≈1.00 on weeks 9–18 |
+| P6 | The props module's projection predicts Kalshi's move from 24 h before kickoff to the close | slope of (logit close − logit 24 h) on (logit model − logit 24 h) > 0 (HYPOTHESES.md §15) | 0.043 (0.022–0.064), p 0.0004, week 7 only. Family G, weeks 2–7: 0.032, p 2×10⁻¹⁴ | not computed; G's p suggests ≈1.00 |
 
 - **Power** comes from `out/protocol_power.csv`, at the effect seen.
 - **The seen effects are selected,** so their power is an upper bound. P3, P4 and P5 were found by looking.
 - **P5 rests on one week.** At Family G's smaller coefficient of 0.09, a season gives roughly three chances in four (`P-G`).
-- **P5 was added 2026-11-02,** after the owner asked whether our model beats any book.
+- **P5 and P6 were added 2026-11-02,** after the owner asked whether our model beats any book and to complete the tests.
+- **P6 is a price relation, like P1 and P2.** Week 7's drift is about a quarter of a cent a contract, below Kalshi's fees, so confirming it is not a betting edge.
 
 **Secondary, reported but not confirmatory:**
 - P1's pair trade as a maker at the mids, net of the 0.0175 maker fee (+0.50¢ per pair in weeks 1–7);
@@ -45,9 +47,9 @@ Two significant mispricings from the exploration (`HYPOTHESES.md`, 2026 weeks 1�
   - `kalshi_consistency.R` (A3 for P1, A5 for P2);
   - `props_close.R` (the series fits for P3);
   - `kalshi_behaviour.R` (B1s for P4);
-  - for P5, `model_vs_books.R`'s props section, which today reads week 7 only. It must be generalised to every week with a saved run, and committed, before registration.
+  - for P5 and P6, `score_week.R` on each week's saved run (`weekly_prospective.sh`), through `props_frame.R`'s `module_props()`. That is the code that scored week 7 (HYPOTHESES.md §13, §15). The weekly results are pooled after week 18 by stacking each week's matched contracts.
 - **Each runs once,** after week 18, on the new games only.
-- **Holm over P1–P5** at a one-sided 5%.
+- **Holm over P1–P6** at a one-sided 5%.
 - **A hypothesis is confirmed** if its Holm-adjusted p < 0.05.
 - **It is economically confirmed** only if its after-cost return's 95% interval (games resampled) lies above 0.
 - **A confirmed P1 or P2 is a price relation,** not a betting edge, until a live test shows maker fills at the tested prices. That live test is the owner's decision.
@@ -58,4 +60,4 @@ Two significant mispricings from the exploration (`HYPOTHESES.md`, 2026 weeks 1�
 1. Sign and register this protocol before week 9 kicks off, so that most of weeks 8–18 count.
 2. Whether a live maker test of P1 (small size, protected YES bid against unprotected YES offer) is wanted. It is the only way to measure fills and adverse selection.
 3. Kalshi's 2025 history stays sealed here. A separate protocol could use it as a tuning season.
-4. Whether to include P5. It needs a `run_week.R` run before every week, which is manual until the weekly schedule (#215) is merged.
+4. Whether to include P5 and P6. They need a `run_week.R` run before every week. Week 9's runs are scheduled in the session store, and later weeks are manual until the weekly schedule (#215) is merged.
