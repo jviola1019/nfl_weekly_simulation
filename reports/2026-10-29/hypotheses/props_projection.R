@@ -91,6 +91,26 @@ res <- rbindlist(list(g1, g2), fill = TRUE)
 res[, q_bh := NA_real_][id == "G1", q_bh := p]
 fwrite(signif_dt(res), file.path(out, "projection_tests.csv"))
 fwrite(signif_dt(by_stat), file.path(out, "projection_by_stat.csv"))
+
+# Timing (added 2026-11-02, HYPOTHESES.md §15): does the projection, known before the week, predict Kalshi's move from 24 hours
+# before kickoff to the close? GT1: the coefficient of (logit close - logit 24h) on (logit model - logit 24h), clustered by
+# game (H1 > 0); GT2: the CLV of picks where the model differs from the 24-hour mid by at least 5 points
+tm <- merge(d, cn[, .(ticker, bid24 = bid_24h, ask24 = ask_24h)], by = "ticker")
+tm <- tm[is.finite(bid24) & is.finite(ask24) & ask24 > 0 & ask24 >= bid24 & ask24 - bid24 <= MAX_SPREAD][, mid24 := (bid24 + ask24) / 2][mid24 > 0 & mid24 < 1]
+tm[, `:=`(move = lg(mid) - lg(mid24), lean = lg(p_model) - lg(mid24))]
+mt <- stats::lm(move ~ lean, data = tm); Vt <- sandwich::vcovCL(mt, cluster = tm$game_id, type = "HC1"); Gt <- uniqueN(tm$game_id)
+bt_ <- unname(stats::coef(mt)["lean"]); set_ <- sqrt(Vt["lean", "lean"])
+tm[, side := fcase(p_model - mid24 >= 0.05, "yes", p_model - mid24 <= -0.05, "no", default = "none")]
+pk <- tm[side != "none"][, clv_bps := 10000 * fifelse(side == "yes", mid - mid24, mid24 - mid)]
+gg2 <- unique(pk$game_id)
+bc <- replicate(2000, { bb <- pk[data.table(game_id = sample(gg2, replace = TRUE)), on = "game_id", allow.cartesian = TRUE]; mean(bb$clv_bps) })
+timing <- data.table(id = c("GT1", "GT2"), test = c("the projection predicts the move from 24 h before kickoff to the close (one-sided > 0)",
+                                                     "mean CLV (bps) of picks 5+ points from the 24-hour mid, to the close"),
+                     contracts = nrow(tm), games = Gt, picks = c(NA, nrow(pk)), estimate = c(bt_, mean(pk$clv_bps)),
+                     lo = c(bt_ - stats::qt(0.975, Gt - 1) * set_, stats::quantile(bc, 0.025)), hi = c(bt_ + stats::qt(0.975, Gt - 1) * set_, stats::quantile(bc, 0.975)),
+                     p_one_sided = c(stats::pt(-bt_ / set_, Gt - 1), mean(bc <= 0)))
+fwrite(signif_dt(timing), file.path(out, "projection_timing.csv"))
+print(signif_dt(timing, 4))
 options(width = 200)
 print(signif_dt(res, 4)); print(signif_dt(by_stat, 4))
 cat(sprintf("\nplayer-weeks projected: %d; contracts matched: %d of the ladders' %d at the close\n", nrow(proj), nrow(d), nrow(st)))

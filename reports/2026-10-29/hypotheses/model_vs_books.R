@@ -15,6 +15,7 @@ args <- commandArgs(trailingOnly = TRUE)
 opt <- function(name) strsplit(sub(sprintf("^--%s=", name), "", grep(sprintf("^--%s=", name), args, value = TRUE)), ",", fixed = TRUE)[[1]]
 out <- grep("^--", args, value = TRUE, invert = TRUE)[1]; inp <- file.path(out, "inputs")
 source(file.path("reports", "2026-10-28", "feasibility", "props_common.R"))
+source(file.path("reports", "2026-10-29", "hypotheses", "props_frame.R"))   # info_test, module_props
 options(timeout = 600)
 read_gz <- function(f) as.data.table(utils::read.csv(gzfile(f), stringsAsFactors = FALSE))
 dec <- function(o) ifelse(o < 0, 1 + 100 / -o, 1 + o / 100)
@@ -88,68 +89,12 @@ lad[, x := as.numeric(sub("^.*[Oo]ver ([0-9.]+)( points)?.*$", "\\1", label))]
 lad[, p_model := fifelse(series == "KXNFLTOTAL", mapply(function(i, xx) p_gt(i, "total", xx), game_id, x),
                          fifelse(same(team, home_team), mapply(function(i, xx) p_gt(i, "margin", xx), game_id, x), mapply(function(i, xx) 1 - p_gt(i, "margin", -xx - 1e-9), game_id, x)))]
 lad <- lad[is.finite(x) & is.finite(p_model)][, p_model := pmin(pmax(p_model, 0.005), 0.995)]
-info_test <- function(d, y, p, mkt) { m <- stats::glm(stats::as.formula(sprintf("%s ~ offset(lg(%s)) + I(lg(%s) - lg(%s))", y, mkt, p, mkt)), family = stats::quasibinomial(), data = d)
-  V <- sandwich::vcovCL(m, cluster = d$game_id, type = "HC1"); G <- uniqueN(d$game_id); b <- unname(stats::coef(m)[2]); se <- sqrt(V[2, 2])
-  data.table(n = nrow(d), games = G, coef = b, lo = b - stats::qt(0.975, G - 1) * se, hi = b + stats::qt(0.975, G - 1) * se, p_one_sided = stats::pt(-b / se, G - 1)) }
 lad_tests <- rbindlist(lapply(c("KXNFLSPREAD", "KXNFLTOTAL"), function(s) { d <- lad[series == s]
   cbind(ladder = s, info_test(d, "yk", "p_model", "mid"), brier_kalshi = mean((d$mid - d$yk)^2), brier_model = mean((d$p_model - d$yk)^2)) }))
 
-# --- 3. props: the module's projected means against Kalshi's close, in Family G's frame --------------------------------------------
-COUNTS <- c("receptions", "carries", "completions", "attempts", "passing_tds", "touchdowns", "passing_interceptions")
-norm <- function(x) { x <- tolower(iconv(x, to = "ASCII//TRANSLIT")); x <- gsub("[.'`-]", "", x); x <- gsub("\\b(jr|sr|ii|iii|iv|v)\\b", "", x); gsub("\\s+", " ", trimws(x)) }
-abbr <- function(full) { z <- strsplit(norm(full), " ", fixed = TRUE); vapply(z, function(t) if (length(t) < 2) NA_character_ else paste(substr(t[1], 1, 1), paste(t[-1], collapse = " ")), "") }
-pr <- k[series %in% names(LADDERS)][, `:=`(kk = as.numeric(sub("^.*: ([0-9]+)\\+$", "\\1", label)), name = sub(":.*$", "", label), stat = unname(LADDERS[series]),
-                                         seg = substring(ticker, nchar(event_ticker) + 2L))]
-aliases <- function(x) c(x, switch(x, LA = "LAR", JAX = "JAC", WAS = "WSH", LV = "LVR", character(0)))
-pr[, pteam := vapply(seq_len(.N), function(i) { cand <- c(stats::setNames(aliases(home_team[i]), rep(home_team[i], length(aliases(home_team[i])))),
-                                                          stats::setNames(aliases(away_team[i]), rep(away_team[i], length(aliases(away_team[i])))))
-  hit <- cand[startsWith(seg[i], cand)]; if (length(hit)) names(hit)[which.max(nchar(hit))] else NA_character_ }, character(1))]
-pr <- pr[!is.na(kk) & !is.na(pteam)][, `:=`(key = norm(name), akey = abbr(name))]
-# Family G: each player's walk-forward EWMA (half-life 3) of his earlier 2026 games, shrunk toward listed players at his
-# position (weight n / (n + 3)); dispersion by stat and position from the earlier weeks
-ps <- as.data.table(nflreadr::load_player_stats(seasons = 2026))[season_type == "REG" & week < WEEK]
-stopifnot(nrow(ps) > 0, all(ps$season == 2026))
-z0 <- function(v) fifelse(is.na(v), 0, as.numeric(v))
-ps[, `:=`(touchdowns = z0(rushing_tds) + z0(receiving_tds) + z0(special_teams_tds), rush_rec_yards = z0(rushing_yards) + z0(receiving_yards),
-          key = norm(player_display_name), pos = fifelse(position == "FB", "RB", position))]
-long <- melt(ps[, c("player_id", "key", "team", "pos", "week", unique(LADDERS)), with = FALSE], id.vars = c("player_id", "key", "team", "pos", "week"),
-             variable.name = "stat", value.name = "v", variable.factor = FALSE)[, v := z0(v)]
-setorder(long, player_id, stat, week)
-# each row's walk-forward EWMA of the player's earlier games (half-life 3 games), as props_projection.R does
-long[, c("mu_raw", "n_prior") := { m <- rep(NA_real_, .N)
-  for (i in seq_len(.N)) if (i > 1) { w <- 0.5^((i - 1 - seq_len(i - 1)) / 3); m[i] <- sum(w * v[seq_len(i - 1)]) / sum(w) }
-  list(m, seq_len(.N) - 1L) }, by = .(player_id, stat)]
-nxt <- long[, .(mu_raw = { w <- 0.5^((.N - seq_len(.N)) / 3); sum(w * v) / sum(w) }, n_prior = .N), by = .(player_id, key, team, pos, stat)]   # for week 7
-listed <- unique(merge(st[, .(event_ticker, series, label)], ev, by = "event_ticker")[week < WEEK & series %in% names(LADDERS),
-                                                                                     .(week, key = norm(sub(":.*$", "", label)), stat = unname(LADDERS[series]))])
-prior <- merge(long, listed, by = c("week", "key", "stat"))
-tgt <- prior[, .(m_pos = mean(v)), by = .(stat, pos)]
-# dispersion by stat and position from the earlier weeks' residuals around their own projections (G's fit)
-fitd <- merge(prior[n_prior > 0], tgt, by = c("stat", "pos"))[, mu := (n_prior * mu_raw + 3 * m_pos) / (n_prior + 3)][is.finite(mu) & is.finite(v)]
-disp <- fitd[, .(theta = { e2 <- mean((v - mu)^2); mm <- mean(mu); if (is.finite(e2) && e2 > mm) mean(mu^2) / (e2 - mm) else Inf },
-                 p0 = mean(v <= 0), kappa = { pv <- v > 0; if (sum(pv) > 5) mean(mu[pv]^2) / mean((v[pv] - mu[pv])^2) else 1 }), by = .(stat, pos)]
-ew <- merge(nxt, tgt, by = c("stat", "pos"))[, mu_g := (n_prior * mu_raw + 3 * m_pos) / (n_prior + 3)]
-mod <- fread(file.path(inp, "w07_baseline_props.csv"))
-mod[, `:=`(stat = fifelse(prop_type == "anytime_td", "touchdowns", prop_type), akey = norm(sub(".", " ", player, fixed = TRUE)))]
-pr <- merge(pr, mod[, .(akey, pteam = team, stat, mu_mod = projection, p_td_mod = p_over)], by = c("akey", "pteam", "stat"))
-pr <- merge(pr, ew[, .(key, pteam = team, stat, pos, mu_g)], by = c("key", "pteam", "stat"), all.x = TRUE)
-pr <- merge(pr, disp, by = c("stat", "pos"), all.x = TRUE)
-p_of <- function(mu, stat, kk, theta, p0, kappa) fifelse(stat %in% COUNTS, 1 - stats::pnbinom(kk - 1, size = pmin(theta, 1e6), mu = pmax(mu, 1e-6)),
-  (1 - pmin(p0, 0.99)) * (1 - stats::pgamma(kk, shape = pmax(kappa, 0.05), rate = pmax(kappa, 0.05) / pmax(mu / (1 - pmin(p0, 0.99)), 1e-6))))
-pr[, `:=`(p_mod = fifelse(stat == "touchdowns" & kk == 1, p_td_mod, p_of(mu_mod, stat, kk, theta, p0, kappa)), p_g = p_of(mu_g, stat, kk, theta, p0, kappa))]
-pr <- pr[is.finite(p_mod)][, p_mod := pmin(pmax(p_mod, 0.005), 0.995)][, p_g := pmin(pmax(p_g, 0.005), 0.995)]
-stopifnot(!anyDuplicated(pr$ticker))   # one row per Kalshi contract: a name shared by two module rows would double-count it
-props_tests <- rbind(cbind(forecast = "props module", info_test(pr, "yk", "p_mod", "mid")), cbind(forecast = "Family G projection", info_test(pr[is.finite(p_g)], "yk", "p_g", "mid")))
-props_tests[, `:=`(brier_kalshi = c(mean((pr$mid - pr$yk)^2), mean((pr[is.finite(p_g)]$mid - pr[is.finite(p_g)]$yk)^2)),
-                   brier_forecast = c(mean((pr$p_mod - pr$yk)^2), mean((pr[is.finite(p_g)]$p_g - pr[is.finite(p_g)]$yk)^2)))]
-pr[, side := fcase(p_mod > ask + fee(ask), "yes", 1 - p_mod > 1 - bid + fee(1 - bid), "no", default = "none")]
-pr[, `:=`(pnl = fcase(side == "yes", yk - ask - fee(ask), side == "no", bid - yk - fee(1 - bid), default = 0),
-          stake = fcase(side == "yes", ask + fee(ask), side == "no", 1 - bid + fee(1 - bid), default = 0))]
-pb <- pr[side != "none"]; gg <- unique(pb$game_id)
-bt <- replicate(2000, { bb <- pb[data.table(game_id = sample(gg, replace = TRUE)), on = "game_id", allow.cartesian = TRUE]; sum(bb$pnl) / sum(bb$stake) })
-props_bets <- data.table(contracts = nrow(pr), bets = nrow(pb), roi = sum(pb$pnl) / sum(pb$stake), lo = stats::quantile(bt, 0.025), hi = stats::quantile(bt, 0.975))
-props_by_stat <- pr[, .(contracts = .N, players = uniqueN(akey), brier_kalshi = mean((mid - yk)^2), brier_module = mean((p_mod - yk)^2),
-                        mean_gap_pp = 100 * mean(abs(p_mod - mid))), by = stat]
+# --- 3. props: the module's projected means against Kalshi's close, in Family G's frame (props_frame.R) -------------------------
+mp <- module_props(k, st, ev, WEEK, fread(file.path(inp, "w07_baseline_props.csv")), cn)
+pr <- mp$pr; mod <- mp$mod; props_tests <- mp$tests; props_bets <- mp$bets; props_by_stat <- mp$by_stat; props_timing <- mp$timing
 
 # --- 4. how far the model sits from the market, against how far the books sit from each other ---------------------------------------
 gaps <- data.table(comparison = c("simulator raw vs consensus at decision", "blend vs consensus at decision", "final (shown) vs consensus at decision",
@@ -163,8 +108,9 @@ fwrite(signif_dt(bet_sum, 4), file.path(out, "games_bets.csv")); fwrite(signif_d
 fwrite(signif_dt(lad_tests, 4), file.path(out, "games_kalshi_ladders.csv")); fwrite(signif_dt(gaps, 4), file.path(out, "games_gaps.csv"))
 fwrite(signif_dt(props_tests, 4), file.path(out, "props_tests.csv")); fwrite(signif_dt(props_bets, 4), file.path(out, "props_bets.csv"))
 fwrite(signif_dt(props_by_stat, 4), file.path(out, "props_by_stat.csv"))
+fwrite(signif_dt(props_timing, 4), file.path(out, "props_timing.csv"))
 fwrite(signif_dt(g[, .(game_id, y, raw, blend, final, cons_dec, cons_close, dk, kalshi_close)], 4), file.path(out, "games_week7.csv"))
 options(width = 220)
 print(signif_dt(acc, 4)); print(signif_dt(acc_vs, 3)); print(signif_dt(bet_sum, 3)); print(signif_dt(ats_sum, 3)); print(signif_dt(lad_tests, 3)); print(signif_dt(gaps, 3))
-print(signif_dt(props_tests, 3)); print(signif_dt(props_bets, 3)); print(signif_dt(props_by_stat, 3))
+print(signif_dt(props_tests, 3)); print(signif_dt(props_bets, 3)); print(signif_dt(props_by_stat, 3)); print(signif_dt(props_timing, 3))
 cat(sprintf("\nprops matched: %d contracts, %d players, %d games; module rows %d\n", nrow(pr), uniqueN(pr$akey), uniqueN(pr$game_id), nrow(mod)))
