@@ -1,0 +1,65 @@
+{
+  "protocol_id": "nfl_props_v1",
+  "protocol_path": "reports/2026-11-02/props-v1/PROTOCOL.md",
+  "protocol_sha256": "d55c68cd86693c00fbb619fb9da628d7eaa8baab834ac2fe494d28c54562af40",
+  "signed": {
+    "date": "2026-11-02",
+    "approval": "the owner, 2026-11-02: complete the listed owner decisions, signing this protocol among them",
+    "before_first_kickoff_utc": "2026-11-06T01:15:00Z"
+  },
+  "season": 2026,
+  "weeks": [9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+  "lag_weeks": [
+    8
+  ],
+  "module": {
+    "code_commit": "4c1c37788c0ac7052d26cbf0ecba11d1d3c213e9",
+    "packages": "reports/2026-11-02/props-v1/module_packages.csv",
+    "runs": "run_week.R <week> 2026 at Tuesday 18:00 UTC; the earliest run saved before the week's first kickoff counts"
+  },
+  "final_fetch": {
+    "from": "2026-10-29",
+    "to": "three days after week 18's last kickoff"
+  },
+  "code": [
+    {
+      "path": "reports/2026-11-02/props-v1/props_v1_score.R",
+      "sha256": "a08c49baab512ef75b79bbb72e1a9ee0d7f27ef0096696d4cb00bd8e2a5c37c4"
+    },
+    {
+      "path": "reports/2026-11-02/props-v1/module_packages.csv",
+      "sha256": "85d6421573e541c9a0b0d8f1fff17679e10e15f30b191b6dda853d0b66c2200d"
+    },
+    {
+      "path": "reports/2026-10-28/feasibility/props_common.R",
+      "sha256": "128ef9ada612b6bfb4676668f721e6f88699a837a458ebb889e967a97748e261"
+    },
+    {
+      "path": "reports/2026-10-29/hypotheses/props_frame.R",
+      "sha256": "227bf4758a8d174ace1819ce46fd4d33754bbe4a6a0bf5fadeb12281be8cc01b"
+    },
+    {
+      "path": "reports/2026-10-29/hypotheses/score_week.R",
+      "sha256": "74887e3516af741570a010e7094bd69954e1d5bf8858d14dad599d0676b2b9be"
+    },
+    {
+      "path": "reports/2026-10-29/hypotheses/weekly_prospective.sh",
+      "sha256": "9f3bc0c863b0b9e70f815e73aa4a157ad50a6f445473d1b82b3f15c2feeddf81"
+    },
+    {
+      "path": "reports/2026-10-28/feasibility/kalshi_settled.R",
+      "sha256": "7bc804e61acee1369f62b2de24befee1133874690cd090f9f0800dce452a8346"
+    },
+    {
+      "path": "reports/2026-10-28/feasibility/kalshi_candles.R",
+      "sha256": "230319b4412a540e5a2c66d04ff2a2a55e6b76ba2438d477cd0a71d738528904"
+    }
+  ],
+  "hash_rule": "sha256 of each file as git stores it (CRLF read as LF)",
+  "alpha_one_sided": 0.05,
+  "correction": "holm",
+  "bootstrap_seed": 20261102,
+  "bootstrap_B": 2000,
+  "economic_rule": "a confirmed hypothesis is economically confirmed when the 95% interval of its registered after-cost return lies above 0",
+  "kalshi_2025_sealed": true
+}

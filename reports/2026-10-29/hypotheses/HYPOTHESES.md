@@ -220,7 +220,9 @@ These are real sources of value in the literature or Kalshi's rules. This data c
 
 ## 11. What goes into the protocols
 
-The protocol drafts are `PROTOCOL_props_v1_DRAFT.md` and `PROTOCOL_market_v1_DRAFT.md`. Both are unsigned, for the owner, and test only games from 2026 week 8 on.
+The protocol drafts are `PROTOCOL_props_v1_DRAFT.md` and `PROTOCOL_market_v1_DRAFT.md`.
+- **The props draft was signed on 2026-11-02** as `reports/2026-11-02/props-v1/PROTOCOL.md`, with P1–P6 on weeks 9–18.
+- **The market draft stays unsigned,** as recommended.
 - **Props:**
   - A3, the protection mispricing, as a price relation;
   - A5, the scalar against the binary ladder;
@@ -359,7 +361,7 @@ The owner asked whether our model beats any book.
   - Brier and log loss of the model against each venue at decision time;
   - the props information test;
   - the persistence of sides that beat Pinnacle (`venue_persistence.R`).
-- **Sign the two protocols:** `nfl_preclose_v1` (games against the opener) and `nfl_props_v1` (props).
+- **Sign the two protocols:** `nfl_preclose_v1` (games against the opener) and `nfl_props_v1` (props). `nfl_props_v1` was signed on 2026-11-02 (`reports/2026-11-02/props-v1/PROTOCOL.md`).
 - **Track H's historical openers** would power the opener test from thousands of games instead of hundreds.
 - **Where the snapshots run is owner checkpoint 3.** They hold sportsbook prices, so they cannot go into the public repository's workflow artifacts.
 
