@@ -48,14 +48,23 @@ export default function PropsPage() {
 
       <DataUnavailable title="Why this page is empty">
         <p>
-          The props engine has known defects that change every row (audit P1–P13): labels are column-wide, recommendation
-          and stake disagree, and anytime-TD prices never reach the output. Phase 4 fixes them and rebuilds the model
-          (usage shares, a touchdown engine), and Phase 5 backtests each market separately.
+          Most props defects from the audit are fixed: each row has one decision (its side, tier and stake agree), a price
+          comes only from a quote captured before kickoff, players are matched by id rather than by name, and
+          opponent-defense adjustments apply (audit P1–P5, P9, P10, P12–P14). Four are open: projections weight three
+          seasons equally, ignore injuries and depth charts, and can fall back to placeholder players (P6); props correlate
+          only with the game total (P7); yards are a normal clipped at zero and receptions a Poisson (P8); and several
+          markets listed above have no model yet (P11). Phase 4 rebuilds the model (usage shares, a touchdown engine),
+          and Phase 5 backtests each market separately.
         </p>
         <p className="mt-snug">
-          A market is backtested only with at least 300 settled player-games that had a pre-kickoff price; below that it
-          is tracked prospectively and labelled that way. What counts as a pre-kickoff price (checkpoint A5) is still an
-          owner decision. See <Link href="/methodology">Methodology</Link>.
+          A prospective test is running: nfl_props_v1, signed on 2026-11-02, scores Kalshi&apos;s prop prices and our
+          props model on 2026 weeks 9–18. The model it tests is the code of commit 4c1c377, from before these fixes, so
+          the fixed model needs a protocol of its own.
+        </p>
+        <p className="mt-snug">
+          A market is backtested only with at least 300 settled player-games that had a pre-kickoff price: a two-sided
+          quote with a spread of at most 0.10, updated in the 60 minutes before kickoff (checkpoint A5). Below that it is
+          tracked prospectively and labelled that way. See <Link href="/methodology">Methodology</Link>.
         </p>
       </DataUnavailable>
     </Page>
