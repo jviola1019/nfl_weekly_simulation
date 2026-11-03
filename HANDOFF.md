@@ -2,6 +2,51 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec. To verify everything and finish the remaining work in a full local environment (VS Code), use `docs/handoff/2026-09-29-vscode-prompt.md`.
 
+## State on 2026-11-03: everything from #215–#230 in one integration PR, two protocols signed, a weekly program running
+
+**Objective.** The owner asked on 2026-11-02 to complete every listed decision:
+- sign `nfl_props_v1` and `nfl_preclose_v1`;
+- let 2025 enter as model history, never scored;
+- merge #217 and #215–#230;
+- test AusSportsBetting's historical openers;
+- settle where snapshots run;
+- run a real-money maker test.
+
+**Done:**
+- **#231 (this integration):** #215–#230 merged in dependency order, conflicts resolved; #223 squashed as `903b11b`.
+  - Local gates: `run_tests.R` 864 files, 3,967 passed, 0 failed, 0 skipped; integrity 63/63.
+  - CI: R, lint, web and parity pass.
+  - **The golden master changes:**
+    - #219 changes the weather inputs only (no output difference at `3dd7d79`);
+    - #223 moves all 16 games of 2024 week 15.
+  - The reference is re-recorded from this PR's CI artifact (see `reports/2026-09-29/golden-master/2024-w15/ATTRIBUTION.md`).
+- **`nfl_props_v1` signed** (`10c78f5`, before week 9): P1–P6 on 2026 weeks 9–18. The props module under test is frozen at `4c1c377`.
+- **`nfl_preclose_v1` signed, then v1.1 before week 9:** PR #232, stacked on this one; results in `reports/2026-11-02/preclose-v1/RESULT.md`.
+  - **Tune/Confirm:** no candidate beats the opener (P1/P2).
+  - **v1.1** withdrew the 2026 opener track, because ESPN's 2026 DraftKings "open" is the preseason line, and made the Kalshi Tuesday track the 2026 test.
+- **Research on `research/hypotheses`:**
+  - T2 on SBR (look-ahead lines);
+  - the opener-timing diagnostic (ESPN BET's openers price week w−1, which settles T1's caveat);
+  - the maker-test kit, for the owner to run by hand.
+- **Refused by auto mode, so the owner acts:**
+  - the merges (hence this PR);
+  - a Windows scheduled task (`register_prospective_task.ps1` is ready for the owner to run).
+- **AusSportsBetting** sits behind a Cloudflare challenge and is dropped.
+
+**Running:** `prospective_dispatch.R` is started every quarter hour by `prospective_loop.sh` in a Claude session, for weeks 8–18.
+- **What it runs:** the frozen props module, snapshots, Kalshi fetches and scores, and nfl_preclose_v1.1's Tuesday predictions.
+- **Store:** `../nfl-worktrees/.prospective/store` (private).
+- **Checkouts:** `../nfl-worktrees/hyp-loop`, `props-v1-run` and `preclose-run`.
+- **It stops with the session.**
+
+**Open risks:**
+- **The PC sleeps often:** on 2026-11-02 it slept 22:10Z to 02:34Z, and week 8's MNF snapshot was missed. Snapshot windows are 55 minutes, so they need the PC awake: the scheduled task with WakeToRun, or a power plan that does not sleep.
+- **Never run `run_week.R` by hand in `props-v1-run`** while the loop can fire (Tuesday 18:00Z, Friday 21:00Z).
+
+**Next targets:**
+- after week 18: `props_v1_score.R --weeks=9:18` and `run_2026.R prospective`;
+- the Holdout, which the owner opens (checkpoint 8).
+
 ## D1 done - 2026-10-27 (feat/d1-odds-layer, draft PR, awaiting the owner)
 
 The keyless odds layer is in `R/odds/` (see CHANGELOG, "D1"). **Objective:** one HTTP layer, three providers, the `odds_snapshots` shape, the closing rule, the 2023–2024 ESPN opener/closer archive, forward capture on the same code. **Done:** all of it, tests with recorded fixtures only; the live smoke (`scripts/odds_live_smoke.R`) and a live capture passed on 2026-10-27. **Not done:** player alias tables (snapshots carry `player_key`), Kalshi spread/total series, owner sign-off of the terms matrix; the raw ESPN responses are not committed (16.4 MB as received; sha256 in `backtest/data/odds_archive/SOURCES.json`). **Confirmed facts:** the archive has 570 games, no 2025 row; complete ESPN BET moneyline opener-and-closer pairs cover 205 of 285 games of 2023 and 284 of 285 of 2024; every request is floored at 1 per second per domain (`CAPTURE_MIN_INTERVAL_SEC` is 1). **Open risks:** ESPN's endpoints are undocumented; the openers/closers carry no timestamp. **Next target:** G3 reads the archive and appends 2025 only in its Holdout build, after the freeze.
