@@ -22,7 +22,7 @@ How to read this report:
 | **H. Opening lines** | Overreaction and predictable moves, 2023–24 | Neither (p 0.89 and 0.47). |
 | **K. Every venue at once** (§12) | Arbitrage, middles and price gaps across 11 venues, week 8 | Game lines: no arbitrage, and 20 of 2,172 sides beat Pinnacle's no-vig price. Props: 5 small arbitrages, all through Smarkets (best +1.39¢ per $1). |
 | **M. Our model against the books** (§13) | The week-7 run against four books' prices | The model is worse than every closing price, and its bets lose. Its props projections show a weak, insignificant signal (p 0.066). |
-| **T. Timing** (§15) | Does a forecast predict the market's later move? | **Yes, in two places.** The EPA model's picks at ESPN BET's opener gained +85 bps of CLV in 2023 (p 0.008), replicating 2024's +93. It does not cover one book's margin, and part of it may be look-ahead if openers were posted before the previous week's games. Prop projections predict Kalshi's last-day drift (p 2×10⁻¹⁴), but the drift is a quarter of a cent. |
+| **T. Timing** (§15) | Does a forecast predict the market's later move? | **Yes, in two places.**<br>• **Games:** the EPA model's picks at ESPN BET's opener gained +85 bps of CLV in 2023 (p 0.008), replicating 2024's +93. It does not cover one book's margin.<br>• **Not look-ahead:** ESPN BET's openers already price the previous week's results (the move ignores them; Elo gains nothing).<br>• **SBR (T2):** on SBR's 2018–2021 spreads, C2 gains +300 bps. But SBR's openers predate the previous week's games (Elo gains +210), so that is look-ahead.<br>• **Props:** prop projections predict Kalshi's last-day drift (p 2×10⁻¹⁴), but the drift is a quarter of a cent. |
 
 So:
 - **No hypothesis gives a taker an edge** after multiple testing and costs.
@@ -389,16 +389,45 @@ The owner asked to complete the tests §14 proposed. Timing ranked first there. 
 - **It does not pay at one book.**
   - ESPN BET's median opening overround is 397 bps across both sides (`opener_clv_data_checks.csv`), so about 200 bps per side. +90 bps of CLV does not cover it, which is why the flat ROI interval includes 0.
   - The CLV is largest where C2 disagrees most: +162 bps (SE 38) on the 163 picks 8 or more points from the open, against +45 and +16 bps in the smaller bands (`opener_clv_by_edge.csv`). This is descriptive and chosen after looking.
-- **Open caveat: when were the openers posted?**
-  - v1's C2 knows week w−1's results. If ESPN BET posted week w's opener before those games, part of this CLV is look-ahead. That is why the pre-close design keeps such information sets out of its confirmatory set (IS-B, "may not be executable").
-  - **It could not be settled here.** ESPN keeps no line history for 2023–2024: its movement endpoint returns nothing.
-  - The 2026 capture archive first sees week w only after week w−1 is over (`opener_timing.R`: `archive_could_see_an_earlier_opener` is FALSE for both weeks). That is because main's capture reads only ESPN's current-week scoreboard; #217 adds the next week by number.
-  - **One fact argues against pure look-ahead.** Elo (C1) also uses week w−1's results, yet gets no CLV.
+- **When were the openers posted? Answered indirectly below** (`opener_timing_elo.R`): ESPN BET's openers already price week w−1's results, so this CLV is not look-ahead on those results.
+  - v1's C2 knows week w−1's results. If ESPN BET posted week w's opener before those games, part of this CLV would be look-ahead. That is why the pre-close design keeps such information sets out of its confirmatory set (IS-B, "may not be executable").
+  - **No direct record:** ESPN keeps no line history for 2023–2024 (its movement endpoint returns nothing). The 2026 capture archive first sees week w only after week w−1 is over (`opener_timing.R`), until #217.
 - **What it means.**
   - The EPA model probably holds information the opening line lacks and the market prices in by the close. It is the only game-level signal found in this research.
   - It is worth money only with a better price than one book's opener, a larger edge threshold, or both.
   - It needs confirming with an information set that is surely executable: PC-C2 on IS-A, or C2 at Tuesday's price, when week w−1 is over.
 - **The confirmatory path is already designed:** `nfl_preclose_v1`'s PC-C2 (the same model on IS-A features, which use the previous game's starter). It is scored on the sealed 2025 Holdout and prospectively in 2026. Both need the owner, because 2025 seasons enter as model history.
+
+**T2: the lead on SBR's opening spreads, 2018–2021** (`opener_spread_clv.R`; pre-registered in `PLAN.md` at `90f47f6`, before any of its numbers).
+- **Sources.** AusSportsBetting's file sits behind a Cloudflare bot challenge (HTTP 403, "Just a moment..."), so it was dropped under the owner's rule. SBR's archive is readable, but frozen at 2021–22 with opening spreads only. It cannot meet track H's admission rule, which needs ESPN's 2023–24 openers, so it is used here only.
+- **The data.** 1,084 games with an opening and a closing spread; SBR's close is within 0.5 points of nflverse's in 86% of games, with a median difference of 0.
+- **Spreads to probabilities.** Each spread becomes a probability through the market's own exchange rate: an isotonic fit of no-vig closing moneylines on closing spreads, over 5,010 games of 2006–2024.
+
+| At SBR's opening spread, 2018–2021 | Picks | Mean CLV (bps) | 95% CI | One-sided p |
+|---|---|---|---|---|
+| **C2 (T2)** | 760 | **+300** | +220 to +403 | < 0.0001 |
+| C2, measured to nflverse's close | 760 | +306 | +220 to +421 | < 0.0001 |
+| Elo (C1), the control | 787 | **+210** | +135 to +316 | < 0.0001 |
+
+- **T2 is positive as pre-registered, but the control fails.** In T1 Elo gained nothing; here a model that knows only past results gains +210 bps. Every season is positive, from +198 to +519 bps, and the 8+ point picks gain +493 bps.
+
+**Diagnostic, added after T2's result** (`opener_timing_elo.R`): does each book's opener already know the previous week's results?
+- **Method.** v1's Elo runs twice: as v1 runs it, and seeing only results through week w−2. The first matches v1's C1 predictions to 5×10⁻¹¹.
+  - Their difference is what week w−1's games taught Elo.
+  - The open-to-close move is regressed on it, clustered by season-week.
+
+| Book | Elo through w−1, CLV | Elo through w−2, CLV | C2, CLV | The move on week w−1's Elo update |
+|---|---|---|---|---|
+| SBR spreads 2018–2021 | +210 bps (p < 0.0001) | +105 (p 0.002) | +300 | **0.78 (0.61 to 0.95), p 2×10⁻¹⁴** |
+| ESPN BET moneylines 2023–2024 | −17 (p 0.72) | −27 (p 0.81) | +90 | **0.04 (−0.08 to 0.17), p 0.47** |
+
+- **SBR's openers predate the previous week's games.** The line then moves about 78% of the way toward what those games showed, so any model with week w−1's results "beats" the opener. T2's +300 bps is mostly this look-ahead, and SBR's openers are no test of an executable edge.
+- **ESPN BET's openers already price the previous week's results.** The move does not follow them, and both Elo versions are null.
+  - So T1's +90 bps for C2 is not look-ahead on results. It is information beyond results (EPA efficiency, and the starter, though the same-starter games gain more).
+  - This answers T1's open caveat, which the capture archive could not.
+- **What follows for the pre-close protocol.**
+  - IS-B, results through w−1, looks executable at ESPN BET's opener.
+  - The confirmatory set stays IS-A as approved. This diagnostic was chosen after looking.
 
 **Props: do projections predict Kalshi's last day?** The question is whether a projection known before the week predicts Kalshi's move from 24 hours before kickoff to the close. The regression is (logit close − logit 24-hour mid) on (logit projection − logit 24-hour mid), clustered by game.
 
@@ -414,10 +443,12 @@ The owner asked to complete the tests §14 proposed. Timing ranked first there. 
   - So the last-day drift cannot pay. A larger move might exist further out, but Kalshi's candles here start 24 hours before kickoff.
 - **This squares with §13.** Against the close the projections show only a trace of information, because the market has absorbed most of it by then.
 
-**The forward test is running.** `weekly_prospective.sh` and `score_week.R` implement §14's program, and week 9 runs on a schedule from the session's private store:
-- the production run at Tuesday 18:00Z and Friday 21:00Z;
-- venue and props snapshots on Thursday and an hour before each kickoff window;
-- Kalshi's settlements and candles on 2026-11-10, then `score_week.R`.
+**The forward test is running.** `weekly_prospective.sh` and `score_week.R` implement §14's program. Since 2026-11-02 it is `nfl_props_v1`'s data collection for weeks 9–18 (`reports/2026-11-02/props-v1/PROTOCOL.md`).
+- **Each week** `prospective_dispatch.R` runs:
+  - the frozen props module at Tuesday 18:00Z and Friday 21:00Z;
+  - venue and props snapshots on Thursday and an hour before each kickoff;
+  - Kalshi's settlements and candles, then `score_week.R`, on the Tuesday and Wednesday after.
+- **The store** is private and local.
 
 It scores the model against every venue's last snapshot, the model's bets with their CLV, the props tests, and every side that beat Pinnacle, by closing EV and by result. `score_week.R` was checked on week 7, where it reproduces §13's point estimates, and on week 8's snapshots.
 

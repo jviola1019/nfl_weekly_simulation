@@ -1,0 +1,3 @@
+pair_id,placed_utc,ticker,leg,limit_price,contracts,filled_contracts,fill_utc,cancelled_utc
+example-001,2026-11-15T15:10:00Z,KXNFLRECPROT-26NOV15EXAMPLE-PLAYER-5,protected_buy,0.43,1,1,2026-11-15T15:42:00Z,
+example-001,2026-11-15T15:10:00Z,KXNFLREC-26NOV15EXAMPLE-PLAYER-5,unprotected_sell,0.45,1,0,,2026-11-15T17:55:00Z
