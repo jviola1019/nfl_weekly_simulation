@@ -18,7 +18,8 @@
 # =============================================================================
 suppressPackageStartupMessages(library(data.table))
 for (f in c("backtest/common.R", "backtest/metrics.R", "backtest/blends.R", "backtest/candidates/elo.R", "backtest/candidates/epa_glm.R",
-            "backtest/preclose/features.R", "backtest/preclose/elo.R", "backtest/preclose/candidates.R", "backtest/preclose/gates.R")) source(f)
+            "backtest/preclose/features.R", "backtest/preclose/elo.R", "backtest/preclose/candidates.R", "backtest/preclose/gates.R",
+            "backtest/preclose/prospective.R")) source(f)
 args <- commandArgs(trailingOnly = TRUE)
 stage <- args[1]; out <- args[2]
 opt <- function(k) { v <- sub(sprintf("^--%s=", k), "", grep(sprintf("^--%s=", k), args, value = TRUE)); if (length(v)) v[1] else NULL }
@@ -27,7 +28,6 @@ dir.create(out, recursive = TRUE, showWarnings = FALSE)
 REG <- file.path("backtest", "eval_windows", "nfl_preclose_v1.json")
 V1 <- jsonlite::read_json(file.path("backtest", "eval_windows", "nfl_games_v1.json"))
 C1 <- list(K = 20, hfa = 30, regress = 0.45); C2 <- list(halflife = 8L, lambda = 100); SEALED <- 2025L
-KALSHI_FEE <- function(p) 0.07 * p * (1 - p)
 
 # --- the registration ---------------------------------------------------------------------------------------------------------------
 sha_lf <- function(f) { b <- readBin(f, "raw", file.size(f)); cr <- which(b == as.raw(13L))
@@ -44,7 +44,9 @@ for (f in c(files, REG)) if (git("ls-files", "--error-unmatch", f)$status != 0 |
 # --- inputs: v1's 2006-2024 and the private 2025-2026 history --------------------------------------------------------------------
 inp <- bt_load_inputs(V1$data_dir, expected = V1$data_sha256)
 h <- opt("history")
-hg <- bt_prepare_games(fread(file.path(h, "games.csv"), colClasses = list(character = c("home_qb_id", "away_qb_id", "gametime")), na.strings = c("", "NA")))
+hg <- fread(file.path(h, "games.csv"), colClasses = list(character = c("home_qb_id", "away_qb_id", "gametime")), na.strings = c("", "NA"))
+hg[season == SEALED, c("home_moneyline", "away_moneyline", "spread_line") := NA]   # 2025's prices are sealed: none is computed (amendment 4)
+hg <- bt_prepare_games(hg)
 stopifnot(all(hg$season %in% 2025:2026), !length(intersect(hg$game_id, inp$games$game_id)))
 games <- rbind(inp$games, hg, fill = TRUE); setorder(games, kickoff, game_id)
 tg <- rbind(inp$team_games, fread(file.path(h, "team_games.csv"))); qg <- rbind(inp$qb_games, fread(file.path(h, "qb_games.csv"), colClasses = list(character = "qb_id")))
@@ -88,33 +90,21 @@ kalshi_home <- function() {
   k[is_home == TRUE, .(game_id, p_tue = (bid_tue + ask_tue) / 2, ask_tue, bid_tue, p_tue_state = (bid_tue_state + ask_tue_state) / 2,
                        p_kclose = (bid_close + ask_close) / 2, tue_end)]
 }
-#' The Tuesday track's CLV and taker return: buy the picked side's YES at its Tuesday ask (the away side as 1 - bid),
-#' pay Kalshi's taker fee, hold to settlement (a tie pays half)
-tuesday_clv <- function(x, col, B = PC_B, seed = PC_SEED) {
-  x <- x[is.finite(get(col)) & is.finite(p_tue) & is.finite(p_kclose)]
-  edge <- x[[col]] - x$p_tue; side <- fifelse(edge >= PC_TAU, "home", fifelse(edge <= -PC_TAU, "away", NA_character_)); k <- !is.na(side)
-  if (!any(k)) return(data.table(picks = 0L))
-  z <- x[k]; s <- side[k]
-  clv <- 10000 * fifelse(s == "home", z$p_kclose - z$p_tue, z$p_tue - z$p_kclose)
-  cost <- fifelse(s == "home", z$ask_tue, 1 - z$bid_tue); cost <- cost + KALSHI_FEE(cost)
-  pay <- fifelse(z$home_score == z$away_score, 0.5, fifelse((s == "home") == (z$home_score > z$away_score), 1, 0))
-  units <- pay / cost - 1
-  wk_f <- factor(z$wk); counts <- bt_boot_counts(nlevels(wk_f), B, seed); n_w <- tabulate(as.integer(wk_f), nlevels(wk_f)); bn <- drop(counts %*% n_w)
-  cb <- drop(counts %*% as.numeric(tapply(clv, wk_f, sum))) / bn; rb <- drop(counts %*% as.numeric(tapply(units, wk_f, sum))) / bn
-  data.table(picks = nrow(z), mean_clv_bps = mean(clv), clv_lo = bt_quantile_ci(cb)[1], clv_hi = bt_quantile_ci(cb)[2], p_one_sided = mean(cb <= 0),
-             roi = mean(units), roi_lo = bt_quantile_ci(rb)[1], roi_hi = bt_quantile_ci(rb)[2])
-}
 score_2026 <- function(d, label) {
   x <- d[!is.na(y) & !is.na(home_score)]
   op <- pc_score_window(x[is.finite(p_open)])
   mv <- pc_movement(x[is.finite(p_open)])
-  tt <- x[is.finite(p_tue) & is.finite(p_kclose)][, `:=`(p_open = p_tue, p_close_venue = p_kclose)]
-  ts <- rbindlist(lapply(c(C2 = "p_c2_t", E1 = "p_e1_t"), function(col) {
-    z <- tt[is.finite(get(col))]
+  # the Tuesday track: Brier on decided games; CLV and the taker return on every played game, a tie paying half (amendment 4)
+  tt <- d[!is.na(home_score) & !is.na(away_score) & is.finite(p_tue) & is.finite(p_kclose)][, `:=`(p_open = p_tue, p_close_venue = p_kclose)]
+  cands <- c(C2 = "p_c2_t", E1 = "p_e1_t")
+  ts <- rbindlist(lapply(names(cands), function(nm) {
+    col <- cands[[nm]]; z <- tt[is.finite(get(col)) & !is.na(y)]
     s <- bt_score_window(copy(z), c(col, "p_close_venue"), "p_open", B = PC_B, seed = PC_SEED)
-    cbind(data.table(track = "Tuesday", candidate = names(which(c(C2 = "p_c2_t", E1 = "p_e1_t") == col)), games = s[[col]]$n, brier = s[[col]]$brier,
-                     brier_tue = s[["p_open"]]$brier, skill = s[[col]]$skill, skill_lo = s[[col]]$skill_ci[1], skill_hi = s[[col]]$skill_ci[2],
-                     dm_p_better = s[[col]]$dm_p_better, slope = s[[col]]$slope, close_skill = s[["p_close_venue"]]$skill), tuesday_clv(z, col))
+    st <- pc_tuesday_clv(tt, col, "p_tue_state")
+    cbind(data.table(track = "Tuesday", candidate = nm, games = s[[col]]$n, brier = s[[col]]$brier, brier_tue = s[["p_open"]]$brier, skill = s[[col]]$skill,
+                     skill_lo = s[[col]]$skill_ci[1], skill_hi = s[[col]]$skill_ci[2], dm_p_better = s[[col]]$dm_p_better, slope = s[[col]]$slope,
+                     close_skill = s[["p_close_venue"]]$skill), pc_tuesday_clv(tt, col),
+          data.table(mean_clv_bps_state = if ("mean_clv_bps" %in% names(st)) st$mean_clv_bps else NA_real_))
   }), fill = TRUE)
   # v1.1 (AMENDMENT_1_1.md): the Tuesday track's test is the CLV of tau-picks, one-sided, with BH across C2 and E1
   if ("p_one_sided" %in% names(ts)) ts[, `:=`(p_bh = stats::p.adjust(p_one_sided, "BH"), confirmed = stats::p.adjust(p_one_sided, "BH") < 0.05)]
@@ -127,10 +117,10 @@ if (stage == "predict") {
   w <- as.integer(opt("week")); stopifnot(length(w) == 1L, w %in% 1:22)
   d <- predict_2026(odds_2026())
   first_kick <- games[season == 2026L & week == w, min(kickoff)]
-  p <- d[week %in% c(w, w + 1L), .(game_id, week, kickoff, p_elo_a, p_pc2, p_e1a, p_oa, p_lm, move_hat, p_elo_b, p_c2_t, p_e1_t)]
+  p <- d[week == w, .(game_id, week, kickoff, p_elo_a, p_pc2, p_e1a, p_oa, p_lm, move_hat, p_elo_b, p_c2_t, p_e1_t)]   # the week's own games (amendment 4)
   p[, `:=`(made_utc = format(now, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"), before_first_kickoff_of_week = now < first_kick)]
   bt_write_csv(s4(p), file.path(out, sprintf("predictions_w%02d_%s.csv", w, stamp)))
-  cat(sprintf("week %d: %d predictions written (weeks %d-%d), %s the week's first kickoff\n", w, nrow(p), w, w + 1L, if (now < first_kick) "before" else "AFTER"))
+  cat(sprintf("week %d: %d predictions written, %s the week's first kickoff\n", w, nrow(p), if (now < first_kick) "before" else "AFTER"))
   quit(status = 0L)
 }
 
@@ -148,14 +138,13 @@ if (stage == "pilot") {
   options(width = 220); print(cov); print(s4(r$opener)); print(s4(r$movement)); print(s4(r$tuesday))
   quit(status = 0L)
 }
-# prospective: weeks 9-18 from the predictions saved before each week (the earliest saved file per game)
+# prospective: weeks 9-18, each game on the prediction its own week's run saved before that week's first kickoff (amendment 4)
 pf <- list.files(opt("predictions"), pattern = "^predictions_w[0-9]{2}_.*\\.csv$", full.names = TRUE)
-sp <- rbindlist(lapply(pf, function(f) fread(f)[, file := basename(f)]))[before_first_kickoff_of_week == TRUE]
-setorder(sp, game_id, made_utc); sp <- sp[, .SD[1], by = game_id]
+sel <- pc_select_saved(pf, d[week %in% 9:18 & !is.na(home_score), game_id])
 keep <- c("game_id", "season", "week", "wk", "kickoff", "y", "home_score", "away_score", "p_open", "p_close_venue", "h_open", "a_open", "h_close", "a_close",
-          "p_tue", "ask_tue", "bid_tue", "p_kclose")
-x <- merge(d[week %in% 9:18, ..keep], sp[, .(game_id, p_pc2, p_oa, p_lm, move_hat, p_c2_t, p_e1_t)], by = "game_id")
+          "p_tue", "ask_tue", "bid_tue", "p_tue_state", "p_kclose")
+x <- merge(d[week %in% 9:18, ..keep], sel$predictions[, .(game_id, p_pc2, p_oa, p_lm, move_hat, p_c2_t, p_e1_t)], by = "game_id")
 r <- score_2026(x, "2026 weeks 9-18 (prospective, one look)")
 # v1.1: the 2026 opener track is withdrawn (ESPN's 2026 DraftKings open is the preseason line); only the Tuesday track counts
-bt_write_csv(s4(r$tuesday), file.path(out, "prospective_tuesday_track.csv"))
-options(width = 220); print(s4(r$tuesday))
+bt_write_csv(s4(r$tuesday), file.path(out, "prospective_tuesday_track.csv")); bt_write_csv(sel$coverage, file.path(out, "prospective_coverage.csv"))
+options(width = 220); print(sel$coverage); print(s4(r$tuesday))

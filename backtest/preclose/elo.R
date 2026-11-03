@@ -8,6 +8,13 @@
 # =============================================================================
 
 pc_elo <- function(games, K, hfa, regress) {
+  # the snapshots follow week changes, so weeks must not run backwards in kickoff order within a season, and a team must
+  # play once a week (then a pre-game rating holds no result of its own week); both hold for 2006-2026 (amendment 4)
+  pw <- games[, .(back = any(diff(week) < 0)), by = season]
+  if (any(pw$back)) stop("pc_elo: week numbers run backwards in kickoff order in season(s) ", paste(pw[back == TRUE, season], collapse = ", "), call. = FALSE)
+  tw <- rbind(games[, .(season, week, team = home_franchise)], games[, .(season, week, team = away_franchise)])[, .N, by = .(season, week, team)]
+  if (any(tw$N > 1L)) stop("pc_elo: a team plays twice in one week: ", paste(utils::head(tw[N > 1L, sprintf("%s %d w%d", team, season, week)], 3), collapse = ", "),
+                           call. = FALSE)
   n <- nrow(games); teams <- sort(unique(c(games$home_franchise, games$away_franchise)))
   R <- setNames(rep(BT_ELO_MEAN, length(teams)), teams)
   pB <- pA <- numeric(n); snaps <- list(); s_now <- games$season[1]; w_now <- games$week[1]

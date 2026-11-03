@@ -95,6 +95,40 @@ test_that("the anchored fits train only on games before the cutoff, never on 202
   expect_equal(unique(merge(lm, d[, .(game_id, wk)], by = "game_id")[wk == 30L, lm_train]), 150L + 90L)
 })
 
+test_that("each prospective game is scored on its own week's prediction, saved before that week, never a stale earlier row", {
+  sys.source(file.path(PROJECT_ROOT, "backtest", "preclose", "gates.R"), envir = pc_env)
+  sys.source(file.path(PROJECT_ROOT, "backtest", "preclose", "prospective.R"), envir = pc_env)
+  dir <- withr::local_tempdir()
+  row <- function(gid, wk, made, before, p) data.table::data.table(game_id = gid, week = wk, kickoff = "2026-11-16T18:00:00Z", p_elo_a = p, p_pc2 = p, p_e1a = p,
+    p_oa = p, p_lm = p, move_hat = 0, p_elo_b = p, p_c2_t = p, p_e1_t = p, made_utc = made, before_first_kickoff_of_week = before)
+  # the week-9 run also carries a (stale) week-10 row, as runs before amendment 4 did; the week-10 run has the real one
+  data.table::fwrite(rbind(row("g9", 9L, "2026-11-03T18:30:00Z", TRUE, 0.51), row("g10", 10L, "2026-11-03T18:30:00Z", TRUE, 0.11)),
+                     file.path(dir, "predictions_w09_20261103T183000Z.csv"))
+  data.table::fwrite(rbind(row("g10", 10L, "2026-11-10T18:30:00Z", TRUE, 0.61), row("g11", 10L, "2026-11-10T18:30:00Z", FALSE, 0.71)),
+                     file.path(dir, "predictions_w10_20261110T183000Z.csv"))
+  sel <- pc_env$pc_select_saved(list.files(dir, full.names = TRUE), c("g9", "g10", "g11"))
+  expect_identical(sort(sel$predictions$game_id), c("g10", "g9"))
+  expect_equal(sel$predictions[game_id == "g10", p_c2_t], 0.61)   # not the stale 0.11 from week 9's run
+  expect_equal(sel$coverage$without, 1L)                            # g11 was saved after its week began
+})
+
+test_that("the Tuesday track's CLV has the picked side's sign, and its return pays the ask plus the fee, a tie paying half", {
+  x <- data.table::data.table(wk = c(1L, 1L, 2L), p_c2_t = c(0.60, 0.40, 0.60), p_tue = c(0.50, 0.50, 0.50), ask_tue = c(0.51, 0.51, 0.51),
+                              bid_tue = c(0.49, 0.49, 0.49), p_kclose = c(0.55, 0.45, 0.50), home_score = c(24L, 10L, 20L), away_score = c(17L, 17L, 20L))
+  r <- pc_env$pc_tuesday_clv(x, "p_c2_t", B = 200L, seed = 1L)
+  expect_equal(r$picks, 3L)
+  expect_equal(r$ties, 1L)
+  expect_equal(r$mean_clv_bps, (500 + 500 + 0) / 3)
+  cost_home <- 0.51 + pc_env$PC_KALSHI_FEE(0.51); cost_away <- (1 - 0.49) + pc_env$PC_KALSHI_FEE(1 - 0.49)
+  expect_equal(r$roi, mean(c(1 / cost_home - 1, 1 / cost_away - 1, 0.5 / cost_home - 1)))
+})
+
+test_that("Elo refuses weeks that run backwards in kickoff order", {
+  g <- data.table::copy(pc_inputs$games[season == 2008L])
+  i <- which(g$week == 5L)[1]; g[i, week := 3L]
+  expect_error(pc_env$pc_elo(g, 20, 30, 0.45), "backwards")
+})
+
 test_that("nfl_preclose_v1's registration matches the frozen protocol", {
   reg <- jsonlite::read_json(file.path(PROJECT_ROOT, "backtest", "eval_windows", "nfl_preclose_v1.json"), simplifyVector = TRUE)
   sha_lf <- function(f) { b <- readBin(f, "raw", file.size(f)); cr <- which(b == as.raw(13L))

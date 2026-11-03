@@ -32,6 +32,7 @@ keep <- c("game_id", "season", "game_type", "week", "gameday", "gametime", "kick
           "home_score", "away_score", "location", "home_rest", "away_rest", "home_moneyline", "away_moneyline", "spread_line", "div_game", "roof",
           "home_qb_id", "away_qb_id")
 g <- g[, ..keep]; setorder(g, kickoff_utc, game_id)
+g[season == 2025L, c("home_moneyline", "away_moneyline", "spread_line") := NA]   # 2025's prices are sealed: never written (amendment 4)
 tgs <- list(); qbs <- list(); meta <- list()
 for (s in SEASONS) {
   f <- get_file(sprintf("%s/pbp/play_by_play_%d.rds", BT_RELEASE_BASE, s), file.path(raw, sprintf("play_by_play_%d.rds", s)))

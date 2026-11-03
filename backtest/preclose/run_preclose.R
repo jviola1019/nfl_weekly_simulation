@@ -164,8 +164,11 @@ write_out(sc$tune[, window := "Tune 2023"], "gates_tune_2023.csv"); write_out(sc
 write_out(rbind(sc$move_tune[, window := "Tune 2023"], sc$move_confirm[, window := "Confirm 2024"], fill = TRUE), "movement_lm.csv")
 write_out(p6, "controls_p6.csv")
 write_out(run$d[, .(game_id, season, week, y, p_open, p_close, p_elo_a, p_pc2, p_e1a, p_oa, p_lm, move_hat)], "predictions.csv")
-meta <- data.table(field = c("stage", "run_utc", "code_commit", "protocol_sha256", "oa_lambda", "result_sha256", "p6_status"),
+# the run is void when a P6 control fails or any candidate trips P7 on Tune or Confirm (amendment 4)
+p7 <- any(c(sc$tune$P7_void, sc$confirm$P7_void) %in% TRUE)
+meta <- data.table(field = c("stage", "run_utc", "code_commit", "protocol_sha256", "oa_lambda", "result_sha256", "p6_status", "p7_tripped", "status"),
                    value = c(stage, format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"), git("rev-parse", "HEAD")$out[1], reg$protocol_sha256,
-                             run$lambda, sha1, if (all(p6$passed)) "complete" else "void"))
+                             run$lambda, sha1, if (all(p6$passed)) "complete" else "void", as.character(p7),
+                             if (all(p6$passed) && !p7) "complete" else "void"))
 bt_write_csv(meta, file.path(out, "run_meta.csv"))
 options(width = 220); print(meta); print(p6); print(sc$tune); print(sc$confirm); print(sc$move_tune); print(sc$move_confirm)

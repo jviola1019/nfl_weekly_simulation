@@ -82,7 +82,7 @@
   },
   "tuesday_track": {
     "decision": "Tuesday 18:00 UTC",
-    "information_set": "IS-B",
+    "information_set": "IS-T (amendment 1): results through week w-1, the starter of the team's previous game",
     "candidates": [
       "C2",
       "E1"
@@ -100,7 +100,7 @@
     },
     {
       "path": "backtest/preclose/elo.R",
-      "sha256": "cdd7c538290126b947df92dad814c432e3eba78758d41a7bd6c65ec93cc1387c"
+      "sha256": "cc742376a0558c11b6c7f3aff0acae4ee7abf9f9e62a4a59aeed0d716e3abc13"
     },
     {
       "path": "backtest/preclose/candidates.R",
@@ -112,15 +112,15 @@
     },
     {
       "path": "backtest/preclose/run_preclose.R",
-      "sha256": "884b703b5f1b982bee900200763b464833c904da362e2a395a31dbff36fc9ac5"
+      "sha256": "2df99d09273483b787f6b5d44140b3b61b9105d95bcf4a767f59a76ae0dcac2a"
     },
     {
       "path": "backtest/preclose/run_2026.R",
-      "sha256": "503bceb97c41cf4b7183da8bc2f6963a8835792ada525be2cbe7f43119de5847"
+      "sha256": "bfb606a11ae571a1bcf70d715d6205dcd0602ddfaa2c5ffec20134b4addd10f6"
     },
     {
       "path": "backtest/preclose/build_history.R",
-      "sha256": "6c6132407f191be4ff5763cb722998cd818eba9f5c8046d3014483c71e4c410d"
+      "sha256": "33de406204e37ad839764677527cf3ad4619ce6f3ae456d96586c0e2512d7603"
     },
     {
       "path": "backtest/preclose/fetch_espn_open_close.R",
@@ -188,11 +188,15 @@
     },
     {
       "path": "tests/testthat/test-preclose.R",
-      "sha256": "0606b81a34c4760f26260eee10dfca50176ad8b9e0e91852c3b357abdb0b9347"
+      "sha256": "a83cd477dc2e72b33c08b549428d827d95e8419f53b066768ab59949945fc93c"
     },
     {
       "path": "reports/2026-11-02/preclose-v1/AMENDMENT_1_1.md",
       "sha256": "42316e72d16760e57808fa7eb522024e3787f8953396541891a5f32d37f7ba09"
+    },
+    {
+      "path": "backtest/preclose/prospective.R",
+      "sha256": "5904be47c17c239c6ba14ca962f4ed59359d16eeb57dc0d5bcdfebb86cca60ba"
     }
   ],
   "code_rule": "registered by sha256 in an amendment before any confirmatory number is read; it may change no choice",
@@ -225,6 +229,21 @@
         "path": "reports/2026-11-02/preclose-v1/dk_opener_timing.R",
         "sha256": "1d1d1017aaf179800ce085261592b9a43eba80cdbca7412a82f2abe1372d2136"
       }
+    },
+    {
+      "id": 4,
+      "date": "2026-11-03",
+      "file": "reports/2026-11-02/preclose-v1/REVIEW_1.md",
+      "sha256": "30a0748a344b63faccfbe148ca698b67e2b55477b00b6056aaa187cece7fe4f6",
+      "what": "the review's fixes (REVIEW_1.md): each game scored on its own week's saved prediction; 2025 prices never written or computed; P7 voids a run; ties pay half on the Tuesday track; Elo asserts week order and one game per team-week; the Tuesday state price reported; IS-T labelled. No choice changes; made before any prospective number and with the Holdout sealed",
+      "rereg": [
+        "backtest/preclose/elo.R cdd7c538 -> cc742376",
+        "backtest/preclose/run_preclose.R 884b703b -> 2df99d09",
+        "backtest/preclose/run_2026.R 503bceb9 -> bfb606a1",
+        "backtest/preclose/build_history.R 6c613240 -> 33de4062",
+        "tests/testthat/test-preclose.R 0606b81a -> a83cd477"
+      ],
+      "added": "backtest/preclose/prospective.R"
     }
   ],
   "protocol_version": "1.1"
