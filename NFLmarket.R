@@ -2131,6 +2131,7 @@ build_moneyline_comparison_table <- function(market_comparison_result,
       ml_implied_away_prob = market_away_prob_raw,
       # Flag if market_home_prob differs significantly from moneyline-implied (spread-derived)
       prob_source = dplyr::case_when(
+        !is.finite(market_home_prob) ~ "none",
         is.na(market_home_ml) | !is.finite(market_home_ml) ~ "spread",
         is.na(ml_implied_home_prob) | !is.finite(ml_implied_home_prob) ~ "spread",
         abs(market_home_prob - ml_implied_home_prob) < 0.01 ~ "moneyline",
@@ -2185,12 +2186,17 @@ build_moneyline_comparison_table <- function(market_comparison_result,
       # One market weight for every game type (audit M2/M3): SHRINKAGE from config.R,
       # unvalidated until the backtest supports a value (docs/EVIDENCE_LEDGER.md C-SHRINK).
       # Playoff and Super Bowl variants were removed with no evidence behind them.
+      # A game with no market keeps the unshrunk blend (as the web bundle's C3), with nothing to bet against
       .game_shrinkage = SHRINKAGE,
-      blend_home_prob_shrunk = shrink_probability_toward_market(
-        blend_home_prob, market_home_prob, shrinkage = .game_shrinkage
+      blend_home_prob_shrunk = dplyr::if_else(
+        is.finite(market_home_prob),
+        shrink_probability_toward_market(blend_home_prob, market_home_prob, shrinkage = .game_shrinkage),
+        blend_home_prob
       ),
-      blend_away_prob_shrunk = shrink_probability_toward_market(
-        blend_away_prob, market_away_prob, shrinkage = .game_shrinkage
+      blend_away_prob_shrunk = dplyr::if_else(
+        is.finite(market_away_prob),
+        shrink_probability_toward_market(blend_away_prob, market_away_prob, shrinkage = .game_shrinkage),
+        blend_away_prob
       ),
 
       # v2.9.4 G8 fix: Harmonize margin with SHRUNK probability for display coherence

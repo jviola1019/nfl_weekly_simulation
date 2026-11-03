@@ -789,6 +789,11 @@ if (!exists("build_snapshot_moneyline_result", inherits = FALSE)) {
 
     model_prob <- clamp_probability(snapshot[[model_prob_col]])
     market_prob <- clamp_probability(snapshot[[market_prob_col]])
+    # attach_market_probs() fills a game without a line with the model's probability, as the
+    # blend's input only (audit M11); that fill is not a market price, as in the web bundle
+    if ("market_available" %in% names(snapshot)) {
+      market_prob[!(snapshot$market_available %in% TRUE)] <- NA_real_
+    }
 
     tibble::tibble(
       game_id = snapshot$game_id,
