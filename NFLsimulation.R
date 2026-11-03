@@ -2206,8 +2206,8 @@ team_tz <- tribble(
   "IND","America/Indiana/Indianapolis",
   "JAX","America/New_York",
   "KC","America/Chicago",
+  "LA","America/Los_Angeles",   # the Rams: nflverse schedules use LA, not LAR (audit P9)
   "LAC","America/Los_Angeles",
-  "LAR","America/Los_Angeles",
   "LV","America/Los_Angeles",
   "MIA","America/New_York",
   "MIN","America/Chicago",
