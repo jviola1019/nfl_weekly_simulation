@@ -250,6 +250,11 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - **Started by:** `prospective_loop.sh` in a shell, or by a Windows scheduled task registered with `register_prospective_task.ps1`. The owner runs that script.
   - **Store:** it writes to a private local store outside the system temp folder.
 - **The weekly score now fits the props model's dispersion on every earlier week the store holds** (`weekly_prospective.sh`). Before, it used weeks 1–7 only.
+- **A live maker test of A3, for the owner** (`reports/2026-11-02/maker-test/`).
+  - **The kit:** `MAKER_TEST.md` (the design, sizes and decision rule, fixed before the first order), `maker_log_template.csv`, and `score_maker_log.R`.
+  - **The scorer** reads the owner's order log and fetches Kalshi's settlements and candles keyless. It reports fills, adverse selection and returns with game-resampled intervals.
+  - **Smoke test:** checked on a synthetic log of real week-7 pairs.
+  - **The orders are placed by hand.** No credential passes through Claude.
 - **Track H, historical openers:**
   - **AusSportsBetting** sits behind a Cloudflare bot challenge (HTTP 403), so it is dropped under the owner's rule.
   - **SBR's archive** is readable but frozen at 2021–22. It has opening spreads only, so it cannot meet the admission rule (no 2023–24 overlap with ESPN).
