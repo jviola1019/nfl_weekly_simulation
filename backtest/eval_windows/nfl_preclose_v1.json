@@ -116,7 +116,7 @@
     },
     {
       "path": "backtest/preclose/run_2026.R",
-      "sha256": "df4bd7c206240d0f170e58c4c578d75ce880e87dc1181dd0d1030bff6f7874d2"
+      "sha256": "c72ff4d995e79af84237422f57b66555e6de5c556bfaaf0f27cde2d1179d4810"
     },
     {
       "path": "backtest/preclose/build_history.R",
@@ -198,7 +198,17 @@
       "id": 1,
       "date": "2026-11-02",
       "what": "registers the scoring code by sha256, before any confirmatory number is read; no choice changes",
-      "rulings": ["IS-T (the Tuesday track): a game not yet played has no known starter, so IS-B's QB is the starter of the team's previous game; results through week w-1 as IS-B", "P4's slope is the scored window's slope of the actual move on LM's predicted move, clustered by season-week", "P6's anchor null and permuted-x null pass when no candidate is claimed (P1 and P2 both pass) on Tune or Confirm", "The Tuesday track's return buys the picked side's YES at its Tuesday ask (the away side at 1 - bid) plus Kalshi's taker fee, held to settlement"]
+      "rulings": [
+        "IS-T (the Tuesday track): a game not yet played has no known starter, so IS-B's QB is the starter of the team's previous game; results through week w-1 as IS-B",
+        "P4's slope is the scored window's slope of the actual move on LM's predicted move, clustered by season-week",
+        "P6's anchor null and permuted-x null pass when no candidate is claimed (P1 and P2 both pass) on Tune or Confirm",
+        "The Tuesday track's return buys the picked side's YES at its Tuesday ask (the away side at 1 - bid) plus Kalshi's taker fee, held to settlement"
+      ]
+    },
+    {
+      "id": 2,
+      "date": "2026-11-02",
+      "what": "re-registers backtest/preclose/run_2026.R (df4bd7c20624 -> c72ff4d995e7): LM's training needs p_close, which the 2026 runner did not set; its first run stopped before computing any 2026 number; no choice changes"
     }
   ]
 }

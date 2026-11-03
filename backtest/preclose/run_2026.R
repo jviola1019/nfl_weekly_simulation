@@ -61,7 +61,7 @@ predict_2026 <- function(odds) {
   d <- merge(games[season %in% c(2023L, 2024L, 2026L), .(game_id, season, week, wk, kickoff, y, home_score, away_score)], el, by = "game_id")
   d <- merge(merge(d, pa, by = "game_id", all.x = TRUE), pt, by = "game_id", all.x = TRUE)
   d[, `:=`(p_e1a = bt_e1(p_elo_a, p_pc2), p_e1_t = fifelse(is.finite(p_c2_t), bt_e1(p_elo_b, p_c2_t), NA_real_))]
-  d <- merge(d, odds, by = "game_id", all.x = TRUE)
+  d <- merge(d, odds, by = "game_id", all.x = TRUE)[, p_close := p_close_venue]
   weeks <- merge(bt_week_schedule(games, c(2023L, 2024L, 2026L)), pc_isa_week_cutoffs(games)[, .(season, week, isa_cutoff)], by = c("season", "week"))
   weeks[, cutoff := isa_cutoff]; setorder(weeks, cutoff)
   lam <- as.numeric(fread(file.path("reports", "2026-11-02", "preclose-v1", "out", "run_meta.csv"))[field == "oa_lambda", value])
