@@ -22,6 +22,15 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - **The Tuesday track becomes 2026's prospective test:** C2 and E1 against Kalshi's Tuesday mid, weeks 9–18.
   - **Its pilot, weeks 1–8:** C2 gains +49 bps (+1 to +92), one-sided p 0.022.
 - **Amendment 2** fixed a missing column in the 2026 runner before it produced any number.
+- **Amendment 4, the review's fixes** (`REVIEW_1.md`, 2026-11-03, before any prospective number). One fresh review found these:
+  - **The prospective stage would have scored weeks 10–18 on predictions saved a week early.** Each game now uses its own week's saved prediction (`prospective.R`, tested and mutation-checked).
+  - **2025 prices** were loaded into the private history. They are no longer written or computed.
+  - **P7** now voids a run.
+  - **Ties** pay half on the Tuesday track.
+  - **Elo** asserts week order and one game a week per team.
+  - **The 18:00Z state price** is reported.
+  - **Unchanged:** Tune/Confirm reproduce result_sha256 `a2bc9d0e`. The pilot moves by one tie (C2 +49 bps on 82 picks, p 0.022).
+  - **Rulings:** IS-A's previous-game starter stays as the signed text defines it. E1's pre-game Elo needs no change.
 - **Weekly predictions** are saved by `prospective_dispatch.R`'s Tuesday 18:30Z step (research/hypotheses `bbea0bb`).
 
 ### D1: the keyless odds layer and the decision-time archive (roadmap D1; audit S2, S4)

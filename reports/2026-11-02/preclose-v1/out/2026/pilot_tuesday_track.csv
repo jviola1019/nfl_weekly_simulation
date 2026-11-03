@@ -1,3 +1,3 @@
-track,candidate,games,brier,brier_tue,skill,skill_lo,skill_hi,dm_p_better,slope,close_skill,picks,mean_clv_bps,clv_lo,clv_hi,p_one_sided,roi,roi_lo,roi_hi,p_bh,confirmed,window
-Tuesday,C2,119,0.232611,0.230052,-0.0111229,-0.0702214,0.0458708,0.627882,0.95398,0.0239616,81,49.3827,1.28165,92.4051,0.0218,0.188799,-0.0428293,0.393005,0.0436,TRUE,2026 weeks 1-8 (pilot)
-Tuesday,E1,119,0.227879,0.230052,0.00944245,-0.0423761,0.0564964,0.385935,1.12456,0.0239616,87,27.5862,-23.5294,71.8,0.1272,0.20446,0.0254487,0.391933,0.1272,FALSE,2026 weeks 1-8 (pilot)
+track,candidate,games,brier,brier_tue,skill,skill_lo,skill_hi,dm_p_better,slope,close_skill,picks,ties,mean_clv_bps,clv_lo,clv_hi,p_one_sided,roi,roi_lo,roi_hi,mean_clv_bps_state,p_bh,confirmed,window
+Tuesday,C2,119,0.232611,0.230052,-0.0111229,-0.0702214,0.0458708,0.627882,0.95398,0.0239616,82,1,48.7805,1.24961,92.2078,0.0218,0.189681,-0.0372601,0.391471,48.7805,0.0436,TRUE,2026 weeks 1-8 (pilot)
+Tuesday,E1,119,0.227879,0.230052,0.00944245,-0.0423761,0.0564964,0.385935,1.12456,0.0239616,88,1,27.2727,-22.6218,71.7949,0.1272,0.205104,0.0277442,0.39021,27.2727,0.1272,FALSE,2026 weeks 1-8 (pilot)

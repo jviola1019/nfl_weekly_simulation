@@ -8,6 +8,7 @@
 | **Amendment 1:** the code registered, with known answers | — | `6002e04` |
 | **Amendment 2:** a column fix in the 2026 runner, made before it produced any number | — | `c8bcc5d` |
 | **Amendment 3 = version 1.1:** the 2026 opener track withdrawn (`AMENDMENT_1_1.md`), made before week 9 | — | `53b58cd` |
+| **Amendment 4:** the review's fixes (`REVIEW_1.md`); no choice changes, and Tune/Confirm reproduce the same result_sha256 | 2026-11-03 | `e8cc66a` |
 
 - **The Holdout (2025, sealed) decides** and is not built yet: the owner opens it once, with `nfl_games_v2`.
 - **2026 weeks 9–18 are prospective.** The weekly scheduler saves each week's predictions on Tuesday at 18:30 UTC (`prospective_dispatch.R`). They are scored once, after week 18.
@@ -55,8 +56,12 @@ So the pilot's +572 bps for PC-C2 measures a stale line.
 
 | Candidate | Brier skill against the Tuesday mid (95% CI) | CLV of picks (95% CI) | One-sided p (BH) | Taker return: the ask plus the fee, held to settlement |
 |---|---|---|---|---|
-| C2 | −1.1% (−7.0 to +4.6) | **+49 bps (+1 to +92)**, 81 picks | 0.022 (0.044) | +18.9% (−4.3% to +39.3%) |
-| E1 | +0.9% (−4.2 to +5.6) | +28 bps (−24 to +72), 87 picks | 0.127 (0.127) | +20.4% (+2.5% to +39.2%) |
+| C2 | −1.1% (−7.0 to +4.6) | **+49 bps (+1 to +92)**, 82 picks | 0.022 (0.044) | +19.0% (−3.7% to +39.1%) |
+| E1 | +0.9% (−4.2 to +5.6) | +27 bps (−23 to +72), 88 picks | 0.127 (0.127) | +20.5% (+2.8% to +39.0%) |
+
+- **These are amendment 4's numbers** (`REVIEW_1.md`). They count the one tie (week 5, NYG–WAS) at half pay. Before it the table had 81 and 87 picks, and C2's +49 bps and E1's +28 bps.
+- **The 18:00 UTC state price gives the same CLV:** every game had a candle ending at 18:00 UTC.
+- **C2's row meets v1.1's rule here,** a BH-adjusted p below 0.05. In a pilot that confirms nothing.
 
 - **C2 predicts where Kalshi's price moves between Tuesday and kickoff.** The size is similar to T1's at ESPN BET's opener.
 - **This is a pilot, chosen after looking.** v1.1 made the Tuesday track the 2026 test after these numbers were read, and its test is weeks 9–18. Eight weeks of returns at ±20% decide nothing.
