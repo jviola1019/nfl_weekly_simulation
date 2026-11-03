@@ -9,8 +9,9 @@
 #          refreshes the private 2025-2026 history), Tuesday 18:30Z, deadline the week's first kickoff. Scheduled only
 #          when <store>/preclose_checkout.txt names a checkout of the registered code; outputs go to <store>/preclose/.
 # Every step goes through weekly_prospective.sh, so a timed run and a hand run are the same thing. A step that exits 0
-# leaves <store>/wWW/done/<step>.ok; a failure is retried at the next start, up to 3 tries, until its deadline; a step
-# whose deadline passes is marked missed and logged. The schedule (nflverse, keyless) is cached in <store> and refreshed
+# leaves <store>/wWW/done/<step>.ok; a failure is retried at the next 3 starts, then an hour after its last failure, until
+# its deadline and at most 12 tries in all; a step whose deadline passes, or that fails 12 times, is marked missed and
+# logged. The schedule (nflverse, keyless) is cached in <store> and refreshed
 # every 12 hours; 2026 only.
 # Usage: Rscript prospective_dispatch.R --store=<dir> --prod=<checkout for run_week.R> --res=<research checkout>
 #          [--first-week=9] [--last-week=18] [--now=<YYYY-mm-ddTHH:MM:SSZ>] [--only=<regex>] [--dry-run]
@@ -19,7 +20,9 @@
 suppressPackageStartupMessages(library(data.table))
 BASH <- "C:/Program Files/Git/bin/bash.exe"   # Git for Windows' launcher, which puts the POSIX tools on PATH
 RUNNER <- file.path("reports", "2026-10-29", "hypotheses", "weekly_prospective.sh")
-TRIES <- 3L
+TRIES <- 3L         # tries at successive starts after a failure
+RETRY_GAP <- 3600   # then one try this many seconds after the last failure, until the deadline
+MAX_TRIES <- 12L    # and no more than this many in all
 utc <- function(x) format(x, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
 
 load_schedule <- function(store, now, log) {
@@ -65,9 +68,11 @@ step_state <- function(store, s, now) {
   d <- file.path(store, sprintf("w%02d", s$week), "done")
   if (file.exists(file.path(d, paste0(s$step, ".ok")))) return("ok")
   if (file.exists(file.path(d, paste0(s$step, ".missed")))) return("missed")
-  fails <- length(list.files(d, pattern = sprintf("^%s\\.fail[0-9]+$", s$step)))
+  fails <- list.files(d, pattern = sprintf("^%s\\.fail[0-9]+$", s$step), full.names = TRUE)
   if (now < s$due) return("waiting")
-  if (now >= s$deadline || fails >= TRIES) return("expire")
+  if (now >= s$deadline || length(fails) >= MAX_TRIES) return("expire")
+  # an outage can outlast three starts (2026-11-03: a DNS failure took all three in 30 minutes)
+  if (length(fails) >= TRIES && difftime(now, max(file.mtime(fails)), units = "secs") < RETRY_GAP) return("backoff")
   "due"
 }
 
