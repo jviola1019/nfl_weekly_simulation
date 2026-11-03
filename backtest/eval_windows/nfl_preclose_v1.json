@@ -58,7 +58,7 @@
         17,
         18
       ],
-      "use": "one look after week 18"
+      "use": "the Tuesday track (C2 and E1 on IS-T): CLV of tau-picks against Kalshi's Tuesday mid, one-sided, BH across the two; one look after week 18 (amendment 3)"
     },
     "pilot": {
       "season": 2026,
@@ -116,7 +116,7 @@
     },
     {
       "path": "backtest/preclose/run_2026.R",
-      "sha256": "c72ff4d995e79af84237422f57b66555e6de5c556bfaaf0f27cde2d1179d4810"
+      "sha256": "503bceb97c41cf4b7183da8bc2f6963a8835792ada525be2cbe7f43119de5847"
     },
     {
       "path": "backtest/preclose/build_history.R",
@@ -189,6 +189,10 @@
     {
       "path": "tests/testthat/test-preclose.R",
       "sha256": "0606b81a34c4760f26260eee10dfca50176ad8b9e0e91852c3b357abdb0b9347"
+    },
+    {
+      "path": "reports/2026-11-02/preclose-v1/AMENDMENT_1_1.md",
+      "sha256": "42316e72d16760e57808fa7eb522024e3787f8953396541891a5f32d37f7ba09"
     }
   ],
   "code_rule": "registered by sha256 in an amendment before any confirmatory number is read; it may change no choice",
@@ -209,6 +213,19 @@
       "id": 2,
       "date": "2026-11-02",
       "what": "re-registers backtest/preclose/run_2026.R (df4bd7c20624 -> c72ff4d995e7): LM's training needs p_close, which the 2026 runner did not set; its first run stopped before computing any 2026 number; no choice changes"
+    },
+    {
+      "id": 3,
+      "date": "2026-11-02",
+      "version": "1.1",
+      "file": "reports/2026-11-02/preclose-v1/AMENDMENT_1_1.md",
+      "sha256": "42316e72d16760e57808fa7eb522024e3787f8953396541891a5f32d37f7ba09",
+      "what": "withdraws the 2026 opener track (ESPN's 2026 DraftKings open is the preseason line: reports/2026-11-02/preclose-v1/dk_opener_timing.R) and makes the Tuesday track 2026's prospective test; re-registers backtest/preclose/run_2026.R (c72ff4d995e7 -> 503bceb97c41); made before week 9's first kickoff",
+      "evidence": {
+        "path": "reports/2026-11-02/preclose-v1/dk_opener_timing.R",
+        "sha256": "1d1d1017aaf179800ce085261592b9a43eba80cdbca7412a82f2abe1372d2136"
+      }
     }
-  ]
+  ],
+  "protocol_version": "1.1"
 }

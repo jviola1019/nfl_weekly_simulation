@@ -101,7 +101,7 @@ tuesday_clv <- function(x, col, B = PC_B, seed = PC_SEED) {
   units <- pay / cost - 1
   wk_f <- factor(z$wk); counts <- bt_boot_counts(nlevels(wk_f), B, seed); n_w <- tabulate(as.integer(wk_f), nlevels(wk_f)); bn <- drop(counts %*% n_w)
   cb <- drop(counts %*% as.numeric(tapply(clv, wk_f, sum))) / bn; rb <- drop(counts %*% as.numeric(tapply(units, wk_f, sum))) / bn
-  data.table(picks = nrow(z), mean_clv_bps = mean(clv), clv_lo = bt_quantile_ci(cb)[1], clv_hi = bt_quantile_ci(cb)[2],
+  data.table(picks = nrow(z), mean_clv_bps = mean(clv), clv_lo = bt_quantile_ci(cb)[1], clv_hi = bt_quantile_ci(cb)[2], p_one_sided = mean(cb <= 0),
              roi = mean(units), roi_lo = bt_quantile_ci(rb)[1], roi_hi = bt_quantile_ci(rb)[2])
 }
 score_2026 <- function(d, label) {
@@ -116,6 +116,8 @@ score_2026 <- function(d, label) {
                      brier_tue = s[["p_open"]]$brier, skill = s[[col]]$skill, skill_lo = s[[col]]$skill_ci[1], skill_hi = s[[col]]$skill_ci[2],
                      dm_p_better = s[[col]]$dm_p_better, slope = s[[col]]$slope, close_skill = s[["p_close_venue"]]$skill), tuesday_clv(z, col))
   }), fill = TRUE)
+  # v1.1 (AMENDMENT_1_1.md): the Tuesday track's test is the CLV of tau-picks, one-sided, with BH across C2 and E1
+  if ("p_one_sided" %in% names(ts)) ts[, `:=`(p_bh = stats::p.adjust(p_one_sided, "BH"), confirmed = stats::p.adjust(p_one_sided, "BH") < 0.05)]
   list(opener = op[, window := label], movement = mv[, window := label], tuesday = ts[, window := label])
 }
 s4 <- function(x) x[, lapply(.SD, function(v) if (is.numeric(v)) signif(v, 6) else v)]
@@ -154,6 +156,6 @@ keep <- c("game_id", "season", "week", "wk", "kickoff", "y", "home_score", "away
           "p_tue", "ask_tue", "bid_tue", "p_kclose")
 x <- merge(d[week %in% 9:18, ..keep], sp[, .(game_id, p_pc2, p_oa, p_lm, move_hat, p_c2_t, p_e1_t)], by = "game_id")
 r <- score_2026(x, "2026 weeks 9-18 (prospective, one look)")
-bt_write_csv(s4(r$opener), file.path(out, "prospective_opener_track.csv")); bt_write_csv(s4(r$movement), file.path(out, "prospective_lm_movement.csv"))
+# v1.1: the 2026 opener track is withdrawn (ESPN's 2026 DraftKings open is the preseason line); only the Tuesday track counts
 bt_write_csv(s4(r$tuesday), file.path(out, "prospective_tuesday_track.csv"))
-options(width = 220); print(s4(r$opener)); print(s4(r$movement)); print(s4(r$tuesday))
+options(width = 220); print(s4(r$tuesday))
