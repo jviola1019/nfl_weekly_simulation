@@ -92,3 +92,20 @@ The run also records the merge commits already on `main` before this branch. `4f
 **Head vs baseline (`3900255` vs `b5d1ac4`)** includes M19 as well: `mu_home` 0.3289 (M24); `sd_home`/`sd_away` 1.3857 and `k_*` up to 36.9 (M19 and M22b); `home_p_2w_model` 0.0332; `home_p_2w_blend` 0.0573; `margin_blend` 2.07.
 
 **Current golden master.** `final_numeric.csv`, `meta.json` and `inputs.csv` here were re-recorded from the CI artifact `gm-3900255…` of workflow run 37186552533, `csv_sha256 b7b888a7f782d0046abff04db9921bbb1cfe747a6a92b93b05ceee6bca1ce670` (checked against the file with sha256). Predicted-vs-measured checks: `mu_home`, `mu_away`, `sd_home` and `home_p_2w_model` at `3900255` equal those at `34702a2` exactly.
+
+## Integration of #215–#230 (#231)
+
+The record was made by `.github/workflows/golden-master.yml` on #231: workflow run 41568091649, `attribute` job 125698822741. Each first-parent commit, from main's `4c1c377` through the integration head `faf2316`, is judged against the previous one, on the same live data.
+
+**Determinism:** `b5d1ac4` recorded twice differs only by fit noise: 2.2e-10 in the SDs, 4.0e-9 in `k_*`.
+
+| Commit | PR | Columns changed vs the previous commit | Games | Max abs diff | Verdict vs prediction |
+|---|---|---|---|---|---|
+| `2f69662`, `80de6d9`, `fd15712`, `272121d`, `7b218ca`, `8ff5a04` | #217 capture, #216 P13, #220 P1 props, #230 projection week, #215 auto week, #218 seal diagnostics | none | 0 | none | As predicted: none of them is on the game model's path for a pinned week. |
+| `3dd7d79` | #219 stadium ids | none. **Input drift:** weather `partial_fallback` → `full`; `weather_fallback_games` KC@CLE, NYJ@JAX, WAS@NO → none | 0 | none | Explained: the three games now get real weather. Weather is not admitted into the means (`MU_TERMS_ADMITTED`), so no output moves. |
+| `903b11b` | #223 F11 (home field for every team) and F11b (franchise codes), squashed | `mu_home` in 16 games; `mu_away` unchanged; SDs, `k_*`, every probability, the blend, and `proj_home_score` in 2 games | 16 | `mu_home` 0.616; `mu_away` 7.4e-9; `home_p_2w_model` 0.0201; `home_p_2w_blend` 0.0370; `margin_blend` 1.55 | **Not as predicted** (#223 expected none for a week with all 32 teams). The change is in home field alone (`mu_home` moves, `mu_away` does not), the term #223 rebuilt. |
+| `305f7d6` … `faf2316` | #228, #224, #222, #221, the research stack (#225–#229), run_matrix's timeout | none (fit noise only) | 0 | none | As predicted. |
+
+**Head vs baseline (`faf2316` vs `b5d1ac4`):** the 1b-1 and M19 changes recorded above, plus #223's.
+
+**Current golden master.** `final_numeric.csv`, `meta.json` and `inputs.csv` here were re-recorded from the CI artifact `gm-faf2316…` of workflow run 41568091649, `csv_sha256 dd03499045703a7189fd9b6a8d1c2b449e67960064a7312ec4cbd214d8325b0d` (checked against the file with sha256).

@@ -5,6 +5,9 @@
 #   snap   Thursday 18:00Z, and 60 minutes before every distinct kickoff time (deadline: 5 minutes before it).
 #   fetch  Kalshi's settlements and hourly candles for the week, then score_week.R: the first Tuesday 12:00Z after the
 #          week's last game, and again on Wednesday 12:00Z for anything settled late.
+#   preclose  nfl_preclose_v1.1's predictions for the week (backtest/preclose/run_2026.R predict, after build_history.R
+#          refreshes the private 2025-2026 history), Tuesday 18:30Z, deadline the week's first kickoff. Scheduled only
+#          when <store>/preclose_checkout.txt names a checkout of the registered code; outputs go to <store>/preclose/.
 # Every step goes through weekly_prospective.sh, so a timed run and a hand run are the same thing. A step that exits 0
 # leaves <store>/wWW/done/<step>.ok; a failure is retried at the next start, up to 3 tries, until its deadline; a step
 # whose deadline passes is marked missed and logged. The schedule (nflverse, keyless) is cached in <store> and refreshed
@@ -34,7 +37,7 @@ load_schedule <- function(store, now, log) {
 }
 
 # every step of every week, with when it is due and its deadline
-week_steps <- function(sched, weeks) {
+week_steps <- function(sched, weeks, preclose = FALSE) {
   at <- function(d, hm) as.POSIXct(paste(format(d), hm), tz = "UTC")
   et_day <- function(t) as.Date(format(t, "%Y-%m-%d", tz = "America/New_York"))
   wday <- function(d) as.POSIXlt(d)$wday   # Sunday 0, Tuesday 2
@@ -52,7 +55,8 @@ week_steps <- function(sched, weeks) {
       data.table(week = w, step = sprintf("snap_%s", format(kicks, "%Y%m%dT%H%MZ", tz = "UTC")), mode = "snap",
                  due = kicks - 3600, deadline = kicks - 300, env = ""),
       data.table(week = w, step = c("fetch_tue", "fetch_wed"), mode = "fetch",
-                 due = c(at(after, "12:00:00"), at(after + 1L, "12:00:00")), deadline = at(after + 6L, "12:00:00"), env = fetch_env)
+                 due = c(at(after, "12:00:00"), at(after + 1L, "12:00:00")), deadline = at(after + 6L, "12:00:00"), env = fetch_env),
+      if (preclose) data.table(week = w, step = "preclose_predict", mode = "preclose", due = at(tue, "18:30:00"), deadline = k1, env = "")
     )
   }))[order(due)]
 }
@@ -73,7 +77,16 @@ run_step <- function(store, prod, res, s, log) {
   for (kv in strsplit(strsplit(s$env, " ")[[1]], "=")) if (length(kv) == 2L) do.call(Sys.setenv, setNames(list(kv[2]), kv[1]))
   q <- function(x) shQuote(x, type = "cmd")
   log(sprintf("start week %d %s (%s, due %s)", s$week, s$step, s$mode, utc(s$due)))
-  rc <- system2(BASH, c(q(file.path(res, RUNNER)), s$mode, q(prod), q(res), q(w), s$week))
+  if (s$mode == "preclose") {
+    pc <- trimws(readLines(file.path(store, "preclose_checkout.txt"), warn = FALSE)[1]); ps <- file.path(store, "preclose")
+    dir.create(file.path(w, "logs"), recursive = TRUE, showWarnings = FALSE)
+    lf <- file.path(w, "logs", sprintf("preclose_%s.log", format(Sys.time(), "%Y%m%dT%H%M%SZ", tz = "UTC")))
+    old <- setwd(pc); on.exit(setwd(old), add = TRUE)
+    rc <- system2("Rscript", c(file.path("backtest", "preclose", "build_history.R"), q(file.path(ps, "raw")), q(file.path(ps, "history"))), stdout = lf, stderr = lf)
+    if (rc == 0L) rc <- system2("Rscript", c(file.path("backtest", "preclose", "run_2026.R"), "predict", q(file.path(ps, "predictions")),
+                                          paste0("--history=", file.path(ps, "history")), paste0("--week=", s$week)), stdout = lf, stderr = lf)
+    setwd(old)
+  } else rc <- system2(BASH, c(q(file.path(res, RUNNER)), s$mode, q(prod), q(res), q(w), s$week))
   if (rc == 0L && s$mode == "fetch") rc <- system2(BASH, c(q(file.path(res, RUNNER)), "score", q(prod), q(res), q(w), s$week))
   if (rc == 0L) file.create(file.path(d, paste0(s$step, ".ok"))) else
     file.create(file.path(d, sprintf("%s.fail%d", s$step, length(list.files(d, pattern = sprintf("^%s\\.fail", s$step))) + 1L)))
@@ -101,7 +114,7 @@ main <- function() {
     }
     on.exit(unlink(lock, recursive = TRUE))
   }
-  steps <- week_steps(load_schedule(store, now, log), weeks)
+  steps <- week_steps(load_schedule(store, now, log), weeks, preclose = file.exists(file.path(store, "preclose_checkout.txt")))
   if (!is.null(opt("only"))) steps <- steps[grepl(opt("only"), step)]
   steps[, state := vapply(seq_len(.N), function(i) step_state(store, steps[i], now), "")]
   if (dry) {
