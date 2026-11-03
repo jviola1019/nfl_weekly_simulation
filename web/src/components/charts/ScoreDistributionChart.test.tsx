@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { pctTicks } from "@/lib/format";
 import { ScoreDistributionChart } from "./ScoreDistributionChart";
 import { ScoreDistributionPlot } from "./ScoreDistributionPlot";
 
@@ -41,5 +42,24 @@ describe("ScoreDistributionPlot (server render of the client plot)", () => {
     expect(html).toContain("median total 41 points");
     expect(html).not.toContain("Final ");
     expect(html).not.toContain('stroke="var(--actual)"');
+  });
+
+  // 2026 week 9, JAX at BAL: a total distribution peaking at 2.544% gets ticks every 0.5%, which the axis labelled
+  // 0%, 0.5%, 1%, 2%, 2%, 3% (1.5% and 2.5% rounded to whole percents), so its top gridline read 3% at 2.5%
+  it("labels every y gridline with its own value when the ticks are half a percent apart", () => {
+    const totals = Array.from({ length: 91 }, (_, i) => 20 + i).map((x) => ({ x, p: 0.02544 * Math.exp(-((x - 52) ** 2) / (2 * 15.7 ** 2)) }));
+    const html = renderToStaticMarkup(<ScoreDistributionPlot kind="total" bins={totals} homeId="BAL" awayId="JAX" nSims={100000} result={null} />);
+    const yLabels = [...html.matchAll(/text-anchor="end"[^>]*>([0-9.]+%)<\/text>/g)].map((m) => m[1]);
+    expect(yLabels).toEqual(["0%", "0.5%", "1.0%", "1.5%", "2.0%", "2.5%"]);
+  });
+});
+
+describe("pctTicks", () => {
+  it("gives each tick the decimals of the tick step, so no two labels are the same", () => {
+    expect(pctTicks([0, 0.005, 0.01, 0.015, 0.02, 0.025])).toEqual(["0%", "0.5%", "1.0%", "1.5%", "2.0%", "2.5%"]);
+    expect(pctTicks([0, 0.01, 0.02, 0.03])).toEqual(["0%", "1%", "2%", "3%"]);
+    expect(pctTicks([0, 0.002, 0.004, 0.006])).toEqual(["0%", "0.2%", "0.4%", "0.6%"]);
+    expect(pctTicks([0, 0.0005, 0.001])).toEqual(["0%", "0.05%", "0.10%"]);
+    expect(pctTicks([0.01])).toEqual(["1%"]);
   });
 });
