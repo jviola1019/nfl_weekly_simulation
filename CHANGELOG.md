@@ -4,6 +4,26 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### `nfl_preclose_v1` signed, scored on Tune and Confirm, and amended to v1.1 before week 9 (2026-11-02)
+
+- **Signed before PC-C2 was computed on any season** (`reports/2026-11-02/preclose-v1/PROTOCOL.md`, `backtest/eval_windows/nfl_preclose_v1.json`).
+  - It fixes the approved design of 2026-10-20: IS-A, PC-C2, OA[E1] and LM[E1] with BH, the windows, the Tuesday track, gates P1–P7 and the disclosures.
+  - **2025 enters only as history.**
+- **The code** (`backtest/preclose/`): PC-C2 on v1's estimator with the cutoff and QB as parameters, Elo on both information sets, the anchored fits, the gates and controls, the scorers, and private fetchers for the 2025–2026 history, ESPN's 2026 openers and Kalshi's Tuesday prices.
+  - **Registered** by sha256 in amendment 1: 24 files.
+  - **Known answers:** the builder on IS-B reproduces v1's C2 to 5×10⁻¹¹ on 1,942 games. Elo, the timing diagnostic and T1 all match.
+  - **Tests:** `tests/testthat/test-preclose.R`.
+- **Tune 2023 and Confirm 2024** (`RESULT.md`): every P6 control passes.
+  - **No candidate passes P1 or P2.** PC-C2's Brier skill against the opener is −6.6% (−10.8 to −3.0) in 2024.
+  - **CLV:** PC-C2 gains +45 bps in 2024 and +54 in 2023, about half of IS-B's. OA[E1]'s 2024 CLV is +135 bps (+47 to +231).
+  - **The Holdout decides.**
+- **Version 1.1** (`AMENDMENT_1_1.md`, amendment 3, before week 9):
+  - **The 2026 opener track is withdrawn.** ESPN's 2026 DraftKings "open" is the preseason line: Elo at the season's start gains +315 bps against it (`dk_opener_timing.R`).
+  - **The Tuesday track becomes 2026's prospective test:** C2 and E1 against Kalshi's Tuesday mid, weeks 9–18.
+  - **Its pilot, weeks 1–8:** C2 gains +49 bps (+1 to +92), one-sided p 0.022.
+- **Amendment 2** fixed a missing column in the 2026 runner before it produced any number.
+- **Weekly predictions** are saved by `prospective_dispatch.R`'s Tuesday 18:30Z step (research/hypotheses `bbea0bb`).
+
 ### D1: the keyless odds layer and the decision-time archive (roadmap D1; audit S2, S4)
 
 - **`R/odds/`:** one HTTP layer (`http.R`: truthful user agent, 20 s timeout, at most 1 request/second per domain as a floor in code, backoff on 429/5xx, a 401/403/429 that survives the retries or a challenge page blocks the domain, sha256 of every successful raw response, error responses recorded by status and error text, fetch log), the `odds_snapshots` shape and market/venue vocabulary (`snapshots.R`), the closing rule (`closing.R`: last snapshot at or before kickoff at the same line, more than 60 minutes is stale, a missing line stays missing), one provider interface with `provider_nflverse`, `provider_espn_core` and `provider_kalshi`, forward capture (`capture.R`) and the archive builder (`archive.R`). Every gap a provider meets (a market not served, a dropped block, a missing field, a page cap, a line without a price, an empty or JSON-null body) is counted and makes its status `stale`; a Kalshi market of an unsupported type is counted as information. A challenge page or a 401/403/429 blocks the domain for the rest of the session. Responses are parsed with `jsonlite::parse_json`, which never reads a file or URL that a response names. A close block fetched before kickoff is kept as an observed snapshot at the fetch time, never as a close. No new dependency; tests inject a fetch function and read recorded fixtures in `tests/testthat/fixtures/odds/`.
