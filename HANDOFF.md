@@ -42,6 +42,11 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 **Open risks:**
 - **The PC sleeps often:** on 2026-11-02 it slept 22:10Z to 02:34Z, and week 8's MNF snapshot was missed. Snapshot windows are 55 minutes, so they need the PC awake: the scheduled task with WakeToRun, or a power plan that does not sleep.
 - **Never run `run_week.R` by hand in `props-v1-run`** while the loop can fire (Tuesday 18:00Z, Friday 21:00Z).
+- **Injury loads can fail silently.** `safe_load_injuries()` (NFLsimulation.R) suppresses nflreadr's warnings, so an empty return, such as a download timeout under load, runs the model with zero injury impact. The badge shows only "Injuries: UNAVAILABLE".
+  - It happened once on 2026-11-02 and produced a false golden-master lead.
+  - **Check each weekly run's `source_status.json` for its injury status.**
+  - The fix (retry, log the warning) is an engine edit for the owner.
+- **Before blaming code for a golden-master difference,** read its INPUT DRIFT lines.
 
 **Next targets:**
 - after week 18: `props_v1_score.R --weeks=9:18` and `run_2026.R prospective`;
