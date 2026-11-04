@@ -1,0 +1,8 @@
+PASS: 0 failure(s) -> exit 0 after 1 attempt(s) (want exit 0 after 1)
+PASS: 2 failure(s) -> exit 0 after 3 attempt(s) (want exit 0 after 3)
+      ::warning::golden-master record attempt 1 of 3 failed for abc1234
+      ::warning::golden-master record attempt 2 of 3 failed for abc1234
+PASS: 3 failure(s) -> exit 1 after 3 attempt(s) (want exit 1 after 3)
+      ::warning::golden-master record attempt 1 of 3 failed for abc1234
+      ::warning::golden-master record attempt 2 of 3 failed for abc1234
+      ::warning::golden-master record attempt 3 of 3 failed for abc1234
