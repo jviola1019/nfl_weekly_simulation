@@ -72,8 +72,13 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 - **Before blaming code for a golden-master difference,** read its INPUT DRIFT lines.
 - **The checkouts `hyp-loop` and `preclose-run` have no `.Rprofile`,** so they run on the user library (dplyr 1.2.0). The pre-close code's packages are identical in both libraries, and it does not use dplyr.
 
+- **The model gauntlet is done** (`research/model-gauntlet`, `reports/2026-11-03/model-gauntlet/RESULT.md`): valid, reproducible, and none of 20 candidates beats or adds to the close on 2018–2022. In a ratings model, the engine's home-field estimator measurably costs accuracy.
+  - "RoboBot sim" was read as a drive-level simulator, F9, and the reading still needs the owner's confirmation.
+- **Verification on `ef3d49b`:** `run_matrix` 11/11, `run_tests.R` 878/4,008/0, integrity 63/63, Playwright 135/135 on the real run, CI green.
+  - Two runs cut off when the PC slept were restarted on AC power and passed.
+
 **Next targets:**
-- **the model gauntlet** (owner, 2026-11-03: "various different models … concepts … testing … gauntlet looping"). It follows the owner's `fantasy_football_dashboard/scripts/model-gauntlet.ts` standard: many families on Tune only, paired out-of-fold loss, Holm, and positive controls, or the run is void. It includes a drive-level simulator (my reading of "RoboBot sim", to confirm) and the strength-free home field;
+- **the home-field term** for the engine's term-admission backtest (M22): a league home field in place of `team_hfa_table()`'s mean home margin. It needs G1's point-in-time `predict_week()` first, because the engine's calibration path cannot compare estimators (`reports/2026-11-04/hfa-engine/README.md`);
 - after week 18: `props_v1_score.R --weeks=9:18` and `run_2026.R prospective`;
 - the Holdout, which the owner opens (checkpoint 8).
 
