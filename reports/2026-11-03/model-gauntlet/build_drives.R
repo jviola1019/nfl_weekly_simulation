@@ -21,22 +21,41 @@ mg_drives_one_season <- function(pbp) {
     by = .(game_id, team = posteam, opp)]
 }
 
+#' A release file read whole: a cached copy is used only if it reads as an RDS (a download cut off by a sleeping
+#' PC leaves a truncated file); a download goes to <file>.part and is renamed once it reads, with three tries
+mg_fetch_rds <- function(url, f, tries = 3L) {
+  if (file.exists(f)) {
+    x <- tryCatch(readRDS(f), error = function(e) NULL)
+    if (!is.null(x)) return(x)
+    message(sprintf("%s does not read whole; downloading it again", basename(f)))
+  }
+  part <- paste0(f, ".part")
+  for (k in seq_len(tries)) {
+    Sys.sleep(if (k == 1L) 1 else 10)
+    ok <- tryCatch({ utils::download.file(url, part, mode = "wb", quiet = TRUE); TRUE },
+                   warning = function(w) FALSE, error = function(e) FALSE)
+    x <- if (ok) tryCatch(readRDS(part), error = function(e) NULL) else NULL
+    if (!is.null(x)) { file.rename(part, f); return(x) }
+    message(sprintf("%s: try %d of %d failed", basename(f), k, tries))
+  }
+  unlink(part)
+  stop(sprintf("could not download %s whole", url), call. = FALSE)
+}
+
 main <- function() {
   raw <- commandArgs(trailingOnly = TRUE)[1]
   if (is.na(raw)) stop("usage: build_drives.R <raw cache dir>")
   dir.create(raw, recursive = TRUE, showWarnings = FALSE)
   games <- fread(file.path("backtest", "data", "games.csv"), na.strings = c("", "NA"),
                  colClasses = list(character = c("home_qb_id", "away_qb_id", "gametime")))[season <= max(MG_DRIVE_SEASONS)]
+  options(timeout = max(900, getOption("timeout")))
   meta <- list(); parts <- list()
   for (s in MG_DRIVE_SEASONS) {
     url <- sprintf("%s/play_by_play_%d.rds", MG_PBP_BASE, s)
     f <- file.path(raw, basename(url))
-    if (!file.exists(f)) {
-      Sys.sleep(1)
-      utils::download.file(url, f, mode = "wb", quiet = TRUE)
-    }
+    pbp <- mg_fetch_rds(url, f)
     meta[[length(meta) + 1]] <- list(file = basename(f), url = url, sha256 = digest::digest(file = f, algo = "sha256"), bytes = file.size(f))
-    parts[[length(parts) + 1]] <- mg_drives_one_season(readRDS(f))
+    parts[[length(parts) + 1]] <- mg_drives_one_season(pbp)
     message(sprintf("%d: %d team-games", s, nrow(parts[[length(parts)]])))
   }
   d <- rbindlist(parts)

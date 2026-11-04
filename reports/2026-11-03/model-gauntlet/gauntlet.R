@@ -3,6 +3,8 @@
 # and scored once on 2018-2022 against the no-vig close, with the controls that void the run on failure.
 # Games after 2022 are dropped as soon as the inputs load.
 #   Rscript reports/2026-11-03/model-gauntlet/gauntlet.R [--out=<dir>] [--sims=20000]
+# Development only, never the scored run: --families=F1,F4 runs a subset; --select-only stops after the 2012-2017
+# selection, so nothing of 2018-2022 is scored or seen.
 suppressPackageStartupMessages(library(data.table))
 for (f in c("common.R", "metrics.R", "controls.R", "candidates/elo.R", "candidates/epa_glm.R")) source(file.path("backtest", f))
 MG_DIR <- file.path("reports", "2026-11-03", "model-gauntlet")
@@ -18,6 +20,8 @@ args <- commandArgs(trailingOnly = TRUE)
 opt <- function(k, d) { v <- sub(sprintf("^--%s=", k), "", grep(sprintf("^--%s=", k), args, value = TRUE)); if (length(v)) v[1] else d }
 out_dir <- opt("out", file.path(MG_DIR, "out"))
 n_sims <- as.integer(opt("sims", "20000"))
+only <- opt("families", NA_character_)
+select_only <- "--select-only" %in% args
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 t_start <- Sys.time()
 say <- function(...) message(format(Sys.time(), "%H:%M:%S"), " ", sprintf(...))
@@ -28,8 +32,11 @@ games <- inp$games[season <= max(MG_GAUNTLET)]
 stopifnot(max(games$season) == 2022)
 team_games <- inp$team_games[game_id %in% games$game_id]
 qb_games <- inp$qb_games[game_id %in% games$game_id]
-drives <- fread(file.path("backtest", "data", "drive_games.csv"))[game_id %in% games$game_id]
-drives[, kickoff := bt_parse_utc(kickoff_utc)]
+wanted <- if (is.na(only)) paste0("F", 1:10) else strsplit(only, ",")[[1]]
+if ("F9" %in% wanted) {
+  drives <- fread(file.path("backtest", "data", "drive_games.csv"))[game_id %in% games$game_id]
+  drives[, kickoff := bt_parse_utc(kickoff_utc)]
+}
 weeks <- bt_week_schedule(games, c(MG_SELECT, MG_GAUNTLET))
 wk_sel <- weeks[season %in% MG_SELECT]; wk_gnt <- weeks[season %in% MG_GAUNTLET]
 target <- games[season %in% c(MG_SELECT, MG_GAUNTLET)]
@@ -93,6 +100,7 @@ mg_xgb_walk_forward <- function(s) {
   }))
 }
 
+families <- families[wanted]
 MG_EPA_FEATS <- lapply(setNames(nm = as.character(unique(BT_EPA_GRID$halflife))), function(h)
   bt_epa_features(games, team_games, qb_games, as.numeric(h), target_seasons = BT_EPA_FIRST_TRAIN_SEASON:max(MG_GAUNTLET)))
 
@@ -115,6 +123,10 @@ for (fam in names(families)) {
   say("%s: selected %s (log loss %.5f over %d settings)", fam, paste(names(grid), unlist(grid[best]), sep = "=", collapse = " "), lls[best], nrow(grid))
 }
 bt_write_csv(rbindlist(selection, fill = TRUE), file.path(out_dir, "selection.csv"))
+if (select_only || !is.na(only)) {
+  say("development run: selection only, 2018-2022 not scored")
+  quit(save = "no", status = 0)
+}
 
 # ---- stacks: S[F] fitted on every scored game before the predicted week ------------------------------------------
 all_p <- Reduce(function(a, b) merge(a, b, by = "game_id", all = TRUE),
