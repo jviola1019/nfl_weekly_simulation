@@ -1,0 +1,335 @@
+1: In anova.lm(stats::lm(x ~ factor(g))) :
+  ANOVA F-tests on an essentially perfect fit are unreliable
+2: In anova.lm(stats::lm(x ~ factor(g))) :
+  ANOVA F-tests on an essentially perfect fit are unreliable
+                                                                               item
+                                                                             <char>
+ 1:                                                                           price
+ 2: contracts with an outcome and a capture but no two-sided candle close (dropped)
+ 3:                                                              capture files read
+ 4:                                                                 series captured
+ 5:                                                series with markets in weeks 6-7
+ 6:                                                     series tied to single games
+ 7:                                                 contracts in single-game series
+ 8:                    settled with an outcome (binary, tie share or scalar payout)
+ 9:                       settled at the pre-game fair price (no outcome, excluded)
+10:                                   not settled in the window (week 8, or voided)
+11:                     contracts with a pre-kickoff two-sided quote and an outcome
+12:                                            of them with spread <= 0.10 (fitted)
+13:                                                                    games fitted
+14:          2026 week 6-7 games in the schedule, and those with no fitted contract
+15:                                                      series fitted on their own
+16:                            series set aside: fewer than 10 events or non-events
+17:                                                  Kalshi settlements fetched for
+18:                                      player stats and snap counts fetched (UTC)
+                                                                                                                                                       value
+                                                                                                                                                      <char>
+ 1:                                                                                                            the last capture before the scheduled kickoff
+ 2:                                                                                                                                                        0
+ 3:                                                                                                                                                     3641
+ 4:                                                                                                                                                      191
+ 5:                                                                                                                                                      121
+ 6:                                                                                                                                                       74
+ 7:                                                                                                                                                    37175
+ 8:                                                                                                                                                    32308
+ 9:                                                                                                                                                      577
+10:                                                                                                                                                     4290
+11:                                                                                                                                                    29669
+12:                                                                                                                                                    26635
+13:                                                                                                                                                       28
+14:                                                                                                                                            28; missing: 
+15:                                                                                                                                                       56
+16: KXNFLESCALATORREC (8 events); KXNFLESCALATORRECYDS (5 events); KXNFLESCALATORRSHYDS (3 events); KXNFLLADDERRSHYDS (8 events); KXNFLMOSTRSHYDS (8 events)
+17:                                                                                                                          2026-10-13 to 2026-10-28 closes
+18:                                                                                                                                     2026-10-29T06:03:02Z
+                   series                      group markets game_events settled_outcome fair_price fitted_contracts                                             status
+                   <char>                     <char>   <int>       <int>           <int>      <int>            <int>                                             <char>
+  1:          KXNFLSPREAD                  game line    1117          43             761          0              712                       fitted on its own and pooled
+  2:           KXNFLTOTAL                  game line     810          43             544          0              532                       fitted on its own and pooled
+  3:            KXNFLGAME                  game line     116          58              58          0               56                       fitted on its own and pooled
+  4:       KXNFLTEAMTOTAL                  game prop    1141          43             764          0              754                       fitted on its own and pooled
+  5:     KXNFL1HTEAMTOTAL                  game prop     899          42             618          0              611                       fitted on its own and pooled
+  6:        KXNFL1HSPREAD                  game prop     612          38             457          0              429                       fitted on its own and pooled
+  7:        KXNFL2HSPREAD                  game prop     603          39             448          0              428                       fitted on its own and pooled
+  8:         KXNFL1HTOTAL                  game prop     515          38             376          0              372                       fitted on its own and pooled
+  9:         KXNFL2HTOTAL                  game prop     533          39             394          0              365                       fitted on its own and pooled
+ 10:        KXNFL4QSPREAD                  game prop     413          38             305          0              297                       fitted on its own and pooled
+ 11:        KXNFL2QSPREAD                  game prop     414          38             309          0              296                       fitted on its own and pooled
+ 12:        KXNFL3QSPREAD                  game prop     413          38             305          0              294                       fitted on its own and pooled
+ 13:        KXNFL1QSPREAD                  game prop     385          38             284          0              284                       fitted on its own and pooled
+ 14:         KXNFL1QTOTAL                  game prop     380          38             280          0              280                       fitted on its own and pooled
+ 15:         KXNFL3QTOTAL                  game prop     380          38             280          0              276                       fitted on its own and pooled
+ 16:         KXNFL2QTOTAL                  game prop     380          38             280          0              271                       fitted on its own and pooled
+ 17:            KXNFL1HFT                  game prop     363          41             255          0              249                       fitted on its own and pooled
+ 18:         KXNFL4QTOTAL                  game prop     380          38             280          0              247                       fitted on its own and pooled
+ 19:            KXNFLRACE                  game prop     438         146             423          0              239                       fitted on its own and pooled
+ 20:       KXNFLWINMARGIN                  game prop     210          30             203          0              196                       fitted on its own and pooled
+ 21:        KXNFLTEAMSACK                  game prop     300          30             290          0               87                       fitted on its own and pooled
+ 22:              KXNFLFG                  game prop     238          30             230          0               86                       fitted on its own and pooled
+ 23:              KXNFL1H                  game prop     114          38              84          0               84                       fitted on its own and pooled
+ 24:              KXNFL1Q                  game prop     114          38              84          0               84                       fitted on its own and pooled
+ 25:              KXNFL2Q                  game prop     114          38              84          0               82                       fitted on its own and pooled
+ 26:              KXNFL3Q                  game prop     114          38              84          0               81                       fitted on its own and pooled
+ 27:              KXNFL2H                  game prop     117          39              87          0               77                       fitted on its own and pooled
+ 28:              KXNFL4Q                  game prop     114          38              84          0               76                       fitted on its own and pooled
+ 29:            KXNFLBOTH                  game prop     117          30             113          0               62                       fitted on its own and pooled
+ 30:     KXNFLFIRSTTDTEAM                  game prop      87          29              84          0               54                       fitted on its own and pooled
+ 31:              KXNFLOT                  game prop      40          40              28          0               28    pooled only (too few contracts for its own fit)
+ 32:            KXNFLSFTY                  game prop      30          30              29          0               28    pooled only (too few contracts for its own fit)
+ 33:             KXNFLTIE                  game prop      41          41              29          0               28    pooled only (too few contracts for its own fit)
+ 34:          KXNFLEQBTTS                  game prop      29          29              28          0               24    pooled only (too few contracts for its own fit)
+ 35:           KXNFLDSTTD                  game prop      30          30              29          0               16    pooled only (too few contracts for its own fit)
+ 36:          KXNFL1QBTTS                  game prop      29          29              28          0               13    pooled only (too few contracts for its own fit)
+ 37:          KXNFL2QBTTS                  game prop      29          29              28          0               13    pooled only (too few contracts for its own fit)
+ 38:          KXNFL3QBTTS                  game prop      29          29              28          0               12    pooled only (too few contracts for its own fit)
+ 39:          KXNFL4QBTTS                  game prop      29          29              28          0               12    pooled only (too few contracts for its own fit)
+ 40:         KXNFLTEAMYDS                  game prop     300          30             290          0               12    pooled only (too few contracts for its own fit)
+ 41:       KXNFL60YARDFGS not a single game's market       6           0               0          0                0 season, novelty or cross-game market: out of scope
+ 42:         KXNFLBLOWOUT not a single game's market       7           0               0          0                0 season, novelty or cross-game market: out of scope
+ 43:         KXNFLCOMPETE not a single game's market       1           0               0          0                0 season, novelty or cross-game market: out of scope
+ 44:           KXNFLCPOTY not a single game's market      21           0               0          0                0 season, novelty or cross-game market: out of scope
+ 45:           KXNFLDPOTY not a single game's market      72           0               0          0                0 season, novelty or cross-game market: out of scope
+ 46:           KXNFLDROTY not a single game's market      40           0               0          0                0 season, novelty or cross-game market: out of scope
+ 47:     KXNFLFFHIGHSCORE not a single game's market      26           0               0          0                0 season, novelty or cross-game market: out of scope
+ 48:    KXNFLFFPLAYERHIGH not a single game's market      36           0               0          0                0 season, novelty or cross-game market: out of scope
+ 49:   KXNFLFFSEASONTOTAL not a single game's market      36           0               0          0                0 season, novelty or cross-game market: out of scope
+ 50:      KXNFLFIRSTSTART not a single game's market       5           0               0          0                0 season, novelty or cross-game market: out of scope
+ 51:    KXNFLGAMESPECIALS not a single game's market      24           0               0          0                0 season, novelty or cross-game market: out of scope
+ 52:      KXNFLHALLOFFAME not a single game's market      28           0               0          0                0 season, novelty or cross-game market: out of scope
+ 53:       KXNFLHIGHSCORE not a single game's market       4           0               0          0                0 season, novelty or cross-game market: out of scope
+ 54:           KXNFLHKANE not a single game's market       1           0               0          0                0 season, novelty or cross-game market: out of scope
+ 55:       KXNFLLASTTOWIN not a single game's market       5           0               0          0                0 season, novelty or cross-game market: out of scope
+ 56:       KXNFLLONGESTFG not a single game's market       4           0               0          0                0 season, novelty or cross-game market: out of scope
+ 57:     KXNFLLONGESTPLAY not a single game's market       5           0               0          0                0 season, novelty or cross-game market: out of scope
+ 58:         KXNFLMATCHUP not a single game's market     496           0               0          0                0 season, novelty or cross-game market: out of scope
+ 59:             KXNFLNBA not a single game's market     300           0               0          0                0 season, novelty or cross-game market: out of scope
+ 60:        KXNFLNEXTTEAM not a single game's market     462           0               0          0                0 season, novelty or cross-game market: out of scope
+ 61:           KXNFLOPOTY not a single game's market      69           0               0          0                0 season, novelty or cross-game market: out of scope
+ 62:           KXNFLOROTY not a single game's market      40           0               0          0                0 season, novelty or cross-game market: out of scope
+ 63:            KXNFLPOTM not a single game's market     300           0               0          0                0 season, novelty or cross-game market: out of scope
+ 64:       KXNFLPRIMETIME not a single game's market      32           0               0          0                0 season, novelty or cross-game market: out of scope
+ 65:          KXNFLPROOTY not a single game's market      40           0               0          0                0 season, novelty or cross-game market: out of scope
+ 66:          KXNFLRETIRE not a single game's market      20           0               0          0                0 season, novelty or cross-game market: out of scope
+ 67:            KXNFLROLE not a single game's market       1           0               0          0                0 season, novelty or cross-game market: out of scope
+ 68:            KXNFLROTM not a single game's market     151           0               0          0                0 season, novelty or cross-game market: out of scope
+ 69:       KXNFLSBOUTCOME not a single game's market     512           0               0          0                0 season, novelty or cross-game market: out of scope
+ 70:   KXNFLSEASONPASSTDS not a single game's market     115           0               0          0                0 season, novelty or cross-game market: out of scope
+ 71:   KXNFLSEASONPASSYDS not a single game's market     120           0               0          0                0 season, novelty or cross-game market: out of scope
+ 72:       KXNFLSEASONREC not a single game's market     169           0               0          0                0 season, novelty or cross-game market: out of scope
+ 73:     KXNFLSEASONRECTD not a single game's market     180           0               0          0                0 season, novelty or cross-game market: out of scope
+ 74:    KXNFLSEASONRECYDS not a single game's market     195           0               0          0                0 season, novelty or cross-game market: out of scope
+ 75:     KXNFLSEASONRSHTD not a single game's market     228           0               0          0                0 season, novelty or cross-game market: out of scope
+ 76:    KXNFLSEASONRSHYDS not a single game's market     116           0               0          0                0 season, novelty or cross-game market: out of scope
+ 77:         KXNFLSELLOUT not a single game's market       1           0               0          0                0 season, novelty or cross-game market: out of scope
+ 78:     KXNFLSFPRACFIELD not a single game's market       1           0               0          0                0 season, novelty or cross-game market: out of scope
+ 79:         KXNFLSTADIUM not a single game's market       2           0               0          0                0 season, novelty or cross-game market: out of scope
+ 80:     KXNFLSTAGEOFELIM not a single game's market     192           0               0          0                0 season, novelty or cross-game market: out of scope
+ 81:        KXNFLTEAMDPTS not a single game's market      32           0               0          0                0 season, novelty or cross-game market: out of scope
+ 82:         KXNFLTEAMPTS not a single game's market      64           0               0          0                0 season, novelty or cross-game market: out of scope
+ 83:            KXNFLTIES not a single game's market       3           0               0          0                0 season, novelty or cross-game market: out of scope
+ 84:           KXNFLTRADE not a single game's market      57           0               0          0                0 season, novelty or cross-game market: out of scope
+ 85:           KXNFLTSPEC not a single game's market     290           0               0          0                0 season, novelty or cross-game market: out of scope
+ 86:    KXNFLWORSTTOFIRST not a single game's market       1           0               0          0                0 season, novelty or cross-game market: out of scope
+ 87:          KXNFLWPMOTY not a single game's market      31           0               0          0                0 season, novelty or cross-game market: out of scope
+ 88:          KXNFLRECYDS                     player    3433          31            3210         36             2688                       fitted on its own and pooled
+ 89:             KXNFLREC                     player    2542          30            2468         16             2135                       fitted on its own and pooled
+ 90:      KXNFLRECYDSPROT                     player    3192          31            2895        110             2087                       fitted on its own and pooled
+ 91:         KXNFLRECPROT                     player    2458          30            2330         70             1782                       fitted on its own and pooled
+ 92:          KXNFLRSHYDS                     player    1729          31            1620         53             1318                       fitted on its own and pooled
+ 93:              KXNFLTD                     player    1592          41            1396         57             1285                       fitted on its own and pooled
+ 94:          KXNFLTDPROT                     player    1569          41            1341         89             1154                       fitted on its own and pooled
+ 95:      KXNFLRSHYDSPROT                     player    1606          31            1476         74             1109                       fitted on its own and pooled
+ 96:         KXNFLFIRSTTD                     player     816          40             703         39              697                       fitted on its own and pooled
+ 97:         KXNFLPASSYDS                     player     574          31             542          0              475                       fitted on its own and pooled
+ 98:     KXNFLPASSYDSPROT                     player     546          31             514          0              398                       fitted on its own and pooled
+ 99:     KXNFLTEAMFIRSTTD                     player     769          58             718         27              330                       fitted on its own and pooled
+100:           KXNFLFFPTS                     player     335          30             324          0              284                       fitted on its own and pooled
+101:          KXNFLRSHATT                     player     289          30             280          0              244                       fitted on its own and pooled
+102:         KXNFLPASSTDS                     player     254          31             236          0              225                       fitted on its own and pooled
+103:         KXNFLLONGREC                     player     331          30             322          2              221                       fitted on its own and pooled
+104:     KXNFLPASSTDSPROT                     player     257          31             239          0              201                       fitted on its own and pooled
+105:           KXNFLRRYDS                     player     337          30             325          3              201                       fitted on its own and pooled
+106:         KXNFLPASSINT                     player     179          30             173          0              161                       fitted on its own and pooled
+107:        KXNFLPASSCOMP                     player     177          30             171          0              160                       fitted on its own and pooled
+108:         KXNFLPASSATT                     player     177          30             171          0              158                       fitted on its own and pooled
+109:      KXNFLMOSTRECYDS                     player     273          29             273          0              155                       fitted on its own and pooled
+110:         KXNFLLONGRSH                     player     144          30             138          1               92                       fitted on its own and pooled
+111:      KXNFLMOSTRSHYDS                     player     123          28             123          0               61    pooled only (too few contracts for its own fit)
+112:      KXNFLPASSYDSH2H                     player       4           2               4          0                2    pooled only (too few contracts for its own fit)
+113:       KXNFLRECYDSH2H                     player       4           2               4          0                2    pooled only (too few contracts for its own fit)
+114:       KXNFLRSHYDSH2H                     player       4           2               4          0                2    pooled only (too few contracts for its own fit)
+115:     KXNFLFFPTSLADDER              player scalar     172          30             167          0              158                       fitted on its own and pooled
+116:    KXNFLESCALATORREC              player scalar     155          30             151          0              143    pooled only (too few contracts for its own fit)
+117: KXNFLESCALATORRECYDS              player scalar     156          30             151          0              143    pooled only (too few contracts for its own fit)
+118:    KXNFLLADDERRECYDS              player scalar     156          30             151          0              141                       fitted on its own and pooled
+119:       KXNFLLADDERREC              player scalar     155          30             151          0              140                       fitted on its own and pooled
+120: KXNFLESCALATORRSHYDS              player scalar      75          30              72          0               68    pooled only (too few contracts for its own fit)
+121:    KXNFLLADDERRSHYDS              player scalar      75          30              72          0               68    pooled only (too few contracts for its own fit)
+                   series                      group markets game_events settled_outcome fair_price fitted_contracts                                             status
+--- calibration (game-clustered, t with G - 1 df) ---
+                   series         group exclusive contracts games mean_y   brier  slope slope_lo slope_hi q_slope      citl q_citl spread
+                   <char>        <char>    <lgcl>     <int> <int>  <num>   <num>  <num>    <num>    <num>   <num>     <num>  <num>  <num>
+ 1:     pooled: game prop     game prop        NA      6847    28 0.3150 0.14800  0.960  0.83300    1.090      NA -6.22e-02     NA  0.020
+ 2: pooled: player scalar player scalar        NA       861    28 0.1040 0.00658  1.060  0.96100    1.170      NA -9.34e-02     NA  0.021
+ 3:        pooled: player        player        NA     17627    28 0.2650 0.13200  1.010  0.92800    1.090      NA -2.58e-02     NA  0.030
+ 4:     pooled: game line     game line        NA      1300    28 0.3500 0.16900  0.994  0.68900    1.300      NA -1.63e-01     NA  0.010
+ 5:           pooled: all           all        NA     26635    28 0.2770 0.13400  0.995  0.92200    1.070      NA -4.54e-02     NA  0.020
+ 6:               KXNFL1H     game prop      TRUE        84    28 0.3330 0.19100  0.771  0.03190    1.510    0.92  3.97e-16     NA  0.010
+ 7:             KXNFL1HFT     game prop      TRUE       249    28 0.1080 0.07910  0.829  0.38700    1.270    0.90  5.09e-02     NA  0.010
+ 8:         KXNFL1HSPREAD     game prop     FALSE       429    28 0.2770 0.18800  0.828  0.24700    1.410    0.92  9.70e-02   0.89  0.010
+ 9:      KXNFL1HTEAMTOTAL     game prop     FALSE       611    28 0.3240 0.12600  1.020  0.71400    1.320    0.98 -1.41e-01   0.89  0.020
+10:          KXNFL1HTOTAL     game prop     FALSE       372    28 0.4760 0.12600  1.130  0.82300    1.440    0.90 -1.18e-01   0.89  0.010
+11:               KXNFL1Q     game prop      TRUE        84    28 0.3330 0.20900  1.050 -0.25300    2.360    0.98  6.80e-03     NA  0.010
+12:         KXNFL1QSPREAD     game prop     FALSE       284    28 0.2150 0.14900  1.090  0.65000    1.530    0.96  5.69e-02   0.89  0.015
+13:          KXNFL1QTOTAL     game prop     FALSE       280    28 0.2750 0.12300  1.070  0.58700    1.540    0.98 -8.06e-02   0.89  0.020
+14:               KXNFL2H     game prop      TRUE        77    28 0.3380 0.23100  0.380 -0.11500    0.874    0.39  1.02e-01     NA  0.020
+15:         KXNFL2HSPREAD     game prop     FALSE       428    28 0.2480 0.18500  0.560 -0.02160    1.140    0.80  5.00e-02   0.89  0.020
+16:          KXNFL2HTOTAL     game prop     FALSE       365    28 0.4600 0.14200  1.010  0.74900    1.270    0.98 -1.31e-01   0.89  0.030
+17:               KXNFL2Q     game prop      TRUE        82    28 0.3290 0.19000  0.986  0.01610    1.960    0.98  4.73e-03     NA  0.020
+18:         KXNFL2QSPREAD     game prop     FALSE       296    28 0.2360 0.16000  1.080  0.50800    1.660    0.98 -6.63e-02   0.89  0.030
+19:          KXNFL2QTOTAL     game prop     FALSE       271    28 0.4350 0.15300  1.010  0.56700    1.460    0.98 -1.59e-01   0.89  0.030
+20:               KXNFL3Q     game prop      TRUE        81    28 0.3330 0.24100 -0.118 -1.09000    0.857    0.39  2.14e-02     NA  0.020
+21:         KXNFL3QSPREAD     game prop     FALSE       294    28 0.1730 0.13900  0.802  0.35000    1.250    0.90 -2.63e-01   0.89  0.030
+22:          KXNFL3QTOTAL     game prop     FALSE       276    28 0.2280 0.14400  0.860  0.50200    1.220    0.90 -6.31e-01   0.89  0.030
+23:               KXNFL4Q     game prop      TRUE        76    28 0.3420 0.21600  0.604 -0.25600    1.460    0.90  1.00e-01     NA  0.020
+24:         KXNFL4QSPREAD     game prop     FALSE       297    28 0.2420 0.17800  0.611  0.16200    1.060    0.61  5.94e-02   0.89  0.030
+25:          KXNFL4QTOTAL     game prop     FALSE       247    27 0.4450 0.18900  0.853  0.55300    1.150    0.90  1.54e-01   0.89  0.030
+26:             KXNFLBOTH     game prop     FALSE        62    28 0.2260 0.08090  1.480  0.82700    2.130    0.80 -3.84e-01   0.89  0.040
+27:            KXNFLFFPTS        player     FALSE       284    28 0.4440 0.24100  1.030  0.00887    2.050    0.98 -1.58e-02   0.95  0.030
+28:      KXNFLFFPTSLADDER player scalar     FALSE       158    28 0.1390 0.00552  0.772  0.43900    1.110    0.82 -2.57e-02   0.89  0.020
+29:               KXNFLFG     game prop     FALSE        86    14 0.4530 0.18100  0.944  0.49200    1.390    0.98  2.91e-01   0.89  0.030
+30:          KXNFLFIRSTTD        player      TRUE       697    28 0.0402 0.03690  1.040  0.55600    1.530    0.98 -1.79e-02     NA  0.010
+31:      KXNFLFIRSTTDTEAM     game prop      TRUE        54    28 0.2410 0.10200  3.570 -0.76500    7.900    0.90  3.85e-03     NA  0.010
+32:             KXNFLGAME     game line      TRUE        56    28 0.5000 0.24700  0.417 -0.80100    1.640    0.90 -8.06e-04     NA  0.010
+33:        KXNFLLADDERREC player scalar     FALSE       140    28 0.1980 0.01000  0.925  0.65600    1.190    0.92 -4.64e-02   0.89  0.020
+34:     KXNFLLADDERRECYDS player scalar     FALSE       141    28 0.1160 0.00510  0.953  0.71400    1.190    0.96 -1.80e-02   0.89  0.020
+35:          KXNFLLONGREC        player     FALSE       221    28 0.4570 0.24600  2.950  0.07940    5.820    0.82 -1.37e-01   0.89  0.040
+36:          KXNFLLONGRSH        player     FALSE        92    27 0.4130 0.25100 -0.342 -4.46000    3.770    0.92 -3.35e-01   0.89  0.050
+37:       KXNFLMOSTRECYDS        player     FALSE       155    26 0.0645 0.04880  1.280  0.57900    1.980    0.90 -4.72e-02   0.92  0.040
+38:          KXNFLPASSATT        player     FALSE       158    28 0.5190 0.21100  0.913  0.55300    1.270    0.96  9.20e-02   0.89  0.020
+39:         KXNFLPASSCOMP        player     FALSE       160    28 0.5310 0.17200  0.971  0.63400    1.310    0.98  1.15e-01   0.89  0.020
+40:          KXNFLPASSINT        player     FALSE       161    28 0.2170 0.12000  1.480  1.06000    1.910    0.39 -1.39e-01   0.89  0.020
+41:          KXNFLPASSTDS        player     FALSE       225    28 0.3470 0.12900  1.190  0.84500    1.530    0.90 -1.20e-01   0.89  0.010
+42:      KXNFLPASSTDSPROT        player     FALSE       201    28 0.3180 0.12300  1.160  0.78000    1.530    0.90 -2.13e-01   0.89  0.060
+43:          KXNFLPASSYDS        player     FALSE       475    28 0.4320 0.13600  1.310  1.02000    1.590    0.40  1.36e-01   0.89  0.010
+44:      KXNFLPASSYDSPROT        player     FALSE       398    28 0.3990 0.12700  1.320  1.00000    1.630    0.40  1.09e-01   0.89  0.060
+45:             KXNFLRACE     game prop      TRUE       239    28 0.2510 0.13000  1.040  0.54800    1.540    0.98  9.40e-02     NA  0.030
+46:              KXNFLREC        player     FALSE      2135    28 0.3040 0.13800  1.030  0.89900    1.160    0.96  2.68e-03   0.98  0.020
+47:          KXNFLRECPROT        player     FALSE      1782    28 0.2930 0.13000  1.060  0.92300    1.190    0.90  1.33e-01   0.89  0.060
+48:           KXNFLRECYDS        player     FALSE      2688    28 0.2930 0.15700  0.927  0.78800    1.070    0.90 -3.85e-02   0.89  0.020
+49:       KXNFLRECYDSPROT        player     FALSE      2087    28 0.2750 0.14200  0.987  0.84200    1.130    0.98  8.16e-02   0.89  0.060
+50:            KXNFLRRYDS        player     FALSE       201    28 0.2440 0.14800  1.260  0.81800    1.700    0.90 -2.02e-01   0.89  0.030
+51:           KXNFLRSHATT        player     FALSE       244    28 0.4140 0.19100  1.100  0.83000    1.360    0.92 -3.57e-01   0.89  0.020
+52:           KXNFLRSHYDS        player     FALSE      1318    28 0.2910 0.15200  0.979  0.80100    1.160    0.98 -1.96e-01   0.89  0.020
+53:       KXNFLRSHYDSPROT        player     FALSE      1109    28 0.2770 0.15000  0.938  0.74700    1.130    0.92 -1.39e-01   0.89  0.060
+54:           KXNFLSPREAD     game line     FALSE       712    28 0.2420 0.15600  1.090  0.43100    1.750    0.98 -1.99e-01   0.89  0.010
+55:               KXNFLTD        player     FALSE      1285    28 0.1000 0.07660  0.940  0.72400    1.160    0.92 -1.13e-01   0.89  0.010
+56:           KXNFLTDPROT        player     FALSE      1154    28 0.1100 0.08210  0.918  0.72100    1.120    0.90  5.80e-03   0.98  0.020
+57:      KXNFLTEAMFIRSTTD        player     FALSE       330    28 0.0667 0.05480  1.520  1.11000    1.930    0.39  1.31e-01   0.89  0.040
+58:         KXNFLTEAMSACK     game prop     FALSE        87    14 0.2530 0.13400  1.640  1.01000    2.270    0.40 -4.83e-01   0.89  0.050
+59:        KXNFLTEAMTOTAL     game prop     FALSE       754    28 0.4830 0.13100  1.080  0.84700    1.310    0.92 -1.31e-01   0.89  0.010
+60:            KXNFLTOTAL     game line     FALSE       532    28 0.4790 0.17700  0.934  0.63700    1.230    0.96 -1.40e-01   0.89  0.010
+61:        KXNFLWINMARGIN     game prop      TRUE       196    28 0.1430 0.11700  0.959  0.33400    1.580    0.98  8.84e-02     NA  0.020
+                   series         group exclusive contracts games mean_y   brier  slope slope_lo slope_hi q_slope      citl q_citl spread
+--- reliability ---
+Key: <group, bin>
+            group        bin contracts mean_mid mean_y       gap      se
+           <char>     <fctr>     <num>    <num>  <num>     <num>   <num>
+ 1:     game line   [0,0.05]        24   0.0412 0.0000 -4.12e-02 0.00000
+ 2:     game line (0.05,0.1]       135   0.0780 0.0444 -3.35e-02 0.01780
+ 3:     game line  (0.1,0.2]       251   0.1490 0.1080 -4.10e-02 0.01960
+ 4:     game line  (0.2,0.3]       191   0.2490 0.2150 -3.42e-02 0.02980
+ 5:     game line  (0.3,0.5]       319   0.3990 0.4010  2.10e-03 0.02750
+ 6:     game line  (0.5,0.7]       210   0.5830 0.6140  3.17e-02 0.03370
+ 7:     game line  (0.7,0.8]        53   0.7490 0.6040 -1.45e-01 0.06780
+ 8:     game line  (0.8,0.9]        57   0.8550 0.6490 -2.06e-01 0.06380
+ 9:     game line (0.9,0.95]        37   0.9290 0.8650 -6.46e-02 0.05700
+10:     game line   (0.95,1]        23   0.9600 1.0000  4.04e-02 0.00000
+11:     game prop   [0,0.05]       906   0.0271 0.0265 -6.46e-04 0.00534
+12:     game prop (0.05,0.1]       875   0.0763 0.0686 -7.74e-03 0.00855
+13:     game prop  (0.1,0.2]      1180   0.1480 0.1620  1.43e-02 0.01080
+14:     game prop  (0.2,0.3]       879   0.2480 0.2500  2.38e-03 0.01460
+15:     game prop  (0.3,0.5]      1430   0.3980 0.3720 -2.54e-02 0.01280
+16:     game prop  (0.5,0.7]       711   0.5880 0.5610 -2.64e-02 0.01860
+17:     game prop  (0.7,0.8]       260   0.7520 0.6850 -6.74e-02 0.02890
+18:     game prop  (0.8,0.9]       264   0.8520 0.8300 -2.21e-02 0.02320
+19:     game prop (0.9,0.95]       154   0.9300 0.9550  2.49e-02 0.01680
+20:     game prop   (0.95,1]       193   0.9720 0.9790  7.46e-03 0.01030
+21:        player   [0,0.05]      3990   0.0294 0.0280 -1.46e-03 0.00261
+22:        player (0.05,0.1]      2760   0.0743 0.0706 -3.77e-03 0.00487
+23:        player  (0.1,0.2]      2790   0.1480 0.1400 -7.63e-03 0.00658
+24:        player  (0.2,0.3]      1720   0.2490 0.2600  1.16e-02 0.01060
+25:        player  (0.3,0.5]      2810   0.4080 0.3970 -1.04e-02 0.00923
+26:        player  (0.5,0.7]      2000   0.5880 0.5790 -9.05e-03 0.01110
+27:        player  (0.7,0.8]       784   0.7530 0.7350 -1.83e-02 0.01580
+28:        player  (0.8,0.9]       666   0.8470 0.8690  2.21e-02 0.01310
+29:        player (0.9,0.95]        99   0.9190 0.9600  4.01e-02 0.01990
+30:        player   (0.95,1]         6   0.9640 1.0000  3.58e-02 0.00000
+31: player scalar   [0,0.05]       244   0.0258 0.0179 -7.88e-03 0.00220
+32: player scalar (0.05,0.1]       186   0.0764 0.0764  7.26e-06 0.00631
+33: player scalar  (0.1,0.2]       317   0.1500 0.1390 -1.07e-02 0.00566
+34: player scalar  (0.2,0.3]        98   0.2380 0.2240 -1.38e-02 0.01050
+35: player scalar  (0.3,0.5]        16   0.3520 0.3140 -3.81e-02 0.02700
+            group        bin contracts mean_mid mean_y       gap      se
+--- movement ---
+Key: <group>
+           group contracts games sd_bps sd_logit median_abs_bps p90_abs_bps share_moved median_hours_between units sd_bps_unit icc_within_game picks_100bps picks_100bps_8_candidates picks_50bps picks_50bps_8_candidates
+          <char>     <num> <num>  <num>    <num>          <num>       <num>       <num>                <num> <num>       <num>           <num>        <num>                     <num>       <num>                    <num>
+1:     game line      1300    28  673.2   0.4158            200         950      0.9308               139.00    28       148.4             NaN          356                       580        1424                     2319
+2:     game prop      6838    28 1022.0   0.6782            150        1450      0.8934                95.17    28       120.4             NaN          820                      1336        3278                     5341
+3:        player     14850    28  683.0   0.5113            150         700      0.9036                65.14   690       424.5         0.07695          367                       597        1465                     2386
+4: player scalar       775    28  773.9   0.6684             71         250      0.9032                47.52   149       535.2         0.66380          471                       766        1881                     3064
+--- out of sample (week 6 -> week 7) ---
+           group train_week test_week contracts games recal_slope brier_mid brier_recalibrated      skill p_game_t games_needed  bets bets_yes staked      pnl      roi  roi_lo  roi_hi
+          <char>     <char>    <char>     <num> <num>       <num>     <num>              <num>      <num>    <num>        <num> <num>    <num>  <num>    <num>    <num>   <num>   <num>
+1:     game prop          6         7      3381    14       0.969  0.149700           0.149600  0.0002866   0.4764        23690   599        0 250.80  -9.8060 -0.03910 -0.3007 0.25240
+2: player scalar          6         7       420    14       1.124  0.006525           0.006558 -0.0051790   0.3613          658    47        0  42.56   0.2388  0.00561 -0.0329 0.04360
+3:        player          6         7      8579    14       1.037  0.132200           0.132500 -0.0020880   0.9417           NA     0        0   0.00   0.0000       NA      NA      NA
+4:     game line          6         7       647    14       1.051  0.177900           0.185400 -0.0418400   0.8816           NA   635        0 413.10 -16.1200 -0.03901 -0.1589 0.08932
+5:           all          6         7     13030    14       1.017  0.135000           0.134900  0.0001598   0.4821        41320     0        0   0.00   0.0000       NA      NA      NA
+--- Kalshi's settlements against nflverse ---
+           series contracts both_outcome agree kalshi_fair_rebuilt_no_snap kalshi_fair_rebuilt_outcome kalshi_outcome_rebuilt_no_snap agreement
+           <char>     <int>        <int> <int>                       <int>                       <int>                          <int>     <num>
+ 1:   KXNFLRSHATT       280          280   280                           0                           0                              0         1
+ 2:   KXNFLRECYDS      3246         3200  3200                          36                           0                             10         1
+ 3:      KXNFLREC      2484         2459  2459                          16                           0                              9         1
+ 4:    KXNFLRRYDS       328          325   325                           3                           0                              0         1
+ 5:   KXNFLRSHYDS      1673         1620  1620                          53                           0                              0         1
+ 6:       KXNFLTD      1453         1329  1329                          57                           0                             67         1
+ 7:  KXNFLPASSATT       171          171   171                           0                           0                              0         1
+ 8: KXNFLPASSCOMP       171          171   171                           0                           0                              0         1
+ 9:  KXNFLPASSINT       173          173   173                           0                           0                              0         1
+10:  KXNFLPASSTDS       236          236   236                           0                           0                              0         1
+11:  KXNFLPASSYDS       542          542   542                           0                           0                              0         1
+12:           all     10757        10506 10506                         165                           0                             86         1
+--- the first version's cutoff against this one (the ten ladders) ---
+                                          cutoff in_game_quotes contracts player_games games mean_y mean_mid  brier slope slope_lo slope_hi  p_slope      citl citl_lo citl_hi p_citl median_spread median_hours_before
+                                          <char>          <num>     <num>        <num> <num>  <num>    <num>  <num> <num>    <num>    <num>    <num>     <num>   <num>   <num>  <num>         <num>               <num>
+1:      occurrence time only (the first version)           6300      8564          639    28 0.3065   0.3060 0.0978 1.157   1.0640    1.250 0.001839  0.004731 -0.1242 0.13360 0.9405          0.01               1.321
+2: the last capture before the scheduled kickoff              0      8849          633    28 0.2866   0.2949 0.1397 1.008   0.9138    1.101 0.870500 -0.059020 -0.2122 0.09414 0.4360          0.01              16.890
+   slope_lo_pg slope_hi_pg median_abs_move_bps sd_move_bps_player_game events events_occurrence_after_kickoff games_affected max_gap_minutes
+         <num>       <num>               <num>                   <num>  <num>                           <num>          <num>           <num>
+1:      1.0730       1.241                 450                  1047.0   2569                            2569             58             200
+2:      0.9331       1.082                 125                   259.3   2569                            2569             58             200
+hours from the last quote to kickoff, median by group:
+           group median_hours_before
+          <char>               <num>
+1:     game prop           16.926389
+2: player scalar           17.059444
+3:        player            3.318611
+4:     game line           17.058056
+--- coherence of mutually exclusive sets ---
+              series events mean_contracts mean_sum_mid mean_sum_ask mean_sum_bid events_yes_all_pays events_no_all_pays best_profit
+              <char>  <num>          <num>        <num>        <num>        <num>               <num>              <num>       <num>
+ 1:          KXNFL1H     28           3.00       1.0000        1.017       0.9829                   0                  0   -0.029360
+ 2:        KXNFL1HFT     28           9.00       0.9607        1.051       0.8704                   0                  0   -0.038360
+ 3:          KXNFL1Q     28           3.00       0.9957        1.015       0.9768                   0                  0   -0.032900
+ 4:          KXNFL2H     28           3.00       0.9934        1.048       0.9389                   0                  0   -0.038230
+ 5:          KXNFL2Q     28           3.00       0.9909        1.030       0.9521                   0                  0   -0.035350
+ 6:          KXNFL3Q     28           3.00       0.9882        1.035       0.9414                   0                  0   -0.043780
+ 7:          KXNFL4Q     28           3.00       0.9850        1.039       0.9311                   0                  0   -0.039380
+ 8:     KXNFLFIRSTTD     23          24.74       1.0180        1.159       0.8770                   0                  0   -0.042640
+ 9: KXNFLFIRSTTDTEAM     28           3.00       0.9252        1.039       0.8111                   0                  0   -0.024960
+10:        KXNFLGAME     28           2.00       1.0000        1.010       0.9904                   0                  0   -0.025310
+11:        KXNFLRACE    140           3.00       0.8642        1.073       0.6554                   0                  0   -0.002316
+12:   KXNFLWINMARGIN     28           7.00       0.9305        1.029       0.8321                   0                  0   -0.026360

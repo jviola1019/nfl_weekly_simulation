@@ -1,6 +1,7 @@
 "use client";
 
 import { scaleLinear } from "@visx/scale";
+import { DataTable } from "@/components/ui";
 import { bps, signedPct } from "@/lib/format";
 import { candidateLabel } from "@/lib/policy";
 import { ChartFigure, LineKey } from "./ChartFigure";
@@ -53,22 +54,22 @@ export function ClvHistogram({
       title={`Closing-line value per pick, ${candidateLabel(candidate)}`}
       summary={summary}
       legend={
-        <div className="flex flex-wrap gap-x-5">
+        <div className="flex flex-wrap gap-x-stack">
           <LineKey color="var(--model)" label="Picks per 50-bps bin" />
           <LineKey color="var(--ink)" label="Mean and 95% interval" />
         </div>
       }
       table={
-        <table className="num w-full text-left">
-          <thead className="text-ink-2">
-            <tr><th className="py-1 pr-4 font-normal">CLV bin (bps)</th><th className="font-normal">Picks</th></tr>
-          </thead>
-          <tbody>
-            {edges.map((e, i) => (
-              <tr key={e} className="border-t border-rule"><td className="py-1 pr-4">{e} to {e + width}</td><td>{counts[i]}</td></tr>
-            ))}
-          </tbody>
-        </table>
+        <DataTable
+          caption={`Closing-line value per pick, ${candidateLabel(candidate)}, every bin`}
+          numeric
+          dense
+          columns={[
+            { key: "bin", header: "CLV bin (bps)", rowHeader: true },
+            { key: "picks", header: "Picks" }
+          ]}
+          rows={edges.map((e, i) => ({ key: String(e), cells: { bin: `${e} to ${e + width}`, picks: counts[i] } }))}
+        />
       }
     >
       <ChartTooltip>

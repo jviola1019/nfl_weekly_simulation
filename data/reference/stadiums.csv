@@ -1,0 +1,56 @@
+stadium_id,name,city,lat,lon,roof_type,note
+ATL00,Georgia Dome,Atlanta,33.7577,-84.4008,dome,closed 2016
+ATL97,Mercedes-Benz Stadium,Atlanta,33.7554,-84.4008,retractable,
+BAL00,M&T Bank Stadium,Baltimore,39.2780,-76.6227,outdoors,
+BOS00,Gillette Stadium,Foxborough,42.0909,-71.2643,outdoors,
+BUF00,Highmark Stadium,Orchard Park,42.7738,-78.7870,outdoors,also Ralph Wilson Stadium and New Era Field
+BUF01,Rogers Centre,Toronto,43.6414,-79.3894,retractable,Bills Toronto series 2008-2013
+CAR00,Bank of America Stadium,Charlotte,35.2258,-80.8528,outdoors,
+CHI98,Soldier Field,Chicago,41.8623,-87.6167,outdoors,
+CIN00,Paycor Stadium,Cincinnati,39.0955,-84.5161,outdoors,also Paul Brown Stadium
+CLE00,Huntington Bank Field,Cleveland,41.5061,-81.6995,outdoors,also FirstEnergy Stadium and Cleveland Browns Stadium
+DAL00,AT&T Stadium,Arlington,32.7473,-97.0945,retractable,
+DAL99,Texas Stadium,Irving,32.8400,-96.9110,outdoors,partial roof with an open centre; closed 2008
+DEN00,Empower Field at Mile High,Denver,39.7439,-105.0201,outdoors,also Sports Authority Field at Mile High
+DET00,Ford Field,Detroit,42.3400,-83.0456,dome,
+FRA00,Deutsche Bank Park,Frankfurt,50.0686,8.6455,retractable,
+GER00,Allianz Arena,Munich,48.2188,11.6247,outdoors,roof over the stands only
+GNB00,Lambeau Field,Green Bay,44.5013,-88.0622,outdoors,
+HOU00,NRG Stadium,Houston,29.6847,-95.4107,retractable,nflverse also uses Reliant Stadium
+IND00,Lucas Oil Stadium,Indianapolis,39.7601,-86.1639,retractable,
+IND99,RCA Dome,Indianapolis,39.7636,-86.1634,dome,closed 2007
+JAX00,EverBank Stadium,Jacksonville,30.3239,-81.6373,outdoors,also EverBank Field and TIAA Bank Stadium; nflverse labels one London game with this id
+KAN00,GEHA Field at Arrowhead Stadium,Kansas City,39.0489,-94.4839,outdoors,
+LAX01,SoFi Stadium,Inglewood,33.9534,-118.3390,dome,fixed translucent roof
+LAX97,Dignity Health Sports Park,Carson,33.8644,-118.2611,outdoors,StubHub Center 2017-2019
+LAX99,Los Angeles Memorial Coliseum,Los Angeles,34.0141,-118.2879,outdoors,
+LON00,Wembley Stadium,London,51.5560,-0.2796,outdoors,roof over the stands only
+LON01,Twickenham Stadium,London,51.4560,-0.3415,outdoors,
+LON02,Tottenham Hotspur Stadium,London,51.6043,-0.0664,outdoors,
+MAD01,Santiago Bernabeu,Madrid,40.4531,-3.6883,retractable,
+MEL00,Melbourne Cricket Ground,Melbourne,-37.8200,144.9834,outdoors,nflverse marks it dome; it is open-air
+MEX00,Estadio Azteca,Mexico City,19.3029,-99.1505,outdoors,also Estadio Banorte
+MIA00,Hard Rock Stadium,Miami Gardens,25.9580,-80.2389,outdoors,canopy over the stands only
+MIN00,Hubert H. Humphrey Metrodome,Minneapolis,44.9739,-93.2581,dome,closed 2013
+MIN01,U.S. Bank Stadium,Minneapolis,44.9736,-93.2575,dome,
+MIN98,TCF Bank Stadium,Minneapolis,44.9765,-93.2246,outdoors,Vikings 2010 and 2014-2015
+MUN01,Allianz Arena,Munich,48.2188,11.6247,outdoors,nflverse marks it dome; roof over the stands only
+NAS00,Nissan Stadium,Nashville,36.1665,-86.7713,outdoors,
+NOR00,Caesars Superdome,New Orleans,29.9511,-90.0812,dome,also Mercedes-Benz Superdome
+NYC00,Giants Stadium,East Rutherford,40.8124,-74.0768,outdoors,closed 2009
+NYC01,MetLife Stadium,East Rutherford,40.8135,-74.0745,outdoors,
+OAK00,Oakland Coliseum,Oakland,37.7516,-122.2005,outdoors,
+PAR00,Stade de France,Saint-Denis,48.9245,2.3602,outdoors,nflverse marks it dome; roof over the stands only
+PHI00,Lincoln Financial Field,Philadelphia,39.9008,-75.1675,outdoors,
+PHO00,State Farm Stadium,Glendale,33.5276,-112.2626,retractable,also University of Phoenix Stadium
+PIT00,Acrisure Stadium,Pittsburgh,40.4468,-80.0158,outdoors,also Heinz Field
+RIO00,Maracana Stadium,Rio de Janeiro,-22.9122,-43.2302,outdoors,
+SAO00,Arena Corinthians,Sao Paulo,-23.5453,-46.4742,outdoors,
+SDG00,Qualcomm Stadium,San Diego,32.7831,-117.1196,outdoors,closed 2016
+SEA00,Lumen Field,Seattle,47.5952,-122.3316,outdoors,also CenturyLink Field
+SFO00,Candlestick Park,San Francisco,37.7136,-122.3863,outdoors,closed 2013
+SFO01,Levi's Stadium,Santa Clara,37.4030,-121.9700,outdoors,
+STL00,Edward Jones Dome,St. Louis,38.6328,-90.1885,dome,closed 2015
+TAM00,Raymond James Stadium,Tampa,27.9759,-82.5033,outdoors,
+VEG00,Allegiant Stadium,Las Vegas,36.0909,-115.1833,dome,
+WAS00,Northwest Stadium,Landover,38.9076,-76.8645,outdoors,also FedExField

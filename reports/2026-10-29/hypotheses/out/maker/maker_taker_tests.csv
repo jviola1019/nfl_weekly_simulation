@@ -1,0 +1,3 @@
+id,test,n,games,estimate,lo,hi,p,mde_80,q_bh
+C1,"makers earn a positive return before kickoff, net of the maker fee (one-sided > 0)",298430000,107,0.0074935,-0.028611,0.043598,0.34077,0.045607,0.68155
+C2,the last day's net YES taker share predicts the outcome beyond the close (two-sided),1457,107,-0.010005,-0.25462,0.23461,0.93552,0.34887,0.93552

@@ -1,0 +1,5 @@
+book,term,games,clusters,estimate,lo,hi,p_two_sided,r2
+SBR spreads 2018-2021,Elo through w-2 minus the opener,1084,85,0.2773,0.01613,0.5385,0.03771,0.1533
+SBR spreads 2018-2021,week w-1's Elo update (IS-B minus IS-A),1084,85,0.7782,0.6111,0.9452,1.771e-14,0.1533
+ESPN BET moneylines 2023-2024,Elo through w-2 minus the opener,489,39,0.007303,-0.05377,0.06837,0.81,0.0009849
+ESPN BET moneylines 2023-2024,week w-1's Elo update (IS-B minus IS-A),489,39,0.04478,-0.0801,0.1697,0.4723,0.0009849

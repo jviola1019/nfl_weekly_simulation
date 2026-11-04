@@ -1,0 +1,22 @@
+rep 1 done
+rep 2 done
+rep 3 done
+rep 4 done
+rep 5 done
+                                               null  reps mean_above max_above
+                                             <char> <int>      <num>     <int>
+1:                             y within week (spec)     5        6.6         9
+2:                           x permuted within week     5        0.0         0
+3: y drawn from the anchor (consistency resampling)     5        0.6         2
+   mean_below reps_with_claim
+        <num>           <int>
+1:        0.4               5
+2:        3.4               0
+3:        2.4               0
+    beta detected    of mean_skill
+   <num>    <int> <int>      <num>
+1:  0.05        1     5    0.00153
+2:  0.10        1     5    0.00244
+3:  0.20        3     5    0.00782
+There were 20 warnings (use warnings() to see them)
+exit=0

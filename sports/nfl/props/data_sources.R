@@ -109,8 +109,15 @@ load_player_projections <- function(season = NULL, week = NULL, min_games = 3) {
   message(sprintf("  Raw player stats: %d rows, %d unique players",
                   nrow(player_stats), length(unique(player_stats$player_id))))
 
-  # Calculate rolling averages with recency weighting
-  # More recent games weighted higher (exponential decay)
+  # Point in time: in the target season only the games before `week` count; earlier seasons count whole.
+  # Without this a run for a past week averaged in the games played after it. week = NULL keeps every game.
+  if (!is.null(week)) {
+    target_season <- season
+    target_week <- week
+    player_stats <- player_stats %>% dplyr::filter(season < target_season | week < target_week)
+  }
+
+  # Per-player means over the loaded seasons, every game weighted equally (no recency weighting)
   projections <- tryCatch({
     # Use 'team' column from nflreadr (renamed to recent_team for consistency)
     team_col <- if ("recent_team" %in% names(player_stats)) "recent_team" else "team"
@@ -238,7 +245,7 @@ get_player_projections_with_fallback <- function(season, week, home_team, away_t
 
   for (fallback_season in fallback_seasons) {
     fallback_projections <- tryCatch({
-      load_player_projections(fallback_season, week = 18, min_games)
+      load_player_projections(fallback_season, week = NULL, min_games)   # a past season counts whole, as before the week filter
     }, error = function(e) NULL)
 
     if (!is.null(fallback_projections) && nrow(fallback_projections) > 0) {
@@ -368,120 +375,8 @@ create_baseline_projections <- function(home_team, away_team) {
   projections
 }
 
-#' Load Defense Rankings for Adjustments
-#'
-#' Calculates team defense rankings based on yards allowed from play-by-play data.
-#'
-#' @param season Season year
-#' @param weeks Vector of weeks to include (default: all completed)
-#'
-#' @return Tibble with defense rankings:
-#'   \item{team}{Team abbreviation}
-#'   \item{pass_yards_allowed}{Total passing yards allowed}
-#'   \item{rush_yards_allowed}{Total rushing yards allowed}
-#'   \item{pass_def_rank}{Pass defense rank (1 = best)}
-#'   \item{rush_def_rank}{Rush defense rank (1 = best)}
-#'   \item{pass_def_mult}{Multiplier for opponent passing (0.80-1.20)}
-#'   \item{rush_def_mult}{Multiplier for opponent rushing (0.75-1.25)}
-#'
-#' @examples
-#' \dontrun{
-#'   defense <- load_defense_rankings(2024)
-#'   # Get multiplier for opponent passing vs Buffalo
-#'   buf_mult <- defense$pass_def_mult[defense$team == "BUF"]
-#' }
-#'
-#' @export
-load_defense_rankings <- function(season, weeks = NULL) {
 
-  message(sprintf("Loading defense rankings for season %d", season))
 
-  # Load play-by-play data
-  pbp <- tryCatch({
-    nflreadr::load_pbp(seasons = season)
-  }, error = function(e) {
-    warning("Failed to load PBP data from nflreadr: ", e$message)
-    return(NULL)
-  })
-
-  if (is.null(pbp) || nrow(pbp) == 0) {
-    warning("No PBP data available, returning default rankings")
-    return(get_default_defense_rankings())
-  }
-
-  # Filter to specific weeks if provided
-  if (!is.null(weeks)) {
-    pbp <- pbp %>% dplyr::filter(week %in% weeks)
-  }
-
-  # Calculate yards allowed by defense
-  defense_rankings <- pbp %>%
-    dplyr::filter(!is.na(defteam), !is.na(play_type)) %>%
-    dplyr::group_by(defteam) %>%
-    dplyr::summarize(
-      games = dplyr::n_distinct(game_id),
-      pass_yards_allowed = sum(passing_yards, na.rm = TRUE),
-      rush_yards_allowed = sum(rushing_yards, na.rm = TRUE),
-      .groups = "drop"
-    ) %>%
-    dplyr::rename(team = defteam) %>%
-    dplyr::mutate(
-      # Rank (1 = fewest yards allowed = best defense)
-      pass_def_rank = rank(pass_yards_allowed),
-      rush_def_rank = rank(rush_yards_allowed),
-
-      # Convert rank to multiplier
-      # Rank 1 (best) = 0.80 multiplier (harder to score against)
-      # Rank 32 (worst) = 1.20 multiplier (easier to score against)
-      pass_def_mult = scale_defense_rank(pass_def_rank, 0.80, 1.20),
-      rush_def_mult = scale_defense_rank(rush_def_rank, 0.75, 1.25)
-    )
-
-  message(sprintf("Calculated defense rankings for %d teams", nrow(defense_rankings)))
-
-  defense_rankings
-}
-
-#' Scale Defense Rank to Multiplier
-#'
-#' Converts a 1-32 rank to a multiplier range.
-#'
-#' @param rank Defense rank (1 = best, 32 = worst)
-#' @param min_mult Multiplier for rank 1 (best defense)
-#' @param max_mult Multiplier for rank 32 (worst defense)
-#'
-#' @return Multiplier value
-#'
-#' @keywords internal
-scale_defense_rank <- function(rank, min_mult = 0.80, max_mult = 1.20) {
-  # Linear interpolation from rank to multiplier
-  min_mult + (rank - 1) / 31 * (max_mult - min_mult)
-}
-
-#' Get Default Defense Rankings
-#'
-#' Returns default (neutral) defense rankings when data unavailable.
-#'
-#' @return Tibble with all teams at rank 16 (average)
-#'
-#' @keywords internal
-get_default_defense_rankings <- function() {
-  teams <- c("ARI", "ATL", "BAL", "BUF", "CAR", "CHI", "CIN", "CLE",
-             "DAL", "DEN", "DET", "GB", "HOU", "IND", "JAX", "KC",
-             "LAC", "LAR", "LV", "MIA", "MIN", "NE", "NO", "NYG",
-             "NYJ", "PHI", "PIT", "SEA", "SF", "TB", "TEN", "WAS")
-
-  tibble::tibble(
-    team = teams,
-    games = 0L,
-    pass_yards_allowed = NA_real_,
-    rush_yards_allowed = NA_real_,
-    pass_def_rank = 16L,
-    rush_def_rank = 16L,
-    pass_def_mult = 1.0,
-    rush_def_mult = 1.0
-  )
-}
 
 #' Load Red Zone Efficiency Data
 #'
@@ -605,7 +500,7 @@ load_game_context <- function(game_id) {
   }
 
   # Dome stadiums
-  dome_teams <- c("ARI", "ATL", "DAL", "DET", "HOU", "IND", "LAC", "LAR",
+  dome_teams <- c("ARI", "ATL", "DAL", "DET", "HOU", "IND", "LAC", "LA",   # the Rams are LA in schedules
                   "LV", "MIN", "NO")
 
   list(

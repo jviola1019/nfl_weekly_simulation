@@ -1,0 +1,25 @@
+endpoint,host,status,bytes,error,probed_utc,carried_over
+action_network,api.actionnetwork.com,200,177669,,2026-10-29T21:12Z,FALSE
+action_books,api.actionnetwork.com,200,338818,,2026-10-29T21:12Z,FALSE
+draftkings,,403,0,HTTP 403,2026-10-29T19:25Z,TRUE
+kambi_betrivers,eu-offering-api.kambicdn.com,200,50491,,2026-10-29T21:12Z,FALSE
+caesars,,403,0,HTTP 403,2026-10-29T19:25Z,TRUE
+bovada,www.bovada.lv,200,38931,,2026-10-29T21:12Z,FALSE
+polymarket_sports,gamma-api.polymarket.com,200,156891,,2026-10-29T21:12Z,FALSE
+polymarket_nfl,gamma-api.polymarket.com,200,43234436,,2026-10-29T21:12Z,FALSE
+fanduel,,400,0,HTTP 400,2026-10-29T19:25Z,TRUE
+betmgm,,403,0,HTTP 403,2026-10-29T19:25Z,TRUE
+pinnacle_matchups,guest.api.arcadia.pinnacle.com,200,2030313,,2026-10-29T21:12Z,FALSE
+pinnacle_markets,guest.api.arcadia.pinnacle.com,200,818703,,2026-10-29T21:12Z,FALSE
+betonline_page,www.betonline.ag,200,366253,,2026-10-29T21:12Z,FALSE
+fanatics,,403,0,HTTP 403,2026-10-29T19:25Z,TRUE
+underdog,,426,0,HTTP 426,2026-10-29T19:25Z,TRUE
+prizepicks,,403,0,HTTP 403,2026-10-29T19:25Z,TRUE
+espn_odds,sports.core.api.espn.com,200,5809,,2026-10-29T21:12Z,FALSE
+kalshi_nfl_game,api.elections.kalshi.com,200,129780,,2026-10-29T21:12Z,FALSE
+kalshi_incentives,api.elections.kalshi.com,200,368615,,2026-10-29T21:12Z,FALSE
+sxbet_sports,api.sx.bet,200,1028,,2026-10-29T21:12Z,FALSE
+sxbet_markets,api.sx.bet,200,31137,,2026-10-29T21:12Z,FALSE
+smarkets_events,api.smarkets.com,200,45852,,2026-10-29T21:12Z,FALSE
+polymarket_tag_nfl,,200,9631422,"",2026-10-29T19:25Z,TRUE
+betonline_offering_post,,401,0,HTTP 401,2026-10-29T19:26Z,TRUE

@@ -58,6 +58,11 @@ source_module <- function(module_name) {
   message(sprintf("  Loaded: R/%s.R", module_name))
 }
 
+# A fixed run context for the whole suite (C1, 2026-10-20). Without options, config.R now falls
+# back to the calendar week, so the suite pins the week it was written against (2025 week 22)
+# rather than depend on today's date. Tests that need another context set their own options.
+options(nfl.season = 2025L, nfl.week = 22L)
+
 # Load config.R first (defines all global parameters)
 config_path <- file.path(PROJECT_ROOT, "config.R")
 if (!file.exists(config_path)) stop("Test setup: config.R not found at: ", config_path, call. = FALSE)
@@ -72,6 +77,10 @@ message("Loading R modules from: ", PROJECT_ROOT)
 LOAD_FIRST <- c("logging", "utils", "capture_raw", "data_validation", "playoffs", "date_resolver", "test_policy")
 all_modules <- sub("\\.R$", "", list.files(file.path(PROJECT_ROOT, "R"), pattern = "\\.R$"))
 for (m in c(LOAD_FIRST, setdiff(sort(all_modules), LOAD_FIRST))) source_module(m)
+
+# R/odds/*.R, the keyless odds layer (roadmap D1): list.files() above is not recursive
+odds_modules <- sub("\\.R$", "", list.files(file.path(PROJECT_ROOT, "R", "odds"), pattern = "\\.R$"))
+for (m in file.path("odds", sort(odds_modules))) source_module(m)
 
 # Load player props configuration (v2.9.0)
 props_config_path <- file.path(PROJECT_ROOT, "sports", "nfl", "props", "props_config.R")

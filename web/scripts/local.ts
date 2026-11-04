@@ -27,6 +27,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 import * as schema from "../src/db/schema";
+import { reportDbChecks } from "../src/lib/dbcheck/run";
 import { BundleRejected, ingestBundle, loadBundle } from "../src/lib/ingest/ingest";
 import {
   APP_HOST,
@@ -159,6 +160,10 @@ async function migrateAndIngest(url: string) {
     if (rejected) console.log(`${rejected} bundle(s) rejected (see above); the app serves the others`);
     const published = await db.select({ pointer: schema.publishPointers.pointer }).from(schema.publishPointers);
     for (const m of missingPointers(published.map((p) => p.pointer))) console.log(m.hint);
+    // the SQL data checks after every ingest (C2); the local app keeps serving, as it does past a
+    // rejected bundle, but says plainly that the data fails them
+    const checks = await reportDbChecks(db);
+    if (checks.errors > 0) console.log(`db-check: the database fails ${checks.errors} check(s) (listed above); the pages show data that is not clean`);
   } finally {
     await client.end({ timeout: 5 });
   }

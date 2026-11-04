@@ -52,7 +52,6 @@ test_that("ScoresAndOdds scraping is off by default (audit S5)", {
   sys.source(file.path(PROJECT_ROOT, "R", "prop_odds_api.R"), envir = api)
   expect_false(formals(api$load_prop_odds_scoresandodds)$allow_remote)
   api$load_prop_odds_scoresandodds <- function(...) stop("scraper called")
-  api$load_prop_odds <- function(...) NULL
   api$load_prop_odds_csv <- function(...) NULL
-  expect_no_error(withr::with_options(list(), api$resolve_prop_odds_cache(source_order = NULL, api_key = "")))
+  expect_no_error(withr::with_options(list(), api$resolve_prop_odds_cache(source_order = NULL)))
 })

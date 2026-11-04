@@ -4,6 +4,475 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Golden master CI: a record attempt that fails is tried again (2026-11-04)
+
+- **The failure:** CI on `c933862` failed 2 of its 52 record jobs (`08149e7`, `7b218ca`). The cause was the same in both: `raw.githubusercontent.com` answered 503 for nflverse's `games.rds` while every matrix job was downloading at once. Neither job ran code that had changed, and both had recorded cleanly on `a340a32`.
+- **The fix** (`.github/workflows/golden-master.yml`):
+  - **Retries:** the Record step makes up to three attempts, 2 and then 5 minutes apart.
+  - **Visibility:** each failed attempt is a warning annotation in the run.
+  - **Why a retry is safe:** a record writes its output only after the model run completes, so a retry never builds on a partial one.
+- **Test:** `reports/2026-11-04/gm-retry/test_retry.sh` runs the step's own text against a fake `Rscript`. It failed on the old step (one attempt) and passes on the new one (`test_retry_out.txt`):
+  - two failures, then success: exit 0 after 3 attempts;
+  - three failures: exit 1 after 3 attempts.
+
+### The engine's home-field comparison is void; the default stays team_margin (2026-11-04)
+
+- **The comparison:** three `run_week.R 15 2024` runs, one per `HFA_TEAM_ESTIMATOR`, scored the calibration simulations of 2019–2023 (1,322 games). As scored, team_margin beat league by 0.0039 Brier, the reverse of the model gauntlet.
+- **Why it is void** (`reports/2026-11-04/hfa-engine/README.md`):
+  - **No home field.** `week_inputs_and_sim_2w()` gives the margin `(home_hfa − away_hfa)/2`, where production gives the home team its full `HFA_pts`. The calibration simulations average a −0.02-point home margin against +1.29 in the results, and a 0.499 home win probability against a 0.530 home win rate.
+  - **Rest.** The calibration path also adds rest points, which production has not admitted.
+  - **Look-ahead.** Its home-field table spans 2015–2024 for every calibration week (audit M5). Under team_margin the difference is mostly team strength, which carries later seasons into each game.
+- **Effect on published numbers:** small. The blend behind C3 scores 0.216, 0.215 and 0.216 under the three estimators, against the market's 0.212.
+- **Not patched:** G1 (Plan 1b-2) retires this path for one point-in-time `predict_week()` shared with production (M5, M6, M8), with a production = backtest parity gate. Patching it first would move the golden master twice.
+- **config.R:** the estimator's comment now says so. Its value is unchanged.
+
+### Code review of the final test's fixes: eight findings (2026-11-04)
+
+The code-review skill reviewed `a639552..ef3d49b`. These engine edits rest on the owner's instructions of 2026-11-03 ("Fix the props page issue … and all other issues") and 2026-11-04 ("Make sure you are fixing any issues you find").
+- **`5dbb410`: an injury download that errors is retried and flagged too.**
+  - Only an empty table had been retried; an error still dropped the season unflagged.
+  - Only seasons with completed games are retried (`retry_seasons`), so a release not yet published costs one download.
+  - The retry count and wait are config.R settings: `INJURY_LOAD_RETRIES`, `INJURY_LOAD_RETRY_WAIT`.
+- **`111131d`: a game without a market line has no probability edge or model-market disagreement** (`market_gap()`). They were 0, which made it read as the most certain game.
+- **`fb3c0a7`: the Rams are LA** in the props module's dome list and `TEAM_ABBR_TO_NAME`. A Rams home game had never been a dome to the props context.
+- **`1704416`: a home-field estimator switch**, `HFA_TEAM_ESTIMATOR`: "league", "strength_free" or "team_margin".
+  - The default is unchanged ("team_margin"). The engine's own comparison proved void (the entry above), so G2's term-admission backtest decides it.
+  - The calibration cache key (v6) and the score cache key (v3) carry the estimator, so a calibration simulated under one is never served to another.
+- **`746f0d6`:** a clear error when the e2e bundle has no games, and the props test names the claims it pins.
+- **Recorded, the owner's call:** the TMB/glmmTMB pair. CRAN now ships TMB 1.9.25 with glmmTMB 1.1.15.2. Upgrading both in `renv.lock` ends the Windows ABI warning, but it is a dependency change. Rebuilding locally would touch the renv cache that the frozen `nfl_props_v1` package set links to. The GLMM feeds only the unadmitted `glmm` term.
+
+### Final end-to-end test of the integration: six defects fixed (2026-11-03)
+
+- **The test.** `Rscript run_week.R` with no arguments on a clean checkout of `a639552` (fresh HOME, the renv package set), 2026-11-03 04:46–05:06Z: `Auto-resolved 2026 week 9 (15 games, first kickoff Thu 2026-11-05 20:15 ET)`; Injuries FULL, Weather FULL, Market PARTIAL (2 games had no line yet); defense rankings applied; bundle QA passed. A check script compared the log, the bundle, the schedule and both audit tables, and the local app was checked page by page (`reports/2026-11-03/final-test/`).
+- **Fixed: a game without a market line was priced and bet in `artifacts/baseline_games.csv`.**
+  - **Before:** `attach_market_probs()` fills such a game's market probability with the model's own, as the blend's input only (audit M11). `build_snapshot_moneyline_result()` passed that fill on as the market. `build_moneyline_comparison_table()` then turned it into moneylines, shrank toward it and recommended a bet. ARI at SEA was priced at the model's own −337/+337 ("Bet ARI moneyline"); TB at CHI at −111/+111 ("Bet CHI moneyline", raw Kelly 0.053), where nflverse listed CHI −285 by 05:30Z.
+  - **Now:** the snapshot passes no market where `market_available` is FALSE, as the web bundle already did. The table gives such a game no market price, `prob_source` "none", the unshrunk blend (the bundle's C3) and "No Play". The web bundle and the app were never affected.
+  - **Test:** `tests/testthat/test-comparison-no-market.R` (10 failures before the fix).
+- **Fixed: an injury season that failed to download dropped out unflagged.**
+  - **Before:** nflreadr reports a failed download as a warning and an empty table, and memoises it. `safe_load_injuries()` suppressed the warning, so the season was neither loaded nor flagged. One empty season beside loaded ones still read "full"; all of them empty read "unavailable" with no cause (the golden-master misdiagnosis of 2026-11-03).
+  - **Now:** an empty season is downloaded again (`retries = 2L`, nflreadr's cache cleared, `retry_wait` 3 s apart). One that stays empty is a missing season ("partial" in the badge), with nflreadr's warning printed as the cause.
+  - **Test:** `tests/testthat/test-injury-load.R` (8 failures before).
+- **Fixed: the Rams had no time zone in the game model** (the game model's half of audit P9). `team_tz` had `LAR` where nflverse schedules use `LA`, so a Rams game got a travel term of 0 and an Eastern local kickoff. Travel is not an admitted term (`MU_TERMS_ADMITTED`), so no simulated output changes; the logged term is now right for the term-admission backtest. Test: `tests/testthat/test-team-tz.R` (the table against `data/reference/teams.csv`, and a Rams trip east at 1 pm).
+- **Fixed: the Props page described fixed defects as open.** It listed audit P1–P13 as open and checkpoint A5 as undecided (decided 2026-09-30). It now lists what is fixed (P1–P5, P9, P10, P12–P14) and what is open (P6–P8, P11), that `nfl_props_v1` tests the module as of `4c1c377`, and A5's rule. Test: `web/src/test/pages/props.test.tsx`, which reads the protocol's id, weeks and module commit from `backtest/eval_windows/nfl_props_v1.json`.
+- **Fixed: the score-distribution charts labelled two gridlines with the same value.** The y-axis took its decimals from each tick's size, not the tick step. With ticks every 0.5% (JAX at BAL's total, peaking at 2.544%) it read 0%, 0.5%, 1%, 2%, 2%, 3%, so its top gridline said 3% at 2.5%. `pctTicks()` (`web/src/lib/format.ts`) gives every tick the step's decimals: 0%, 0.5%, 1.0%, 1.5%, 2.0%, 2.5%. Test: `ScoreDistributionChart.test.tsx` (the live case, and the rule).
+- **Fixed: a weekly-program step was marked missed after three failed starts, however far off its deadline.**
+  - **What happened:** on 2026-11-03 week 9's `preclose_predict` failed three times in 30 minutes on a DNS outage (`Could not resolve hostname`, the PC moving in and out of standby). It was marked missed with its deadline, the first kickoff, still 54 hours ahead. `run_tue`'s venue and props snapshots failed on the same outage; `run_week.R` itself had finished (exit 0, QA passed).
+  - **Now** (`reports/2026-10-29/hypotheses/prospective_dispatch.R`, which no protocol registers): a step gets three tries at successive starts, then one an hour after its last failure, until its deadline and at most 12 tries in all. Test: `tests/testthat/test-prospective-dispatch.R`.
+  - **Week 9 recovered:** the step's markers were set aside (`w09/done/superseded-20261103/`) and the loop reran it at 20:30Z ("15 predictions written, before the week's first kickoff"). The snapshots were retaken by hand at 20:22Z. Both are noted in the store's `dispatch.log`.
+- **Fixed: the Playwright suite could not run on a published `run_week.R` run.** Seven specs failed on fixture data: the fixed `/games/2026_04_DEN_SF` page, and paper leans on the desk, which a simulator run never has. With `E2E_SIM_BUNDLE` set, `PUBLIC_PAGES` uses that run's first game, and the desk spec checks the simulator's message and zero stake cells. CI's main pass is unchanged. Against the real week-9 run: 135 passed, 0 failed (`08c8410`).
+- **Recorded, not fixed:**
+  - **Home field measures team strength.** `team_hfa_table()` sets a team's home field to its mean home margin (shrunk toward the league value), which is mostly team strength, already in the `base` term. This week Washington's admitted home field is −1.27 points and New England's +3.67. The simulator's median margins are more extreme than the market's in 13 of 15 games, by 1.75 points on average. The estimator dates from the original model. A strength-free estimator (half the home-minus-away margin difference) changes every output, so it goes to the term-admission backtest (M22).
+  - `renv.lock` pins TMB 1.9.17 with glmmTMB 1.1.13, whose Windows binary was built with TMB 1.9.19 and warns at load. The GLMM feeds only the unadmitted `glmm` term. A lock change is an owner decision, and the `nfl_props_v1` package set is frozen.
+  - `build_res_blend()` warns that the calibration backtest's per-game table has no `game_type` key. The collapse uses `game_id`, which is unique, so no row is lost; the warning predates the integration.
+
+### D1: the keyless odds layer and the decision-time archive (roadmap D1; audit S2, S4)
+
+- **`R/odds/`:** one HTTP layer (`http.R`: truthful user agent, 20 s timeout, at most 1 request/second per domain as a floor in code, backoff on 429/5xx, a 401/403/429 that survives the retries or a challenge page blocks the domain, sha256 of every successful raw response, error responses recorded by status and error text, fetch log), the `odds_snapshots` shape and market/venue vocabulary (`snapshots.R`), the closing rule (`closing.R`: last snapshot at or before kickoff at the same line, more than 60 minutes is stale, a missing line stays missing), one provider interface with `provider_nflverse`, `provider_espn_core` and `provider_kalshi`, forward capture (`capture.R`) and the archive builder (`archive.R`). Every gap a provider meets (a market not served, a dropped block, a missing field, a page cap, a line without a price, an empty or JSON-null body) is counted and makes its status `stale`; a Kalshi market of an unsupported type is counted as information. A challenge page or a 401/403/429 blocks the domain for the rest of the session. Responses are parsed with `jsonlite::parse_json`, which never reads a file or URL that a response names. A close block fetched before kickoff is kept as an observed snapshot at the fetch time, never as a close. No new dependency; tests inject a fetch function and read recorded fixtures in `tests/testthat/fixtures/odds/`.
+- **Capture:** `scripts/capture_odds_raw.R` is a thin caller of `run_capture()`, which delegates to the providers; `odds-capture.yml` is unchanged. `capture_http_get()` delegates to the new layer. A capture on a date in a sealed season (2025: September 2025 to February 2026) requests nothing, and the ESPN capture stops at a sealed season's scoreboard. A live run on 2026-10-27: 208 requests, all HTTP 200, 3 min 27 s, 20.1 MB.
+- **Archive:** `backtest/build_odds_archive.R` wrote `backtest/data/odds_archive/` (ESPN BET game openers and closes, 570 games of 2023–2024; 570 requests, all HTTP 200, 9.5 min). It refuses 2025 before any schedule load or request, and exits 1 when any game's response could not be stored (a failed request, an unusable body, or a game never requested after a block, each listed in `fetch_failures`); `--from-raw` rebuilds the CSVs byte for byte and makes no request. Measured coverage of games with a complete moneyline opener and closer: 2023 205 of 285 (71.9%), 2024 284 of 285 (99.6%). ESPN BET has no moneyline opener for 78 regular-season games of 2023 (weeks 1 to 5), so "open and close from 2023" holds from 2024 on. `backtest/data/espn_open_close.csv` and the v1 protocol hashes are untouched.
+- **Docs:** `docs/odds-sources.md` (endpoints, rate limits, coverage, terms matrix; the terms texts are not yet reviewed by the owner). Manual `odds-live-smoke.yml` and `scripts/odds_live_smoke.R`, which exits 1 on a failure and on a skip (an unreachable host checked nothing); the live tests are in `tests/live/`, outside the default suite.
+
+### A0 follow-up: the Tuesday capture reads the coming week (2026-10-21)
+
+- **Before:** the capture read only ESPN's default scoreboard. ESPN keeps that on the week just played until it rolls the week over. The Tuesday 2026-10-20 21:23Z run (39499941009) saw week 6, with all 14 games final, so it fetched zero ESPN game odds; the 216 h horizon had nothing to select.
+- **Now:** `run_capture()` also asks for the next week by number:
+  - `parse_espn_scoreboard_week()` and `espn_next_week()` read the week from the scoreboard and step it forward. The regular season runs 1–18; the postseason runs 1–5 and ends after the Super Bowl.
+  - The request is `espn_scoreboard_url(week)`, which gives `?seasontype=&week=&dates=`.
+  - ESPN refuses a `dates=YYYYMMDD-YYYYMMDD` range with HTTP 400 (probed 2026-10-21).
+- **Live check:** at 2026-10-21 05:09Z, an ESPN-only capture into a scratch folder made 17 of 17 requests at 200. It read 2 scoreboards and fetched game odds for 15 games inside 216 h (week 7's 14, plus week 8's Thursday game).
+- **Test:** `test-capture-raw.R`, with a Tuesday run on a stubbed fetch. The default scoreboard lists week 6 final; the capture now requests week 7 and that week's two games, and never the finished game.
+
+### P13: opponent-defense multipliers apply ("Defense rankings unavailable", owner 2026-10-20)
+
+- **Before:**
+  - `load_defense_rankings()` in `R/correlated_props.R` errored on every call: `dplyr::if_else` was given a scalar condition and 32-row branches.
+  - The error was caught, the run printed "Defense rankings unavailable", and every prop's opponent-defense multiplier was 1.0.
+  - A second definition in `sports/nfl/props/data_sources.R` had other columns, and which one ran depended on source order.
+  - The 2026 week 7 run on main still printed the error for every game.
+- **Now:**
+  - There is one definition, a pure `compute_defense_multipliers(pbp, weeks)` plus `load_defense_rankings(season, weeks = NULL, pbp = NULL)`.
+  - `apply_defense_adjustments(..., weeks = NULL, defense_ranks = NULL)` prints "Defense adjustments NEUTRAL" when it has no rankings, rather than staying silent.
+  - The duplicate and its two helpers (`scale_defense_rank`, `get_default_defense_rankings`) are removed. They are three functions; no file is deleted.
+- **Per game, not season totals.** Yards allowed are divided by games played before they are scaled. Mid-season, a team past its bye has played one game fewer, and a total made it look about 11% stingier (found in P1's final review). A bye-week test pins it.
+- **Scope:**
+  - A current-week run reads only games already played, so it sees no later weeks.
+  - A re-run of a past week still passes no `weeks` until P1 Task 3 threads point-in-time weeks through `run_game_props()`.
+- **Tests:**
+  - New `tests/testthat/test-props-defense.R` (27 expectations): 32 distinct multipliers inside their bounds; the `weeks` argument leaves out later games; an injected table is applied to the right team; the neutral message; one definition across `R/` and `sports/nfl/props/`; source order cannot change the function.
+  - The `KNOWN-DEFECT P13` skip is removed, so the live test runs.
+- **Gates (fresh HOME):** `run_tests.R` gives tests=462, passed=1787, failed=0, errors=0, skipped=0, exit 0. Integrity is 63 passed, 0 failed.
+
+### P1: props correctness (audit P1-P5, P9, P12-P14; P10 was already done)
+
+- **P14, prop lines are point-in-time.** The quote cache has a game key (`game_id`), a capture time (`captured_at`) and a player id. `get_market_prop_quotes()` uses a quote only if it was captured at or before the game's kickoff and before the run, and only if it is at most `PROP_QUOTE_MAX_AGE_MIN` (120, new default, owner-approved) minutes old at that moment. A 2024 week 16 run can no longer be priced with a 2026 line. A prop with no usable quote stays unpriced: NA odds and EV, recommendation PASS, and its reason in `unpriced_reason` and `Pass Reason`. With the default `PROP_REQUIRE_MARKET_ODDS = TRUE`, `artifacts/baseline_props.csv` keeps only priced rows once any row is priced, so unpriced reasons reach the file only when nothing is priced (an open owner setting in HANDOFF).
+- **P13, defense multipliers apply.** One `load_defense_rankings(season, weeks, pbp)` (the `R/correlated_props.R` copy; the `data_sources.R` copy and its two helpers are deleted, no file removed). The arithmetic is elementwise (`compute_defense_multipliers`), a game uses only weeks played before it, and a neutral fallback says so. The `KNOWN-DEFECT P13` skip is gone; the allowlist regex is unchanged. A new test scans `R/` and `sports/nfl/props/` for functions defined in both (`load_red_zone_efficiency` is the one known duplicate left, not a P1 item).
+- **P1, P2, P3, one decision per row.** `classify_prop_edge_quality` is vectorized. `govern_prop_rows()` picks the side the model likes among the priced sides, stakes on that side's probability and price, and returns side, tier (`bet`, `review`, `pass`, `model_error`) and stake together: stake above zero exactly when the tier is `bet` (10,000 random rows). `artifacts/baseline_props.csv` gains `side`, `tier`, `unpriced_reason`, `mkt_fair_over`, `price_venue`, `quote_captured_at`.
+- **P9, ids only.** `R/prop_keys.R`: `normalize_team_abbr` (no more `"KC"` to `""`; `LA` and `LAR` are one team; ffverse spellings such as `KCC`, `NEP`, `GBP` map to the schedule's), `resolve_player_ids` (exact name plus team against the ffverse crosswalk; A.St. Brown is no longer A.J. Brown). The `team_tz` table in `NFLsimulation.R` still has `LAR` where schedules use `LA`; that is the game model's half of P9 and is left for an owner-approved engine change.
+- **P12, price.** `R/prop_pricing.R`: proportional devig per venue, Kalshi at the bid/ask mid, EV at the best fresh quote for the side the model likes, including the Kalshi taker fee `KALSHI_TAKER_FEE_COEF` (0.07; **unverified against the primary PDF**, see the ledger row P-FEE-COEF). The consensus devigged probability is reported, never used as a price.
+- **P4, P5, keyless only.** `scripts/check_odds_api_callgraph.R` shows no reference to the keyed The Odds API client remains; `load_prop_odds`, `ODDS_API_KEY` and the `odds_api` source are deleted (owner-approved). `PROP_ODDS_SOURCE_ORDER` defaults to `csv`, `model`. The ScoresAndOdds scraper (audit S5) is untouched and its rows cannot be priced (no game key, no capture time).
+- **P10.** Already done: `sports/nfl/props/props_pipeline.R` was deleted in `3b942ff` (A0) and `test-repo-hygiene.R` keeps it from returning.
+- **Final-review fixes (2026-10-22):**
+  - **Production kickoffs.** `run_correlated_props()` reads the kickoff from games_ready's `game_date` and `kickoff_time_raw` when `gameday` and `gametime` are absent. Before this, every production prop was "Kickoff unknown".
+  - **Capture times need a zone.** A CSV `captured_at` must carry `Z` or an offset. A time without one is NA, is counted at load, and gives the reason "Line capture time missing or without a time zone". It is never read as UTC.
+  - **Lines.** Each book keeps every line from its latest capture (strike ladders and alternate lines). `mkt_fair_over` is the market's view at the chosen line.
+  - **Minimum edge.** An edge at or below `PROP_MIN_BET_EDGE` (2%) is a pass, "Edge below minimum".
+  - **CSV schema.** The loader accepts P1's own schema: `player_id`, and Kalshi's `yes_bid`/`yes_ask`.
+  - **Names.** Player names are transliterated with ICU (`stringi`), the same on Linux as on Windows.
+  - **Defense.** Defense multipliers use yards per game, so a bye no longer makes a defense look stingier.
+  - **Deferred to K2/P2:** an adapter from D1's `odds_snapshots` to this quote cache, and a point-in-time player crosswalk (the ffverse table carries each player's team today).
+- **Golden master:** no differences predicted. The golden master runs `NFLsimulation.R` only, and props run from `run_week.R` after `final` is written. It is measured by a local record on main `4c1c377` compared on this branch (week 15 of 2024), and by CI's per-commit `attribute` job; the PR quotes both.
+- **Gates (fresh HOME, Windows):**
+  - `run_tests.R`: tests=509, passed=2004, failed=0, errors=0, skipped=0. The `KNOWN-DEFECT P13` skip is gone, and `tests/skip_allowlist.txt` is unchanged.
+  - Integrity: 63 passed, 0 failed.
+  - `audit_verify.R`: 32 PASS, 0 FAIL.
+  - `check_odds_api_callgraph.R`: exit 0.
+
+### Fixed: player projections no longer see the games after the week they project (2026-11-02)
+
+- **The look-ahead.** `load_player_projections()` (`sports/nfl/props/data_sources.R`) took a `week` argument but never used it. A run for a past week therefore averaged in every later game of that season, including the projected week's own game.
+  - Found by HYPOTHESES.md §13 on `research/hypotheses`, which could test the props module only on the one week its run was made in advance.
+- **Now** only the target season's games before `week` count. Earlier seasons count whole, and `week = NULL` keeps every game.
+- **The fallback** for a season without data now passes `week = NULL` for the past season. It counts that season whole, exactly as before.
+- **No change to a run made before its week:** no later games exist at that time. Neither the golden master (game model only) nor any committed output is affected.
+- **The function's comment** said "rolling averages with recency weighting". It now says what the code does: an equal-weight mean over the loaded seasons.
+- **Test:** `tests/testthat/test-props-projection-week.R` (it failed before the fix: 6 games and 50 yards instead of 5 and 30).
+
+### C1: the week to simulate is the upcoming week, never a fixed 2025 week 22 (owner, 2026-10-20)
+
+- **Before:**
+  - `config.R` defaulted to `SEASON` 2025 and `WEEK_TO_SIM` 22, so a run without arguments simulated a sealed season's Super Bowl.
+  - `AUTO_RESOLVE_WEEK` (FALSE) and four other resolver settings were read by nothing.
+  - `weekly-sim.yml` stayed manual because of that default.
+- **Now:**
+  - With no week given, `run_week.R` takes the earliest week of the nflverse schedule that still has a game to kick off, from `resolve_run_target()` and `resolve_target_week()` in `R/run_config.R`. It prints `Auto-resolved <season> week <w> (<n> games, first kickoff ...)`.
+  - A week given alone means the season in progress.
+  - A schedule that cannot load stops the run and names the command to use.
+  - `config.R` sourced on its own falls back to `nfl_calendar_week()` and says so.
+- **Removed:** the five unread resolver settings (`AUTO_RESOLVE_WEEK`, `TARGET_DATETIME`, `TIMEZONE`, `WEEK_BUFFER_PRE`, `WEEK_BUFFER_POST`). None had a reader in any `.R`, `.yml` or `.ts` file.
+- **Workflow:**
+  - `weekly-sim.yml` runs at the two decision points (Tuesday 18:00Z and Friday 21:00Z) for the resolved week, through `scripts/resolve_week.R`.
+  - A manual run may name a week and season.
+  - The 2025 refusal now checks the resolved season.
+- **Tests:**
+  - `test-run-config.R`: the calendar, the target week across a week's kickoffs, the stops, and resolution before `config.R`.
+  - `test-workflows.R`: the crons, the optional inputs, and the step order.
+  - The suite pins its old context (2025 week 22) in `tests/testthat/setup.R`.
+
+### Sealed seasons stay out of the market comparison's diagnostics (owner, 2026-10-21; output audit F3)
+
+- **Before:** 2026 production runs calibrate on 2021–2025 and printed 2025 model-against-market results: a by-season row (Brier, log-loss) and rolling windows ending at 2025 week 18. This exposed the sealed holdout season on every run. It also happened in the 2026-10-13 C3 retest runs, and it is disclosed for `nfl_preclose_v1` and `nfl_games_v2`.
+- **Now:** `compare_to_market()` (`NFLbrier_logloss.R`) drops `SEALED_SEASONS` (new in `config.R`, 2025) before computing any diagnostic: the pooled deltas, the by-season table, the reliability bins and the rolling windows. It prints `sealed season(s) 2025 omitted from these diagnostics (holdout not yet scored)`.
+- **Unchanged:** production still calibrates on 2025, as the owner chose ("keep 2025 in calibration, hide its printout, disclose").
+- **Remaining:** the engine's own pooled calibration summary (`NFLsimulation.R`) still mixes 2025 in as one of five seasons. It shows no per-season figures.
+- **Test:** `tests/testthat/test-compare-to-market-seal.R`. RED was the unused `sealed_seasons` argument and the missing `SEALED_SEASONS`. GREEN checks that sealed rows leave `comp`, `by_season`, `overall` and `rolling`; that with no sealed season every season is kept; and that the default comes from config.
+
+### Venues by stadium id: real coordinates and roofs for every game (audit M21/S3; output audit F6)
+
+- **Before.** The engine joined a hand-typed table of 29 venues by NAME, and nflverse renames venues while keeping the id. Three kinds of game fell back to league-average weather centred on Kansas, with no roof:
+  - every renamed venue: Heinz Field, CenturyLink Field, Paul Brown Stadium, FirstEnergy Stadium, Mercedes-Benz Superdome, University of Phoenix Stadium, "Reliant Stadium" (Houston, still named that by nflverse in 2026), and others;
+  - Atlanta's Mercedes-Benz Stadium (82 games since 2017);
+  - every international venue.
+
+  In the 2026 week 7 run, the games in Houston, Atlanta and Paris used this fallback.
+- **Now:**
+  - `data/reference/stadiums.csv` holds all 55 stadium ids nflverse used in 2006–2026, with coordinates and a roof type (outdoors, dome or retractable). Some roof types correct nflverse: Stade de France, the MCG and the Allianz Arena are open-air, though nflverse marks them as domes.
+  - `R/stadiums.R` adds `load_stadium_reference()`, `stadium_is_indoor()` and `attach_stadiums()`.
+  - A retractable roof counts as closed until it is reported open.
+  - A game whose id is missing from the reference is named in a message, and its weather fallback is logged, as before.
+  - `NFLsimulation.R` now joins venues by `stadium_id` for both the dome flag and the weather coordinates.
+- **Effect on predictions: none.** Weather and dome terms are computed and logged but are not admitted into the simulated means (`MU_TERMS_ADMITTED` is base and hfa). This makes them correct before G2 tests whether to admit them.
+- **Not changed (listed for G2):** the blend's historical-context features read nflverse's `roof` directly (`is_outdoors`), and they do feed predictions.
+- **Tests:** `tests/testthat/test-stadiums.R`. It checks:
+  - every id from 2006–2026 appears exactly once, with coordinates;
+  - US venues fall inside the continental US;
+  - the roof truth table;
+  - the join names unknown ids;
+  - the engine no longer joins by name.
+
+### F11: home field for every team in the calibration backtest; a missing mean stops (engine, owner-gated)
+
+- **The bug.**
+  - `hfa_tbl` was built only for the teams on the slate being simulated (`NFLsimulation.R`, near the old line 2798). The calibration backtest joins it for every team of every past week (`recent_form_at_sim`).
+  - So a team on a bye in the target week had no home-field value in all of its calibration games. Both means went NA, and `simulate_game_nb` replaced each with 21.5, a coin flip.
+  - In the 2026 week 7 run (byes BUF, JAX, LAC, WAS), 317 of the 1,355 calibration games (2021–2025) were coin flips. That is exactly the games that involve those four teams (output audit F11).
+  - The golden master (2024 week 15, no byes) could not see it. `calib_cache_key` has no week, so the first run of a season cached the broken fit for every later week.
+- **The fix.**
+  - `team_hfa_table()` (`R/schedule_context.R`) builds home field for every team in the schedule.
+  - `assert_finite_means()` stops a calibration week whose means are not finite, naming the games, instead of letting them become 21.5. The message also names every missing input of those means, with up to three of its games.
+  - The calibration cache version is now 5L, and the score cache's 2L (F11b below), so no cached fit from before the fix is reused.
+- **The effect.** Measured on a cold-cache `run_week.R 7 2026` with `warn = 1`, against the audit's run before the fix:
+  - fallback warnings: 634 before, 0 after;
+  - raw simulator over the 1,355 calibration games: Brier 0.247 → 0.243 and log-loss 0.690 → 0.682 (the market is 0.212 and 0.611);
+  - the production blend is unchanged at Brier 0.215 and log-loss 0.624;
+  - blend minus market, week-block bootstrap: ΔLog-loss +0.0131 [0.0025, 0.0260] before and +0.0134 [0.0022, 0.0265] after; ΔBrier +0.0034 [0.0012, 0.0058] before and +0.0032 [0.0009, 0.0058] after.
+
+  **The fix makes the simulator's inputs honest, but it does not close the gap to the market. F4 still stands.**
+- **F11b: franchise codes** (owner decision, 2026-10-28).
+  - **The bug.** The new stop exposed it: CI's golden master (2024 week 15, whose calibration starts at 2019 week 1) stopped at `2019_01_DEN_OAK`, missing all four of the home team's drive inputs.
+    - nflverse play-by-play files the 2019 Raiders as `LV`, while its schedules and injuries say `OAK`; `SD` and `STL` are the same before their moves.
+    - So no play-by-play table joined the schedule's code. On main, every 2019 Raiders calibration game was a 21.5–21.5 coin flip, and no 2015–2019 `OAK`, `SD` or `STL` game had its division flags (`load_teams(current = TRUE)` has only the current codes).
+  - **The fix.** `franchise_code()` (`R/schedule_context.R`) maps OAK→LV, SD→LAC and STL→LA. The engine applies it to the schedule as it loads and to the injury table; `game_id` keeps its season's code.
+    - Form, pace and points per drive carry across a move, and home field pools both stadiums.
+    - `score_weeks` starts at SEASON − 8, so it reaches the pre-move seasons, and its cache version is 2L.
+  - **The effect** on the 2024 week 15 golden master, against main's record (`golden_master.R attribute`):
+    - the calibration runs every week of 2019–2023, where F11 alone stopped at 2019 week 1;
+    - two home means move: ATL at LV by −0.616 points (home win probability −0.020) and TB at LAC by −0.332 (−0.013);
+    - the other 14 games keep their means, and their win probabilities move at most 0.0009, through the calibration.
+- **Gates:**
+  - `run_tests.R`: 461 tests, 1,773 passed, 0 failed, 1 allowlisted skip.
+  - `verify_repo_integrity.R`: 63 passed, 0 failed.
+  - `golden_master.R record 15 2024` (fresh HOME) completes, with no missing mean.
+  - The F11 run of `run_week.R 7 2026` finished with exit 0 and `QA: passed`.
+  - New tests are in `tests/testthat/test-calibration-hfa.R`. The pinned cache versions are 5L (calibration) and 2L (score) in `test-schedule-context.R`.
+
+### The odds capture starts 4 h 30 min or more before every kickoff (owner, 2026-10-29: "Do this")
+
+- **The problem.** A0's 3 h 45 min buffer was not enough. From 2026-10-19 to 10-27, GitHub started every scheduled run 2 h 12 min to 3 h 57 min late (`reports/2026-10-28/feasibility/capture_delays.csv`, #227).
+  - On 2026-10-25 the 13:15Z early-games run started at 17:03Z, after the 13:30Z international game and the seven 17:00Z games had kicked off. Those games' last capture was Saturday's.
+  - Monday Night Football's run on 2026-10-26 started 14 minutes before kickoff.
+- **Now** (`odds-capture.yml`):
+  - every game-day run starts 4 h 30 min or more before the kickoff it serves (TNF, the Sunday windows, SNF, MNF);
+  - every run is at a minute off the hour, since GitHub's scheduler is busiest at the top of the hour;
+  - a Sunday-morning run (08:37Z) covers the 9:30 a.m. ET international games.
+  - `tests/testthat/test-workflows.R` pins the schedule and checks each game-day run's slack.
+- **Exact pre-kickoff prices** come from Kalshi's hourly candles (`kalshi_candles.R`, #227), so the captures are now needed for ESPN's data and the decision-time snapshots.
+
+### C2: SQL data checks after every ingest, and an ERD generated from the schema (web only)
+
+- **18 SQL checks** (`web/src/lib/dbcheck/checks.ts`). Each is a query that returns one row per violation, so clean data returns zero rows from all of them. `npm run db-check` runs them against `DATABASE_URL`: errors exit 1, warnings are printed, and a missing URL exits 2.
+- **Which runs are checked.** Checks on run-scoped rows look only at the runs the app serves: the runs a publish pointer names, and their backtest runs. The ingest keeps superseded and QA-failed runs, so checking every run would let one bad run fail every later legitimate ingest. Shared tables (games, markets, odds) and publication consistency are checked whole.
+- **What the 15 error checks cover:**
+  - every probability in `[0, 1]`, with NaN and Infinity caught;
+  - backtest metric ranges, with every interval value finite and lower ≤ upper;
+  - score distributions that cover their run's stated `distribution_mass`, with consecutive integer bins;
+  - duplicate matchups and inconsistent scores (a score more than a day before kickoff, since a kickoff with no game time is assumed 1 PM ET);
+  - publication consistency (one published run per kind, pointers to published runs, an ingest log row for every run);
+  - one backtest run per model run (B2's deferred minor: `evidence()` and `publicGates()` would otherwise disagree);
+  - odds quotes:
+    - no price;
+    - an American price in (−100, 100);
+    - a bid above its ask;
+    - a yes/no quote outside [0, 1];
+    - a two-way price whose implied sum is outside [1.00, 1.15], with spreads paired by |line|;
+    - a closing line captured after kickoff, or pointing at another game, market, venue, side or player.
+- **The 3 warnings:**
+  - a slope or skill outside its own bootstrap interval (a percentile interval need not contain it);
+  - a venue more than 8 points from the median no-vig probability of at least three venues in the same UTC hour;
+  - a coded column outside the vocabulary its table uses. This is a warning because the bundle contract keys its vocabularies by column name alone, so it admits wider values; making the contract per table is a follow-up.
+- **Six checks target tables no bundle writes yet:** the five odds checks and `prop_line_probs` (the K3 odds bundle and P2 will write them). So far these are verified only on rows planted in the tests.
+- **Writer contract for K3:** both sides of a two-way quote carry the same `captured_at`, or no pair forms.
+- **Audit F7 is by design.** A run's bins cover the central `distribution_mass` (0.999) of its draws, so they sum to between 0.999 and 1. The check compares against the run's stated mass.
+- **Where the checks run:**
+  - after every ingest in CI (the fixture, simulator and parity-online steps);
+  - in the deployed ingest (`weekly-sim.yml`);
+  - in `npm run local`, which keeps serving but prints the violations.
+
+  In the deployed ingest the check runs after the ingest has committed, so it fails the job loudly but does not stop that run being published. Gating inside the ingest transaction is a follow-up.
+- **`docs/ERD.md`** is the data model as a Mermaid ERD: 32 tables and 44 foreign keys, with PK, FK and UK marks. `npm run erd` generates it from `web/src/db/schema.ts`. `web/src/lib/erd.test.ts` fails when the file is stale (a test column added to the schema made it fail), and `npm run erd -- --check` says the same.
+- **Gates:**
+  - vitest 21 files, 160 tests with `REQUIRE_DB_TESTS=1` (main has 18 files, 126 tests). Every check returns zero rows on the three fixture bundles, and each fires on a row planted to break it.
+  - typecheck and lint exit 0.
+  - `verify_repo_integrity.R`: 63 passed, 0 failed.
+  - `npm run local` on the three fixture bundles printed `db-check: 18 checks, 0 error(s), 0 warning(s)`.
+- **Unchanged:** no dependency, migration, contract or R file. Range CHECK constraints in migration 0003 are owner checkpoint 7 and not part of this.
+
+### B2: one token and component system, context on every number, professional HTML (web app only; no R, contract or schema change)
+
+- **Tokens.** `web/src/app/globals.css` gains a static Tailwind 4 theme: type roles (`heading`, `figure`, `stat`, `title-sm`, `title`, `score`, `hero`, responsive at 40 and 80 rem), spacing roles on a 4 px base (`tight` 4, `snug` 8, `control` 12, `stack` 20, `card` 20, `card-sm` 16, `section` 40, `page-top` 48, gutters 16/32/64), radii and measures. `web/src/test/tokens.test.ts` with `tokenCeilings.json` is a ratchet: a file's arbitrary utilities can only fall (114 became 3; `text-[Npx]`, 43 of them in 16 sizes, became 0), and a spacing role named like a Tailwind display utility fails the test (a first draft's `inline` and `block` turned every `inline-block` into a 20 px square).
+- **Components.** `web/src/components/ui.tsx` is the one `Page`, `PageHeader`, `Section`, `Card`, `StatTile`, `DataTable`, `Stamp`, `Term`, `Breadcrumb` and `Grid`. All nine page files and the four chart tables use them, and `designLanguage.test.ts` fails if a page writes its own table, heading or card. A table row without a cell for a column throws, and a `StatTile` without a source does not compile.
+- **Bugs fixed, each with a test.**
+  - The game page's flags were inset 26 px against 58 px end zones. They are drawn inside the hero strip and sit within 1 px of their markers at 390, 768 and 1440 px (`e2e/flags.spec.ts`).
+  - The game page started 16 px higher than the others, and the blocks of a page were 20, 24, 28, 32, 36 or 40 px apart. Every page now starts 48 px below the header and keeps one 40 px gap between sections (`e2e/rhythm.spec.ts`).
+  - The theme was applied after hydration, so the other theme flashed. It is a cookie the server renders, set by a plain form post to `/theme`: no inline script, a tap during load is kept, a foreign origin is refused (`e2e/theme.spec.ts`).
+  - The phone header was 229 px of four rows; it is 109 px of two, with the five labels on one line (a 320 or 360 px phone scrolls the row inside its box; `e2e/header.spec.ts`).
+  - The header's Desk link carried its own copy of the dark button's class; the class is written once, in `ui.tsx`, and `designLanguage.test.ts` fails on a second copy.
+  - Only a strip's title was a link; the whole strip is one link with one focus ring (`e2e/card-link.spec.ts`).
+  - `/evidence` had four scroll regions all named "Scrollable table" (axe `landmark-unique`); a table's region is named after its caption.
+- **Context.** Every page that shows data states the run and the data date (a `<time datetime>`), every headline number has a label, a unit and a source line, and terms link to thirteen definitions on `/methodology` (`web/src/lib/glossary.ts`). A page with no run or backtest says so and stays valid (`e2e/context.spec.ts`, `web/src/test/pages/`). Login and not-found show no run data and carry no run line.
+- **Professional HTML.** Every public page has its own title and description, one banner, one main, one contentinfo, one h1, named navigation landmarks and `<time datetime>` (`e2e/html.spec.ts`). The accessibility specs run axe with the best-practice rules and fail on any violation. The game and evidence pages print as dark ink on white with the blue and gold lines kept (`e2e/print.spec.ts`). `error.tsx` is the app's error boundary.
+- **First load.** `publicGates()` reads the promotion gates in one cached query where `evidence()` needed seven, and a page and its metadata share cached queries. Lighthouse 13.5.0 mobile, five interleaved rounds on one machine (2026-10-26, other R jobs running alongside), `main` against this branch, median LCP: home 2.52 s against 2.67 s, game 2.78 s against 2.82 s, evidence 2.85 s against 2.88 s (main's evidence median is over its four runs that recorded an LCP); performance 0.88, 0.89, 0.80 against 0.89, 0.89, 0.80; total blocking time 374, 316, 643 ms against 336, 311, 599 ms. On every page the branch is within 0.25 s of `main`'s LCP and no worse on performance or blocking time. Neither tree meets the 2.5 s gate on any page on that machine; the dry run (2026-10-20, a quieter machine) measured home 2.45 s against 2.44 s.
+- **Owner decisions** (also in the PR): no root `loading.tsx` (React 19 holds a Suspense fallback on screen for a few hundred milliseconds, which moved LCP up by 0.3 to 0.5 s on every page; the file is in the plan's appendix); the theme choice moved from the header to the footer; type sizes consolidated (section titles 22 to 24 px, lead text 17 to 18 px, chips 13 to 14 px, strip team codes 22 to 20 px); `experimental.inlineCss` rejected (the nonce CSP blocks the inlined style); font subsetting left to the owner (`offlineFonts.test.ts` pins the committed font file).
+- **Gates** (the branch, 2026-10-26): typecheck and lint exit 0; vitest 31 files and 192 tests with `REQUIRE_DB_TESTS=1` (baseline 18 and 126); Playwright on the fixtures 112 passed and 60 skipped (baseline 70 and 60), `@sim` 11 passed, the seven run-reading specs 35 passed on the simulator run, `@parity` 60 passed offline and 60 online at zero differing pixels (a wrong baseline fails with 861,285 differing pixels); axe with best-practice rules 0 violations, and review-ui 48 rows with no overflow, console error, serious axe rule or leak, on both trees and both data states; `verify_repo_integrity.R` 63 passed, 0 failed. No dependency added, no file deleted. The other R gates were not run: no R file changed.
+
+### `nfl_props_v1` signed, and the weekly program on a timer (2026-11-02)
+
+- **Signed before week 9's first kickoff:** `reports/2026-11-02/props-v1/PROTOCOL.md`, registered in `backtest/eval_windows/nfl_props_v1.json` with its sha256 and the scoring code's. It tests P1–P6 (Holm, one-sided 5%) once, on 2026 weeks 9–18.
+  - P1–P4 are Kalshi price relations.
+  - P5 and P6 test our props model.
+- **The props model under test** is the code of commit `4c1c377`, whose week-7 run produced P5's and P6's evidence.
+  - It runs from its own checkout, with that run's package set (`module_packages.csv`, 219 packages; dplyr 1.1.4, where the user library has 1.2.0).
+  - Later fixes (#216, #220, #230) are not part of this test.
+- **The final scorer** (`props_v1_score.R`) copies the exploration's code with only a filter to the scored weeks. It refuses to run unless the registered files are unchanged and committed.
+  - **Known answer:** on weeks 1–7 it reproduces every effect the protocol was built on (P1 0.0097, P2 0.809, P3 1.264, P4 0.120, P5 0.260, P6 0.0428). `tests/testthat/test-props-v1-protocol.R` checks this.
+- **Weekly reports are interim.** The draft ruled out interim looks; the signed text allows labelled interim reports on which nothing is decided.
+- **The weekly program on a timer** (`prospective_dispatch.R`):
+  - **Runs:** each week's runs, snapshots, Kalshi fetch and score, for weeks 9–18.
+  - **Rules:** each step runs once, with deadlines, retries and an atomic lock.
+  - **Started by:** `prospective_loop.sh` in a shell, or by a Windows scheduled task registered with `register_prospective_task.ps1`. The owner runs that script.
+  - **Store:** it writes to a private local store outside the system temp folder.
+- **The weekly score now fits the props model's dispersion on every earlier week the store holds** (`weekly_prospective.sh`). Before, it used weeks 1–7 only.
+- **A live maker test of A3, for the owner** (`reports/2026-11-02/maker-test/`).
+  - **The kit:** `MAKER_TEST.md` (the design, sizes and decision rule, fixed before the first order), `maker_log_template.csv`, and `score_maker_log.R`.
+  - **The scorer** reads the owner's order log and fetches Kalshi's settlements and candles keyless. It reports fills, adverse selection and returns with game-resampled intervals.
+  - **Smoke test:** checked on a synthetic log of real week-7 pairs.
+  - **The orders are placed by hand.** No credential passes through Claude.
+- **Track H, historical openers:**
+  - **AusSportsBetting** sits behind a Cloudflare bot challenge (HTTP 403), so it is dropped under the owner's rule.
+  - **SBR's archive** is readable but frozen at 2021–22. It has opening spreads only, so it cannot meet the admission rule (no 2023–24 overlap with ESPN).
+- **T2** (`opener_spread_clv.R`, pre-registered in `PLAN.md` at `90f47f6`): C2's picks at SBR's opening spreads, 2018–2021, gain +300 bps (+220 to +403).
+  - **The Elo control fails:** Elo gains +210.
+- **Diagnostic, after T2** (`opener_timing_elo.R`): Elo seeing results through week w−2 against v1's Elo through w−1.
+  - **SBR:** the open-to-close move follows the previous week's Elo update at 0.78 (p 2×10⁻¹⁴). SBR's openers predate those games, so T2 is look-ahead.
+  - **ESPN BET:** the coefficient is 0.04 (p 0.47), and both Elo versions are null. So T1's +90 bps for C2 is not look-ahead on results, which settles T1's open caveat.
+  - **Shared code:** the SBR parsing lives in `sbr_common.R`; T2's outputs are byte-identical after the move.
+
+### Value hypotheses, every venue, and our model against the books (2026-10-29 to 2026-11-02)
+
+- **The report:** `reports/2026-10-29/hypotheses/HYPOTHESES.md`. Families A–H were fixed in `PLAN.md` (`d9367fd`) before 2026 week 8; K and M were added at the owner's later requests.
+- **Families A–H:** only A3 (protected contracts underpriced, q 4×10⁻⁷) and A5 (the binary ladder beats the scalar's mean, q 2.5×10⁻⁴) survive BH, and neither pays a taker.
+  - **Family C (makers and takers):** makers net +0.75¢ a contract before kickoff (−2.86 to +4.36, q 0.68) over 2.58 million Kalshi trades. Only a 4.6¢ edge was detectable.
+  - **Kalshi's liquidity incentives** paid on 19 NFL markets, none of them game lines or props.
+- **Track K1, every venue at once** (`VENUE_SURVEY.md`, `venue_probe.R`, `venue_snapshot.R`, `props_snapshot.R`, `venue_persistence.R`):
+  - **Venues:** 11 are readable without a key; 8 refused.
+  - **Game lines in week 8:** no arbitrage, line shopping worth 0.7–1.4¢ per $1, and 20 of 2,172 sides beat Pinnacle's no-vig price.
+  - **Props:** 5 small arbitrages, all through Smarkets (best +1.39¢).
+  - **Confidentiality:** raw sportsbook responses and per-venue prices stay private; only aggregates are committed.
+- **Family M, our model against the books** (`model_vs_books.R`), on the week-7 run made before kickoff:
+  - **Moneyline:** the shown C3 probability is worse than every closing price (Brier 0.2488 against Kalshi's 0.2268 and the consensus close's 0.2310), and its bets lose.
+  - **Spreads and totals:** on Kalshi's ladders the model adds no information.
+  - **Props:** the props module has never priced a market (none of its 570 props has a market line or odds). Its projected means show a weak, insignificant signal against Kalshi's close (0.26, one-sided p 0.066).
+- **Defect found, not fixed:** `load_player_projections()` averages three seasons equally although its comment says "recency weighting", and it has no week filter (`sports/nfl/props/data_sources.R:62-158`).
+- **Recommendation (§14):**
+  - stop trying to make the game model beat the close;
+  - give props one pre-registered season-long test;
+  - pursue timing (CLV) and price-relative betting against a sharp reference.
+- **Family T, timing (§15, `opener_clv.R`):**
+  - **T1 replicates v1's lead on 2023.** The EPA model C2's picks at ESPN BET's opener gain +85 bps of CLV (141 picks, one-sided p 0.008). This uses D1's 2023 openers and v1's own predictions, rule and bootstrap; 2024 recomputes exactly.
+  - **Pooled** over both seasons it is +90 bps (+47 to +135), and +103 bps where no starter changed, so it is not v1's starter caveat.
+  - **It does not pay at one book:** the flat ROI is −2.6% (−16% to +11%), and ESPN BET's median opening overround is 397 bps.
+  - **Open caveat:** if openers were posted before the previous week's games, part of the CLV is look-ahead. ESPN keeps no line history for 2023–2024, and the 2026 capture archive cannot see an earlier opener until #217 (`opener_timing.R`). Elo's null argues against pure look-ahead.
+  - **Props:** the projections predict Kalshi's last-day drift (Family G 0.032, p 2×10⁻¹⁴; the module 0.043, p 0.0004), but by about a quarter of a cent, below Kalshi's fees.
+- **The forward test** (`weekly_prospective.sh`, `score_week.R`, with the shared props code in `props_frame.R`) runs on weeks 9–18 from a private local store; week 9 is scored on 2026-11-10. Since 2026-11-02 it is `nfl_props_v1`'s data collection (above).
+- **`PROTOCOL_props_v1_DRAFT.md`** gains P6, the module's timing, as a price relation. P5's code is `score_week.R`.
+
+### Feasibility research (2026-10-28 to 29): can a model beat the market, with significance?
+
+- **The report:** `reports/2026-10-28/feasibility/FEASIBILITY.md`. Every number in it comes from a script in its folder.
+- **Games against the close:** no feasible sample can confirm an accuracy edge (`power.R`).
+  - On every game with a closing moneyline (4,997, 2006–2024), the smallest detectable Brier skill is 0.39%.
+  - The best blend's +0.068% would need 20,836 games.
+- **Games against the opener:** in 2023 the close beat the opener by 2.29% of its Brier (p 0.077; `opener_ceiling.csv`). Closing-line value is the test.
+- **Kalshi props.** All 191 series in the captures are inventoried, and the 74 single-game series are scored.
+  - **Outcomes:** Kalshi's own settlements (`kalshi_settled.R`). They agree with an nflverse rebuild on 10,506 of 10,506 contracts.
+  - **Prices:** the close at kickoff, from Kalshi's hourly candles (`kalshi_candles.R`).
+  - **The data:** 2026 weeks 1–7, 88,439 contracts and 107 games (`props_close.R`).
+  - **Close to calibrated.** Player props' slope is 0.958 (0.917–0.999), and none of the 67 series fitted alone departs after BH.
+  - The scalar ladders' pooled compression (1.12, Bonferroni 0.017) does not carry out of sample.
+  - **No recalibration edge.** Traded walk-forward after the spread and fee, a taker loses 15.7% (−30.1% to −1.7%).
+  - **No sure profits.** No exclusive set offers one at kickoff: 0 of 1,661 events.
+- **Corrected: the first version's favorite–longshot finding** (slope 1.15) was an artifact. Kalshi's `occurrence_datetime` is the kickoff plus 3 hours, so 74% of that probe's "pre-kickoff" quotes were mid-game (`props/props_cutoff_check.csv`).
+- **Dates:**
+  - **Schedule checks** (`dates_audit.R`): of ten, only nflverse's rest days differ, on 34 team-games. REST-FLEX is recorded on the five rest features (`backtest/vvf/registry.R`), and 0 of 15 S1 verdicts change.
+  - **Capture timing** (`capture_delays.R`): the capture workflow starts 2 h 12 min to 3 h 57 min late. On 2026-10-25, 8 games kicked off before their game-day capture ran.
+- **Calibrators:** none of #205's 21 calibrated variants improves significantly on its own model (`calibrators.R`).
+- **The A3 research reproduces from scratch:** 11 of 11 outputs are identical (`rerun_research.sh`).
+  - Fixed: `a3-research.R s4` no longer overwrites `s4_power.csv`. It writes `s4_power_initial.csv`.
+- **Literature re-checked:** one claim was corrected, the sports horizons in arXiv 2602.19520.
+
+### A3b: incremental skill, the S4 controls and diagnostics (VVF S3–S5), with the owner's research of 2026-10-28
+
+- **S3, incremental skill** (`backtest/vvf/s3_skill.R`).
+  - Each feature enters as `logit(p) = lp_anchor + b·x_c`, refit every week on the earlier weeks only, and is scored against the anchor alone: paired Brier and log loss, a week-block bootstrap (B = 10,000), DM-HLN and BH over the declared order.
+  - It refuses a close anchor at an opener decision, and a table with a sealed season.
+- **S4, the controls** (`s4_controls.R`): the canary, 200 placebos, the spec's label shuffle, the anchor copy and reproducibility, plus two researched nulls.
+  - The anchor null redraws y from the anchor, by consistency resampling.
+  - The permuted-x null permutes each feature within its week.
+  - Each null passes when S3's own claim rule claims no feature.
+  - The run reports two statuses: `s4_status`, under the spec's controls, is the status of record; `s4_status_amended` is under the proposed amendment, which the owner signs.
+- **S5, the diagnostics** (`s5_curves.R`, `s5_scores.R`, `s5_smoothing.R`, `s5_anova.R`):
+  - validation curves with the one-SE rule on paired differences, a nested-tuning guard, learning curves and the fit gap;
+  - an exact Murphy decomposition, calibration slopes, bias and variance, CRPS, a randomized NB PIT and effective df;
+  - the engine's recency weights checked against an EWMA, and the Kalman steady state;
+  - loss ANOVA by season and part of season, and team effects.
+- **The research** (`reports/2026-10-28/a3-research/RESEARCH.md`; every number is in its `summary.txt`):
+  - **The spec's label shuffle fails by construction.** Over 5 replicates of 36 features, shuffled labels break the anchor offset, so it claimed skill in 5 of 5 replicates. The anchor null and the permuted-x null claimed nothing in 5 of 5.
+  - **S3's power is low** (20 replicates per effect): a planted effect was detected in 11 of 20 at 0.20 log-odds per SD (exact 95% CI 0.32–0.77), 15 of 20 at 0.30 and 19 of 20 at 0.40. So "no skill" is no evidence against effects below about 0.3.
+  - **The inherited cluster-robust joint Wald over-rejects:** 0.30–0.69 at a nominal 5% under a true null, with 107 clusters and 29–34 coefficients. The restricted wild cluster score bootstrap with diagonal studentization holds 0.041–0.059. On one season the Wald and the full score bootstrap are undefined and the LR over-rejects (0.116); the diagonal bootstrap holds 0.054.
+  - **The cluster unit:** the ICC is 0.0000 at every unit (0.0006 for totals by team-season), so the season-week stays.
+  - **Late schedule changes** (Wikipedia, 2018–2024, 77 rows): 51 of 1,372 Tune games changed. Nothing is significant against the close (p 0.33–0.81), and dropping them changes 0 of 108 S1 verdicts. No adjustment. A secondary look at 2023–24 opener-to-close movement is disclosed (A3-MOVE-LOOK).
+- **The joint test's p of record** (`s1_screen.R`) is `p_joint = max(p_test, p_joint_wild)`.
+  - **The old p-values, decided on the research** (owner, 2026-10-28: research and choose). The joint Wald's χ²(k) p-value, `p_wald_robust`, is dropped: its test rejects 0.30–0.69 of true nulls. Its statistic stays as v2's known answer, `NA` when the covariance is singular, where the code used to stop.
+  - S1's per-feature `p_robust` (k = 1; 200 placebos reject 0.055) and the reproduction's v2-df p stay.
+  - The v2 reproduction was regenerated, with its known answers unchanged (χ² 26.9332 on df 29, p 0.5753). On v2's inputs `p_joint_wild` runs 0.18–0.60, where the old p ran from 1.2e-06 to 0.45: no feature set is jointly significant in any family.
+- **The close-anchored run** (`run_a3b_close.R`, `reports/2026-10-28/vvf-a3b-close/`, Tune 2018–2022, 1,365 games, result_sha256 `49875172…`):
+  - **S3** claims none of v2's 36 features. Its fallbacks never fired: 0 skipped and 0 constant weeks.
+  - **S4** is `void` under the spec, because the label shuffle fails: 29 of 36 intervals include 0, with skill up to 0.10025. Under the amendment it is `complete`: the anchor null and the permuted-x null claim 0 features each, and the placebo rate is 0.055.
+  - **Bias and variance.** Adding all 36 features to the close as one logit loses out of sample at every training length: log loss 0.6446 with 2 seasons and 0.6188 at best (6), against the anchor's 0.6097. The in-sample fit beats the walk-forward one by 0.068–0.113 per season, which is over-fitting. All 107 fits per length converged.
+  - **C2's half-life curve** over the amendment's grid and v1's 16 is U-shaped: 0.6348 with no decay, 0.6289 at the best, 8, and 0.6543 at 1. The one-SE rule chooses 16. The engine's settings (RECENCY_HALFLIFE, GLMM_BLEND_W, SOS_STRENGTH, N_RECENT, SHRINKAGE) need C3's walk-forward and wait for G2.
+  - **Calibration** is consistent with a slope of 1 for every model (C0 1.047, 0.894–1.200).
+  - **Murphy:** the close's Brier is 0.211116, against 0.219535 for E1.
+  - **E1's excess loss by part of season:** none survives BH over the four loss-ANOVA tests. Part of season has q 0.084 (Brier) and 0.085 (log loss); by season, q 0.714.
+  - **No team effects:** outcome p 0.424, spread p 0.441.
+  - **Market errors:** the closing lines' own errors have a bias of −0.52 points on the margin and +0.20 on the total.
+- **Admission** (`docs/VARIABLE_LEDGER.md`): S3 first, then S1, then S4, and Confirm under G3. All 36 features are excluded against the close, with no incremental skill on Tune, so the close-anchored model is the market alone.
+- **The input ERD** (`input_schema.R`) declares the eight tables the stages read and their keys and references.
+  - The checks run before every stage (both runs stop on a violation) and at every ledger render, and find 0 violations.
+  - A missing key or reference counts as a violation.
+- **An independent verification** (`reports/2026-10-28/verification/VALIDATION_REPORT.md`; owner, 2026-10-28) recomputes the p-values, Brier and log loss, the research and the blends. It uses base R, hand-written cluster sandwiches, lmtest, car and nlme: **56 of 56 checks pass.**
+  - S3's DM-HLN p is exactly the paired t-test at h = 1.
+  - Every test holds its size under the null: DM 0.049, S1's LR 0.042, its robust p 0.048, and the joint wild p 0.043, at a nominal 5%.
+  - The research replicates: the robust Wald's size is 0.397 (research 0.399), and the REML ICC is 0.00000.
+  - #205's and #209's blends recompute from their per-game files, on the same no-vig close as VVF (4.99e-09). No blend beats it: every q is 1.000.
+- **The final review** (Haiku) found no Critical issue, 9 Important and 18 Minor ones.
+  - Each Important finding is fixed, every code fix with a test that failed first.
+  - 13 minors are fixed, 11 of them re-graded up as silent failures or doc errors.
+  - 5 minors are deferred (see the PR).
+- **Docs:** a docs-truth test checks that every repo path cited in CLAUDE.md, README and GETTING_STARTED exists.
+- **Owner decisions:**
+  - S4-NULL: the spec §4 amendment;
+  - the merge, after #225.
+- **Unchanged:** the engine files, `config.R`, `renv.lock`, the protocols and the 2025 seal.
+
+### A3a: the validation framework, S0–S2 (master plan Track A; spec 2026-10-20 §2, §4–§6)
+
+- **The port** (`backtest/vvf/`; owner decision of 2026-10-20, "Port builder + inputs"). Three things come over from PR #205:
+  - its input builder, `build_inputs.R`, with injectable loaders and the network rules;
+  - its feature builder, `features.R`. `vvf_anchor_features()` makes the anchor-relative columns follow the close today and the opener later;
+  - its sha256-locked inputs, `backtest/vvf/data/`, for the seasons 2009–2024.
+
+  Every loader refuses the 2025 Holdout, and so do the anchor features and both screens, from the table's `season` or `game_id`. VVF code refuses `reports/2026-09-29/clv-power/espn_open_close_2024_2025.csv`. v1's `backtest/build_inputs.R:106` still reads that file and drops 2025 only afterwards; this is disclosed (spec §6). The builder refuses to overwrite locked inputs unless `--overwrite` is given.
+- **S0, the registry** (`registry.R`, `provenance.R`). It has one row per variable, with its `known_at` class and its defects.
+  - `vvf_assert_known_at()` refuses a feature that is not known at the decision point, before any model is fit. Of v2's 36 features, 21 are admissible at IS-A.
+  - `vvf_assert_anchor()` refuses a table whose anchor is not known at the decision. The close is known only at the close; the opener is known at every decision.
+- **S1, the screen** (`s1_screen.R`):
+  - LR and F tests, with the anchor as a parameter;
+  - week-clustered robust p, using a wild cluster bootstrap below 30 clusters, where no sandwich SE or CI is reported beside it;
+  - BH and the MDE;
+  - joint tests whose df counts the estimable terms only.
+- **S2, structure** (`s2_structure.R`): VIF with declared-first precedence, the sign in each period, and feature × period tests.
+  - The first-declared feature over VIF 5 stays, and its most collinear later partner yields (spec §4).
+  - On the Tune window that keeps `rest_diff` and drops `home_bye`.
+- **The known-answer test** (`reproduce_v2.R`, with the results in `reports/2026-10-22/vvf-v2-repro/`). It runs on the ported inputs over the Tune seasons 2018–2022:
+  - The base predictions match v1 within 5.0e-11 over 1,372 games.
+  - The screen matches v2's 108 rows within a relative 4.5e-06.
+  - v2's moneyline joint test counted df 30 for 29 estimable terms. With df 29, χ² 26.933 gives p 0.575; v2 printed 0.627.
+  - All 108 rows read "no evidence". The smallest BH q is 0.147 (spread, `abs_tz_away`).
+  - Each joint test's p of record is `p_test`. The cluster-robust Wald beside it is not size-controlled with 29 to 34 coefficients (disclosure JOINT-WALD).
+- **The ledger** (`docs/VARIABLE_LEDGER.md`). `scripts/write_variable_ledger.R` generates it from the registry and the committed results, and a docs-truth test fails on any hand edit.
+- **F11's diagnosis** (`scripts/diagnose_mu_na.R`). It finds which mean term is NA in the calibration backtest from the call frames, with no engine edit.
+  - Its positive control on main (2024 week 5, `reports/2026-10-26/f11-bye-week-main/`) found 328 calibration games with a missing mean.
+  - `home_hfa` is missing in 171 of them and `away_hfa` in 172, the bye teams' games. That is F11, whose fix is the open PR #223.
+  - 16 are the 2019 Raiders' games: the play-by-play files them under `LV`, while the schedule says `OAK`. That is F11b, an owner decision.
+  - The script stops if a mean term is missing from the engine's table.
+  - The regression check on the fixed main waits for both fixes.
+- **The final review** (Haiku, one per branch) found 1 Critical and 8 Important issues; each is fixed with a test that failed first, or disclosed. Five questions stay with the owner, as ledger disclosures:
+  - JOINT-WALD;
+  - CLUSTER-UNIT;
+  - A3-FLEX;
+  - F11B;
+  - V2-JOINT-DF, the known-answer p moving from 0.63 to 0.575.
+- **Unchanged:** the engine files, `config.R`, `renv.lock` and the protocols. S3–S5 and the controls are A3b.
+
 ### A0: the odds capture sees every game before the close, on time, and is kept (owner, 2026-10-19)
 
 - **Every upcoming game's line is captured mid-week.**

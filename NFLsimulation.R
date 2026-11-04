@@ -71,6 +71,7 @@ local({
   source(file.path(base_path, "mu_terms.R"))
   source(file.path(base_path, "schedule_context.R"))
   source(file.path(base_path, "sleeper_api.R"))
+  source(file.path(base_path, "stadiums.R"))
 })
 
 load_market_helpers <- local({
@@ -788,6 +789,11 @@ if (!exists("build_snapshot_moneyline_result", inherits = FALSE)) {
 
     model_prob <- clamp_probability(snapshot[[model_prob_col]])
     market_prob <- clamp_probability(snapshot[[market_prob_col]])
+    # attach_market_probs() fills a game without a line with the model's probability, as the
+    # blend's input only (audit M11); that fill is not a market price, as in the web bundle
+    if ("market_available" %in% names(snapshot)) {
+      market_prob[!(snapshot$market_available %in% TRUE)] <- NA_real_
+    }
 
     tibble::tibble(
       game_id = snapshot$game_id,
@@ -1552,18 +1558,19 @@ if (!dir.exists(.score_cache_dir)) dir.create(.score_cache_dir, recursive = TRUE
 score_cache_key <- function(start_season, end_season, weeks, trials, seed, rho) {
   digest::digest(list(
     tag="score_weeks",
-    version = 1L,  # bump when the calibration-history code changes
+    version = 3L,  # bump when the calibration-history code changes; v3: the home-field estimator; v2: franchise codes (F11b)
     start_season, end_season, weeks = paste0(weeks, collapse=","),
     trials, seed, rho,
-    N_RECENT, USE_SOS, SOS_STRENGTH, RECENCY_HALFLIFE
+    N_RECENT, USE_SOS, SOS_STRENGTH, RECENCY_HALFLIFE, HFA_TEAM_ESTIMATOR
   ))
 }
 
 # Bump `version` when the calibration-history code changes (the key cannot see function bodies).
-calib_cache_key <- function(season, n_years, halflife, use_sos, sos_pow, trials, rho, seed){
+calib_cache_key <- function(season, n_years, halflife, use_sos, sos_pow, trials, rho, seed, hfa_estimator){
   digest::digest(list(
     tag = "calib_sim_df_nb",
-    version = 3L,  # v3: neutral sites (M24) and own-game rest (M23) in the calibration history
+    version = 6L,  # v6: the home-field estimator; v5: franchise codes (F11b); v4: home field for every team (F11); v3: M24, M23
+    hfa_estimator = hfa_estimator,
     season = season,
     n_years = n_years,
     halflife = halflife,
@@ -1865,8 +1872,11 @@ is_playoff_week_sim <- function(week) {
 
 # ------------------------ DATA LOAD -------------------------------------------
 seasons_hfa <- (SEASON - 9):(SEASON - 0)
+# Franchise codes (F11b): the play-by-play files the 2019 Raiders as LV, the schedule as OAK, so
+# every table joined on team uses the current code; game_id keeps the code of its season
 sched <- load_schedules(seasons = seasons_hfa) |>
-  mutate(game_completed = !is.na(home_score) & !is.na(away_score))
+  mutate(game_completed = !is.na(home_score) & !is.na(away_score),
+         home_team = franchise_code(home_team), away_team = franchise_code(away_team))
 
 # CRITICAL: Verify season column exists (fail fast with clear error if missing)
 if (!"season" %in% names(sched)) {
@@ -1978,7 +1988,9 @@ week_slate <- sched %>%
     neutral_site,
     home_rest,
     away_rest,
-    venue = as.character(venue)   # <-- only the normalized column
+    venue = as.character(venue),   # <-- only the normalized column
+    stadium_id = as.character(stadium_id),   # the venue key (R/stadiums.R); stable across renames
+    roof = as.character(roof)
   ) %>%
   distinct()
 
@@ -2133,51 +2145,12 @@ if (nrow(dup_sched_keys)) {
   ))
 }
 
-stadium_coords <- tribble(
-  ~venue, ~lat, ~lon, ~dome,
-  "GEHA Field at Arrowhead Stadium", 39.0490, -94.4839, FALSE,
-  "Highmark Stadium",                42.7738, -78.7868, FALSE,
-  "Soldier Field",                   41.8625, -87.6166, FALSE,
-  "Paycor Stadium",                  39.0954, -84.5160, FALSE,
-  "Cleveland Browns Stadium",        41.5061, -81.6995, FALSE,
-  "AT&T Stadium",                    32.7473, -97.0945, TRUE,
-  "Empower Field at Mile High",      39.7439, -105.0201, FALSE,
-  "Ford Field",                      42.3400, -83.0456, TRUE,
-  "Lambeau Field",                   44.5013, -88.0622, FALSE,
-  "NRG Stadium",                     29.6847, -95.4107, TRUE,
-  "Lucas Oil Stadium",               39.7601, -86.1639, TRUE,
-  "EverBank Stadium",                30.3240, -81.6387, FALSE,
-  "Allegiant Stadium",               36.0909, -115.1830, TRUE,
-  "SoFi Stadium",                    33.9535, -118.3391, TRUE,
-  "Hard Rock Stadium",               25.9580, -80.2389, FALSE,
-  "U.S. Bank Stadium",               44.9736, -93.2572, TRUE,
-  "Gillette Stadium",                42.0909, -71.2643, FALSE,
-  "Caesars Superdome",               29.9509, -90.0815, TRUE,
-  "MetLife Stadium",                 40.8136, -74.0745, FALSE,
-  "Lincoln Financial Field",         39.9008, -75.1675, FALSE,
-  "Acrisure Stadium",                40.4468, -80.0158, FALSE,
-  "Levi's Stadium",                  37.4030, -121.9690, FALSE,
-  "Lumen Field",                     47.5952, -122.3316, FALSE,
-  "Raymond James Stadium",           27.9759, -82.5033, FALSE,
-  "Nissan Stadium",                  36.1665, -86.7713, FALSE,
-  "FedExField",                      38.9078, -76.8645, FALSE,
-  "M&T Bank Stadium",                39.2779, -76.6227, FALSE,
-  "Bank of America Stadium",         35.2251, -80.8526, FALSE,
-  "State Farm Stadium",              33.5277, -112.2626, TRUE
-) %>%
-  mutate(venue_key = stringr::str_to_lower(stringr::str_replace_all(venue, "[^a-zA-Z0-9]+", " ")))
-week_slate <- week_slate %>%
-  dplyr::mutate(
-    venue_key = stringr::str_to_lower(stringr::str_replace_all(venue, "[^a-zA-Z0-9]+", " "))
-  ) %>%
-  dplyr::left_join(stadium_coords %>% dplyr::select(venue_key, dome), by = "venue_key")
-
-# guarantee the column exists before coalesce()
-if (!"dome" %in% names(week_slate)) {
-  week_slate <- week_slate %>% mutate(dome = FALSE)
-}
-
-week_slate <- week_slate %>% mutate(dome = coalesce(dome, FALSE))
+# Venues by nflverse stadium_id (R/stadiums.R; audit M21/S3, output audit F6): coordinates,
+# roof type and the dome flag for every game, including renamed and international venues.
+# The old table matched 29 venue NAMES, so renamed venues, Atlanta and every game abroad fell
+# back to league-average weather in Kansas and lost their roof.
+stadium_ref <- load_stadium_reference(file.path("data", "reference", "stadiums.csv"))
+week_slate <- attach_stadiums(week_slate, stadium_ref)
 
 # ============================== TIME ZONES / SIMPLE TRAVEL TAX =============================
 
@@ -2234,8 +2207,8 @@ team_tz <- tribble(
   "IND","America/Indiana/Indianapolis",
   "JAX","America/New_York",
   "KC","America/Chicago",
+  "LA","America/Los_Angeles",   # the Rams: nflverse schedules use LA, not LAR (audit P9)
   "LAC","America/Los_Angeles",
-  "LAR","America/Los_Angeles",
   "LV","America/Los_Angeles",
   "MIA","America/New_York",
   "MIN","America/Chicago",
@@ -2346,8 +2319,16 @@ teams_on_slate <- sort(unique(c(week_slate$home_team, week_slate$away_team)))
 #    https://nflreadr.nflverse.com/reference/load_injuries.html
 # 2. nflfastR::fast_scraper_injuries() - Alternative scraper
 # 3. Returns empty tibble if no data available (model defaults to zero injury impact)
+# nflreadr reports a failed download as a warning and an empty table (and memoises it), or as an
+# error. A season in `retry_seasons` (NULL: every season), which should have a release, is
+# downloaded again `retries` times (cache cleared, `retry_wait` seconds apart; config.R
+# INJURY_LOAD_RETRIES, INJURY_LOAD_RETRY_WAIT). One that stays empty is a missing season, with
+# nflreadr's message as its cause.
 safe_load_injuries <- function(seasons, prefer_fast = TRUE, allow_live_fallback = FALSE,
-                               stamp_season = NA_integer_, stamp_week = NA_integer_, ...) {
+                               stamp_season = NA_integer_, stamp_week = NA_integer_,
+                               retries = get0("INJURY_LOAD_RETRIES", ifnotfound = 2L),
+                               retry_wait = get0("INJURY_LOAD_RETRY_WAIT", ifnotfound = 3),
+                               retry_seasons = NULL, ...) {
   seasons <- sort(unique(seasons))
   if (!length(seasons)) {
     message("No seasons specified for injury data; returning empty tibble.")
@@ -2434,32 +2415,45 @@ safe_load_injuries <- function(seasons, prefer_fast = TRUE, allow_live_fallback 
       }
     }
 
-    tryCatch(
-      {
-        # suppressWarnings to suppress expected 404 warnings for future seasons
-        result <- suppressWarnings(nflreadr::load_injuries(seasons = season, ...))
-        if (is.data.frame(result) && nrow(result) > 0) {
-          message(sprintf("✓ Loaded %d injury records for season %s from nflreadr", nrow(result), season))
-        }
-        result
-      },
-      error = function(e) {
-        msg <- conditionMessage(e)
-        if (grepl("404", msg, fixed = TRUE) || grepl("not found", msg, ignore.case = TRUE)) {
-          missing <<- c(missing, season)
-          message(sprintf(
-            "Injury release for season %s is unavailable yet; model will use zero injury impact for this season.",
-            season
-          ))
-          return(tibble::tibble())
-        }
-        warning(sprintf(
-          "nflreadr::load_injuries failed for season %s (%s). Model will use zero injury impact.",
-          season, msg
-        ), call. = FALSE)
-        return(tibble::tibble())
+    # A failed download is nflreadr's warning and an empty table (a timeout, or a release not yet published), or an
+    # error. Either keeps its message as the cause. A season with completed games must have a release, so it is
+    # downloaded again past nflreadr's cache; one that stays empty is a missing season, flagged with that cause.
+    tries <- if (is.null(retry_seasons) || season %in% retry_seasons) retries + 1L else 1L
+    cause <- character(0)
+    result <- NULL
+    for (attempt in seq_len(tries)) {
+      if (attempt > 1L) {
+        message(sprintf("Injury data for season %s did not load (%s); downloading again (attempt %d of %d).",
+                        season, paste(cause, collapse = "; "), attempt, tries))
+        suppressMessages(nflreadr::clear_cache())
+        Sys.sleep(retry_wait)
       }
-    )
+      cause <- character(0)
+      result <- tryCatch(
+        withCallingHandlers(
+          nflreadr::load_injuries(seasons = season, ...),
+          warning = function(w) {
+            cause <<- c(cause, conditionMessage(w))
+            invokeRestart("muffleWarning")
+          }
+        ),
+        error = function(e) {
+          cause <<- c(cause, conditionMessage(e))
+          NULL
+        }
+      )
+      if (is.data.frame(result) && nrow(result) > 0) break
+    }
+    if (is.data.frame(result) && nrow(result) > 0) {
+      message(sprintf("✓ Loaded %d injury records for season %s from nflreadr", nrow(result), season))
+      return(result)
+    }
+    missing <<- c(missing, season)
+    message(sprintf(
+      "⚠ Injury data for season %s did not load after %d attempt(s) (%s); model will use zero injury impact for this season.",
+      season, tries, if (length(cause)) paste(cause, collapse = "; ") else "no rows and no warning"
+    ))
+    tibble::tibble()
   })
 
   injuries <- dplyr::bind_rows(pieces)
@@ -2525,6 +2519,7 @@ inj_all <- safe_load_injuries(
   allow_live_fallback = sleeper_fallback_allowed(week_slate$game_date),
   stamp_season = SEASON,
   stamp_week = WEEK_TO_SIM,
+  retry_seasons = sort(unique(sched$season[!is.na(sched$home_score)])),   # their releases must exist
   file_type = getOption("nflreadr.prefer", default = "rds")
 )
 
@@ -2716,7 +2711,7 @@ if (!is.data.frame(inj_all) || nrow(inj_all) == 0) {
       transmute(
         season   = if (!is.na(col_season)) .data[[col_season]] else NA_integer_,
         week     = if (!is.na(col_week))   .data[[col_week]]   else NA_integer_,
-        team     = toupper(as.character(.data[[col_team]])),
+        team     = franchise_code(toupper(as.character(.data[[col_team]]))),   # F11b: as the schedule
         position = toupper(as.character(coalesce(if (!is.na(col_pos))    .data[[col_pos]]    else NA_character_, ""))),
         status   = toupper(as.character(coalesce(if (!is.na(col_status)) .data[[col_status]] else NA_character_, ""))),
         player   = as.character(coalesce(if (!is.na(col_player)) .data[[col_player]] else NA_character_, ""))
@@ -2775,32 +2770,19 @@ hfa_sample <- sched_hfa |>
 league_hfa <- mean(hfa_sample$margin, na.rm = TRUE)
 if (!is.finite(league_hfa)) league_hfa <- 1.6  # safe fallback
 
-# Team-specific HFA with shrinkage toward league mean
-team_hfa_tbl <- sched_hfa %>%
-  transmute(
-    team_home = .data[[home_team_col]],
-    team_away = .data[[away_team_col]],
-    margin    = .data[[home_pts_col]] - .data[[away_pts_col]]
-  ) %>%
-  group_by(team_home) %>%
-  summarise(
-    hfa_raw = mean(margin, na.rm = TRUE),
-    n       = n(),
-    .groups = "drop"
-  ) %>%
-  mutate(
-    w   = n / (n + 60),                   # shrinkage weight (tune 60 if you want)
-    hfa = w * hfa_raw + (1 - w) * league_hfa
-  ) %>%
-  transmute(team = team_home, hfa)
-
-# Guarantee a value for every slate team; apply DEN altitude flavor
-hfa_tbl <- tibble(team = teams_on_slate) %>%
-  left_join(team_hfa_tbl, by = "team") %>%
-  mutate(
-    hfa = coalesce(hfa, league_hfa),
-    hfa = ifelse(team == "DEN", hfa + DEN_ALTITUDE_BONUS, hfa)
-  )
+# Team-specific HFA with shrinkage toward the league mean, for EVERY team in the schedule: the
+# calibration backtest joins it for every team of every past week, so a table of this slate's
+# teams left each bye team without home field and its calibration games at 21.5-21.5 (audit F11)
+hfa_tbl <- team_hfa_table(
+  sched_hfa |>
+    dplyr::transmute(team_home = .data[[home_team_col]], team_away = .data[[away_team_col]],
+                     margin = .data[[home_pts_col]] - .data[[away_pts_col]]),
+  teams = sort(unique(c(sched[[home_team_col]], sched[[away_team_col]]))),
+  league_hfa = league_hfa,
+  den_bonus = DEN_ALTITUDE_BONUS,
+  estimator = HFA_TEAM_ESTIMATOR
+)
+message(sprintf("Home field: %s estimator (league %.2f points)", HFA_TEAM_ESTIMATOR, league_hfa))
 
 # Create a standardized view
 sched_std <- sched |>
@@ -2995,6 +2977,7 @@ if (isTRUE(getOption("live_refresh", FALSE))) {
     allow_live_fallback = sleeper_fallback_allowed(week_slate$game_date),
     stamp_season = SEASON,
     stamp_week = WEEK_TO_SIM,
+    retry_seasons = sort(unique(sched$season[!is.na(sched$home_score)])),
     file_type = getOption("nflreadr.prefer", default = "rds")
   )
   options(nflreadr.cache = old_cache)
@@ -3325,7 +3308,7 @@ get_hourly_weather <- function(lat, lon, date_iso, hours = c(13)) {
     )
 }
 
-# make sure stadium_coords is defined above this point and has columns: venue_key, lat, lon, dome
+# week_slate carries lat, lon and dome from attach_stadiums() (R/stadiums.R)
 
 # Default weather conditions for neutral sites / missing stadium data
 # Uses league-average conditions from config.R if available, otherwise sensible defaults
@@ -3392,13 +3375,9 @@ extract_first <- function(x, nm) {
 
 weather_inputs <- week_slate %>%
   mutate(
-    venue_key = stringr::str_to_lower(stringr::str_replace_all(venue, "[^a-zA-Z0-9]+", " ")),
     date_iso  = format(as.Date(game_date), "%Y-%m-%d"),
-    kickoff_local_hour = kickoff_local_hour
-  ) %>%
-  dplyr::left_join(stadium_coords %>% dplyr::select(venue_key, lat, lon, dome), by = "venue_key") %>%
-  mutate(
-    lat = as.numeric(lat),
+    kickoff_local_hour = kickoff_local_hour,
+    lat = as.numeric(lat),   # from attach_stadiums(): the venue of record, by stadium_id
     lon = as.numeric(lon)
   )
 
@@ -3418,12 +3397,12 @@ weather_rows <- weather_inputs %>%
   )
 
 # Notify about games using stadium fallback (once per session)
-# Changed from warning to message: this is expected behavior for venues not in stadium_coords
+# A message, not a warning: it names any game whose stadium_id is not in data/reference/stadiums.csv
 warn_stadium_fallback <- get0("WARN_STADIUM_FALLBACK", envir = .GlobalEnv, ifnotfound = TRUE)
 if (isTRUE(warn_stadium_fallback) && length(.stadium_fallback_games) > 0 && !.stadium_fallback_warned) {
   .stadium_fallback_warned <<- TRUE
   message(sprintf(
-    "ℹ Stadium fallback: %d game(s) using league-average weather (venue not in stadium_coords): %s",
+    "ℹ Stadium fallback: %d game(s) using league-average weather (stadium_id not in data/reference/stadiums.csv): %s",
     length(.stadium_fallback_games),
     paste(.stadium_fallback_games, collapse = ", ")
   ))
@@ -4643,6 +4622,8 @@ week_inputs_and_sim_2w <- function(cut_season, cut_week, n_trials = CALIB_TRIALS
     dplyr::filter(!is.na(y_home))
 
   if (!nrow(g)) return(tibble::tibble())
+  # never let simulate_game_nb turn a missing mean into a 21.5 coin flip (audit F11)
+  assert_finite_means(g, sprintf("calibration %d week %d", cut_season, cut_week))
 
   set.seed(CALIB_SEED_BASE + cut_season * 100 + cut_week)
 
@@ -4687,7 +4668,7 @@ calib_seasons <- (SEASON - N_CALIB_YEARS):(SEASON - 1)
 # --- disk cache for calibration dataset ---
 .calib_key <- calib_cache_key(
   SEASON, N_CALIB_YEARS, CALIB_HALFLIFE, CALIB_USE_SOS, CALIB_SOS_POW,
-  CALIB_TRIALS, RHO_SCORE, CALIB_SEED_BASE
+  CALIB_TRIALS, RHO_SCORE, CALIB_SEED_BASE, hfa_estimator = HFA_TEAM_ESTIMATOR
 )
 .calib_path <- file.path(.calib_cache_dir, paste0(.calib_key, ".rds"))
 
@@ -5816,6 +5797,10 @@ mkt_now <- tryCatch(
   }
 )
 
+#' The model's probability minus the market's; NA for a game without a market line, whose market
+#' probability is attach_market_probs()'s fill with the model's own (audit M11), not a price
+market_gap <- function(model, market, available) ifelse(available %in% TRUE, model - market, NA_real_)
+
 #' Join market probabilities; flag, log and track games without a line (audit M11).
 #' Games without a line keep the model probability as the blend *input* only, marked
 #' market_available = FALSE; betting governance already passes on missing odds.
@@ -5866,7 +5851,7 @@ final <- final |>
 
     # Epistemic uncertainty from model disagreement (blend vs market)
     # Higher values = more model disagreement = less certain prediction
-    model_uncertainty = abs(home_p_2w_cal - home_p_2w_mkt) / pmax(home_p_2w_cal + home_p_2w_mkt, 0.01),
+    model_uncertainty = abs(market_gap(home_p_2w_cal, home_p_2w_mkt, market_available)) / pmax(home_p_2w_cal + home_p_2w_mkt, 0.01),
 
     # Total uncertainty combines aleatoric (score variance) + epistemic (model disagreement)
     total_uncertainty = sqrt((sd_home^2 + sd_away^2) / 2) + 10 * model_uncertainty
@@ -5883,8 +5868,8 @@ final <- final %>%
   dplyr::mutate(
     # Calculate approximate EV edge (home team perspective)
     # This is a simplified version; full calculations are in moneyline report
-    prob_edge_home = home_p_2w_cal - home_p_2w_mkt,
-    prob_edge_away = away_p_2w_cal - away_p_2w_mkt,
+    prob_edge_home = market_gap(home_p_2w_cal, home_p_2w_mkt, market_available),
+    prob_edge_away = market_gap(away_p_2w_cal, away_p_2w_mkt, market_available),
 
     # Betting confidence flags (for filtering high-quality opportunities)
     high_confidence_home = (prob_edge_home > HIGH_CONFIDENCE_EDGE) &

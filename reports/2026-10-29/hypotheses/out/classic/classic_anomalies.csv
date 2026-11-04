@@ -1,0 +1,31 @@
+id,study,bet,period,seasons,bets,clusters,rate,rate_lo,rate_hi,p_rate,roi,roi_lo,roi_hi,p_roi,odds_recorded,q_bh
+E1,"Levitt (2004), 1980-2001",home underdog ATS,after the study (test),2002-2024,2046,395,0.49658,0.47585,0.51709,0.6237,-0.036711,-0.077606,0.0027941,0.95928,0.82551,0.7555
+E1,"Levitt (2004), 1980-2001",home underdog ATS,the study's years (replication),1999-2001,231,51,0.53247,0.46798,0.59091,0.15442,0.016529,-0.10659,0.1281,0.39305,0,
+E1,"Levitt (2004), 1980-2001",home underdog ATS,2026 weeks 1-7,2026,41,7,0.43902,0.27267,0.59461,0.74645,-0.15451,-0.47318,0.13904,0.81222,1,
+E2,"Borghesi (2007), late season","home underdog ATS, weeks 13+",after the study (test),2007-2024,545,94,0.49725,0.45849,0.53322,0.55676,-0.032977,-0.10825,0.03783,0.81069,0.99633,0.7555
+E2,"Borghesi (2007), late season","home underdog ATS, weeks 13+",the study's years (replication),1999-2006,197,40,0.54822,0.47566,0.61659,0.089163,0.049408,-0.090129,0.17963,0.23488,0.11168,
+E2,"Borghesi (2007), late season","home underdog ATS, weeks 13+",2026 weeks 1-7,2026,0,,,,,,,,,,,
+E3,"Borghesi (2008), 1984-2004","under, outdoors, wind >= 15 mph",after the study (test),2005-2024,336,183,0.54464,0.49107,0.6,0.053049,0.060668,-0.043126,0.16771,0.1294,0.91964,0.26524
+E3,"Borghesi (2008), 1984-2004","under, outdoors, wind >= 15 mph",the study's years (replication),1999-2004,154,76,0.57792,0.49664,0.6579,0.028393,0.10331,-0.051861,0.256,0.092937,0,
+E3,"Borghesi (2008), 1984-2004","under, outdoors, wind >= 15 mph",2026 weeks 1-7,2026,0,,,,,,,,,,,
+E4,"Borghesi (2007), home weather","home ATS, outdoors, <= 32 F, warm visitor",after the study (test),2008-2024,63,38,0.61905,0.48333,0.73336,0.030468,0.21177,-0.050809,0.437,0.043498,1,0.26524
+E4,"Borghesi (2007), home weather","home ATS, outdoors, <= 32 F, warm visitor",the study's years (replication),1999-2007,45,31,0.6,0.43587,0.74468,0.10654,0.15711,-0.16783,0.43557,0.15639,0.2,
+E4,"Borghesi (2007), home weather","home ATS, outdoors, <= 32 F, warm visitor",2026 weeks 1-7,2026,0,,,,,,,,,,,
+E5,"Shank (2019), 2003-2016",away ATS in division games,after the study (test),2017-2024,750,137,0.51733,0.48342,0.55288,0.17352,0.0042736,-0.061728,0.071717,0.45209,0.99867,0.36197
+E5,"Shank (2019), 2003-2016",away ATS in division games,the study's years (replication),2003-2016,1307,235,0.53252,0.50581,0.55848,0.0083848,0.036635,-0.015571,0.086772,0.083564,0.73221,
+E5,"Shank (2019), 2003-2016",away ATS in division games,2026 weeks 1-7,2026,33,7,0.66667,0.5,0.81832,0.026186,0.2742,-0.042162,0.57368,0.050045,1,
+E6,"Shank (2019), 2003-2016",under in division games,after the study (test),2017-2024,760,137,0.51711,0.48031,0.55481,0.18098,0.0037646,-0.067517,0.077644,0.45916,0.99868,0.36197
+E6,"Shank (2019), 2003-2016",under in division games,the study's years (replication),2003-2016,1318,235,0.522,0.49348,0.55098,0.064634,0.015201,-0.039847,0.070513,0.29553,0.72914,
+E6,"Shank (2019), 2003-2016",under in division games,2026 weeks 1-7,2026,33,7,0.42424,0.23333,0.59375,0.78323,-0.18503,-0.5513,0.14151,0.83947,1,
+E7,Shank (2018),home underdog of 7+ ATS,after the study (test),2018-2024,161,95,0.54658,0.47059,0.62113,0.12097,0.039528,-0.10426,0.18041,0.30016,1,0.36197
+E7,Shank (2018),home underdog of 7+ ATS,the study's years (replication),1999-2017,315,201,0.54603,0.49359,0.59871,0.047873,0.045143,-0.055427,0.1446,0.19678,0.6381,
+E7,Shank (2018),home underdog of 7+ ATS,2026 weeks 1-7,2026,3,,,,,,,,,,,
+E8,Shank (2018),"over, total in the season's bottom or top 10%",after the study (test),2018-2024,413,120,0.47458,0.42997,0.52279,0.85584,-0.082367,-0.169,0.010361,0.96344,1,0.85584
+E8,Shank (2018),"over, total in the season's bottom or top 10%",the study's years (replication),1999-2017,1078,313,0.50464,0.47393,0.53438,0.38278,-0.023698,-0.083369,0.033422,0.78475,0.60761,
+E8,Shank (2018),"over, total in the season's bottom or top 10%",2026 weeks 1-7,2026,26,7,0.5,0.38235,0.69565,0.5,-0.043661,-0.26335,0.32078,0.61016,1,
+E9,Shank (2018),home ATS after the home team failed to cover,after the study (test),2018-2024,826,116,0.49153,0.45714,0.52551,0.67995,-0.048623,-0.1159,0.017618,0.91617,1,0.7555
+E9,Shank (2018),home ATS after the home team failed to cover,the study's years (replication),1999-2017,2099,304,0.4888,0.4682,0.50991,0.85557,-0.051841,-0.092407,-0.010727,0.99426,0.62268,
+E9,Shank (2018),home ATS after the home team failed to cover,2026 weeks 1-7,2026,38,6,0.47368,0.39394,0.55556,0.71951,-0.095742,-0.24445,0.05864,0.86932,1,
+E10,"Costa (2025), 2020-2024","away moneyline, home no-vig 0.3-0.7",after the study (test),2026-2026,76,7,0.53947,0.45679,0.62162,0.194,0.032294,-0.086431,0.15123,0.31472,1,0.52453
+E10,"Costa (2025), 2020-2024","away moneyline, home no-vig 0.3-0.7",the study's years (replication),2020-2024,872,89,0.51147,0.47976,0.54221,0.24042,0.017176,-0.045888,0.07886,0.30024,1,
+E10,"Costa (2025), 2020-2024","away moneyline, home no-vig 0.3-0.7",2026 weeks 1-7,2026,76,7,0.53947,0.45679,0.62162,0.194,0.032294,-0.086431,0.15123,0.31472,1,

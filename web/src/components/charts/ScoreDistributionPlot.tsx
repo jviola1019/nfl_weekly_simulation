@@ -11,6 +11,7 @@ import {
   stepPaths,
   ticksEvery
 } from "@/lib/distribution";
+import { pctTicks } from "@/lib/format";
 import { linearScale } from "@/lib/linearScale";
 import { useChartWidth } from "./useChartWidth";
 
@@ -50,6 +51,8 @@ export function ScoreDistributionPlot({
   const hi = bins[bins.length - 1]!.x + 0.5;
   const x = linearScale({ domain: [lo, hi], range: [left, W - right] });
   const y = linearScale({ domain: [0, Math.max(...bins.map((b) => b.p))], range: [H - bottom, top], nice: true });
+  const yTicks = y.ticks(4);
+  const yLabels = pctTicks(yTicks);
   const binPx = x(first + 0.5) - x(lo);
   const columns = binPx >= 5;
   const barW = Math.min(24, binPx - 2);
@@ -95,11 +98,11 @@ export function ScoreDistributionPlot({
           e.preventDefault();
         }}
       >
-        {y.ticks(4).map((t) => (
+        {yTicks.map((t, i) => (
           <g key={t}>
             <line x1={left} x2={W - right} y1={y(t)} y2={y(t)} stroke="var(--grid)" strokeWidth={1} />
             <text x={left - 8} y={y(t) + 4} textAnchor="end" fontSize={12} fill="var(--ink-muted)" className="num">
-              {t === 0 ? "0%" : `${(t * 100).toFixed(t < 0.01 ? 1 : 0)}%`}
+              {yLabels[i]}
             </text>
           </g>
         ))}
@@ -131,7 +134,7 @@ export function ScoreDistributionPlot({
       {focused ? (
         <div
           role="status"
-          className="pointer-events-none absolute z-10 rounded-[3px] border border-rule bg-surface px-2 py-1 text-sm"
+          className="pointer-events-none absolute z-10 rounded-control border border-rule bg-surface px-2 py-1 text-sm"
           style={{ left: Math.min(Math.max(0, x(focused.x) + 12), Math.max(0, W - 170)), top: 40 }}
         >
           <div className="num font-semibold text-ink">{share(focused.p)} of simulated games</div>

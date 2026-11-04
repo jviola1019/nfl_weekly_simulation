@@ -2,12 +2,16 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { PUBLIC_PAGES, SCHEMES, signIn, WIDTHS } from "./helpers";
 
+/**
+ * WCAG 2.0/2.1 A and AA plus axe's best-practice rules (landmarks named once, one main, headings in
+ * order, regions): any violation, of any impact, fails. Before Track B2 the rule was "serious or
+ * critical only", which let /evidence ship four scroll regions that were all named "Scrollable table".
+ */
 async function audit(page: Page, label: string) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow, `${label}: horizontal overflow`).toBeLessThanOrEqual(0);
-  const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
-  const serious = axe.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
-  expect(serious.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).slice(0, 3).join(", ")}`), label).toEqual([]);
+  const axe = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "best-practice"]).analyze();
+  expect(axe.violations.map((v) => `${v.id} (${v.impact}): ${v.nodes.map((n) => n.target.join(" ")).slice(0, 3).join(", ")}`), label).toEqual([]);
 }
 
 for (const scheme of SCHEMES) {

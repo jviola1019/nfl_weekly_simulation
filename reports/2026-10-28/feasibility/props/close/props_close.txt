@@ -1,0 +1,177 @@
+1: In anova.lm(stats::lm(x ~ factor(g))) :
+  ANOVA F-tests on an essentially perfect fit are unreliable
+2: In anova.lm(stats::lm(x ~ factor(g))) :
+  ANOVA F-tests on an essentially perfect fit are unreliable
+3: In anova.lm(stats::lm(x ~ factor(g))) :
+  ANOVA F-tests on an essentially perfect fit are unreliable
+4: In anova.lm(stats::lm(x ~ factor(g))) :
+  ANOVA F-tests on an essentially perfect fit are unreliable
+5: In anova.lm(stats::lm(x ~ factor(g))) :
+  ANOVA F-tests on an essentially perfect fit are unreliable
+6: In anova.lm(stats::lm(x ~ factor(g))) :
+  ANOVA F-tests on an essentially perfect fit are unreliable
+                                                           item                                                                                                                                         value
+                                                         <char>                                                                                                                                        <char>
+ 1:                                      settled contracts read                                                                                                                                        103015
+ 2:                                       in single-game series                                                                                                                                        102466
+ 3:        with an outcome (binary, tie share or scalar payout)                                                                                                                                        100973
+ 4:   settled at the pre-game fair price (no outcome, excluded)                                                                                                                                          1493
+ 5:            with an outcome and a two-sided close at kickoff                                                                                                                                         96356
+ 6:                        of them with spread <= 0.10 (fitted)                                                                                                                                         88439
+ 7:                                                       weeks                                                                                                                                 1 2 3 4 5 6 7
+ 8:                                                games fitted                                                                                                                                           107
+ 9:                                         player-games fitted                                                                                                                                          2900
+10:                                  series fitted on their own                                                                                                                                            67
+11:        series set aside: fewer than 10 events or non-events KXNFLDSTTD (8 events); KXNFLEQBTTS (8 events); KXNFLESCALATORRSHYDS (9 events); KXNFLOT (9 events); KXNFLSFTY (1 events); KXNFLTIE (1 events)
+12:                                            exclusive series                 KXNFL1H KXNFL1HFT KXNFL1Q KXNFL2H KXNFL2Q KXNFL3Q KXNFL4Q KXNFLFIRSTTDTEAM KXNFLGAME KXNFLMOSTRSHYDS KXNFLRACE KXNFLWINMARGIN
+--- calibration at kickoff (game-clustered, t with G - 1 df) ---
+                   series         group exclusive contracts games mean_y slope slope_lo slope_hi p_slope q_slope   mde      citl  p_citl q_citl
+                   <char>        <char>    <lgcl>     <int> <int>  <num> <num>    <num>    <num>   <num>   <num> <num>     <num>   <num>  <num>
+ 1:     pooled: game prop     game prop        NA     26333   107 0.3300 1.020   0.9530    1.100  0.5000      NA 0.100 -3.10e-03 9.5e-01     NA
+ 2: pooled: player scalar player scalar        NA      2254    77 0.1030 1.120   1.0400    1.200  0.0034      NA 0.110 -7.75e-02 4.5e-02     NA
+ 3:        pooled: player        player        NA     54877   107 0.2710 0.958   0.9170    0.999  0.0460      NA 0.059  5.90e-03 8.8e-01     NA
+ 4:     pooled: game line     game line        NA      4975   107 0.3720 0.990   0.8410    1.140  0.9000      NA 0.210 -1.79e-02 8.3e-01     NA
+ 5:           pooled: all           all        NA     88439   107 0.2900 0.981   0.9410    1.020  0.3400      NA 0.057  1.23e-06 1.0e+00     NA
+ 6:               KXNFL1H     game prop      TRUE       321   107 0.3330 1.000   0.6370    1.370  0.9900    0.99 0.520  3.38e-03 4.5e-02     NA
+ 7:             KXNFL1HFT     game prop      TRUE       912   107 0.1040 0.917   0.7000    1.130  0.4500    0.81 0.310  2.31e-02 3.6e-01     NA
+ 8:         KXNFL1HSPREAD     game prop     FALSE      1655   107 0.2620 1.190   0.8860    1.490  0.2200    0.72 0.430 -1.61e-02 8.8e-01   0.95
+ 9:      KXNFL1HTEAMTOTAL     game prop     FALSE      2125   107 0.3440 1.110   0.9670    1.250  0.1300    0.66 0.200 -1.24e-01 2.6e-01   0.79
+10:          KXNFL1HTOTAL     game prop     FALSE      1448   107 0.4700 1.040   0.8760    1.210  0.6000    0.91 0.240 -1.50e-01 3.7e-01   0.79
+11:               KXNFL1Q     game prop      TRUE       321   107 0.3330 0.900   0.2850    1.510  0.7500    0.91 0.880  1.48e-04 9.3e-01     NA
+12:           KXNFL1QBTTS     game prop     FALSE       102   102 0.4220 0.181  -1.7800    2.140  0.4100    0.81 2.800  8.20e-02 6.9e-01   0.90
+13:         KXNFL1QSPREAD     game prop     FALSE      1085   107 0.2010 1.190   0.9380    1.450  0.1400    0.66 0.360 -4.43e-02 6.7e-01   0.90
+14:          KXNFL1QTOTAL     game prop     FALSE      1065   107 0.2710 1.120   0.9180    1.330  0.2400    0.72 0.290 -6.63e-02 6.9e-01   0.90
+15:               KXNFL2H     game prop      TRUE       321   107 0.3330 0.707   0.4550    0.960  0.0240    0.32 0.360  2.32e-02 8.6e-19     NA
+16:         KXNFL2HSPREAD     game prop     FALSE      1597   107 0.2700 0.630   0.3300    0.929  0.0160    0.32 0.430  1.48e-01 1.3e-01   0.79
+17:          KXNFL2HTOTAL     game prop     FALSE      1288   107 0.5090 1.110   0.9230    1.300  0.2400    0.72 0.270  1.73e-01 2.9e-01   0.79
+18:               KXNFL2Q     game prop      TRUE       321   107 0.3330 1.030   0.6020    1.460  0.8800    0.92 0.610  7.70e-03 2.9e-05     NA
+19:           KXNFL2QBTTS     game prop     FALSE        90    90 0.6670 1.340  -0.9880    3.670  0.7700    0.91 3.300 -1.54e-02 9.5e-01   0.96
+20:         KXNFL2QSPREAD     game prop     FALSE      1103   107 0.2350 1.210   0.8940    1.530  0.1900    0.72 0.450 -7.79e-02 4.5e-01   0.80
+21:          KXNFL2QTOTAL     game prop     FALSE       998   107 0.4390 1.130   0.9220    1.350  0.2100    0.72 0.300 -1.64e-01 3.1e-01   0.79
+22:               KXNFL3Q     game prop      TRUE       320   107 0.3340 0.610   0.0985    1.120  0.1300    0.66 0.730  1.94e-02 9.3e-03     NA
+23:           KXNFL3QBTTS     game prop     FALSE        92    92 0.4670 1.980  -0.0304    4.000  0.3300    0.75 2.900  1.72e-01 4.1e-01   0.79
+24:         KXNFL3QSPREAD     game prop     FALSE      1080   107 0.1940 0.842   0.5900    1.090  0.2200    0.72 0.360 -1.30e-01 2.7e-01   0.79
+25:          KXNFL3QTOTAL     game prop     FALSE      1003   107 0.2890 1.040   0.8710    1.210  0.6300    0.91 0.240  2.23e-02 9.0e-01   0.95
+26:               KXNFL4Q     game prop      TRUE       315   106 0.3330 0.980   0.5620    1.400  0.9200    0.95 0.600  1.47e-02 7.5e-05     NA
+27:           KXNFL4QBTTS     game prop     FALSE        97    97 0.6080 2.400   0.6610    4.130  0.1100    0.66 2.500  3.38e-02 8.7e-01   0.95
+28:         KXNFL4QSPREAD     game prop     FALSE      1071   107 0.2580 0.857   0.6000    1.110  0.2700    0.72 0.370  1.20e-01 2.4e-01   0.79
+29:          KXNFL4QTOTAL     game prop     FALSE       908   107 0.4410 1.110   0.9070    1.310  0.2900    0.72 0.280  1.56e-01 3.5e-01   0.79
+30:             KXNFLBOTH     game prop     FALSE       279    94 0.2870 1.060   0.8080    1.300  0.6600    0.91 0.350  4.86e-02 8.2e-01   0.95
+31:     KXNFLESCALATORREC player scalar     FALSE       395    75 0.0596 1.110   0.8280    1.380  0.4500    0.81 0.400 -1.35e-01 1.9e-01   0.79
+32:  KXNFLESCALATORRECYDS player scalar     FALSE       395    75 0.0360 1.290   1.0800    1.500  0.0072    0.24 0.300 -3.60e-01 4.4e-03   0.12
+33:            KXNFLFFPTS        player     FALSE       926   107 0.4420 0.940   0.5620    1.320  0.7600    0.91 0.540 -3.37e-02 5.9e-01   0.90
+34:      KXNFLFFPTSLADDER player scalar     FALSE       405    73 0.1410 1.020   0.8290    1.210  0.8500    0.92 0.270 -1.63e-02 6.3e-01   0.90
+35:               KXNFLFG     game prop     FALSE       473   103 0.3870 0.914   0.7210    1.110  0.3800    0.81 0.280 -1.41e-02 9.2e-01   0.96
+36:          KXNFLFIRSTTD        player     FALSE      2687   107 0.0391 1.100   0.8330    1.370  0.4600    0.81 0.380 -3.50e-03 8.5e-01   0.95
+37:      KXNFLFIRSTTDTEAM     game prop      TRUE       254   107 0.2830 0.838   0.5230    1.150  0.3100    0.74 0.450 -2.47e-02 6.6e-01     NA
+38:             KXNFLGAME     game line      TRUE       212   106 0.5000 0.722   0.1540    1.290  0.3300    0.75 0.810 -8.63e-04 3.7e-01     NA
+39:        KXNFLLADDERREC player scalar     FALSE       317    66 0.1990 0.969   0.8070    1.130  0.7000    0.91 0.230 -3.49e-02 3.9e-01   0.79
+40:     KXNFLLADDERRECYDS player scalar     FALSE       370    75 0.1120 0.979   0.8280    1.130  0.7800    0.91 0.220 -6.18e-02 1.4e-01   0.79
+41:     KXNFLLADDERRSHYDS player scalar     FALSE       183    72 0.1250 1.180   0.9820    1.390  0.0740    0.60 0.290 -5.37e-02 2.4e-01   0.79
+42:          KXNFLLONGREC        player     FALSE       805   101 0.4670 0.689  -0.4640    1.840  0.5900    0.91 1.600 -1.10e-01 1.1e-01   0.79
+43:          KXNFLLONGRSH        player     FALSE       354    97 0.4380 0.794  -1.0400    2.630  0.8200    0.92 2.600 -2.31e-01 1.8e-02   0.32
+44:       KXNFLMOSTRECYDS        player     FALSE       713   102 0.0743 0.958   0.7050    1.210  0.7500    0.91 0.360  1.56e-01 1.3e-01   0.79
+45:       KXNFLMOSTRSHYDS        player      TRUE       301   100 0.1590 1.220   0.9190    1.510  0.1500    0.68 0.420  5.38e-02 6.4e-01     NA
+46:          KXNFLPASSATT        player     FALSE       648   107 0.4780 0.944   0.7730    1.120  0.5200    0.87 0.240 -5.30e-02 6.8e-01   0.90
+47:         KXNFLPASSCOMP        player     FALSE       630   107 0.5000 0.911   0.7590    1.060  0.2500    0.72 0.220  6.10e-02 6.4e-01   0.90
+48:          KXNFLPASSINT        player     FALSE       616   107 0.2220 1.260   1.0700    1.460  0.0073    0.24 0.270 -1.19e-01 3.3e-01   0.79
+49:          KXNFLPASSTDS        player     FALSE       874   107 0.3620 1.060   0.9240    1.190  0.3900    0.81 0.190  7.17e-02 5.9e-01   0.90
+50:      KXNFLPASSTDSPROT        player     FALSE       342    42 0.3570 1.130   0.8920    1.370  0.2800    0.72 0.340 -3.40e-02 8.7e-01   0.95
+51:          KXNFLPASSYDS        player     FALSE      1857   107 0.4260 0.999   0.8730    1.130  0.9900    0.99 0.180  1.63e-01 1.8e-01   0.79
+52:      KXNFLPASSYDSPROT        player     FALSE       736    42 0.4230 1.050   0.8380    1.270  0.6300    0.91 0.300  1.17e-01 5.6e-01   0.90
+53:             KXNFLRACE     game prop      TRUE       817   107 0.2690 1.020   0.8020    1.240  0.8600    0.92 0.310  4.90e-02 3.0e-01     NA
+54:              KXNFLREC        player     FALSE      8333   107 0.3030 0.965   0.9020    1.030  0.2800    0.72 0.090 -1.45e-02 7.8e-01   0.95
+55:          KXNFLRECPROT        player     FALSE      3192    42 0.3170 0.967   0.8540    1.080  0.5500    0.88 0.160  7.57e-02 4.3e-01   0.79
+56:           KXNFLRECYDS        player     FALSE      9696   107 0.2940 0.932   0.8710    0.993  0.0290    0.32 0.086  5.77e-02 2.7e-01   0.79
+57:       KXNFLRECYDSPROT        player     FALSE      3899    42 0.3010 0.890   0.7950    0.984  0.0230    0.32 0.130  8.32e-02 3.6e-01   0.79
+58:            KXNFLRRYDS        player     FALSE       781   107 0.2620 1.020   0.8390    1.190  0.8600    0.92 0.250 -1.07e-01 3.3e-01   0.79
+59:           KXNFLRSHATT        player     FALSE      1088   107 0.4690 0.914   0.7720    1.060  0.2300    0.72 0.200 -8.28e-02 3.2e-01   0.79
+60:           KXNFLRSHYDS        player     FALSE      5315   107 0.3050 0.981   0.8860    1.080  0.6900    0.91 0.130 -1.12e-01 1.0e-01   0.79
+61:       KXNFLRSHYDSPROT        player     FALSE      2026    42 0.3060 0.886   0.7570    1.010  0.0810    0.60 0.180 -9.97e-02 4.3e-01   0.79
+62:           KXNFLSPREAD     game line     FALSE      2730   107 0.2630 0.900   0.6280    1.170  0.4700    0.81 0.390 -8.74e-02 3.8e-01   0.79
+63:               KXNFLTD        player     FALSE      4893   107 0.1070 0.971   0.8740    1.070  0.5500    0.88 0.140  2.51e-03 9.6e-01   0.96
+64:           KXNFLTDPROT        player     FALSE      1781    43 0.1160 0.944   0.7980    1.090  0.4500    0.81 0.210  1.11e-01 1.8e-01   0.79
+65:      KXNFLTEAMFIRSTTD        player     FALSE      2372   107 0.0628 0.969   0.7780    1.160  0.7500    0.91 0.270  1.42e-01 4.3e-03   0.12
+66:         KXNFLTEAMSACK     game prop     FALSE       511   103 0.3210 0.949   0.6630    1.240  0.7300    0.91 0.410 -2.08e-01 2.0e-01   0.79
+67:           KXNFLTEAMTD     game prop     FALSE       107    33 0.4770 0.911   0.4710    1.350  0.6800    0.91 0.620 -6.18e-02 8.1e-01   0.95
+68:        KXNFLTEAMTOTAL     game prop     FALSE      2885   107 0.5020 1.010   0.9010    1.130  0.8000    0.91 0.160  6.95e-02 5.8e-01   0.90
+69:          KXNFLTEAMYDS     game prop     FALSE        91    33 0.4950 1.410   0.8680    1.940  0.1300    0.66 0.760  6.98e-02 8.0e-01   0.95
+70:            KXNFLTOTAL     game line     FALSE      2033   107 0.5060 1.020   0.8700    1.170  0.7800    0.91 0.220  7.08e-02 6.8e-01   0.90
+71:          KXNFLTOTALTD     game prop     FALSE       157    33 0.4520 1.170   0.7290    1.610  0.4400    0.81 0.630 -1.15e-01 7.1e-01   0.90
+72:        KXNFLWINMARGIN     game prop      TRUE       679   107 0.1330 0.730   0.4350    1.020  0.0720    0.60 0.420  2.14e-02 5.4e-01     NA
+                   series         group exclusive contracts games mean_y slope slope_lo slope_hi p_slope q_slope   mde      citl  p_citl q_citl
+--- by week ---
+     week         group contracts games slope slope_lo slope_hi     citl   brier
+    <num>        <char>     <num> <num> <num>    <num>    <num>    <num>   <num>
+ 1:     1     game line       740    16 0.813    0.395    1.230  0.26900 0.19900
+ 2:     2     game line       751    16 0.819    0.452    1.190 -0.12700 0.18400
+ 3:     3     game line       750    16 1.030    0.602    1.460 -0.05800 0.16700
+ 4:     4     game line       742    16 1.290    0.937    1.640 -0.09450 0.15300
+ 5:     5     game line       692    15 1.120    0.614    1.630  0.15800 0.17300
+ 6:     6     game line       653    14 1.050    0.559    1.530 -0.36000 0.16000
+ 7:     7     game line       647    14 0.987    0.537    1.440  0.03660 0.17600
+ 8:     1     game prop      3470    16 0.944    0.728    1.160  0.07570 0.16300
+ 9:     2     game prop      3990    16 0.995    0.751    1.240 -0.24500 0.14400
+10:     3     game prop      3960    16 1.090    0.909    1.270  0.02910 0.14500
+11:     4     game prop      3920    16 1.110    0.957    1.270  0.10300 0.14500
+12:     5     game prop      3790    15 1.150    0.947    1.350  0.13400 0.14300
+13:     6     game prop      3640    14 0.966    0.782    1.150 -0.06740 0.14900
+14:     7     game prop      3560    14 0.947    0.746    1.150 -0.05620 0.15100
+15:     1        player      6200    16 0.970    0.862    1.080  0.03580 0.13400
+16:     2        player      6000    16 0.998    0.909    1.090 -0.12700 0.13000
+17:     3        player      6180    16 1.000    0.903    1.110  0.08630 0.13400
+18:     4        player      6580    16 0.882    0.771    0.992  0.05180 0.14400
+19:     5        player     10000    15 0.923    0.822    1.020  0.00867 0.14000
+20:     6        player      9780    14 1.010    0.890    1.130  0.05290 0.13400
+21:     7        player     10100    14 0.944    0.809    1.080 -0.06090 0.14000
+22:     2 player scalar        13     2 1.630   -3.430    6.690  0.12400 0.01140
+23:     3 player scalar       545    16 1.270    1.130    1.410 -0.03580 0.00755
+24:     4 player scalar       446    16 0.987    0.776    1.200 -0.11800 0.01260
+25:     5 player scalar       469    15 1.090    0.862    1.310 -0.01270 0.00854
+26:     6 player scalar       357    14 1.260    1.040    1.490 -0.18700 0.00598
+27:     7 player scalar       424    14 1.030    0.910    1.140 -0.08830 0.00646
+     week         group contracts games slope slope_lo slope_hi     citl   brier
+--- coherence at kickoff ---
+Key: <series>
+              series events mean_contracts mean_sum_mid mean_sum_ask mean_sum_bid events_yes_all_pays events_no_all_pays best_profit
+              <char>  <num>          <num>        <num>        <num>        <num>               <num>              <num>       <num>
+ 1:          KXNFL1H    107          3.000       0.9982        1.015       0.9816                   0                  0   -0.027050
+ 2:        KXNFL1HFT     99          9.000       0.9549        1.069       0.8406                   0                  0   -0.001583
+ 3:          KXNFL1Q    107          3.000       0.9999        1.019       0.9809                   0                  0   -0.020470
+ 4:          KXNFL2H    107          3.000       0.9875        1.019       0.9558                   0                  0   -0.018490
+ 5:          KXNFL2Q    107          3.000       0.9955        1.021       0.9697                   0                  0   -0.031520
+ 6:          KXNFL3Q    107          3.000       0.9928        1.026       0.9596                   0                  0   -0.034320
+ 7:          KXNFL4Q    107          3.000       0.9919        1.027       0.9565                   0                  0   -0.030980
+ 8: KXNFLFIRSTTDTEAM    107          3.000       0.9564        1.047       0.8659                   0                  0   -0.015490
+ 9:        KXNFLGAME    106          2.000       1.0000        1.010       0.9904                   0                  0   -0.013710
+10:  KXNFLMOSTRSHYDS     53          4.491       0.8455        1.089       0.6019                   0                  0   -0.013850
+11:        KXNFLRACE    550          3.000       0.9555        1.189       0.7225                   0                  0   -0.001574
+12:   KXNFLWINMARGIN    104          7.000       0.9357        1.081       0.7902                   0                  0   -0.005741
+--- out of sample ---
+              design         group        train_week test_week contracts games recal_slope brier_mid brier_recalibrated      skill p_game_t games_needed  bets bets_yes staked      pnl       roi   roi_lo    roi_hi
+              <char>        <char>            <char>    <char>     <num> <num>       <num>     <num>              <num>      <num>    <num>        <num> <num>    <num>  <num>    <num>     <num>    <num>     <num>
+ 1: weeks 1-5 -> 6-7     game prop               1-5       6-7      7203    28      1.0520  0.149600           0.150000 -2.391e-03  0.89340           NA   359      359 308.40 -12.4500 -0.040360 -0.12330  0.042220
+ 2: weeks 1-5 -> 6-7 player scalar               1-5       6-7       781    28      1.1180  0.006243           0.006199  6.959e-03  0.08339           86    14        2  12.23   0.1333  0.010900 -0.04572  0.061710
+ 3: weeks 1-5 -> 6-7        player               1-5       6-7     19910    28      0.9482  0.136600           0.136600  3.590e-04  0.31840          759   226        0  31.85 -15.8500 -0.497700 -0.73980 -0.188900
+ 4: weeks 1-5 -> 6-7     game line               1-5       6-7      1300    28      0.9861  0.168200           0.168400 -1.186e-03  0.74090           NA     0        0   0.00   0.0000        NA       NA        NA
+ 5: weeks 1-5 -> 6-7           all               1-5       6-7     29190    28      0.9843  0.137800           0.137800  1.913e-05  0.43860         7117     0        0   0.00   0.0000        NA       NA        NA
+ 6:     walk-forward     game prop all earlier weeks       2-7     22860    91      1.0070  0.146000           0.146300 -2.665e-03  0.98860           NA  1483      711 544.40 -51.3600 -0.094340 -0.21960  0.019950
+ 7:     walk-forward player scalar all earlier weeks       4-7      1696    59      1.1460  0.008553           0.008669 -1.363e-02  0.92370           NA   370       52 318.60  -1.3060 -0.004098 -0.01415  0.005415
+ 8:     walk-forward        player all earlier weeks       2-7     48680    91      0.9617  0.137200           0.137200 -1.279e-04  0.79270           NA   123        0  17.23  -9.2310 -0.535700 -0.90430 -0.068830
+ 9:     walk-forward     game line all earlier weeks       2-7      4235    91      0.8766  0.169000           0.170300 -7.179e-03  0.97150           NA  1633     1309 367.60 -50.6200 -0.137700 -0.29270  0.012770
+10:     walk-forward           all all earlier weeks       2-7     78030    91      0.9847  0.137800           0.137900 -8.983e-04  0.97780           NA  2423     1641 409.20 -64.1300 -0.156700 -0.30100 -0.017230
+--- the last day's movement ---
+            group before_kickoff contracts share_moved median_abs_bps p90_abs_bps sd_bps icc_within_game picks_100bps picks_100bps_8_candidates picks_50bps picks_50bps_8_candidates
+           <char>         <char>     <num>       <num>          <num>       <num>  <num>           <num>        <num>                     <num>       <num>                    <num>
+ 1:     game line            24h      4975      0.6888            100       200.0 143.60             NaN           17                        27          65                      106
+ 2:     game prop            24h     21520      0.7966             50       200.0 148.50             NaN           18                        29          70                      113
+ 3:        player            24h     38520      0.7879            100       300.0 205.30         0.07069           34                        54         133                      216
+ 4: player scalar            24h      2112      0.5909             25       179.5 122.10         0.09399           12                        20          47                       77
+ 5:     game line             3h      4975      0.4374              0       100.0  87.65             NaN            7                        10          25                       40
+ 6:     game prop             3h     25570      0.6421             50       150.0 111.10             NaN           10                        16          39                       64
+ 7:        player             3h     52210      0.6216             50       200.0 136.20         0.03608           15                        24          59                       95
+ 8: player scalar             3h      2157      0.4673              0       101.5 108.00         0.12460           10                        15          37                       60
+ 9:     game line             1h      4975      0.3108              0       100.0  64.48             NaN            4                         6          14                       22
+10:     game prop             1h     26010      0.5205             50       150.0  91.67             NaN            7                        11          27                       43
+11:        player             1h     52850      0.4987              0       150.0  92.56         0.03457            7                        11          27                       44
+12: player scalar             1h      2117      0.4105              0       100.0  92.43         0.19300            7                        11          27                       44

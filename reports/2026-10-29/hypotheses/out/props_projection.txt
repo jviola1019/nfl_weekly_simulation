@@ -1,0 +1,19 @@
+Warning message:
+       id                                                              test contracts games estimate       lo        hi       p brier_kalshi brier_model  bets bets_yes      roi    q_bh
+   <char>                                                            <char>     <num> <num>    <num>    <num>     <num>   <num>        <num>       <num> <num>    <num>    <num>   <num>
+1:     G1 the projection adds information to Kalshi's close (one-sided > 0)     24100    75  0.08968 -0.01993  0.199300 0.05365       0.1476      0.1597    NA       NA       NA 0.05365
+2:     G2           betting the projection's disagreements pays after costs     24100    75       NA -0.06812 -0.007836      NA           NA          NA 19930     9504 -0.03798      NA
+                     stat contracts      coef brier_kalshi brier_model
+                   <char>     <num>     <num>        <num>       <num>
+ 1:            touchdowns      3152 -0.008844      0.08478     0.09134
+ 2:              attempts       445 -0.453300      0.20670     0.23160
+ 3:           completions       423 -0.249800      0.18720     0.20270
+ 4: passing_interceptions       445  0.399200      0.13060     0.13200
+ 5:           passing_tds       612 -0.098290      0.13610     0.14380
+ 6:         passing_yards      1310 -0.769800      0.15320     0.17070
+ 7:         rushing_yards      3747  0.132400      0.15890     0.17640
+ 8:               carries       757 -0.153900      0.19330     0.22470
+ 9:       receiving_yards      6809  0.209800      0.15990     0.16920
+10:            receptions      5794  0.137700      0.14580     0.15600
+11:        rush_rec_yards       601 -0.016290      0.16700     0.18960
+player-weeks projected: 4892; contracts matched: 24095 of the ladders' 39628 at the close

@@ -1,0 +1,217 @@
+{
+ "count": 3,
+ "pageIndex": 1,
+ "pageSize": 25,
+ "pageCount": 1,
+ "items": [
+  {
+   "provider": {
+    "id": "2000",
+    "name": "Bet 365"
+   }
+  },
+  {
+   "provider": {
+    "id": "58",
+    "name": "ESPN BET"
+   },
+   "details": "BUF -6.5",
+   "overUnder": 45.5,
+   "spread": -6.5,
+   "overOdds": -110.0,
+   "underOdds": -110.0,
+   "awayTeamOdds": {
+    "moneyLine": 260,
+    "spreadOdds": 100.0,
+    "open": {
+     "pointSpread": {
+      "american": "+7"
+     },
+     "spread": {
+      "american": "-110"
+     },
+     "moneyLine": {
+      "american": "+225"
+     }
+    },
+    "close": {
+     "pointSpread": {
+      "american": "+6.5"
+     },
+     "spread": {
+      "american": "+100"
+     },
+     "moneyLine": {
+      "american": "+260"
+     }
+    },
+    "current": {
+     "pointSpread": {
+      "american": "+6.5"
+     },
+     "spread": {
+      "american": "+100"
+     },
+     "moneyLine": {
+      "american": "+260"
+     }
+    }
+   },
+   "homeTeamOdds": {
+    "moneyLine": -320,
+    "spreadOdds": -120.0,
+    "open": {
+     "pointSpread": {
+      "american": "-7"
+     },
+     "spread": {
+      "american": "-110"
+     },
+     "moneyLine": {
+      "american": "-275"
+     }
+    },
+    "close": {
+     "pointSpread": {
+      "american": "-6.5"
+     },
+     "spread": {
+      "american": "-120"
+     },
+     "moneyLine": {
+      "american": "-320"
+     }
+    },
+    "current": {
+     "pointSpread": {
+      "american": "-6.5"
+     },
+     "spread": {
+      "american": "-120"
+     },
+     "moneyLine": {
+      "american": "-320"
+     }
+    }
+   },
+   "open": {
+    "over": {
+     "american": "-105"
+    },
+    "under": {
+     "american": "-115"
+    },
+    "total": {
+     "american": "48"
+    }
+   },
+   "close": {
+    "over": {
+     "american": "-110"
+    },
+    "under": {
+     "american": "-110"
+    },
+    "total": {
+     "american": "45.5"
+    }
+   },
+   "current": {
+    "over": {
+     "american": "-110"
+    },
+    "under": {
+     "american": "-110"
+    },
+    "total": {
+     "american": "45.5"
+    }
+   }
+  },
+  {
+   "provider": {
+    "id": "59",
+    "name": "ESPN Bet - Live Odds"
+   },
+   "details": "BUF -8.5",
+   "overUnder": 65.5,
+   "spread": -8.5,
+   "overOdds": -130.0,
+   "underOdds": 100.0,
+   "awayTeamOdds": {
+    "moneyLine": 550,
+    "spreadOdds": -5000.0,
+    "open": {
+     "pointSpread": {
+      "american": "+7"
+     },
+     "spread": {
+      "american": "-110"
+     },
+     "moneyLine": {
+      "american": "+225"
+     }
+    },
+    "current": {
+     "pointSpread": {
+      "american": "+8.5"
+     },
+     "spread": {
+      "american": "-5000"
+     },
+     "moneyLine": {
+      "american": "+550"
+     }
+    }
+   },
+   "homeTeamOdds": {
+    "moneyLine": -1000,
+    "spreadOdds": 1400.0,
+    "open": {
+     "pointSpread": {
+      "american": "-7"
+     },
+     "spread": {
+      "american": "-110"
+     },
+     "moneyLine": {
+      "american": "-275"
+     }
+    },
+    "current": {
+     "pointSpread": {
+      "american": "-8.5"
+     },
+     "spread": {
+      "american": "+1400"
+     },
+     "moneyLine": {
+      "american": "-1000"
+     }
+    }
+   },
+   "open": {
+    "over": {
+     "american": "-105"
+    },
+    "under": {
+     "american": "-115"
+    },
+    "total": {
+     "american": "48"
+    }
+   },
+   "current": {
+    "over": {
+     "american": "-130"
+    },
+    "under": {
+     "american": "+100"
+    },
+    "total": {
+     "american": "65.5"
+    }
+   }
+  }
+ ]
+}

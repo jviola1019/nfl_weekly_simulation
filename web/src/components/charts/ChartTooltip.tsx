@@ -34,7 +34,7 @@ export function ChartTooltip({ children }: { children: React.ReactNode }) {
       {tip ? (
         <div
           role="status"
-          className="pointer-events-none absolute z-10 rounded-[3px] border border-rule bg-surface px-2 py-1 text-sm"
+          className="pointer-events-none absolute z-10 rounded-control border border-rule bg-surface px-2 py-1 text-sm"
           style={{ left: Math.max(0, tip.x + 12), top: Math.max(0, tip.y - 44) }}
         >
           <div className="num font-semibold text-ink">{tip.value}</div>

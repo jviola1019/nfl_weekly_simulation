@@ -184,7 +184,9 @@ artifacts <- list(
     name = "testthat",
     category = "test",
     command = "source('scripts/run_tests.R')",
-    timeout_secs = 1200  # full suite takes ~8 min; policy runner sets exit code
+    # the merged suite (864 files with the VVF, odds and research tests, 2026-11-02) needs 15-20 min on the owner's
+    # Windows machine and timed out at 1200 s under load; policy runner sets exit code
+    timeout_secs = 2700
   )
 )
 

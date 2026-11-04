@@ -2,7 +2,158 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec. To verify everything and finish the remaining work in a full local environment (VS Code), use `docs/handoff/2026-09-29-vscode-prompt.md`.
 
-## Current state — A8 (feat/a8-local-app)
+## State on 2026-11-04: everything from #215–#230 in one integration PR, two protocols signed, a weekly program running
+
+**Objective.** The owner asked on 2026-11-02 to complete every listed decision:
+- sign `nfl_props_v1` and `nfl_preclose_v1`;
+- let 2025 enter as model history, never scored;
+- merge #217 and #215–#230;
+- test AusSportsBetting's historical openers;
+- settle where snapshots run;
+- run a real-money maker test.
+
+**Done:**
+- **Final end-to-end test** (2026-11-03, `reports/2026-11-03/final-test/FINAL_TEST.md`). `run_week.R` with no arguments resolved 2026 week 9, and the local app and the Playwright suite ran on its bundle.
+  - **Six defects fixed,** each with a test that failed first:
+    - `de42950`: a game without a line was priced and bet in `baseline_games.csv`;
+    - `6006ac8`: the silent injury load, now retried and flagged;
+    - `08149e7`: the Rams' time zone;
+    - `16ac64e`: the Props page text;
+    - `2991757`, merged as `63807cb`: the dispatcher's retry rule;
+    - `e45f4be`: duplicate axis labels.
+  - **Plus** `08c8410`: the e2e suite also runs on a real run.
+  - **Rerun:** 23/23 checks pass; every page serves with no console error; Playwright 135/135 on the real run.
+  - **Gates on `4a2f925`:** `run_tests.R` 874 tests, 4,002 passed, 0 failed, 0 skipped; integrity 63/63. CI (R, web, golden master) green, and the golden master shows "no differences" for each fix.
+  - **New finding, recorded and not patched:** home field measures team strength (`team_hfa_table()`). Washington −1.27, New England +3.67. It is for the term-admission backtest.
+- **Code review of the final test's fixes** (2026-11-04, the code-review skill on `a639552..ef3d49b`): eight findings, fixed with tests in `5dbb410`–`746f0d6` (CHANGELOG).
+  - Also added: a home-field estimator switch, `HFA_TEAM_ESTIMATOR` (`1704416`), with its default unchanged.
+  - CI on `a340a32`: R, lint, web, parity and the golden master pass.
+  - Local gates with this note (2026-11-04 19:20Z, fresh HOME): `run_tests.R` 885 tests, 4,031 passed, 0 failed, 0 errors, 0 skipped; integrity 63/63.
+- **The engine's home-field comparison is void** (`reports/2026-11-04/hfa-engine/README.md`).
+  - **No home field:** the calibration path gives the margin `(home_hfa − away_hfa)/2`, which averages −0.02 points against +1.29 in the results. Production gives the full home field.
+  - **Look-ahead:** its table spans 2015–2024 for every calibration week (M5). team_margin "won" through that leak.
+  - **The fix is G1's:** G1 retires the path. The default stays team_margin.
+- **#231 (this integration):** #215–#230 merged in dependency order, conflicts resolved; #223 squashed as `903b11b`.
+  - Local gates at the time: `run_tests.R` 864 tests, 3,967 passed, 0 failed, 0 skipped; integrity 63/63.
+  - CI: R, lint, web and parity pass.
+  - **The golden master changes:**
+    - #219 changes the weather inputs only (no output difference at `3dd7d79`);
+    - #223 moves all 16 games of 2024 week 15.
+  - The reference is re-recorded from this PR's CI artifact (see `reports/2026-09-29/golden-master/2024-w15/ATTRIBUTION.md`).
+- **`nfl_props_v1` signed** (`10c78f5`, before week 9): P1–P6 on 2026 weeks 9–18. The props module under test is frozen at `4c1c377`.
+- **`nfl_preclose_v1` signed, then v1.1 before week 9:** PR #232, stacked on this one; results in `reports/2026-11-02/preclose-v1/RESULT.md`.
+  - **Tune/Confirm:** no candidate beats the opener (P1/P2).
+  - **v1.1** withdrew the 2026 opener track, because ESPN's 2026 DraftKings "open" is the preseason line, and made the Kalshi Tuesday track the 2026 test.
+- **Research on `research/hypotheses`:**
+  - T2 on SBR (look-ahead lines);
+  - the opener-timing diagnostic (ESPN BET's openers price week w−1, which settles T1's caveat);
+  - the maker-test kit, for the owner to run by hand.
+- **Refused by auto mode, so the owner acts:**
+  - the merges (hence this PR);
+  - a Windows scheduled task (`register_prospective_task.ps1` is ready for the owner to run).
+- **AusSportsBetting** sits behind a Cloudflare challenge and is dropped.
+
+**Running:** `prospective_dispatch.R` is started every quarter hour by `prospective_loop.sh` in a Claude session, for weeks 8–18.
+- **What it runs:** the frozen props module, snapshots, Kalshi fetches and scores, and nfl_preclose_v1.1's Tuesday predictions.
+- **Store:** `../nfl-worktrees/.prospective/store` (private).
+- **Checkouts:** `../nfl-worktrees/hyp-loop`, `props-v1-run` and `preclose-run`.
+- **It stops with the session.**
+- **Latest (2026-11-04 19:10Z):** week 9's `preclose_predict` reran at 2026-11-03 20:30Z (exit 0), and week 8's `fetch_wed` ran at 2026-11-04 17:26Z. Next are `snap_thu` (2026-11-05 18:00Z) and the TNF snapshot (2026-11-06 00:15–01:10Z).
+
+**Open risks:**
+- **The PC sleeps, and the session pauses with it.** The machine uses Modern Standby. On battery it sleeps after 3 minutes idle, or on "Austerity Battery Drain Budget Exceeded"; on AC it never idle-sleeps (Kernel-Power event 506 gives each reason).
+  - **What it cost:** week 8's MNF snapshot (2026-11-02). Then on 2026-11-03 a DNS outage around a wake failed week 9's `preclose_predict` three times, and the Tuesday venue and props snapshots once each.
+  - **Recovered:** the step was rerun at 20:30Z before kickoff, and the snapshots were retaken (notes in the store's `dispatch.log`).
+  - **Now:** the dispatcher retries a failed step hourly until its deadline (`2991757`, at most 12 tries).
+  - **Still needed:** snapshot windows are 55 minutes, so keep the PC on AC power with the lid open, or register the scheduled task with WakeToRun.
+- **Run `date -u` before any time-based step:** hours can pass between tool calls.
+- **Never run `run_week.R` by hand in `props-v1-run`** while the loop can fire (Tuesday 18:00Z, Friday 21:00Z).
+- **Injury loads** now retry an empty season and flag one that stays empty as "partial", with nflreadr's warning as the cause (`6006ac8`). Still check each weekly run's `source_status.json`.
+- **Before blaming code for a golden-master difference,** read its INPUT DRIFT lines.
+- **The checkouts `hyp-loop` and `preclose-run` have no `.Rprofile`,** so they run on the user library (dplyr 1.2.0). The pre-close code's packages are identical in both libraries, and it does not use dplyr.
+
+**Next targets:**
+- **the model gauntlet** (owner, 2026-11-03: "various different models … concepts … testing … gauntlet looping"). It follows the owner's `fantasy_football_dashboard/scripts/model-gauntlet.ts` standard: many families on Tune only, paired out-of-fold loss, Holm, and positive controls, or the run is void. It includes a drive-level simulator (my reading of "RoboBot sim", to confirm) and the strength-free home field;
+- after week 18: `props_v1_score.R --weeks=9:18` and `run_2026.R prospective`;
+- the Holdout, which the owner opens (checkpoint 8).
+
+## D1 done - 2026-10-27 (feat/d1-odds-layer, draft PR, awaiting the owner)
+
+The keyless odds layer is in `R/odds/` (see CHANGELOG, "D1"). **Objective:** one HTTP layer, three providers, the `odds_snapshots` shape, the closing rule, the 2023–2024 ESPN opener/closer archive, forward capture on the same code. **Done:** all of it, tests with recorded fixtures only; the live smoke (`scripts/odds_live_smoke.R`) and a live capture passed on 2026-10-27. **Not done:** player alias tables (snapshots carry `player_key`), Kalshi spread/total series, owner sign-off of the terms matrix; the raw ESPN responses are not committed (16.4 MB as received; sha256 in `backtest/data/odds_archive/SOURCES.json`). **Confirmed facts:** the archive has 570 games, no 2025 row; complete ESPN BET moneyline opener-and-closer pairs cover 205 of 285 games of 2023 and 284 of 285 of 2024; every request is floored at 1 per second per domain (`CAPTURE_MIN_INTERVAL_SEC` is 1). **Open risks:** ESPN's endpoints are undocumented; the openers/closers carry no timestamp. **Next target:** G3 reads the archive and appends 2025 only in its Holdout build, after the freeze.
+
+## Track B2 (feat/b2-tokens-components): tokens, components, context and professional HTML
+
+2026-10-26. Branch `feat/b2-tokens-components` from `main` at `4c1c377`, draft PR against `main` (never merged by the agent). Web app only: no R, `contracts/` or schema file changed, no dependency added, no file deleted. What changed is in CHANGELOG "B2"; the plan is `docs/superpowers/plans/2026-10-19-b2-tokens-components.md` (13 tasks, each with its RED and GREEN; Tasks 1–3 by subagents with task reviews, Tasks 4–13 inline by the controller; the ledger and its rulings are in `.superpowers/sdd/2026-10-19-b2-tokens-components/progress.md`).
+
+**Gate results (the branch, 2026-10-26):**
+- Web: typecheck and lint exit 0; vitest 31 files, 192 tests with `REQUIRE_DB_TESTS=1` (baseline 18 files, 126 tests); Playwright on the fixtures `112 passed`, `60 skipped` (baseline 70 passed); `@sim` 11 passed and the seven run-reading specs 35 passed on the simulator run; `@parity` offline writes 60 snapshots and online matches all 60 at maxDiffPixels 0 / threshold 0, and a wrong baseline fails (861,285 differing pixels); axe with the best-practice rules finds 0 violations on every page, width and scheme; review-ui 48 rows, overflow 0, errors 0, no serious axe rule, no leaks, on both trees and both data states.
+- R: `verify_repo_integrity.R` exit 0, `Total: 63 passed, 0 failed`. The other R gates were not run: no R file changed.
+- Lighthouse 13.5.0 mobile, five interleaved rounds, one machine (other R jobs running), `main` against the branch, median LCP: home 2.52 s against 2.67 s, game 2.78 s against 2.82 s, evidence 2.85 s against 2.88 s; performance 0.88, 0.89, 0.80 against 0.89, 0.89, 0.80; total blocking time 374, 316, 643 ms against 336, 311, 599 ms. The branch is within 0.25 s of `main` on every page and no worse on performance or blocking time.
+
+**Open items:**
+- The 2.5 s mobile LCP gate is unmet on every page on both trees on the measuring machine (the dry run, on a quieter machine, met it on the home page only). Confirm on CI or a reference machine. The levers left (font subsetting, less chart code on evidence) are owner decisions; `loading.tsx` and `experimental.inlineCss` were measured and rejected.
+- Under heavy machine load (other lanes' R suites), Playwright cases can exceed their 30 s timeout (`offline.spec.ts` passed alone in 12.7 s) and `scripts/local/discover.test.ts` (a synchronous fixture copy) can exceed its 5 s timeout. The dry run saw one `e2e/id-leaks.spec.ts` failure right after a database reset that did not recur. Re-run before investigating.
+- Login and not-found show no run data and carry no run line (the plan's reading of "every page states its run").
+
+**Owner decisions pending:** merge approval; no root `loading.tsx`; the theme choice in the footer; the consolidated type sizes (22 to 24, 17 to 18, 13 to 14 px, strip team codes 22 to 20 px); font subsetting.
+
+**Context-reset packet:** objective: one token and component system, context on every number, professional HTML, with no slower first load. Done: Tasks 1 to 13 with every gate above. Not done: the owner's merge; the LCP gate on the game page and evidence. Confirmed facts: the gates above. Open risks: LCP on a reference machine; the `id-leaks` flake. Next target: the owner's review of the draft PR and its screenshots; B3 (React Bits) and B4 (editing and offline features) are separate tracks.
+
+## A3b done - 2026-10-28 (feat/a3b-vvf, stacked on feat/a3a-vvf, awaiting the owner)
+
+S3–S5, the S4 controls, the researched nulls and joint test, and the input ERD are in `backtest/vvf/` (see CHANGELOG, "A3b").
+- **Objective:** S3 incremental skill, the S4 controls and the S5 diagnostics, close-anchored on Tune 2018–2022. Then the owner's 2026-10-28 requests:
+  - research the label shuffle, the inherited joint test and the cluster unit;
+  - test late schedule changes;
+  - admit only significant variables;
+  - check bias and variance;
+  - verify the ERD and the docs.
+- **Done:** plan Tasks 1–16. That includes the final review's fix pass (Task 13), the old p-values decision (14) and the independent verification (15, 56 of 56 checks).
+  - `reports/2026-10-28/a3-research/` holds the research.
+  - `reports/2026-10-28/vvf-a3b-close/` holds the run.
+  - The ledger shows S3, each variable's admission and the input ERD.
+- **Confirmed facts:**
+  - Against the close, S3 claims none of v2's 36 features, so all 36 are excluded and the close-anchored model is the market alone.
+  - The spec's label shuffle fails by construction. The researched nulls hold.
+  - The inherited robust joint Wald is oversized (0.30–0.69 at a nominal 5%), so its p-value is dropped (decided 2026-10-28 at the owner's request). The wild score bootstrap holds 0.041–0.059.
+  - The ICC is about 0 at every cluster unit.
+  - Late changes are not significant.
+  - The final review's fix pass is done.
+  - `reports/2026-10-28/verification/` recomputes every p-value, Brier and log loss, the research and the blends independently.
+- **Open risks:** S3's power on Tune is low: a planted effect was detected in 11 of 20 runs at 0.20 log-odds per SD and 19 of 20 at 0.40. "No skill" does not rule out effects below about 0.3.
+- **Owner questions:**
+  - S4-NULL: sign the spec §4 amendment (the anchor null);
+  - the merge, after #225.
+- **Next target:** A4, the opener screen on D1's archive, after #224 and #225.
+
+## A3a done - 2026-10-27 (feat/a3a-vvf, draft PR, awaiting the owner)
+
+The validation framework's S0–S2 are in `backtest/vvf/` (see CHANGELOG, "A3a").
+- **Objective:** S0–S2 on PR #205's ported inputs, with the variable ledger.
+- **Done:**
+  - the port;
+  - the registry and S0;
+  - S1 and S2;
+  - the reproduction of v2's §1;
+  - the generated ledger;
+  - the F11 diagnosis script and its positive control.
+- **Not done:**
+  - Plan Task 10 Step 2, the regression check on the fixed main, after #223 and F11b;
+  - A3b, S3–S5 and the controls. These are built and dry-run in `../nfl-worktrees/a3dry`, and their plan comes next.
+- **Confirmed facts:**
+  - The port reproduces v1 within 5.0e-11 and v2's screen within 4.5e-06.
+  - v2's moneyline joint df was 30 for 29 estimable terms, so p is 0.575, not 0.627.
+  - All 108 screen rows read "no evidence".
+- **Open risks:** F11b, the 2019 Raiders' missing drive inputs. Once #223 merges, it stops any calibration that reaches 2019.
+- **Owner questions** (disclosures in the ledger):
+  - JOINT-WALD: the robust joint Wald is not size-controlled;
+  - CLUSTER-UNIT: season-week or week of season;
+  - A3-FLEX: `primetime`'s flex timing;
+  - V2-JOINT-DF: the known-answer p moves from 0.63 to 0.575;
+  - F11B.
+- **Next target:** A3b.
+
+## Previous state — A8 (feat/a8-local-app)
 
 2026-10-13. Branch `feat/a8-local-app` (base `4f9aad3`; `main` at `28e4ed7`, with #210, merged in on 2026-10-13), draft PR #212 against `main` (never merged by the agent). The final whole-branch review returned "with fixes"; the fix wave below applied them and the owner's four decisions, and every gate was re-run on the merged branch.
 
@@ -236,3 +387,9 @@ The owner asked (2026-09-30) to merge everything and move the remaining work to 
 | 21 | The first mockup palette failed the dataviz validator (lightness band, contrast on turf, numbers coloured by series) | Re-stepped to the validated palette with a darker turf, and republished |
 | 22 | **A delete without looking first:** a screenshot path passed unconverted made Playwright create `C:\c\Users\…\rd_shots`; I moved the images and ran `rm -rf /c/c` without first checking `C:\c` for other content | It very likely held only that run's output (a top-level `C:\c` is unusual), but this was not verified; disclosed to the owner. Rule: list a directory before any delete |
 | 23 | The ScoresAndOdds scraper ran during the A3 end-to-end step because config still enabled it (S5) | Disclosed; defaults turned off in #206; `run_week.R` not run again |
+
+## P1 (props correctness) close-out note
+
+- Done on the P1 branch (see CHANGELOG "P1"): P13, P14, P1, P2, P3, P9, P12, P4, P5; P10 was already done.
+- Not done, owner decisions: the `KALSHI_TAKER_FEE_COEF` value must be checked against kalshi.com/docs/kalshi-fee-schedule.pdf (HTTP 429 on 2026-10-13); `PROP_REQUIRE_MARKET_ODDS` (default TRUE) drops unpriced rows from the output when any priced row exists, which hides their pass reasons; `team_tz` in `NFLsimulation.R` has `LAR` where schedules use `LA`; the ScoresAndOdds scraper (S5) and the duplicate `load_red_zone_efficiency` remain.
+- Next: P2 (props model v2) needs G1's `predict_week()`; P3 needs the signed `nfl_props_v1` protocol; D1's providers write `odds_snapshots`, not P1's quote cache. An adapter (snapshot side rows pivoted to quote rows; `venue_id` to book; `bid`/`ask` to `yes_bid`/`yes_ask`; `market_id` to `prop_type`) and a point-in-time player crosswalk (ESPN athlete ids through ffverse `espn_id`; Kalshi uuids by name, team and game) belong to K2/P2 (P1 final review I1 and I6).

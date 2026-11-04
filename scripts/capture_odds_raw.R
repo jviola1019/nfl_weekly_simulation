@@ -1,15 +1,17 @@
 #!/usr/bin/env Rscript
 # =============================================================================
-# Raw odds forward capture
+# Raw odds forward capture: a thin caller of the provider layer (R/odds/)
 # =============================================================================
 # Usage (from repo root):
 #   Rscript scripts/capture_odds_raw.R                 # ESPN + Kalshi
 #   Rscript scripts/capture_odds_raw.R --sources=espn  # one source
 #   Rscript scripts/capture_odds_raw.R --root=/tmp/cap
 #
-# Writes gzipped raw responses under CAPTURE_ROOT/YYYY-MM-DD/<source>/ and
-# appends one line per request to CAPTURE_ROOT/manifest.ndjson.
-# Exit status 1 if every request failed (so schedulers notice).
+# Writes gzipped raw responses under CAPTURE_ROOT/YYYY-MM-DD/<source>/ and appends one
+# line per request (status, sha256) to CAPTURE_ROOT/manifest.ndjson. All HTTP goes
+# through R/odds/http.R: truthful user agent, 20 s timeout, at most 1 request per
+# second per domain, backoff on 429/5xx, no workaround for a 403 or a challenge page.
+# Exit status 1 if no request succeeded (so schedulers notice).
 # =============================================================================
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -18,13 +20,14 @@ arg_value <- function(name, default) {
   if (length(hit) == 0) default else sub(sprintf("^--%s=", name), "", hit[[1]])
 }
 
-if (!file.exists("config.R") || !file.exists("R/capture_raw.R")) {
-  stop("Run from the repository root (config.R and R/capture_raw.R not found)")
+if (!file.exists("config.R") || !dir.exists("R/odds")) {
+  stop("Run from the repository root (config.R and R/odds not found)")
 }
 
 cfg_env <- new.env()
 sys.source("config.R", envir = cfg_env)
 source("R/capture_raw.R")
+for (f in sort(list.files("R/odds", pattern = "\\.R$", full.names = TRUE))) source(f)
 
 cfg <- list(
   user_agent = cfg_env$CAPTURE_USER_AGENT,
@@ -49,7 +52,8 @@ if (nrow(summary) == 0) {
   quit(status = 1)
 }
 
-ok <- !is.na(summary$status) & summary$status < 400
+# a request is ok when it returned a usable body: a block or an empty body is not
+ok <- !is.na(summary$status) & summary$status < 400 & is.na(summary$error)
 by_source <- aggregate(
   cbind(requests = 1, ok = ok, bytes = summary$bytes) ~ source,
   data = transform(summary, ok = ok), FUN = sum

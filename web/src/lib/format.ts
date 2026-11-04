@@ -6,6 +6,13 @@ export function pct(p: number | null | undefined, digits = 0): string {
   return `${(p * 100).toFixed(digits)}%`;
 }
 
+/** Axis labels for percent ticks, each with the decimals of the tick step, so no two are the same (0 stays "0%") */
+export function pctTicks(ticks: number[]): string[] {
+  const step = ticks.length > 1 ? Math.abs(ticks[1]! - ticks[0]!) : 1;
+  const digits = Math.max(0, -Math.floor(Math.log10(step * 100) + 1e-9));
+  return ticks.map((t) => (t === 0 ? "0%" : pct(t, digits)));
+}
+
 /** Signed percentage points, e.g. +2.4 pts */
 export function pts(d: number, digits = 1): string {
   const v = d * 100;

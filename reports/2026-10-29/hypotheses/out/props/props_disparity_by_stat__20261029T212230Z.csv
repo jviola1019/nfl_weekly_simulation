@@ -1,0 +1,11 @@
+stat,lines,median_range_pp,p90_range_pp,max_range_pp
+receptions,91,0.8327,2.037,3.2
+receiving_yards,326,1.955,4.546,8.239
+attempts,13,1.168,1.928,2.037
+completions,16,0.8298,2.108,2.84
+passing_tds,28,2.228,4.104,8.879
+passing_yards,217,1.413,3.099,7.432
+rushing_yards,202,1.841,4.05,7.226
+carries,21,0.553,1.878,2.141
+passing_interceptions,17,0.478,2.175,2.956
+touchdowns,13,1.109,2.584,3.789

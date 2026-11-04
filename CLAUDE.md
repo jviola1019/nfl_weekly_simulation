@@ -349,6 +349,7 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `R/sim_bundle.R` - the simulator's weekly bundle, written by `run_week.R` (replaced the HTML report at A8)
 - `R/mu_terms.R` - explicit mean composition: the term table and `compose_mu()` (M22)
 - `R/schedule_context.R` - neutral sites, home-field points and rest days (M24, M23)
+- `R/odds/` - the keyless odds layer (D1): `http.R` is the only HTTP code for ESPN and Kalshi (nflverse loads through nflreadr; 1 request/second per domain, no workaround for a 403/429 or a challenge page); providers for nflverse, ESPN core and Kalshi; the `odds_snapshots` shape; the closing rule; the archive builder. Tests inject a fetch function and read `tests/testthat/fixtures/odds/`; live checks are in `tests/live/` only. Endpoints and the terms matrix: `docs/odds-sources.md`
 
 ### Props Data Sources
 - `sports/nfl/props/data_sources.R` - Player projections with fallback chain
@@ -364,6 +365,15 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 ### Game Backtest
 - `backtest/walk_forward.R` - pre-registered walk-forward shootout; `--stage score` refuses to run unless `reports/<date>/backtest-games-v1/PROTOCOL.md` matches the hash in `backtest/eval_windows/nfl_games_v1.json` and is committed. Never edit a frozen PROTOCOL.md; register a new version instead.
 - `backtest/build_inputs.R` - derives the committed point-in-time inputs in `backtest/data/`
+- `backtest/build_odds_archive.R` - derives `backtest/data/odds_archive/` (ESPN game openers and closes, 2023-2024). It refuses 2025: the G3 Holdout build appends 2025 after the freeze
+- `backtest/vvf/` - the validation framework on PR #205's ported inputs: S0 provenance and the registry, S1 screen, S2 structure (A3a); S3 incremental skill, S4 controls, S5 diagnostics (A3b). `backtest/vvf/reproduce_v2.R` is its known-answer test.
+- `backtest/vvf/run_a3b_close.R` - the close-anchored run of S3, S4 and S5 on Tune 2018-2022 (`reports/2026-10-28/vvf-a3b-close/`)
+- `backtest/vvf/input_schema.R` - the input ERD: every table's key and references, checked against the data, drawn in the ledger
+- `reports/2026-10-28/a3-research/` - the research behind S4's null, the joint test's p, the cluster unit and late schedule changes
+- `reports/2026-10-28/verification/` - `verify.R` recomputes A3b's p-values, Brier and log loss, the research and the blends independently (56 checks; run long R scripts from a frozen copy)
+- `docs/VARIABLE_LEDGER.md` - every variable, its known-at class, defects, results, admission, the input ERD and disclosures; generated, never edited by hand
+- `scripts/write_variable_ledger.R` - writes `docs/VARIABLE_LEDGER.md` from the registry and the committed results
+- `scripts/diagnose_mu_na.R` - F11: which calibration mean term is NA, found from the call frames
 
 ### Tests
 - `tests/testthat/setup.R` - Test infrastructure
@@ -391,9 +401,9 @@ Rscript scripts/verify_repo_integrity.R
 # 3. Full artifact matrix (must show 11/11 pass; golden-master needs network)
 Rscript scripts/run_matrix.R
 
-# 4. Run weekly simulation (use valid week!)
-# Edit config.R first: WEEK_TO_SIM <- 16; SEASON <- 2024
-Rscript -e "source('run_week.R')"
+# 4. Run weekly simulation: the upcoming week from the nflverse schedule, or name one
+Rscript run_week.R            # prints "Auto-resolved <season> week <w> (...)"
+Rscript run_week.R 16 2024    # a named week and season
 
 # 5. View the run offline (after `npm ci` in web/ once)
 cd web && npm run local

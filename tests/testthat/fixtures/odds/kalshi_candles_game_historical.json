@@ -1,0 +1,80 @@
+{
+ "candlesticks": [
+  {
+   "end_period_ts": 1786053600,
+   "open_interest": "570458.31",
+   "price": {
+    "close": "0.5300",
+    "high": "0.5300",
+    "low": "0.5200",
+    "mean": "0.5298",
+    "open": "0.5300",
+    "previous": "0.5300"
+   },
+   "volume": "106363.30",
+   "yes_ask": {
+    "close": "0.5300",
+    "high": "0.5300",
+    "low": "0.5300",
+    "open": "0.5300"
+   },
+   "yes_bid": {
+    "close": "0.5200",
+    "high": "0.5200",
+    "low": "0.5200",
+    "open": "0.5200"
+   }
+  },
+  {
+   "end_period_ts": 1786057200,
+   "open_interest": "734985.17",
+   "price": {
+    "close": "0.5300",
+    "high": "0.5300",
+    "low": "0.5200",
+    "mean": "0.5298",
+    "open": "0.5300",
+    "previous": "0.5300"
+   },
+   "volume": "170999.15",
+   "yes_ask": {
+    "close": "0.5300",
+    "high": "0.5300",
+    "low": "0.5300",
+    "open": "0.5300"
+   },
+   "yes_bid": {
+    "close": "0.5200",
+    "high": "0.5200",
+    "low": "0.5200",
+    "open": "0.5200"
+   }
+  },
+  {
+   "end_period_ts": 1786060800,
+   "open_interest": "1329788.90",
+   "price": {
+    "close": "0.5300",
+    "high": "0.5300",
+    "low": "0.5200",
+    "mean": "0.5299",
+    "open": "0.5300",
+    "previous": "0.5300"
+   },
+   "volume": "602880.19",
+   "yes_ask": {
+    "close": "0.5300",
+    "high": "0.5300",
+    "low": "0.5300",
+    "open": "0.5300"
+   },
+   "yes_bid": {
+    "close": "0.5200",
+    "high": "0.5200",
+    "low": "0.5200",
+    "open": "0.5200"
+   }
+  }
+ ],
+ "ticker": "KXNFLGAME-26AUG06CARARI-CAR"
+}

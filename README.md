@@ -193,11 +193,9 @@ Raw model probabilities are adjusted using isotonic regression to ensure they ma
 
 ## Configuration
 
-Edit `config.R` to change settings:
+`Rscript run_week.R` simulates the upcoming week from the nflverse schedule; `Rscript run_week.R <week> <season>` names one. Edit `config.R` to change the model's settings, for example:
 
 ```r
-SEASON <- 2025              # Current season
-WEEK_TO_SIM <- 12          # Week to predict (1-18)
 N_TRIALS <- 100000         # Simulation count
 ```
 
@@ -278,6 +276,8 @@ Rscript scripts/run_matrix.R  # Should show 11/11 passed (golden-master needs ne
 | `R/date_resolver.R` | Timezone-safe datetime parsing |
 | `R/bundle_writer.R` | Writes and validates R -> web bundles (`contracts/schema/`) |
 | `R/sim_bundle.R` | The simulator's weekly bundle, written by `run_week.R` |
+| `R/prop_keys.R` | Canonical team abbreviations and exact player-id resolution for prop quotes |
+| `R/prop_pricing.R` | Devig per venue, Kalshi taker fee, EV at the best fresh quote |
 
 ### Verification Scripts (`scripts/`)
 | File | Purpose |
@@ -308,6 +308,19 @@ Rscript scripts/run_matrix.R  # Should show 11/11 passed (golden-master needs ne
 | `backtest/metrics.R`, `backtest/controls.R` | Paired block bootstrap, DM-HLN, BH, ECE, CLV; leak canary, shuffled labels, market copy |
 | `backtest/eval_windows/nfl_games_v1.json` | Hash-locked windows, data and protocol |
 | `backtest/prospective.R` | Weekly bundle of unplayed games from the v1 candidates (never predicts a played game) |
+| `backtest/build_odds_archive.R` | Builds `backtest/data/odds_archive/` (ESPN game openers and closes, 2023-2024 only; refuses 2025) with the sha256 of every raw response in `SOURCES.json` |
+
+### Keyless Odds Layer (`R/odds/`)
+| File | Purpose |
+|------|---------|
+| `R/odds/http.R` | The only HTTP layer for ESPN and Kalshi (nflverse downloads go through nflreadr): truthful user agent, 20 s timeout, at most 1 request/second per domain, backoff on 429/5xx, no workaround for a 403 or a challenge page, raw sha256 per successful response (error responses are recorded by status and error text) |
+| `R/odds/snapshots.R` | The `odds_snapshots` shape, market and venue vocabulary, validation |
+| `R/odds/closing.R` | The closing rule: last snapshot at or before kickoff at the same line; over 60 minutes is stale |
+| `R/odds/provider.R`, `provider_nflverse.R`, `provider_espn_core.R`, `provider_kalshi.R` | One provider interface and the three keyless sources |
+| `R/odds/capture.R`, `scripts/capture_odds_raw.R` | Forward capture (`odds-capture.yml`) as a caller of the providers |
+| `R/odds/archive.R` | The decision-time archive builder, coverage report and verifier |
+| `scripts/odds_live_smoke.R`, `tests/live/` | Manual live smoke test (never part of `run_tests.R`) |
+| `docs/odds-sources.md` | Endpoints, rate limits, coverage and the terms-of-service matrix |
 
 ### Data Contract and Web App (`contracts/`, `web/`)
 | File | Purpose |

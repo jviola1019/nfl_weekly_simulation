@@ -1,0 +1,5 @@
+market,sides,mean_gain_cents,p90_gain_cents,max_gain_cents
+ml,28,1.303,1.857,2.12
+spread,308,0.6889,1.409,2.903
+total,204,0.6939,1.354,3.14
+team_total,76,1.418,2.453,3.614

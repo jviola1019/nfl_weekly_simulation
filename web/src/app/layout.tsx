@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { themeAttribute } from "@/lib/theme";
+import { readTheme } from "@/lib/themeCookie";
 import "./globals.css";
 
 // Archivo variable (weight 100–900, width 62–125%): condensed for dense tables, expanded
@@ -27,18 +29,20 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 // prerendered page cannot: its scripts would be blocked. So nothing is static.
 export const dynamic = "force-dynamic";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // the theme is a cookie the server renders onto <html>: no flash, no inline script
+  const theme = await readTheme();
   return (
-    <html lang="en" className={archivo.variable}>
+    <html lang="en" className={archivo.variable} data-theme={themeAttribute(theme)}>
       <body>
         <a href="#main" className="skip-link">
           Skip to content
         </a>
         <SiteHeader />
-        <main id="main" className="mx-auto max-w-[1440px] px-4 pb-10 pt-8 sm:px-8 xl:px-16">
+        <main id="main" className="mx-auto max-w-page px-gutter pb-page-top pt-page-top">
           {children}
         </main>
-        <SiteFooter />
+        <SiteFooter theme={theme} />
       </body>
     </html>
   );
