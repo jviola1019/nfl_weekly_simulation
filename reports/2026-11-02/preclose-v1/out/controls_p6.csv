@@ -1,0 +1,7 @@
+control,passed
+leak_canary,TRUE
+anchor_copy,TRUE
+reproducibility,TRUE
+anchor_null,TRUE
+permuted_x,TRUE
+placebo,TRUE
