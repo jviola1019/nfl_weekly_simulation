@@ -4,7 +4,13 @@ import { expect, type Page } from "@playwright/test";
 
 /** The run under test: E2E_SIM_BUNDLE names a published run_week.R bundle; unset, the committed weekly fixture. */
 export const SIM_BUNDLE = process.env.E2E_SIM_BUNDLE;
-const GAME = SIM_BUNDLE ? (JSON.parse(readFileSync(join(SIM_BUNDLE, "games.json"), "utf8")) as { game_id: string }[])[0]!.game_id : "2026_04_DEN_SF";
+const GAME = SIM_BUNDLE ? firstGame(SIM_BUNDLE) : "2026_04_DEN_SF";
+
+function firstGame(dir: string): string {
+  const games = JSON.parse(readFileSync(join(dir, "games.json"), "utf8")) as { game_id: string }[];
+  if (!games.length) throw new Error(`E2E_SIM_BUNDLE ${dir}: games.json lists no games`);
+  return games[0]!.game_id;
+}
 
 /** Public routes, with one game of the run under test. */
 export const PUBLIC_PAGES = ["/", `/games/${GAME}`, "/props", "/evidence", "/methodology", "/data-health", "/login"];
