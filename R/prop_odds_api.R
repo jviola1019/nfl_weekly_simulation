@@ -416,7 +416,7 @@ TEAM_ABBR_TO_NAME <- c(
   "JAX" = "Jacksonville Jaguars",
   "KC"  = "Kansas City Chiefs",
   "LAC" = "Los Angeles Chargers",
-  "LAR" = "Los Angeles Rams",
+  "LA"  = "Los Angeles Rams",
   "LV"  = "Las Vegas Raiders",
   "MIA" = "Miami Dolphins",
   "MIN" = "Minnesota Vikings",

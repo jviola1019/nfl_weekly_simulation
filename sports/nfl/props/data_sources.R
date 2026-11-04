@@ -500,7 +500,7 @@ load_game_context <- function(game_id) {
   }
 
   # Dome stadiums
-  dome_teams <- c("ARI", "ATL", "DAL", "DET", "HOU", "IND", "LAC", "LAR",
+  dome_teams <- c("ARI", "ATL", "DAL", "DET", "HOU", "IND", "LAC", "LA",   # the Rams are LA in schedules
                   "LV", "MIN", "NO")
 
   list(
