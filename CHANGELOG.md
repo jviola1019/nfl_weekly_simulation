@@ -14,6 +14,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - CRAN's glmmTMB now needs TMB ≥ 1.9.23, so the two must move together.
 - **Checked on Windows:** the three packages load from a separate library with no version-mismatch warning, and a glmmTMB fit converges. The library the frozen `nfl_props_v1` run uses is untouched.
 - **Outputs:** the GLMM feeds only the unadmitted `glmm` term. CI's golden master is the check that no simulated mean moves.
+- **The golden master now runs on `renv.lock` changes.** Its path filter missed the lockfile, so a package upgrade never got an output check.
 
 ### Golden master CI: a record attempt that fails is tried again (2026-11-04)
 
