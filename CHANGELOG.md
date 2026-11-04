@@ -4,6 +4,17 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Golden master CI: a record attempt that fails is tried again (2026-11-04)
+
+- **The failure:** CI on `c933862` failed 2 of its 52 record jobs (`08149e7`, `7b218ca`). The cause was the same in both: `raw.githubusercontent.com` answered 503 for nflverse's `games.rds` while every matrix job was downloading at once. Neither job ran code that had changed, and both had recorded cleanly on `a340a32`.
+- **The fix** (`.github/workflows/golden-master.yml`):
+  - **Retries:** the Record step makes up to three attempts, 2 and then 5 minutes apart.
+  - **Visibility:** each failed attempt is a warning annotation in the run.
+  - **Why a retry is safe:** a record writes its output only after the model run completes, so a retry never builds on a partial one.
+- **Test:** `reports/2026-11-04/gm-retry/test_retry.sh` runs the step's own text against a fake `Rscript`. It failed on the old step (one attempt) and passes on the new one (`test_retry_out.txt`):
+  - two failures, then success: exit 0 after 3 attempts;
+  - three failures: exit 1 after 3 attempts.
+
 ### The engine's home-field comparison is void; the default stays team_margin (2026-11-04)
 
 - **The comparison:** three `run_week.R 15 2024` runs, one per `HFA_TEAM_ESTIMATOR`, scored the calibration simulations of 2019–2023 (1,322 games). As scored, team_margin beat league by 0.0039 Brier, the reverse of the model gauntlet.
