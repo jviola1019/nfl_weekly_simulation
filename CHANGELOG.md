@@ -4,6 +4,21 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Code review of the final test's fixes: eight findings (2026-11-04)
+
+The code-review skill reviewed `a639552..ef3d49b`. These engine edits rest on the owner's instructions of 2026-11-03 ("Fix the props page issue … and all other issues") and 2026-11-04 ("Make sure you are fixing any issues you find").
+- **`5dbb410`: an injury download that errors is retried and flagged too.**
+  - Only an empty table had been retried; an error still dropped the season unflagged.
+  - Only seasons with completed games are retried (`retry_seasons`), so a release not yet published costs one download.
+  - The retry count and wait are config.R settings: `INJURY_LOAD_RETRIES`, `INJURY_LOAD_RETRY_WAIT`.
+- **`111131d`: a game without a market line has no probability edge or model-market disagreement** (`market_gap()`). They were 0, which made it read as the most certain game.
+- **`fb3c0a7`: the Rams are LA** in the props module's dome list and `TEAM_ABBR_TO_NAME`. A Rams home game had never been a dome to the props context.
+- **`1704416`: a home-field estimator switch**, `HFA_TEAM_ESTIMATOR`: "league", "strength_free" or "team_margin".
+  - The default is unchanged ("team_margin") until the engine's own comparison decides it.
+  - The calibration cache key (v6) and the score cache key (v3) carry the estimator, so a calibration simulated under one is never served to another.
+- **`746f0d6`:** a clear error when the e2e bundle has no games, and the props test names the claims it pins.
+- **Recorded, the owner's call:** the TMB/glmmTMB pair. CRAN now ships TMB 1.9.25 with glmmTMB 1.1.15.2. Upgrading both in `renv.lock` ends the Windows ABI warning, but it is a dependency change. Rebuilding locally would touch the renv cache that the frozen `nfl_props_v1` package set links to. The GLMM feeds only the unadmitted `glmm` term.
+
 ### Final end-to-end test of the integration: six defects fixed (2026-11-03)
 
 - **The test.** `Rscript run_week.R` with no arguments on a clean checkout of `a639552` (fresh HOME, the renv package set), 2026-11-03 04:46–05:06Z: `Auto-resolved 2026 week 9 (15 games, first kickoff Thu 2026-11-05 20:15 ET)`; Injuries FULL, Weather FULL, Market PARTIAL (2 games had no line yet); defense rankings applied; bundle QA passed. A check script compared the log, the bundle, the schedule and both audit tables, and the local app was checked page by page (`reports/2026-11-03/final-test/`).
