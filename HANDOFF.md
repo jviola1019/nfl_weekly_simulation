@@ -69,7 +69,7 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
   - Two runs cut off when the PC slept were restarted on AC power and passed.
 
 **Next targets:**
-- **the home-field term** for the engine's term-admission backtest (M22): a league home field in place of `team_hfa_table()`'s mean home margin;
+- **the home-field term** for the engine's term-admission backtest (M22): a league home field in place of `team_hfa_table()`'s mean home margin. It needs G1's point-in-time `predict_week()` first, because the engine's calibration path cannot compare estimators (`reports/2026-11-04/hfa-engine/README.md`);
 - after week 18: `props_v1_score.R --weeks=9:18` and `run_2026.R prospective`;
 - the Holdout, which the owner opens (checkpoint 8).
 

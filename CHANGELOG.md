@@ -19,7 +19,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - **Power:** an edge needs about 1.9% skill to show.
 - **The home-field finding confirmed** (the planned comparison). In a ratings model the engine's estimator costs +0.0048 Brier against a league home field (+0.0025 to +0.0072), and strength-free team terms cost +0.0012. It goes to the engine's term-admission backtest (M22).
 - **New code:**
-  - `families.R`, the families as tested functions (`tests/testthat/test-model-gauntlet.R`, 8 tests on synthetic leagues);
+  - `families.R`, the families as tested functions (`tests/testthat/test-model-gauntlet.R`, 12 tests on synthetic leagues);
   - `gauntlet.R`; `home_field_compare.R`;
   - `build_drives.R`, which writes `backtest/data/drive_games.csv` (2006–2022, with sha256 sources).
 

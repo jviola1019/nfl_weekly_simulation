@@ -139,6 +139,7 @@ Every Holm-adjusted p is 1.000: no candidate is better than the market in a one-
 
 - **No confirmation protocol:** nothing passed.
 - **The home-field result** goes to the engine's term-admission work (M22). The production engine keeps its estimator until that backtest admits a change.
+  - **Follow-up, 2026-11-04:** an engine-level check cannot settle it before G1 (`reports/2026-11-04/hfa-engine/README.md`). The engine's calibration simulations have no home field, and their home-field table looks ahead (M5).
 - **Next searches** would have to change the question, not only the model:
   - prices before the close (the pre-close protocol is running prospectively);
   - markets other than the moneyline (spreads, totals, props);
