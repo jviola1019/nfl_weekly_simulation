@@ -28,3 +28,15 @@ test_that("no market line at all marks market quality unavailable", {
   expect_false(any(out$market_available))
   expect_equal(get_data_quality()$market$status, "unavailable")
 })
+
+test_that("a game without a market line has no probability edge and no model-market disagreement", {
+  gap_env <- load_script_functions(file.path(PROJECT_ROOT, "NFLsimulation.R"), "market_gap")
+  # the second game's market is attach_market_probs()'s fill with the model's own probability
+  expect_equal(gap_env$market_gap(c(0.62, 0.71), c(0.55, 0.71), c(TRUE, FALSE)), c(0.07, NA_real_))
+  src <- readLines(file.path(PROJECT_ROOT, "NFLsimulation.R"), warn = FALSE)
+  for (col in c("model_uncertainty", "prob_edge_home", "prob_edge_away")) {
+    line <- grep(sprintf("^[[:space:]]*%s = ", col), src, value = TRUE)
+    expect_length(line, 1L)
+    expect_match(line, "market_gap(", fixed = TRUE, info = col)   # not the fill
+  }
+})

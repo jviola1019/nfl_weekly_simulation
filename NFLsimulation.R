@@ -5793,6 +5793,10 @@ mkt_now <- tryCatch(
   }
 )
 
+#' The model's probability minus the market's; NA for a game without a market line, whose market
+#' probability is attach_market_probs()'s fill with the model's own (audit M11), not a price
+market_gap <- function(model, market, available) ifelse(available %in% TRUE, model - market, NA_real_)
+
 #' Join market probabilities; flag, log and track games without a line (audit M11).
 #' Games without a line keep the model probability as the blend *input* only, marked
 #' market_available = FALSE; betting governance already passes on missing odds.
@@ -5843,7 +5847,7 @@ final <- final |>
 
     # Epistemic uncertainty from model disagreement (blend vs market)
     # Higher values = more model disagreement = less certain prediction
-    model_uncertainty = abs(home_p_2w_cal - home_p_2w_mkt) / pmax(home_p_2w_cal + home_p_2w_mkt, 0.01),
+    model_uncertainty = abs(market_gap(home_p_2w_cal, home_p_2w_mkt, market_available)) / pmax(home_p_2w_cal + home_p_2w_mkt, 0.01),
 
     # Total uncertainty combines aleatoric (score variance) + epistemic (model disagreement)
     total_uncertainty = sqrt((sd_home^2 + sd_away^2) / 2) + 10 * model_uncertainty
@@ -5860,8 +5864,8 @@ final <- final %>%
   dplyr::mutate(
     # Calculate approximate EV edge (home team perspective)
     # This is a simplified version; full calculations are in moneyline report
-    prob_edge_home = home_p_2w_cal - home_p_2w_mkt,
-    prob_edge_away = away_p_2w_cal - away_p_2w_mkt,
+    prob_edge_home = market_gap(home_p_2w_cal, home_p_2w_mkt, market_available),
+    prob_edge_away = market_gap(away_p_2w_cal, away_p_2w_mkt, market_available),
 
     # Betting confidence flags (for filtering high-quality opportunities)
     high_confidence_home = (prob_edge_home > HIGH_CONFIDENCE_EDGE) &
