@@ -3,7 +3,7 @@
 # also give a median margin. Definitions only: sourced by gauntlet.R and tests/testthat/test-model-gauntlet.R,
 # after backtest/common.R and backtest/candidates/elo.R.
 
-MG_SIGMA_FLOOR <- 10      # points: a margin SD below this is not credible for the NFL
+MG_SIGMA_FLOOR <- 1e-6    # a numerical guard only: the margin SD is the training residuals' (PLAN.md)
 MG_TD_POINTS <- 7         # a touchdown with its try (the league mean is about 6.95)
 MG_REPLACEMENT_QB <- -0.10  # EPA per dropback assumed for a starter with no history
 
@@ -53,12 +53,15 @@ mg_ratings_fit <- function(g, cutoff, halflife_weeks, team_hfa = c("none", "stre
   list(strength = strength, hfa = hfa, team_hfa = t_hfa, sigma = sigma)
 }
 
-#' Margin and P(home win) for `newg` (home_franchise, away_franchise, neutral). A team with no history rates 0.
+#' Margin and P(home win) for `newg` (home_franchise, away_franchise, neutral). A team with no history rates 0 with
+#' the league home field; `fallback` counts such teams in each game, so a run can report them.
 mg_ratings_predict <- function(fit, newg) {
+  known <- function(t) t %in% names(fit$strength)
   s <- function(t) { v <- fit$strength[t]; v[is.na(v)] <- 0; unname(v) }
   h <- fit$team_hfa[newg$home_franchise]; h[is.na(h)] <- fit$hfa
   margin <- s(newg$home_franchise) - s(newg$away_franchise) + ifelse(newg$neutral, 0, unname(h))
-  data.table(margin = margin, p_home = stats::pnorm(margin / fit$sigma))
+  data.table(margin = margin, p_home = stats::pnorm(margin / fit$sigma), sigma = fit$sigma,
+             fallback = as.integer(!known(newg$home_franchise)) + as.integer(!known(newg$away_franchise)))
 }
 
 # ---- F7: Poisson scores (Maher) ----------------------------------------------------------------------------
@@ -96,13 +99,15 @@ mg_poisson_predict <- function(fit, newg) {
   }, numeric(3)))
   s <- rowSums(out)
   data.table(p_win = out[, "win"] / s, p_loss = out[, "loss"] / s, p_tie = out[, "tie"] / s,
-             p_home = (out[, "win"] + 0.5 * out[, "tie"]) / s, margin = mh - ma)
+             p_home = (out[, "win"] + 0.5 * out[, "tie"]) / s, margin = mh - ma,
+             fallback = as.integer(!newg$home_franchise %in% fit$teams) + as.integer(!newg$away_franchise %in% fit$teams))
 }
 
 # ---- F8: dynamic ratings (Kalman filter) -------------------------------------------------------------------
 
 #' Team strengths follow random walks (process_sd points per week of time); the home field is a state with no
-#' process noise; between seasons strengths shrink by `carry`. Each game's prediction comes before its update.
+#' process noise; between seasons strengths shrink by `carry`. Games that kick off together share the home-field
+#' state and the strengths' covariances, so every game of a kickoff is predicted before any of them updates.
 mg_kalman_run <- function(g, process_sd, carry, obs_sd = 13.5, hfa0 = 2, prior_sd = 7) {
   teams <- sort(unique(c(g$home_franchise, g$away_franchise)))
   k <- length(teams)
@@ -114,25 +119,30 @@ mg_kalman_run <- function(g, process_sd, carry, obs_sd = 13.5, hfa0 = 2, prior_s
   p_out <- numeric(n); m_out <- numeric(n)
   hi <- match(g$home_franchise, teams); ai <- match(g$away_franchise, teams)
   t_week <- as.numeric(g$kickoff) / (7 * 86400)
-  for (i in seq_len(n)) {
-    if (g$season[i] != season_now) {
+  row_of <- function(i) { h <- numeric(k + 1); h[hi[i]] <- 1; h[ai[i]] <- -1; h[k + 1] <- if (g$neutral[i]) 0 else 1; h }
+  for (grp in split(seq_len(n), match(g$kickoff, unique(g$kickoff)))) {
+    if (g$season[grp[1]] != season_now) {
       x[seq_len(k)] <- carry * x[seq_len(k)]
       P[seq_len(k), seq_len(k)] <- carry^2 * P[seq_len(k), seq_len(k)] + diag((1 - carry^2) * prior_sd^2, k)
-      season_now <- g$season[i]
+      season_now <- g$season[grp[1]]
     }
-    for (t in c(hi[i], ai[i])) {
+    for (i in grp) for (t in c(hi[i], ai[i])) {
       if (!is.na(last[t])) P[t, t] <- P[t, t] + process_sd^2 * max(0, t_week[i] - last[t])
       last[t] <- t_week[i]
     }
-    h <- numeric(k + 1); h[hi[i]] <- 1; h[ai[i]] <- -1; h[k + 1] <- if (g$neutral[i]) 0 else 1
-    mu <- sum(h * x)
-    S <- drop(crossprod(h, P %*% h)) + obs_sd^2
-    m_out[i] <- mu
-    p_out[i] <- stats::pnorm(mu / sqrt(S))
-    if (is.na(g$home_score[i]) || is.na(g$away_score[i])) next
-    Kg <- drop(P %*% h) / S
-    x <- x + Kg * ((g$home_score[i] - g$away_score[i]) - mu)
-    P <- P - tcrossprod(Kg, drop(crossprod(h, P)))
+    for (i in grp) {
+      h <- row_of(i)
+      m_out[i] <- sum(h * x)
+      p_out[i] <- stats::pnorm(m_out[i] / sqrt(drop(crossprod(h, P %*% h)) + obs_sd^2))
+    }
+    for (i in grp) {
+      if (is.na(g$home_score[i]) || is.na(g$away_score[i])) next
+      h <- row_of(i)
+      S <- drop(crossprod(h, P %*% h)) + obs_sd^2
+      Kg <- drop(P %*% h) / S
+      x <- x + Kg * ((g$home_score[i] - g$away_score[i]) - sum(h * x))
+      P <- P - tcrossprod(Kg, drop(crossprod(h, P)))
+    }
   }
   data.table(game_id = g$game_id, p_home = p_out, margin = m_out)
 }
@@ -143,7 +153,9 @@ MG_DRIVE_OUTCOMES <- c("td", "fg", "def", "safety")   # per drive; "def" is a to
 
 #' One offence against one defence: each outcome's rate = league * (offence / league) * (defence / league)
 mg_drive_matchup <- function(off, def, league) {
-  r <- league[MG_DRIVE_OUTCOMES] * (off[MG_DRIVE_OUTCOMES] / league[MG_DRIVE_OUTCOMES]) * (def[MG_DRIVE_OUTCOMES] / league[MG_DRIVE_OUTCOMES])
+  L <- league[MG_DRIVE_OUTCOMES]
+  r <- ifelse(L > 0, off[MG_DRIVE_OUTCOMES] * def[MG_DRIVE_OUTCOMES] / L, 0)   # an outcome the league never had stays 0
+  names(r) <- MG_DRIVE_OUTCOMES
   if (sum(r) > 0.95) r <- r * 0.95 / sum(r)
   r
 }
@@ -175,7 +187,8 @@ mg_drive_rates <- function(drives, cutoff, halflife_weeks, prior_drives = 60) {
   w <- mg_decay(as.numeric(difftime(cutoff, tr$kickoff, units = "weeks")), halflife_weeks)
   tot <- sum(w * tr$drives)
   league <- vapply(MG_DRIVE_OUTCOMES, function(o) sum(w * tr[[o]]) / tot, numeric(1))
-  home_f <- vapply(MG_DRIVE_OUTCOMES, function(o) (sum((w * tr[[o]])[tr$home == 1]) / sum((w * tr$drives)[tr$home == 1])) / league[[o]], numeric(1))
+  home_f <- vapply(MG_DRIVE_OUTCOMES, function(o) if (league[[o]] > 0)
+    (sum((w * tr[[o]])[tr$home == 1]) / sum((w * tr$drives)[tr$home == 1])) / league[[o]] else 1, numeric(1))
   rate_by <- function(key) {
     teams <- sort(unique(tr[[key]]))
     m <- t(vapply(teams, function(t) {
@@ -192,8 +205,10 @@ mg_drive_rates <- function(drives, cutoff, halflife_weeks, prior_drives = 60) {
        pace = setNames(pace$pace, pace$team), league_pace = mean(tr$drives))
 }
 
-#' P(home win) and median margin for each game of `newg` from fitted drive rates
+#' P(home win) and median margin for each game of `newg` from fitted drive rates. A team with no history plays at
+#' the league rates and pace; `fallback` counts such teams in each game, so a run can report them.
 mg_drive_predict <- function(rates, newg, n_sims = 20000L, seed = 20261103L) {
+  known <- function(t) t %in% rownames(rates$off) && t %in% rownames(rates$def) && t %in% names(rates$pace)
   get_row <- function(m, t) if (t %in% rownames(m)) m[t, ] else rates$league
   out <- lapply(seq_len(nrow(newg)), function(i) {
     h <- newg$home_franchise[i]; a <- newg$away_franchise[i]; hf <- if (newg$neutral[i]) rep(1, 4) else rates$home
@@ -202,7 +217,7 @@ mg_drive_predict <- function(rates, newg, n_sims = 20000L, seed = 20261103L) {
     pace <- function(t) if (t %in% names(rates$pace)) rates$pace[[t]] else rates$league_pace
     d <- (pace(h) + pace(a)) / 2
     s <- mg_drive_sim(rh, ra, d, d, n_sims = n_sims, seed = seed + i)
-    data.table(p_home = s$p_home, margin = s$margin)
+    data.table(p_home = s$p_home, margin = s$margin, fallback = as.integer(!known(h)) + as.integer(!known(a)))
   })
   rbindlist(out)
 }

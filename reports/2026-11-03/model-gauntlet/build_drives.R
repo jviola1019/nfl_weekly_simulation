@@ -6,9 +6,8 @@
 #   Rscript reports/2026-11-03/model-gauntlet/build_drives.R <raw cache dir>
 suppressPackageStartupMessages(library(data.table))
 source(file.path("backtest", "common.R"))
+source(file.path("backtest", "build_inputs.R"))   # bt_franchise(), BT_RELEASE_BASE, bt_sha256_file(); builds nothing when sourced
 MG_DRIVE_SEASONS <- 2006:2022
-MG_PBP_BASE <- "https://github.com/nflverse/nflverse-data/releases/download/pbp"
-MG_FRANCHISE <- c(OAK = "LV", SD = "LAC", STL = "LA")   # as backtest/build_inputs.R
 
 #' Drives of one season by team-game: the count and how many ended in a touchdown, a field goal, a touchdown by the
 #' defence ("Opp touchdown") or a safety (nflfastR's fixed_drive_result)
@@ -51,17 +50,21 @@ main <- function() {
   options(timeout = max(900, getOption("timeout")))
   meta <- list(); parts <- list()
   for (s in MG_DRIVE_SEASONS) {
-    url <- sprintf("%s/play_by_play_%d.rds", MG_PBP_BASE, s)
+    url <- sprintf("%s/pbp/play_by_play_%d.rds", BT_RELEASE_BASE, s)
     f <- file.path(raw, basename(url))
     pbp <- mg_fetch_rds(url, f)
-    meta[[length(meta) + 1]] <- list(file = basename(f), url = url, sha256 = digest::digest(file = f, algo = "sha256"), bytes = file.size(f))
+    meta[[length(meta) + 1]] <- list(file = basename(f), url = url, sha256 = bt_sha256_file(f), bytes = file.size(f))
     parts[[length(parts) + 1]] <- mg_drives_one_season(pbp)
     message(sprintf("%d: %d team-games", s, nrow(parts[[length(parts)]])))
   }
   d <- rbindlist(parts)
-  d[, `:=`(team = ifelse(team %in% names(MG_FRANCHISE), MG_FRANCHISE[team], team),
-           opp = ifelse(opp %in% names(MG_FRANCHISE), MG_FRANCHISE[opp], opp))]
-  g <- games[, .(game_id, kickoff_utc, home_franchise, away_franchise, home_score, away_score)]
+  d[, `:=`(team = bt_franchise(team), opp = bt_franchise(opp))]
+  g <- games[season %in% MG_DRIVE_SEASONS, .(game_id, kickoff_utc, home_franchise, away_franchise, home_score, away_score)]
+  # every play-by-play game is on the schedule and every scheduled game has drives: a gap stops the build
+  orphan <- setdiff(unique(d$game_id), g$game_id)
+  if (length(orphan)) stop(sprintf("%d play-by-play game(s) not in games.csv, e.g. %s", length(orphan), paste(head(orphan, 5), collapse = ", ")), call. = FALSE)
+  uncovered <- setdiff(g[!is.na(home_score)]$game_id, unique(d$game_id))
+  if (length(uncovered)) stop(sprintf("%d played game(s) without drives, e.g. %s", length(uncovered), paste(head(uncovered, 5), collapse = ", ")), call. = FALSE)
   d <- merge(d, g, by = "game_id")
   stopifnot(all(d$team == d$home_franchise | d$team == d$away_franchise))
   d[, home := as.integer(team == home_franchise)]

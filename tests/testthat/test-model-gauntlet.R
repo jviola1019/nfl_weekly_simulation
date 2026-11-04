@@ -74,6 +74,19 @@ test_that("Kalman ratings track a step change, and a later result never changes 
   expect_equal(p2$p_home, p$p_home)   # the last game's own prediction comes before its result
 })
 
+test_that("Kalman ratings predict every game of a kickoff before any of them updates the shared state", {
+  s <- c(A = 0, B = 0, C = 0, D = 0, E = 0, F = 0)
+  g <- synthetic_league(s, hfa = 0, weeks = 10, noise_sd = 3, seed = 6)
+  g[week == 10, kickoff := min(kickoff)]   # the last week's three games kick off together
+  setorder(g, kickoff, game_id)
+  first <- g[week == 10, game_id][1]
+  p <- mg_kalman_run(g, process_sd = 1, carry = 1, obs_sd = 13.5)
+  g2 <- copy(g); g2[game_id == first, home_score := home_score + 40]   # an extreme result in one of them
+  p2 <- mg_kalman_run(g2, process_sd = 1, carry = 1, obs_sd = 13.5)
+  others <- g$week == 10 & g$game_id != first
+  expect_equal(p2$p_home[others], p$p_home[others])   # not known at the others' kickoff
+})
+
 test_that("the drive simulator splits an even game, favours the better offence, and lands on 3 and 7", {
   even <- c(td = 0.22, fg = 0.15, def = 0.01, safety = 0.003)
   s1 <- mg_drive_sim(home_rates = even, away_rates = even, home_drives = 11.5, away_drives = 11.5, n_sims = 40000, seed = 7)
@@ -84,6 +97,55 @@ test_that("the drive simulator splits an even game, favours the better offence, 
   m <- s1$margins
   share <- function(v) mean(abs(m) == v)
   expect_gt(share(7), share(5)); expect_gt(share(3), share(2))
+})
+
+synthetic_drives <- function() {
+  t0 <- as.POSIXct("2015-09-13 17:00:00", tz = "UTC")
+  rows <- list()
+  teams <- c("A", "B", "C", "D")
+  for (w in 1:20) {
+    pairs <- list(c("A", "B"), c("C", "D"))
+    if (w %% 2 == 0) pairs <- list(c("B", "A"), c("D", "C"))
+    for (p in pairs) {
+      gid <- sprintf("w%02d_%s_%s", w, p[2], p[1])   # p[1] at home
+      for (side in 1:2) {
+        team <- p[side]; opp <- p[3 - side]
+        td <- if (team == "A") 4L else 2L
+        rows[[length(rows) + 1]] <- data.table(game_id = gid, kickoff = t0 + (w - 1) * 7 * 86400, team = team, opp = opp,
+                                               home = as.integer(side == 1), drives = 10L, td = td, fg = 2L, def = 0L, safety = 0L)
+      }
+    }
+  }
+  rbindlist(rows)
+}
+
+test_that("drive rates rate an offence above the league when it scores more, shrunk toward the league", {
+  dr <- synthetic_drives()
+  r <- mg_drive_rates(dr, cutoff = max(dr$kickoff) + 1, halflife_weeks = Inf, prior_drives = 60)
+  raw_a <- 4 / 10
+  expect_gt(r$off["A", "td"], r$league[["td"]])
+  expect_lt(r$off["A", "td"], raw_a)                      # shrunk by the 60 pseudo-drives
+  expect_equal(r$off["A", "td"], (200 * raw_a + 60 * r$league[["td"]]) / (200 + 60), tolerance = 1e-9)
+  expect_equal(unname(r$pace["A"]), 10, tolerance = 1e-9)
+})
+
+test_that("drive predictions favour the better offence, drop the home factor on a neutral field, and count fallbacks", {
+  dr <- synthetic_drives()
+  dr[home == 1L & team %in% c("C", "D"), td := td + 1L]   # a home edge in the league
+  r <- mg_drive_rates(dr, cutoff = max(dr$kickoff) + 1, halflife_weeks = Inf)
+  newg <- data.table(home_franchise = c("A", "A", "Z"), away_franchise = c("C", "C", "C"), neutral = c(FALSE, TRUE, FALSE))
+  pr <- mg_drive_predict(r, newg, n_sims = 20000L, seed = 3L)
+  expect_gt(pr$p_home[1], 0.55)
+  expect_gt(pr$p_home[1], pr$p_home[2])                   # the home factor applies only off a neutral field
+  expect_equal(pr$fallback, c(0L, 0L, 1L))                # Z has no history: league rates, and counted
+})
+
+test_that("margin ratings count a team with no history as a fallback", {
+  s <- c(A = 1, B = 0, C = -1, D = 0)
+  g <- synthetic_league(s, hfa = 2, weeks = 10)
+  fit <- mg_ratings_fit(g, cutoff = max(g$kickoff) + 1, halflife_weeks = Inf, team_hfa = "none")
+  pr <- mg_ratings_predict(fit, data.table(home_franchise = c("A", "Z"), away_franchise = c("B", "Y"), neutral = FALSE))
+  expect_equal(pr$fallback, c(0L, 2L))
 })
 
 test_that("drive rates combine an offence and a defence around the league, with shrinkage", {

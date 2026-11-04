@@ -2,7 +2,8 @@
 # The NFL model gauntlet (PLAN.md): ten families and a market stack for each, selected walk-forward on 2012-2017
 # and scored once on 2018-2022 against the no-vig close, with the controls that void the run on failure.
 # Games after 2022 are dropped as soon as the inputs load.
-#   Rscript reports/2026-11-03/model-gauntlet/gauntlet.R [--out=<dir>] [--sims=20000]
+#   Rscript reports/2026-11-03/model-gauntlet/gauntlet.R [--out=<dir>] [--sims=20000] [--repro=<a second run's out dir>]
+# Control K5 needs two runs: the first without --repro (status "incomplete"), the second pointing at the first.
 # Development only, never the scored run: --families=F1,F4 runs a subset; --select-only stops after the 2012-2017
 # selection, so nothing of 2018-2022 is scored or seen.
 suppressPackageStartupMessages(library(data.table))
@@ -26,12 +27,15 @@ dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 t_start <- Sys.time()
 say <- function(...) message(format(Sys.time(), "%H:%M:%S"), " ", sprintf(...))
 
-# ---- inputs: nothing after 2022 ----------------------------------------------------------------------------------
-inp <- bt_load_inputs(file.path("backtest", "data"))
-games <- inp$games[season <= max(MG_GAUNTLET)]
+# ---- inputs: rows after 2022 are dropped as each file is read, before any outcome or price is computed ---------
+repro_dir <- opt("repro", NA_character_)
+data_dir <- file.path("backtest", "data")
+raw_games <- fread(file.path(data_dir, "games.csv"), na.strings = c("", "NA"),
+                   colClasses = list(character = c("home_qb_id", "away_qb_id", "gametime")))[season <= max(MG_GAUNTLET)]
+games <- bt_prepare_games(raw_games)
 stopifnot(max(games$season) == 2022)
-team_games <- inp$team_games[game_id %in% games$game_id]
-qb_games <- inp$qb_games[game_id %in% games$game_id]
+team_games <- fread(file.path(data_dir, "team_games.csv"), na.strings = c("", "NA"))[game_id %in% games$game_id]
+qb_games <- fread(file.path(data_dir, "qb_games.csv"), na.strings = c("", "NA"))[game_id %in% games$game_id]
 wanted <- if (is.na(only)) paste0("F", 1:10) else strsplit(only, ",")[[1]]
 if ("F9" %in% wanted) {
   drives <- fread(file.path("backtest", "data", "drive_games.csv"))[game_id %in% games$game_id]
@@ -49,7 +53,8 @@ weekly <- function(fit_predict) {
     tg <- target[wk == weeks$wk[i]]
     if (!nrow(tg)) return(NULL)
     r <- fit_predict(weeks$cutoff[i], tg)
-    data.table(game_id = tg$game_id, p = r$p_home, margin = if (is.null(r$margin)) NA_real_ else r$margin)
+    data.table(game_id = tg$game_id, p = r$p_home, margin = if (is.null(r$margin)) NA_real_ else r$margin,
+               fallback = if (is.null(r$fallback)) 0L else r$fallback, sigma = if (is.null(r$sigma)) NA_real_ else r$sigma)
   }))
 }
 recent <- function(cutoff, years = 6) games[kickoff < cutoff & kickoff >= cutoff - years * 365.25 * 86400]
@@ -66,13 +71,13 @@ families <- list(
     r <- bt_epa_walk_forward(f, games, weeks, s$lambda)
     data.table(game_id = r$game_id, p = r$p_c2, margin = NA_real_) }),
   F4 = list(grid = data.table(halflife = c(4, 8, 16, 32)), run = function(s) weekly(function(cut, tg) {
-    mg_ratings_predict(mg_ratings_fit(recent(cut), cut, s$halflife, "none"), tg)[, .(p_home, margin)] })),
+    mg_ratings_predict(mg_ratings_fit(recent(cut), cut, s$halflife, "none"), tg) })),
   F5 = list(grid = CJ(halflife = c(4, 8, 16, 32), shrink = c(1, 4, 16)), run = function(s) weekly(function(cut, tg) {
-    mg_ratings_predict(mg_ratings_fit(recent(cut), cut, s$halflife, "strength_free", s$shrink), tg)[, .(p_home, margin)] })),
+    mg_ratings_predict(mg_ratings_fit(recent(cut), cut, s$halflife, "strength_free", s$shrink), tg) })),
   F6 = list(grid = data.table(halflife = c(4, 8, 16, 32)), run = function(s) weekly(function(cut, tg) {
-    mg_ratings_predict(mg_ratings_fit(recent(cut), cut, s$halflife, "engine"), tg)[, .(p_home, margin)] })),
+    mg_ratings_predict(mg_ratings_fit(recent(cut), cut, s$halflife, "engine"), tg) })),
   F7 = list(grid = data.table(halflife = c(8, 16, 32)), run = function(s) weekly(function(cut, tg) {
-    mg_poisson_predict(mg_poisson_fit(recent(cut), cut, s$halflife), tg)[, .(p_home, margin)] })),
+    mg_poisson_predict(mg_poisson_fit(recent(cut), cut, s$halflife), tg) })),
   F8 = list(grid = CJ(process_sd = c(0.5, 1, 2), carry = c(0.5, 0.75, 1)), run = function(s) {
     r <- mg_kalman_run(games, s$process_sd, s$carry); data.table(game_id = r$game_id, p = r$p_home, margin = r$margin) }),
   F9 = list(grid = data.table(halflife = c(8, 16, 32)), run = function(s) weekly(function(cut, tg) {
@@ -140,7 +145,7 @@ stack_walk <- function(col) {
     tr <- all_p[kickoff < wk_gnt$cutoff[i] & !is.na(y) & is.finite(p_c0) & is.finite(get(col))]
     at <- which(all_p$wk == wk_gnt$wk[i] & is.finite(all_p$p_c0) & is.finite(all_p[[col]]))
     if (!length(at)) next
-    fit <- mg_stack_fit(tr$p_c0, tr[[col]], tr$y)
+    fit <- mg_stack_fit(tr$p_c0, tr[[col]], tr$y, lambda = 0)   # maximum likelihood, as PLAN.md registers
     out[at] <- mg_stack_predict(fit, all_p$p_c0[at], all_p[[col]][at])
   }
   out
@@ -157,12 +162,19 @@ if (is.null(old_seed)) rm(".Random.seed", envir = globalenv()) else assign(".Ran
 k1a <- tryCatch({ bt_assert_asof(all_p$kickoff + 3.5 * 3600, all_p$kickoff, "leak canary"); FALSE },
                 error = function(e) grepl("as-of violation", conditionMessage(e)))
 all_p[, K1_leak_stack := stack_walk("leak")]
+games_scores_check <- games$home_score
 sh <- bt_shuffle_scores(games, seed = BT_SHUFFLE_SEED)
 e <- MG_SELECTED$F1; r4 <- MG_SELECTED$F4
 all_p <- merge(all_p, bt_elo_run(sh, e$K, e$hfa, e$regress)[, .(game_id, K3_shuffled_F1 = p_c1)], by = "game_id", all.x = TRUE)
-games_true <- games; games <- sh
-k3f4 <- families$F4$run(r4)[, .(game_id, K3_shuffled_F4 = p)]
-games <- games_true
+# the family closures read `games` from this environment: run F4 on the shuffled table, restoring it even on error
+with_games <- function(g, fn) {
+  true_games <- games
+  on.exit(assign("games", true_games, envir = globalenv()), add = TRUE)
+  assign("games", g, envir = globalenv())
+  fn()
+}
+k3f4 <- with_games(sh, function() families$F4$run(r4))[, .(game_id, K3_shuffled_F4 = p)]
+stopifnot(identical(games$home_score, games_scores_check))
 all_p <- merge(all_p, k3f4, by = "game_id", all.x = TRUE)
 setorder(all_p, kickoff, game_id)
 
@@ -200,20 +212,34 @@ cv <- data.table(
   passed = c(k1a, ctl[candidate == "K1_leak_stack", pass], !ctl[candidate == "K2_market_copy", pass],
              !ctl[candidate == "K3_shuffled_F1", pass], !ctl[candidate == "K3_shuffled_F4", pass],
              !any(res[candidate != "p_c0", skill] > MG_IMPLAUSIBLE)))
-status <- if (all(cv$passed)) "valid" else "void"
 num <- function(x) bt_round(x, 10)
 res_out <- res[, lapply(.SD, function(x) if (is.numeric(x)) num(x) else x)]
 bt_write_csv(res_out, file.path(out_dir, "results.csv"))
+sha <- function(p) digest::digest(file = p, algo = "sha256")
+# K5: a second, independent run must have written byte-identical results (--repro=<its out dir>)
+k5 <- if (is.na(repro_dir)) NA else {
+  other <- fread(file.path(repro_dir, "run_meta.csv"))
+  identical(other[field == "result_sha256", value], sha(file.path(out_dir, "results.csv")))
+}
+cv <- rbind(cv, data.table(control = "K5 a second run gives the same result sha256", passed = k5))
+status <- if (anyNA(cv$passed)) "incomplete: K5 not checked (run again with --repro=<a second run's out dir>)" else
+  if (all(cv$passed)) "valid" else "void"
 bt_write_csv(ctl[, lapply(.SD, function(x) if (is.numeric(x)) num(x) else x)], file.path(out_dir, "controls_scored.csv"))
 bt_write_csv(cv, file.path(out_dir, "controls.csv"))
 bt_write_csv(all_p[season %in% MG_GAUNTLET, c("game_id", "season", "wk", "y", "p_c0", cands), with = FALSE][
   , lapply(.SD, function(x) if (is.numeric(x)) num(x) else x)], file.path(out_dir, "predictions_2018_2022.csv"))
-sha <- function(p) digest::digest(file = p, algo = "sha256")
+# fallbacks (a team with no history, predicted at league values) and the smallest fitted margin SD, per family
+fb <- vapply(names(preds), function(f) sum(preds[[f]]$fallback, na.rm = TRUE), numeric(1))
+min_sigma <- vapply(names(preds), function(f) suppressWarnings(min(preds[[f]]$sigma, na.rm = TRUE)), numeric(1))
+if (any(fb > 0)) say("fallbacks to league values: %s", paste(sprintf("%s=%d", names(fb)[fb > 0], fb[fb > 0]), collapse = ", "))
 code <- c(file.path(MG_DIR, c("PLAN.md", "families.R", "gauntlet.R")), file.path("backtest", c("common.R", "metrics.R", "controls.R", "candidates/elo.R", "candidates/epa_glm.R")))
 inputs <- file.path("backtest", "data", c("games.csv", "team_games.csv", "qb_games.csv", "drive_games.csv"))
-meta <- data.table(field = c("status", "run_utc", "seconds", "n_scored", "n_sims", "result_sha256", paste0("sha256:", c(code, inputs))),
+meta <- data.table(field = c("status", "run_utc", "seconds", "n_scored", "n_sims", "result_sha256",
+                             paste0("fallbacks:", names(fb)), paste0("min_sigma:", names(min_sigma)[is.finite(min_sigma)]),
+                             paste0("sha256:", c(code, inputs))),
                    value = c(status, format(t_start, "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"), round(as.numeric(difftime(Sys.time(), t_start, units = "secs"))),
-                             nrow(d), n_sims, sha(file.path(out_dir, "results.csv")), vapply(c(code, inputs), sha, "")))
+                             nrow(d), n_sims, sha(file.path(out_dir, "results.csv")), as.character(fb),
+                             as.character(round(min_sigma[is.finite(min_sigma)], 4)), vapply(c(code, inputs), sha, "")))
 bt_write_csv(meta, file.path(out_dir, "run_meta.csv"))
 say("status %s; %d games scored; %d of %d candidates pass; result sha256 %s", status, nrow(d), sum(res$pass), length(cands),
     sha(file.path(out_dir, "results.csv")))
