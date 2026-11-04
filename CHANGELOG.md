@@ -4,6 +4,17 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### TMB 1.9.25 and glmmTMB 1.1.15.2, which ends the Windows ABI warning (owner, 2026-11-04)
+
+- **Why:** `renv.lock` pinned TMB 1.9.17 with glmmTMB 1.1.13. glmmTMB's Windows binary was built against TMB 1.9.19, so every run warned "package version mismatch … Please re-install glmmTMB from source".
+- **The change:** the owner approved the upgrade on 2026-11-04 ("Do this"). `renv.lock` changes three records, which renv 1.1.7 wrote from the installed packages:
+  - TMB 1.9.17 → 1.9.25;
+  - glmmTMB 1.1.13 → 1.1.15.2;
+  - **RTMB 2.0, a new package.** glmmTMB 1.1.15.2 imports it. Its own dependencies (Rcpp, Matrix, TMB, MASS, RcppEigen, lattice) were already locked.
+  - CRAN's glmmTMB now needs TMB ≥ 1.9.23, so the two must move together.
+- **Checked on Windows:** the three packages load from a separate library with no version-mismatch warning, and a glmmTMB fit converges. The library the frozen `nfl_props_v1` run uses is untouched.
+- **Outputs:** the GLMM feeds only the unadmitted `glmm` term. CI's golden master is the check that no simulated mean moves.
+
 ### Golden master CI: a record attempt that fails is tried again (2026-11-04)
 
 - **The failure:** CI on `c933862` failed 2 of its 52 record jobs (`08149e7`, `7b218ca`). The cause was the same in both: `raw.githubusercontent.com` answered 503 for nflverse's `games.rds` while every matrix job was downloading at once. Neither job ran code that had changed, and both had recorded cleanly on `a340a32`.
