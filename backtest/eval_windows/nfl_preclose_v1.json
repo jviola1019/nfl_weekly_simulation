@@ -1,0 +1,250 @@
+{
+  "protocol_id": "nfl_preclose_v1",
+  "protocol_path": "reports/2026-11-02/preclose-v1/PROTOCOL.md",
+  "protocol_sha256": "cc282d7911a4f1e1d3c5fa09abc64f77f27d166c3bda61eab33b1a5e0a620e76",
+  "design": "docs/superpowers/specs/2026-10-20-preclose-validation-design.md (approved 2026-10-20)",
+  "signed": {
+    "date": "2026-11-02",
+    "approval": "the owner, 2026-11-02: complete the listed owner decisions, signing this protocol and 2025 as history (never scored) among them"
+  },
+  "information_set": {
+    "confirmatory": "IS-A: schedule, results before the first kickoff of week w-1, the previous game's starting QB",
+    "secondary": "IS-B: v1's C1 and C2 as committed"
+  },
+  "candidates": [
+    "PC-C2",
+    "OA[E1]",
+    "LM[E1]"
+  ],
+  "correction": "BH across the three",
+  "hyperparameters": {
+    "c2_halflife": 8,
+    "c2_lambda": 100,
+    "c1_K": 20,
+    "c1_hfa": 30,
+    "c1_regress": 0.45,
+    "oa_lambda_grid": [
+      0.1,
+      1,
+      10
+    ],
+    "min_train_with_opener": 100
+  },
+  "windows": {
+    "tune": {
+      "seasons": 2023,
+      "use": "OA's lambda only; every candidate scored"
+    },
+    "confirm": {
+      "seasons": 2024,
+      "use": "secondary evidence"
+    },
+    "holdout": {
+      "seasons": 2025,
+      "sealed": true,
+      "use": "decides; built and scored once with nfl_games_v2 after the owner opens it"
+    },
+    "prospective": {
+      "season": 2026,
+      "weeks": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "use": "the Tuesday track (C2 and E1 on IS-T): CLV of tau-picks against Kalshi's Tuesday mid, one-sided, BH across the two; one look after week 18 (amendment 3)"
+    },
+    "pilot": {
+      "season": 2026,
+      "weeks": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "use": "computed after signing, reported separately, never pooled"
+    }
+  },
+  "venues": {
+    "2023-2024": "ESPN BET (D1 archive)",
+    "2026": "DraftKings as ESPN reports it (provider 100)",
+    "2025": "ESPN BET, sealed"
+  },
+  "tuesday_track": {
+    "decision": "Tuesday 18:00 UTC",
+    "information_set": "IS-T (amendment 1): results through week w-1, the starter of the team's previous game",
+    "candidates": [
+      "C2",
+      "E1"
+    ],
+    "price": "Kalshi KXNFLGAME mid, first hourly candle at or after 18:00 UTC; close = last candle at or before kickoff"
+  },
+  "pick_tau": 0.03,
+  "bootstrap_seed": 20260929,
+  "bootstrap_B": 10000,
+  "s4_null": "anchor null and permuted-x (S4 amendment); the spec's shuffle reported, not gating",
+  "code": [
+    {
+      "path": "backtest/preclose/features.R",
+      "sha256": "dda667b118142016b30fd4070e07c3da519e11f05d6caaf682392492015595a4"
+    },
+    {
+      "path": "backtest/preclose/elo.R",
+      "sha256": "cc742376a0558c11b6c7f3aff0acae4ee7abf9f9e62a4a59aeed0d716e3abc13"
+    },
+    {
+      "path": "backtest/preclose/candidates.R",
+      "sha256": "6365f792062bb216152c9c8669c3ae2f85fe5787ca86bbac382c2d90135768ca"
+    },
+    {
+      "path": "backtest/preclose/gates.R",
+      "sha256": "0f379db6df60818c68786d21bc71761becfd528228a4810e3f879eea83d8eb63"
+    },
+    {
+      "path": "backtest/preclose/run_preclose.R",
+      "sha256": "2df99d09273483b787f6b5d44140b3b61b9105d95bcf4a767f59a76ae0dcac2a"
+    },
+    {
+      "path": "backtest/preclose/run_2026.R",
+      "sha256": "bfb606a11ae571a1bcf70d715d6205dcd0602ddfaa2c5ffec20134b4addd10f6"
+    },
+    {
+      "path": "backtest/preclose/build_history.R",
+      "sha256": "33de406204e37ad839764677527cf3ad4619ce6f3ae456d96586c0e2512d7603"
+    },
+    {
+      "path": "backtest/preclose/fetch_espn_open_close.R",
+      "sha256": "905326e77a9a2315128387d198e7d495e23ec6c391415df629c3e7eff878ab70"
+    },
+    {
+      "path": "backtest/preclose/fetch_kalshi_tuesday.R",
+      "sha256": "d97e69cb311ed6669eb0fc145432d95b573ef8a2b921eef9f7d7a86266eb108b"
+    },
+    {
+      "path": "backtest/common.R",
+      "sha256": "5613080d98d3ae391f32579e5a96ccc540ca92a5d06b2294bc159b87e7df4447"
+    },
+    {
+      "path": "backtest/metrics.R",
+      "sha256": "3af427a380975f8cdcf42b206af4973fc5f95602c80f17aac2cb7fc8ec597df2"
+    },
+    {
+      "path": "backtest/blends.R",
+      "sha256": "408125ddccc0511883a80bb625fd9e107914a920ef003f93c170a7637295b918"
+    },
+    {
+      "path": "backtest/build_inputs.R",
+      "sha256": "f69213b0fa8ee6062d71e2133d462aab4d5c986df3664a79d3b4b4b31114a16b"
+    },
+    {
+      "path": "backtest/candidates/elo.R",
+      "sha256": "1f4185111be014466857a674fc61c714d74412ddf4c06517602f86ba1c692836"
+    },
+    {
+      "path": "backtest/candidates/epa_glm.R",
+      "sha256": "65dbbdc4e3737d6095e70326267c5e0b0f0aa9ae81acf769cb9d4509193990ad"
+    },
+    {
+      "path": "backtest/candidates/market.R",
+      "sha256": "2633bab472252c6fc243808efdd6cd9dcef706a660a85d8d0e7198cee14ce59a"
+    },
+    {
+      "path": "backtest/vvf/common.R",
+      "sha256": "3f81897683b415661f25fb9c7f258ea1a4201e091cd30f2b66dc38764fe4f463"
+    },
+    {
+      "path": "backtest/vvf/registry.R",
+      "sha256": "7b04fc05f4a8ad4d38193c0420f75948002b84b28a6d0b6121699e09311b9bc2"
+    },
+    {
+      "path": "backtest/vvf/s1_screen.R",
+      "sha256": "57c57af2c303b9e13c7d6529946bc11b3c22ef4e1485f5031d3114431d9c7134"
+    },
+    {
+      "path": "backtest/vvf/s3_skill.R",
+      "sha256": "cca538e7f1a89cc7f8493bf5f2931a64317d5f30a628dfedc9a631b9ef3b2ec4"
+    },
+    {
+      "path": "backtest/vvf/s4_controls.R",
+      "sha256": "df3a6a1ec9ad596271289203798dae2a954545957844271c2f38ba15361bebb7"
+    },
+    {
+      "path": "R/capture_raw.R",
+      "sha256": "c083470eb91722eedb6ae7b0964a4801e07d78cf6391b1600ed00de583679c45"
+    },
+    {
+      "path": "reports/2026-10-28/feasibility/props_common.R",
+      "sha256": "128ef9ada612b6bfb4676668f721e6f88699a837a458ebb889e967a97748e261"
+    },
+    {
+      "path": "tests/testthat/test-preclose.R",
+      "sha256": "a83cd477dc2e72b33c08b549428d827d95e8419f53b066768ab59949945fc93c"
+    },
+    {
+      "path": "reports/2026-11-02/preclose-v1/AMENDMENT_1_1.md",
+      "sha256": "42316e72d16760e57808fa7eb522024e3787f8953396541891a5f32d37f7ba09"
+    },
+    {
+      "path": "backtest/preclose/prospective.R",
+      "sha256": "5904be47c17c239c6ba14ca962f4ed59359d16eeb57dc0d5bcdfebb86cca60ba"
+    }
+  ],
+  "code_rule": "registered by sha256 in an amendment before any confirmatory number is read; it may change no choice",
+  "hash_rule": "sha256 of each file as git stores it (CRLF read as LF)",
+  "amendments": [
+    {
+      "id": 1,
+      "date": "2026-11-02",
+      "what": "registers the scoring code by sha256, before any confirmatory number is read; no choice changes",
+      "rulings": [
+        "IS-T (the Tuesday track): a game not yet played has no known starter, so IS-B's QB is the starter of the team's previous game; results through week w-1 as IS-B",
+        "P4's slope is the scored window's slope of the actual move on LM's predicted move, clustered by season-week",
+        "P6's anchor null and permuted-x null pass when no candidate is claimed (P1 and P2 both pass) on Tune or Confirm",
+        "The Tuesday track's return buys the picked side's YES at its Tuesday ask (the away side at 1 - bid) plus Kalshi's taker fee, held to settlement"
+      ]
+    },
+    {
+      "id": 2,
+      "date": "2026-11-02",
+      "what": "re-registers backtest/preclose/run_2026.R (df4bd7c20624 -> c72ff4d995e7): LM's training needs p_close, which the 2026 runner did not set; its first run stopped before computing any 2026 number; no choice changes"
+    },
+    {
+      "id": 3,
+      "date": "2026-11-02",
+      "version": "1.1",
+      "file": "reports/2026-11-02/preclose-v1/AMENDMENT_1_1.md",
+      "sha256": "42316e72d16760e57808fa7eb522024e3787f8953396541891a5f32d37f7ba09",
+      "what": "withdraws the 2026 opener track (ESPN's 2026 DraftKings open is the preseason line: reports/2026-11-02/preclose-v1/dk_opener_timing.R) and makes the Tuesday track 2026's prospective test; re-registers backtest/preclose/run_2026.R (c72ff4d995e7 -> 503bceb97c41); made before week 9's first kickoff",
+      "evidence": {
+        "path": "reports/2026-11-02/preclose-v1/dk_opener_timing.R",
+        "sha256": "1d1d1017aaf179800ce085261592b9a43eba80cdbca7412a82f2abe1372d2136"
+      }
+    },
+    {
+      "id": 4,
+      "date": "2026-11-03",
+      "file": "reports/2026-11-02/preclose-v1/REVIEW_1.md",
+      "sha256": "30a0748a344b63faccfbe148ca698b67e2b55477b00b6056aaa187cece7fe4f6",
+      "what": "the review's fixes (REVIEW_1.md): each game scored on its own week's saved prediction; 2025 prices never written or computed; P7 voids a run; ties pay half on the Tuesday track; Elo asserts week order and one game per team-week; the Tuesday state price reported; IS-T labelled. No choice changes; made before any prospective number and with the Holdout sealed",
+      "rereg": [
+        "backtest/preclose/elo.R cdd7c538 -> cc742376",
+        "backtest/preclose/run_preclose.R 884b703b -> 2df99d09",
+        "backtest/preclose/run_2026.R 503bceb9 -> bfb606a1",
+        "backtest/preclose/build_history.R 6c613240 -> 33de4062",
+        "tests/testthat/test-preclose.R 0606b81a -> a83cd477"
+      ],
+      "added": "backtest/preclose/prospective.R"
+    }
+  ],
+  "protocol_version": "1.1"
+}
