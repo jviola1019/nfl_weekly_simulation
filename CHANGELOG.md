@@ -15,6 +15,25 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - two failures, then success: exit 0 after 3 attempts;
   - three failures: exit 1 after 3 attempts.
 
+### The NFL model gauntlet: ten families and their market stacks against the no-vig close (owner, 2026-11-03; run 2026-11-04)
+
+- **The ask:** "various different models (RoboBot sim should be looked into), concepts and … testing … gauntlet looping". The run follows the owner's `fantasy_football_dashboard/scripts/model-gauntlet.ts` standard.
+- **Pre-registered** before any score: `reports/2026-11-03/model-gauntlet/PLAN.md` (`5cca2d7`).
+- **The design:**
+  - **Families:** Elo, QB-adjusted Elo, the EPA ridge, margin ratings (league, strength-free team and engine home field), Poisson scores, Kalman dynamic ratings, a drive-by-drive simulator (the reading of "RoboBot sim"; no product of that name was found) and gradient boosting.
+  - **Stacks:** a market stack for each family.
+  - **Windows:** selection 2012–2017 walk-forward; scored once on 2018–2022 (1,365 games). 2023–2025 were not read.
+  - **Test:** Holm across the 20 candidates and a week-block bootstrap. Six controls void the run on failure.
+- **Result (`RESULT.md`): valid.** Every control passed, and the corrected run and an independent second run were byte-identical (result sha256 `c74d2e48…`; K5 enforced in the code). The scored window was scored twice: a code review after the first scoring (`4d85d98c…`, same verdict) found nine defects, all fixed in `7bde163`. **None of the 20 beats the close or adds to it.**
+  - **Families alone:** they lose by 4.0% (EPA ridge) to 15.1% (Poisson) Brier skill.
+  - **Stacks:** they come within +0.0001 to +0.0005 Brier, with every interval spanning zero.
+  - **Power:** an edge needs about 1.9% skill to show.
+- **The home-field finding confirmed** (the planned comparison). In a ratings model the engine's estimator costs +0.0048 Brier against a league home field (+0.0025 to +0.0072), and strength-free team terms cost +0.0012. It goes to the engine's term-admission backtest (M22).
+- **New code:**
+  - `families.R`, the families as tested functions (`tests/testthat/test-model-gauntlet.R`, 12 tests on synthetic leagues);
+  - `gauntlet.R`; `home_field_compare.R`;
+  - `build_drives.R`, which writes `backtest/data/drive_games.csv` (2006–2022, with sha256 sources).
+
 ### The engine's home-field comparison is void; the default stays team_margin (2026-11-04)
 
 - **The comparison:** three `run_week.R 15 2024` runs, one per `HFA_TEAM_ESTIMATOR`, scored the calibration simulations of 2019–2023 (1,322 games). As scored, team_margin beat league by 0.0039 Brier, the reverse of the model gauntlet.

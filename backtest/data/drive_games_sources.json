@@ -1,0 +1,117 @@
+{
+  "built_utc": "2026-11-04T06:35:00Z",
+  "seasons": [2006, 2022],
+  "rows": 9152,
+  "sha256": "32dd7c484f4dbb5dbf3ef12b995c218ea47469564d4a448b6f54a538a5d2a06e",
+  "check": [
+    {
+      "mae": 1.5317,
+      "cor": 0.9495,
+      "two_rows": true
+    }
+  ],
+  "raw": [
+    {
+      "file": "play_by_play_2006.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2006.rds",
+      "sha256": "302a77005b4327c6a9bd41fa92908a197313439c6c4a1645afd3c2aea2962b79",
+      "bytes": 13041176
+    },
+    {
+      "file": "play_by_play_2007.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2007.rds",
+      "sha256": "2c5f5f82d4a55464ee0508866be72d7a7b8ff427c84048b22ca19bfd96c81201",
+      "bytes": 13166995
+    },
+    {
+      "file": "play_by_play_2008.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2008.rds",
+      "sha256": "cdbeda26d85949e8d8925cf6d8a19c048e1fb2e59f73b45d078715543072ea17",
+      "bytes": 13090967
+    },
+    {
+      "file": "play_by_play_2009.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2009.rds",
+      "sha256": "2f48e152db837f6c04d72baf084ed5c4445c4d4bc870587bd44a2481d05d5831",
+      "bytes": 13356955
+    },
+    {
+      "file": "play_by_play_2010.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2010.rds",
+      "sha256": "ab1f9295e83a45ae53a23b9eccb8787e212ff5a1bcff75fc4bde804b9019bbac",
+      "bytes": 13461173
+    },
+    {
+      "file": "play_by_play_2011.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2011.rds",
+      "sha256": "c6fe1d689053cfda3c963f20ca6db72859b1193857926cf56a28976657475b11",
+      "bytes": 13504797
+    },
+    {
+      "file": "play_by_play_2012.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2012.rds",
+      "sha256": "4cd2ad487e517f0212a68610210112308685f6ea55b78502845d44fb264bc659",
+      "bytes": 13633357
+    },
+    {
+      "file": "play_by_play_2013.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2013.rds",
+      "sha256": "87d4d1bb1019cd8effa9fef07cc55c0a1822a9f259791accdb5d5a82bc42bfb1",
+      "bytes": 13759140
+    },
+    {
+      "file": "play_by_play_2014.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2014.rds",
+      "sha256": "f894796d0b59e3dc544f327b159e794e78ffd0516c4c9f33e90fb3eb3cc33841",
+      "bytes": 13623443
+    },
+    {
+      "file": "play_by_play_2015.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2015.rds",
+      "sha256": "6c063bbcbf873b95adb76d707a557467a0736b3df5205c970677f8a867fea247",
+      "bytes": 13786480
+    },
+    {
+      "file": "play_by_play_2016.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2016.rds",
+      "sha256": "a117a298ba8a4eb3d29df4cb79af62456b903e6bb3fa590e0d3e4182ecd3c039",
+      "bytes": 13654320
+    },
+    {
+      "file": "play_by_play_2017.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2017.rds",
+      "sha256": "e50bf58c19c966555da8ebec8897b38abeb688faf40772105a3cfe60508d1196",
+      "bytes": 13460885
+    },
+    {
+      "file": "play_by_play_2018.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2018.rds",
+      "sha256": "7605a83218b2101e44435edd825ade252bd01aea24c06680120897f1f8c7d90c",
+      "bytes": 13480901
+    },
+    {
+      "file": "play_by_play_2019.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2019.rds",
+      "sha256": "50034f43c9d8bfeca0698480df325a6a80ed8bc79a4ab53b286c13b6b725d028",
+      "bytes": 13509603
+    },
+    {
+      "file": "play_by_play_2020.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2020.rds",
+      "sha256": "aa5b87433f94f0d9d9b1faa914d257f59bee1c3cf6c913c519853a94e8a32df8",
+      "bytes": 13628119
+    },
+    {
+      "file": "play_by_play_2021.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2021.rds",
+      "sha256": "5dce170c3a273e783118099bd16e8995c43ac3c819c8e6f2f639ae3dd4c5ff87",
+      "bytes": 14321160
+    },
+    {
+      "file": "play_by_play_2022.rds",
+      "url": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2022.rds",
+      "sha256": "041c28890d1d552d1936fd2bb031b7282de680897a45fdd0c7785531c5a4918c",
+      "bytes": 14430736
+    }
+  ]
+}
