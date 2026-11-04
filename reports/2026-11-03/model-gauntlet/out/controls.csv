@@ -1,0 +1,7 @@
+control,passed
+K1a leak rejected by the as-of assertion,TRUE
+K1b leak stack passes,TRUE
+K2 market copy does not pass,TRUE
+K3 shuffled F1 does not pass,TRUE
+K3 shuffled F4 does not pass,TRUE
+K4 no implausible skill,TRUE

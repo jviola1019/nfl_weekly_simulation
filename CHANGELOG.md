@@ -4,6 +4,25 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### The NFL model gauntlet: ten families and their market stacks against the no-vig close (owner, 2026-11-03; run 2026-11-04)
+
+- **The ask:** "various different models (RoboBot sim should be looked into), concepts and … testing … gauntlet looping". The run follows the owner's `fantasy_football_dashboard/scripts/model-gauntlet.ts` standard.
+- **Pre-registered** before any score: `reports/2026-11-03/model-gauntlet/PLAN.md` (`5cca2d7`).
+- **The design:**
+  - **Families:** Elo, QB-adjusted Elo, the EPA ridge, margin ratings (league, strength-free team and engine home field), Poisson scores, Kalman dynamic ratings, a drive-by-drive simulator (the reading of "RoboBot sim"; no product of that name was found) and gradient boosting.
+  - **Stacks:** a market stack for each family.
+  - **Windows:** selection 2012–2017 walk-forward; scored once on 2018–2022 (1,365 games). 2023–2025 were not read.
+  - **Test:** Holm across the 20 candidates and a week-block bootstrap. Six controls void the run on failure.
+- **Result (`RESULT.md`): valid.** Every control passed, and two runs were byte-identical (result sha256 `4d85d98c…`). **None of the 20 beats the close or adds to it.**
+  - **Families alone:** they lose by 4.0% (EPA ridge) to 15.1% (Poisson) Brier skill.
+  - **Stacks:** they come within +0.0001 to +0.0005 Brier, with every interval spanning zero.
+  - **Power:** an edge needs about 1.9% skill to show.
+- **The home-field finding confirmed** (the planned comparison). In a ratings model the engine's estimator costs +0.0048 Brier against a league home field (+0.0025 to +0.0072), and strength-free team terms cost +0.0012. It goes to the engine's term-admission backtest (M22).
+- **New code:**
+  - `families.R`, the families as tested functions (`tests/testthat/test-model-gauntlet.R`, 8 tests on synthetic leagues);
+  - `gauntlet.R`; `home_field_compare.R`;
+  - `build_drives.R`, which writes `backtest/data/drive_games.csv` (2006–2022, with sha256 sources).
+
 ### Final end-to-end test of the integration: six defects fixed (2026-11-03)
 
 - **The test.** `Rscript run_week.R` with no arguments on a clean checkout of `a639552` (fresh HOME, the renv package set), 2026-11-03 04:46–05:06Z: `Auto-resolved 2026 week 9 (15 games, first kickoff Thu 2026-11-05 20:15 ET)`; Injuries FULL, Weather FULL, Market PARTIAL (2 games had no line yet); defense rankings applied; bundle QA passed. A check script compared the log, the bundle, the schedule and both audit tables, and the local app was checked page by page (`reports/2026-11-03/final-test/`).
