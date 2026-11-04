@@ -2318,12 +2318,16 @@ teams_on_slate <- sort(unique(c(week_slate$home_team, week_slate$away_team)))
 #    https://nflreadr.nflverse.com/reference/load_injuries.html
 # 2. nflfastR::fast_scraper_injuries() - Alternative scraper
 # 3. Returns empty tibble if no data available (model defaults to zero injury impact)
-# nflreadr reports a failed download as a warning and an empty table, and memoises it: a season
-# that comes back empty is downloaded again `retries` times (cache cleared, `retry_wait` seconds
-# apart), and one that stays empty is a missing season, with nflreadr's warning as its cause.
+# nflreadr reports a failed download as a warning and an empty table (and memoises it), or as an
+# error. A season in `retry_seasons` (NULL: every season), which should have a release, is
+# downloaded again `retries` times (cache cleared, `retry_wait` seconds apart; config.R
+# INJURY_LOAD_RETRIES, INJURY_LOAD_RETRY_WAIT). One that stays empty is a missing season, with
+# nflreadr's message as its cause.
 safe_load_injuries <- function(seasons, prefer_fast = TRUE, allow_live_fallback = FALSE,
                                stamp_season = NA_integer_, stamp_week = NA_integer_,
-                               retries = 2L, retry_wait = 3, ...) {
+                               retries = get0("INJURY_LOAD_RETRIES", ifnotfound = 2L),
+                               retry_wait = get0("INJURY_LOAD_RETRY_WAIT", ifnotfound = 3),
+                               retry_seasons = NULL, ...) {
   seasons <- sort(unique(seasons))
   if (!length(seasons)) {
     message("No seasons specified for injury data; returning empty tibble.")
@@ -2410,57 +2414,45 @@ safe_load_injuries <- function(seasons, prefer_fast = TRUE, allow_live_fallback 
       }
     }
 
-    tryCatch(
-      {
-        # a failed download (a timeout, or a release not yet published) is nflreadr's warning and
-        # an empty table: keep the warning as the cause, and download again past the cache
-        cause <- character(0)
-        for (attempt in seq_len(retries + 1L)) {
-          if (attempt > 1L) {
-            message(sprintf("Injury data for season %s came back empty (%s); downloading again (attempt %d of %d).",
-                            season, paste(cause, collapse = "; "), attempt, retries + 1L))
-            suppressMessages(nflreadr::clear_cache())
-            Sys.sleep(retry_wait)
-          }
-          cause <- character(0)
-          result <- withCallingHandlers(
-            nflreadr::load_injuries(seasons = season, ...),
-            warning = function(w) {
-              cause <<- c(cause, conditionMessage(w))
-              invokeRestart("muffleWarning")
-            }
-          )
-          if (is.data.frame(result) && nrow(result) > 0) break
-        }
-        if (is.data.frame(result) && nrow(result) > 0) {
-          message(sprintf("✓ Loaded %d injury records for season %s from nflreadr", nrow(result), season))
-          result
-        } else {
-          missing <<- c(missing, season)
-          message(sprintf(
-            "⚠ Injury data for season %s is empty after %d attempts (%s); model will use zero injury impact for this season.",
-            season, retries + 1L, if (length(cause)) paste(cause, collapse = "; ") else "no rows and no warning"
-          ))
-          tibble::tibble()
-        }
-      },
-      error = function(e) {
-        msg <- conditionMessage(e)
-        if (grepl("404", msg, fixed = TRUE) || grepl("not found", msg, ignore.case = TRUE)) {
-          missing <<- c(missing, season)
-          message(sprintf(
-            "Injury release for season %s is unavailable yet; model will use zero injury impact for this season.",
-            season
-          ))
-          return(tibble::tibble())
-        }
-        warning(sprintf(
-          "nflreadr::load_injuries failed for season %s (%s). Model will use zero injury impact.",
-          season, msg
-        ), call. = FALSE)
-        return(tibble::tibble())
+    # A failed download is nflreadr's warning and an empty table (a timeout, or a release not yet published), or an
+    # error. Either keeps its message as the cause. A season with completed games must have a release, so it is
+    # downloaded again past nflreadr's cache; one that stays empty is a missing season, flagged with that cause.
+    tries <- if (is.null(retry_seasons) || season %in% retry_seasons) retries + 1L else 1L
+    cause <- character(0)
+    result <- NULL
+    for (attempt in seq_len(tries)) {
+      if (attempt > 1L) {
+        message(sprintf("Injury data for season %s did not load (%s); downloading again (attempt %d of %d).",
+                        season, paste(cause, collapse = "; "), attempt, tries))
+        suppressMessages(nflreadr::clear_cache())
+        Sys.sleep(retry_wait)
       }
-    )
+      cause <- character(0)
+      result <- tryCatch(
+        withCallingHandlers(
+          nflreadr::load_injuries(seasons = season, ...),
+          warning = function(w) {
+            cause <<- c(cause, conditionMessage(w))
+            invokeRestart("muffleWarning")
+          }
+        ),
+        error = function(e) {
+          cause <<- c(cause, conditionMessage(e))
+          NULL
+        }
+      )
+      if (is.data.frame(result) && nrow(result) > 0) break
+    }
+    if (is.data.frame(result) && nrow(result) > 0) {
+      message(sprintf("✓ Loaded %d injury records for season %s from nflreadr", nrow(result), season))
+      return(result)
+    }
+    missing <<- c(missing, season)
+    message(sprintf(
+      "⚠ Injury data for season %s did not load after %d attempt(s) (%s); model will use zero injury impact for this season.",
+      season, tries, if (length(cause)) paste(cause, collapse = "; ") else "no rows and no warning"
+    ))
+    tibble::tibble()
   })
 
   injuries <- dplyr::bind_rows(pieces)
@@ -2526,6 +2518,7 @@ inj_all <- safe_load_injuries(
   allow_live_fallback = sleeper_fallback_allowed(week_slate$game_date),
   stamp_season = SEASON,
   stamp_week = WEEK_TO_SIM,
+  retry_seasons = sort(unique(sched$season[!is.na(sched$home_score)])),   # their releases must exist
   file_type = getOption("nflreadr.prefer", default = "rds")
 )
 
@@ -2980,6 +2973,7 @@ if (isTRUE(getOption("live_refresh", FALSE))) {
     allow_live_fallback = sleeper_fallback_allowed(week_slate$game_date),
     stamp_season = SEASON,
     stamp_week = WEEK_TO_SIM,
+    retry_seasons = sort(unique(sched$season[!is.na(sched$home_score)])),
     file_type = getOption("nflreadr.prefer", default = "rds")
   )
   options(nflreadr.cache = old_cache)

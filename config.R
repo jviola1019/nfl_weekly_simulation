@@ -355,6 +355,13 @@ INJURY_CACHE_DIR <- file.path(path.expand("~"), ".cache", "nfl_sim_injuries")
 #' @note Uses nflreadr::load_participation() for snap data
 USE_SNAP_WEIGHTED_INJURIES <- FALSE
 
+#' @description Downloads again for an injury season with completed games that did not load
+#'   (nflreadr's empty table or an error), and the seconds between them; a season that still
+#'   does not load is flagged missing with its cause (safe_load_injuries(), 2026-11-03)
+#' @default 2 retries, 3 seconds apart
+INJURY_LOAD_RETRIES <- 2L
+INJURY_LOAD_RETRY_WAIT <- 3
+
 #' @description Reference snap percentage for weighting (50% = neutral impact)
 #' @default 50
 #' @range 30 to 70
