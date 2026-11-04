@@ -5,3 +5,4 @@ K2 market copy does not pass,TRUE
 K3 shuffled F1 does not pass,TRUE
 K3 shuffled F4 does not pass,TRUE
 K4 no implausible skill,TRUE
+K5 a second run gives the same result sha256,TRUE

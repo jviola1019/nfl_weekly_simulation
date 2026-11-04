@@ -1,9 +1,37 @@
 # Result: the NFL model gauntlet (run 2026-11-04)
 
 **Status: valid.**
-- **Controls:** every one passed.
-- **Reproducibility:** two independent runs wrote byte-identical outputs, result sha256 `4d85d98cdb0d0db2a1163365fc8fb3ef70c601fafa4408894b466ac7ef591d14`.
-- **Pre-registration:** the plan was committed before any score (`5cca2d7`, PLAN.md sha256 `bf5b34e6…`), and nothing departed from it.
+- **Controls:** every one passed, K5 enforced in the code.
+- **Pre-registration:** the plan was committed before any score (`5cca2d7`, PLAN.md sha256 `bf5b34e6…`). The departures from it are listed below. One concerns the scored window: it was scored twice, because a code review after the first scoring found defects that had to be fixed.
+
+## Departures from PLAN.md, and the second scoring
+
+**The first scoring** (`8b2c9c9`, result sha256 `4d85d98c…`) was reviewed (the code-review skill, 2026-11-04) before this result was final. Nine findings were fixed in `7bde163`, and the scored window was run again. That second run is the result. The first is kept in git, and its verdict was the same: 0 of 20.
+
+**Changes that could move a number:**
+- **F8's as-of leak:** the Kalman filter updated the shared home-field state between games with the same kickoff. Every game of a kickoff is now predicted before any of them updates.
+- **The stacks:** they are now fitted by maximum likelihood, as registered. The first run put a ridge of 1 on the market-deviation term.
+- **The margin-SD floor:** a floor of 10 is now a numerical guard only. It never bound: the smallest fitted SD is 11.45–11.53 points (`out/run_meta.csv`).
+- **Rows after 2022** are dropped as each file is read, before any outcome or price is computed. That changes no prediction.
+
+**Changes that move none:**
+- the fallback counts (0 in every family);
+- K5 in the code;
+- the drive builder's coverage checks (the table rebuilt byte-identical);
+- the shuffled-table restore;
+- two zero-division guards in the drive rates for outcomes the league never had. Real data has none.
+
+**Fixed design constants PLAN.md did not list** (not tuned):
+
+| Family | Constants |
+|---|---|
+| QB-adjusted Elo | 25 Elo points per point of margin, 35 dropbacks a game, a replacement starter at −0.10 EPA per dropback |
+| Drive simulator | 7 points a touchdown, 60 prior drives per team, a 4-game pace prior, a home factor from the league's home and away rates, drives per side = 1 + Poisson(pace − 1) |
+| Kalman | observation SD 13.5, initial home field 2, prior SD 7 |
+| Ratings and Poisson | the last 6 seasons of games |
+| Boosting | eta 0.05 |
+
+**Unchanged:** the grids, windows, seeds, test, decision rule and controls.
 
 **Headline: none of the 20 candidates beats the no-vig close on 2018–2022, or adds to it.**
 - **Families alone:** all ten lose to the market by 4–15% Brier skill, and every interval lies wholly on the losing side.
@@ -30,7 +58,7 @@
 
 | Family | Selected setting | Log loss |
 |---|---|---|
-| F8 Kalman ratings | process SD 0.5 pts/week, carry 0.75 | 0.62123 |
+| F8 Kalman ratings | process SD 0.5 pts/week, carry 0.75 | 0.62137 (0.62123 in the first scoring, before the as-of fix) |
 | F1 Elo | K 20, home 55, regression 0.45 | 0.62222 |
 | F4 margin ratings | half-life 32 weeks | 0.62581 |
 | F10 gradient boosting | depth 2, 100 rounds | 0.62684 |
@@ -53,17 +81,17 @@ Brier difference = candidate − market (negative is better), with week-block bo
 | S[F3] EPA ridge stack | 0.2113 | +0.0001 | −0.0004 to +0.0007 | −0.07% | 0.97 | |
 | S[F10] boosting stack | 0.2113 | +0.0001 | −0.0005 to +0.0008 | −0.07% | 0.97 | |
 | S[F5] | 0.2113 | +0.0002 | −0.0005 to +0.0010 | −0.11% | 0.97 | |
-| S[F9] drive-simulator stack | 0.2114 | +0.0002 | −0.0007 to +0.0012 | −0.11% | 0.97 | |
-| S[F8] | 0.2114 | +0.0002 | −0.0004 to +0.0009 | −0.12% | 0.97 | |
+| S[F9] drive-simulator stack | 0.2114 | +0.0002 | −0.0007 to +0.0013 | −0.12% | 0.97 | |
+| S[F8] | 0.2114 | +0.0002 | −0.0004 to +0.0009 | −0.11% | 0.97 | |
 | S[F4] | 0.2114 | +0.0003 | −0.0006 to +0.0012 | −0.15% | 0.97 | |
 | S[F2] | 0.2115 | +0.0003 | −0.0005 to +0.0012 | −0.16% | 0.97 | |
 | S[F7] | 0.2115 | +0.0004 | −0.0005 to +0.0012 | −0.18% | 0.97 | |
 | S[F6] | 0.2115 | +0.0004 | −0.0005 to +0.0013 | −0.19% | 0.97 | |
-| S[F1] | 0.2116 | +0.0005 | −0.0003 to +0.0012 | −0.22% | 0.97 | |
+| S[F1] | 0.2116 | +0.0005 | −0.0003 to +0.0013 | −0.22% | 0.97 | |
 | F3 EPA ridge | 0.2196 | +0.0084 | +0.0041 to +0.0129 | −4.00% | 0.99 | |
 | F10 gradient boosting | 0.2212 | +0.0100 | +0.0054 to +0.0144 | −4.75% | 1.01 | |
 | F1 Elo | 0.2238 | +0.0127 | +0.0083 to +0.0171 | −5.99% | 1.01 | |
-| F8 Kalman ratings | 0.2241 | +0.0130 | +0.0082 to +0.0177 | −6.14% | 0.95 | 10.33 |
+| F8 Kalman ratings | 0.2241 | +0.0129 | +0.0082 to +0.0177 | −6.13% | 0.95 | 10.33 |
 | F4 margin ratings | 0.2250 | +0.0139 | +0.0081 to +0.0198 | −6.59% | 0.75 | 10.37 |
 | F5 strength-free team home field | 0.2262 | +0.0151 | +0.0091 to +0.0210 | −7.14% | 0.73 | 10.40 |
 | F2 QB-adjusted Elo | 0.2267 | +0.0156 | +0.0103 to +0.0210 | −7.39% | 0.73 | |
@@ -82,7 +110,7 @@ Every Holm-adjusted p is 1.000: no candidate is better than the market in a one-
 | K2: a noisy copy of the market does not pass (+0.0012) | passed |
 | K3: Elo and ratings trained on shuffled scores do not pass (+0.048, +0.046) | passed |
 | K4: no family shows implausible skill | passed |
-| K5: two runs give identical outputs | passed |
+| K5: a second, independent run gives the same result sha256 (`c74d2e48221ba239e32d373a3ca4d7173deffbf039543d25d4eb9c5f0399603d`), checked in the code | passed |
 
 ## Findings
 

@@ -13,7 +13,7 @@ All notable changes to the NFL Prediction Model are documented in this file.
   - **Stacks:** a market stack for each family.
   - **Windows:** selection 2012–2017 walk-forward; scored once on 2018–2022 (1,365 games). 2023–2025 were not read.
   - **Test:** Holm across the 20 candidates and a week-block bootstrap. Six controls void the run on failure.
-- **Result (`RESULT.md`): valid.** Every control passed, and two runs were byte-identical (result sha256 `4d85d98c…`). **None of the 20 beats the close or adds to it.**
+- **Result (`RESULT.md`): valid.** Every control passed, and the corrected run and an independent second run were byte-identical (result sha256 `c74d2e48…`; K5 enforced in the code). The scored window was scored twice: a code review after the first scoring (`4d85d98c…`, same verdict) found nine defects, all fixed in `7bde163`. **None of the 20 beats the close or adds to it.**
   - **Families alone:** they lose by 4.0% (EPA ridge) to 15.1% (Poisson) Brier skill.
   - **Stacks:** they come within +0.0001 to +0.0005 Brier, with every interval spanning zero.
   - **Power:** an edge needs about 1.9% skill to show.
