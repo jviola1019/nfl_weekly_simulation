@@ -1558,18 +1558,19 @@ if (!dir.exists(.score_cache_dir)) dir.create(.score_cache_dir, recursive = TRUE
 score_cache_key <- function(start_season, end_season, weeks, trials, seed, rho) {
   digest::digest(list(
     tag="score_weeks",
-    version = 2L,  # bump when the calibration-history code changes; v2: franchise codes (F11b)
+    version = 3L,  # bump when the calibration-history code changes; v3: the home-field estimator; v2: franchise codes (F11b)
     start_season, end_season, weeks = paste0(weeks, collapse=","),
     trials, seed, rho,
-    N_RECENT, USE_SOS, SOS_STRENGTH, RECENCY_HALFLIFE
+    N_RECENT, USE_SOS, SOS_STRENGTH, RECENCY_HALFLIFE, HFA_TEAM_ESTIMATOR
   ))
 }
 
 # Bump `version` when the calibration-history code changes (the key cannot see function bodies).
-calib_cache_key <- function(season, n_years, halflife, use_sos, sos_pow, trials, rho, seed){
+calib_cache_key <- function(season, n_years, halflife, use_sos, sos_pow, trials, rho, seed, hfa_estimator){
   digest::digest(list(
     tag = "calib_sim_df_nb",
-    version = 5L,  # v5: franchise codes (F11b); v4: home field for every team, not only the slate's (F11); v3: M24, M23
+    version = 6L,  # v6: the home-field estimator; v5: franchise codes (F11b); v4: home field for every team (F11); v3: M24, M23
+    hfa_estimator = hfa_estimator,
     season = season,
     n_years = n_years,
     halflife = halflife,
@@ -2774,11 +2775,14 @@ if (!is.finite(league_hfa)) league_hfa <- 1.6  # safe fallback
 # teams left each bye team without home field and its calibration games at 21.5-21.5 (audit F11)
 hfa_tbl <- team_hfa_table(
   sched_hfa |>
-    dplyr::transmute(team_home = .data[[home_team_col]], margin = .data[[home_pts_col]] - .data[[away_pts_col]]),
+    dplyr::transmute(team_home = .data[[home_team_col]], team_away = .data[[away_team_col]],
+                     margin = .data[[home_pts_col]] - .data[[away_pts_col]]),
   teams = sort(unique(c(sched[[home_team_col]], sched[[away_team_col]]))),
   league_hfa = league_hfa,
-  den_bonus = DEN_ALTITUDE_BONUS
+  den_bonus = DEN_ALTITUDE_BONUS,
+  estimator = HFA_TEAM_ESTIMATOR
 )
+message(sprintf("Home field: %s estimator (league %.2f points)", HFA_TEAM_ESTIMATOR, league_hfa))
 
 # Create a standardized view
 sched_std <- sched |>
@@ -4664,7 +4668,7 @@ calib_seasons <- (SEASON - N_CALIB_YEARS):(SEASON - 1)
 # --- disk cache for calibration dataset ---
 .calib_key <- calib_cache_key(
   SEASON, N_CALIB_YEARS, CALIB_HALFLIFE, CALIB_USE_SOS, CALIB_SOS_POW,
-  CALIB_TRIALS, RHO_SCORE, CALIB_SEED_BASE
+  CALIB_TRIALS, RHO_SCORE, CALIB_SEED_BASE, hfa_estimator = HFA_TEAM_ESTIMATOR
 )
 .calib_path <- file.path(.calib_cache_dir, paste0(.calib_key, ".rds"))
 
