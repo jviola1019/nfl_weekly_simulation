@@ -1,7 +1,19 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { expect, type Page } from "@playwright/test";
 
-/** Public routes, with one game from the committed weekly fixture bundle. */
-export const PUBLIC_PAGES = ["/", "/games/2026_04_DEN_SF", "/props", "/evidence", "/methodology", "/data-health", "/login"];
+/** The run under test: E2E_SIM_BUNDLE names a published run_week.R bundle; unset, the committed weekly fixture. */
+export const SIM_BUNDLE = process.env.E2E_SIM_BUNDLE;
+const GAME = SIM_BUNDLE ? firstGame(SIM_BUNDLE) : "2026_04_DEN_SF";
+
+function firstGame(dir: string): string {
+  const games = JSON.parse(readFileSync(join(dir, "games.json"), "utf8")) as { game_id: string }[];
+  if (!games.length) throw new Error(`E2E_SIM_BUNDLE ${dir}: games.json lists no games`);
+  return games[0]!.game_id;
+}
+
+/** Public routes, with one game of the run under test. */
+export const PUBLIC_PAGES = ["/", `/games/${GAME}`, "/props", "/evidence", "/methodology", "/data-health", "/login"];
 export const WIDTHS = [390, 768, 1440] as const;
 export const SCHEMES = ["light", "dark"] as const;
 

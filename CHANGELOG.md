@@ -4,6 +4,67 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Golden master CI: a record attempt that fails is tried again (2026-11-04)
+
+- **The failure:** CI on `c933862` failed 2 of its 52 record jobs (`08149e7`, `7b218ca`). The cause was the same in both: `raw.githubusercontent.com` answered 503 for nflverse's `games.rds` while every matrix job was downloading at once. Neither job ran code that had changed, and both had recorded cleanly on `a340a32`.
+- **The fix** (`.github/workflows/golden-master.yml`):
+  - **Retries:** the Record step makes up to three attempts, 2 and then 5 minutes apart.
+  - **Visibility:** each failed attempt is a warning annotation in the run.
+  - **Why a retry is safe:** a record writes its output only after the model run completes, so a retry never builds on a partial one.
+- **Test:** `reports/2026-11-04/gm-retry/test_retry.sh` runs the step's own text against a fake `Rscript`. It failed on the old step (one attempt) and passes on the new one (`test_retry_out.txt`):
+  - two failures, then success: exit 0 after 3 attempts;
+  - three failures: exit 1 after 3 attempts.
+
+### The engine's home-field comparison is void; the default stays team_margin (2026-11-04)
+
+- **The comparison:** three `run_week.R 15 2024` runs, one per `HFA_TEAM_ESTIMATOR`, scored the calibration simulations of 2019–2023 (1,322 games). As scored, team_margin beat league by 0.0039 Brier, the reverse of the model gauntlet.
+- **Why it is void** (`reports/2026-11-04/hfa-engine/README.md`):
+  - **No home field.** `week_inputs_and_sim_2w()` gives the margin `(home_hfa − away_hfa)/2`, where production gives the home team its full `HFA_pts`. The calibration simulations average a −0.02-point home margin against +1.29 in the results, and a 0.499 home win probability against a 0.530 home win rate.
+  - **Rest.** The calibration path also adds rest points, which production has not admitted.
+  - **Look-ahead.** Its home-field table spans 2015–2024 for every calibration week (audit M5). Under team_margin the difference is mostly team strength, which carries later seasons into each game.
+- **Effect on published numbers:** small. The blend behind C3 scores 0.216, 0.215 and 0.216 under the three estimators, against the market's 0.212.
+- **Not patched:** G1 (Plan 1b-2) retires this path for one point-in-time `predict_week()` shared with production (M5, M6, M8), with a production = backtest parity gate. Patching it first would move the golden master twice.
+- **config.R:** the estimator's comment now says so. Its value is unchanged.
+
+### Code review of the final test's fixes: eight findings (2026-11-04)
+
+The code-review skill reviewed `a639552..ef3d49b`. These engine edits rest on the owner's instructions of 2026-11-03 ("Fix the props page issue … and all other issues") and 2026-11-04 ("Make sure you are fixing any issues you find").
+- **`5dbb410`: an injury download that errors is retried and flagged too.**
+  - Only an empty table had been retried; an error still dropped the season unflagged.
+  - Only seasons with completed games are retried (`retry_seasons`), so a release not yet published costs one download.
+  - The retry count and wait are config.R settings: `INJURY_LOAD_RETRIES`, `INJURY_LOAD_RETRY_WAIT`.
+- **`111131d`: a game without a market line has no probability edge or model-market disagreement** (`market_gap()`). They were 0, which made it read as the most certain game.
+- **`fb3c0a7`: the Rams are LA** in the props module's dome list and `TEAM_ABBR_TO_NAME`. A Rams home game had never been a dome to the props context.
+- **`1704416`: a home-field estimator switch**, `HFA_TEAM_ESTIMATOR`: "league", "strength_free" or "team_margin".
+  - The default is unchanged ("team_margin"). The engine's own comparison proved void (the entry above), so G2's term-admission backtest decides it.
+  - The calibration cache key (v6) and the score cache key (v3) carry the estimator, so a calibration simulated under one is never served to another.
+- **`746f0d6`:** a clear error when the e2e bundle has no games, and the props test names the claims it pins.
+- **Recorded, the owner's call:** the TMB/glmmTMB pair. CRAN now ships TMB 1.9.25 with glmmTMB 1.1.15.2. Upgrading both in `renv.lock` ends the Windows ABI warning, but it is a dependency change. Rebuilding locally would touch the renv cache that the frozen `nfl_props_v1` package set links to. The GLMM feeds only the unadmitted `glmm` term.
+
+### Final end-to-end test of the integration: six defects fixed (2026-11-03)
+
+- **The test.** `Rscript run_week.R` with no arguments on a clean checkout of `a639552` (fresh HOME, the renv package set), 2026-11-03 04:46–05:06Z: `Auto-resolved 2026 week 9 (15 games, first kickoff Thu 2026-11-05 20:15 ET)`; Injuries FULL, Weather FULL, Market PARTIAL (2 games had no line yet); defense rankings applied; bundle QA passed. A check script compared the log, the bundle, the schedule and both audit tables, and the local app was checked page by page (`reports/2026-11-03/final-test/`).
+- **Fixed: a game without a market line was priced and bet in `artifacts/baseline_games.csv`.**
+  - **Before:** `attach_market_probs()` fills such a game's market probability with the model's own, as the blend's input only (audit M11). `build_snapshot_moneyline_result()` passed that fill on as the market. `build_moneyline_comparison_table()` then turned it into moneylines, shrank toward it and recommended a bet. ARI at SEA was priced at the model's own −337/+337 ("Bet ARI moneyline"); TB at CHI at −111/+111 ("Bet CHI moneyline", raw Kelly 0.053), where nflverse listed CHI −285 by 05:30Z.
+  - **Now:** the snapshot passes no market where `market_available` is FALSE, as the web bundle already did. The table gives such a game no market price, `prob_source` "none", the unshrunk blend (the bundle's C3) and "No Play". The web bundle and the app were never affected.
+  - **Test:** `tests/testthat/test-comparison-no-market.R` (10 failures before the fix).
+- **Fixed: an injury season that failed to download dropped out unflagged.**
+  - **Before:** nflreadr reports a failed download as a warning and an empty table, and memoises it. `safe_load_injuries()` suppressed the warning, so the season was neither loaded nor flagged. One empty season beside loaded ones still read "full"; all of them empty read "unavailable" with no cause (the golden-master misdiagnosis of 2026-11-03).
+  - **Now:** an empty season is downloaded again (`retries = 2L`, nflreadr's cache cleared, `retry_wait` 3 s apart). One that stays empty is a missing season ("partial" in the badge), with nflreadr's warning printed as the cause.
+  - **Test:** `tests/testthat/test-injury-load.R` (8 failures before).
+- **Fixed: the Rams had no time zone in the game model** (the game model's half of audit P9). `team_tz` had `LAR` where nflverse schedules use `LA`, so a Rams game got a travel term of 0 and an Eastern local kickoff. Travel is not an admitted term (`MU_TERMS_ADMITTED`), so no simulated output changes; the logged term is now right for the term-admission backtest. Test: `tests/testthat/test-team-tz.R` (the table against `data/reference/teams.csv`, and a Rams trip east at 1 pm).
+- **Fixed: the Props page described fixed defects as open.** It listed audit P1–P13 as open and checkpoint A5 as undecided (decided 2026-09-30). It now lists what is fixed (P1–P5, P9, P10, P12–P14) and what is open (P6–P8, P11), that `nfl_props_v1` tests the module as of `4c1c377`, and A5's rule. Test: `web/src/test/pages/props.test.tsx`, which reads the protocol's id, weeks and module commit from `backtest/eval_windows/nfl_props_v1.json`.
+- **Fixed: the score-distribution charts labelled two gridlines with the same value.** The y-axis took its decimals from each tick's size, not the tick step. With ticks every 0.5% (JAX at BAL's total, peaking at 2.544%) it read 0%, 0.5%, 1%, 2%, 2%, 3%, so its top gridline said 3% at 2.5%. `pctTicks()` (`web/src/lib/format.ts`) gives every tick the step's decimals: 0%, 0.5%, 1.0%, 1.5%, 2.0%, 2.5%. Test: `ScoreDistributionChart.test.tsx` (the live case, and the rule).
+- **Fixed: a weekly-program step was marked missed after three failed starts, however far off its deadline.**
+  - **What happened:** on 2026-11-03 week 9's `preclose_predict` failed three times in 30 minutes on a DNS outage (`Could not resolve hostname`, the PC moving in and out of standby). It was marked missed with its deadline, the first kickoff, still 54 hours ahead. `run_tue`'s venue and props snapshots failed on the same outage; `run_week.R` itself had finished (exit 0, QA passed).
+  - **Now** (`reports/2026-10-29/hypotheses/prospective_dispatch.R`, which no protocol registers): a step gets three tries at successive starts, then one an hour after its last failure, until its deadline and at most 12 tries in all. Test: `tests/testthat/test-prospective-dispatch.R`.
+  - **Week 9 recovered:** the step's markers were set aside (`w09/done/superseded-20261103/`) and the loop reran it at 20:30Z ("15 predictions written, before the week's first kickoff"). The snapshots were retaken by hand at 20:22Z. Both are noted in the store's `dispatch.log`.
+- **Fixed: the Playwright suite could not run on a published `run_week.R` run.** Seven specs failed on fixture data: the fixed `/games/2026_04_DEN_SF` page, and paper leans on the desk, which a simulator run never has. With `E2E_SIM_BUNDLE` set, `PUBLIC_PAGES` uses that run's first game, and the desk spec checks the simulator's message and zero stake cells. CI's main pass is unchanged. Against the real week-9 run: 135 passed, 0 failed (`08c8410`).
+- **Recorded, not fixed:**
+  - **Home field measures team strength.** `team_hfa_table()` sets a team's home field to its mean home margin (shrunk toward the league value), which is mostly team strength, already in the `base` term. This week Washington's admitted home field is −1.27 points and New England's +3.67. The simulator's median margins are more extreme than the market's in 13 of 15 games, by 1.75 points on average. The estimator dates from the original model. A strength-free estimator (half the home-minus-away margin difference) changes every output, so it goes to the term-admission backtest (M22).
+  - `renv.lock` pins TMB 1.9.17 with glmmTMB 1.1.13, whose Windows binary was built with TMB 1.9.19 and warns at load. The GLMM feeds only the unadmitted `glmm` term. A lock change is an owner decision, and the `nfl_props_v1` package set is frozen.
+  - `build_res_blend()` warns that the calibration backtest's per-game table has no `game_type` key. The collapse uses `game_id`, which is unique, so no row is lost; the warning predates the integration.
+
 ### `nfl_preclose_v1` signed, scored on Tune and Confirm, and amended to v1.1 before week 9 (2026-11-02)
 
 - **Signed before PC-C2 was computed on any season** (`reports/2026-11-02/preclose-v1/PROTOCOL.md`, `backtest/eval_windows/nfl_preclose_v1.json`).

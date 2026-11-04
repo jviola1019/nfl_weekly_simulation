@@ -43,8 +43,33 @@ test_that("the engine builds home field for every schedule team and refuses a mi
   expect_false(any(grepl("hfa_tbl <- tibble(team = teams_on_slate)", code, fixed = TRUE)))
   expect_true(any(grepl("hfa_tbl <- team_hfa_table(", code, fixed = TRUE)))
   expect_true(any(grepl("assert_finite_means(g, sprintf(\"calibration %d week %d\", cut_season, cut_week))", code, fixed = TRUE)))
-  # a cached calibration built before the F11b fix must not be reused
-  expect_true(any(grepl("version = 5L", code, fixed = TRUE)))
+  # a cached calibration built before the home-field estimator entered its key must not be reused
+  expect_true(any(grepl("version = 6L", code, fixed = TRUE)))
+  expect_true(any(grepl("hfa_estimator = hfa_estimator", code, fixed = TRUE)))
+  expect_true(any(grepl("estimator = HFA_TEAM_ESTIMATOR", code, fixed = TRUE)))
+})
+
+# The model gauntlet (2026-11-04, research/model-gauntlet RESULT.md) found the team_margin estimator measures
+# team strength: a strong team's mean home margin is mostly how good it is. A league value scored best, a
+# strength-free team value next, team_margin worst.
+strength_league <- function() {
+  # league home field 2; A is 10 points better than everyone and has no extra home edge; B is average with +4 at home
+  data.frame(team_home = c(rep("A", 20), rep("X", 20), rep("B", 20), rep("Y", 20)),
+             team_away = c(rep("X", 20), rep("A", 20), rep("Y", 20), rep("B", 20)),
+             margin = c(rep(12, 20), rep(-8, 20), rep(6, 20), rep(2, 20)))
+}
+
+test_that("the league estimator gives every team the league value, plus Denver's bonus", {
+  tbl <- team_hfa_table(strength_league(), teams = c("A", "B", "DEN"), league_hfa = 2, den_bonus = 0.5, estimator = "league")
+  expect_equal(tbl$hfa, c(2, 2, 2.5))
+})
+
+test_that("the strength-free estimator does not credit a strong team's margins to home field", {
+  sf <- team_hfa_table(strength_league(), teams = c("A", "B"), league_hfa = 2, shrink_n = 1e-6, estimator = "strength_free")
+  tm <- team_hfa_table(strength_league(), teams = c("A", "B"), league_hfa = 2, shrink_n = 1e-6, estimator = "team_margin")
+  expect_equal(sf$hfa[sf$team == "A"], 2, tolerance = 1e-6)   # (12 - 8) / 2: the strength cancels
+  expect_gt(sf$hfa[sf$team == "B"], 3.5)                       # (6 - -2) / 2 = 4: the home edge stays
+  expect_gt(tm$hfa[tm$team == "A"], 11)                        # team_margin: A's strength becomes "home field"
 })
 
 test_that("franchise_code() gives every team its current franchise code (F11b)", {

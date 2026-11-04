@@ -2,7 +2,7 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec. To verify everything and finish the remaining work in a full local environment (VS Code), use `docs/handoff/2026-09-29-vscode-prompt.md`.
 
-## State on 2026-11-03: everything from #215–#230 in one integration PR, two protocols signed, a weekly program running
+## State on 2026-11-04: everything from #215–#230 in one integration PR, two protocols signed, a weekly program running
 
 **Objective.** The owner asked on 2026-11-02 to complete every listed decision:
 - sign `nfl_props_v1` and `nfl_preclose_v1`;
@@ -13,8 +13,28 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 - run a real-money maker test.
 
 **Done:**
+- **Final end-to-end test** (2026-11-03, `reports/2026-11-03/final-test/FINAL_TEST.md`). `run_week.R` with no arguments resolved 2026 week 9, and the local app and the Playwright suite ran on its bundle.
+  - **Six defects fixed,** each with a test that failed first:
+    - `de42950`: a game without a line was priced and bet in `baseline_games.csv`;
+    - `6006ac8`: the silent injury load, now retried and flagged;
+    - `08149e7`: the Rams' time zone;
+    - `16ac64e`: the Props page text;
+    - `2991757`, merged as `63807cb`: the dispatcher's retry rule;
+    - `e45f4be`: duplicate axis labels.
+  - **Plus** `08c8410`: the e2e suite also runs on a real run.
+  - **Rerun:** 23/23 checks pass; every page serves with no console error; Playwright 135/135 on the real run.
+  - **Gates on `4a2f925`:** `run_tests.R` 874 tests, 4,002 passed, 0 failed, 0 skipped; integrity 63/63. CI (R, web, golden master) green, and the golden master shows "no differences" for each fix.
+  - **New finding, recorded and not patched:** home field measures team strength (`team_hfa_table()`). Washington −1.27, New England +3.67. It is for the term-admission backtest.
+- **Code review of the final test's fixes** (2026-11-04, the code-review skill on `a639552..ef3d49b`): eight findings, fixed with tests in `5dbb410`–`746f0d6` (CHANGELOG).
+  - Also added: a home-field estimator switch, `HFA_TEAM_ESTIMATOR` (`1704416`), with its default unchanged.
+  - CI on `a340a32`: R, lint, web, parity and the golden master pass.
+  - Local gates with this note (2026-11-04 19:20Z, fresh HOME): `run_tests.R` 885 tests, 4,031 passed, 0 failed, 0 errors, 0 skipped; integrity 63/63.
+- **The engine's home-field comparison is void** (`reports/2026-11-04/hfa-engine/README.md`).
+  - **No home field:** the calibration path gives the margin `(home_hfa − away_hfa)/2`, which averages −0.02 points against +1.29 in the results. Production gives the full home field.
+  - **Look-ahead:** its table spans 2015–2024 for every calibration week (M5). team_margin "won" through that leak.
+  - **The fix is G1's:** G1 retires the path. The default stays team_margin.
 - **#231 (this integration):** #215–#230 merged in dependency order, conflicts resolved; #223 squashed as `903b11b`.
-  - Local gates: `run_tests.R` 864 files, 3,967 passed, 0 failed, 0 skipped; integrity 63/63.
+  - Local gates at the time: `run_tests.R` 864 tests, 3,967 passed, 0 failed, 0 skipped; integrity 63/63.
   - CI: R, lint, web and parity pass.
   - **The golden master changes:**
     - #219 changes the weather inputs only (no output difference at `3dd7d79`);
@@ -38,17 +58,22 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 - **Store:** `../nfl-worktrees/.prospective/store` (private).
 - **Checkouts:** `../nfl-worktrees/hyp-loop`, `props-v1-run` and `preclose-run`.
 - **It stops with the session.**
+- **Latest (2026-11-04 19:10Z):** week 9's `preclose_predict` reran at 2026-11-03 20:30Z (exit 0), and week 8's `fetch_wed` ran at 2026-11-04 17:26Z. Next are `snap_thu` (2026-11-05 18:00Z) and the TNF snapshot (2026-11-06 00:15–01:10Z).
 
 **Open risks:**
-- **The PC sleeps often:** on 2026-11-02 it slept 22:10Z to 02:34Z, and week 8's MNF snapshot was missed. Snapshot windows are 55 minutes, so they need the PC awake: the scheduled task with WakeToRun, or a power plan that does not sleep.
+- **The PC sleeps, and the session pauses with it.** The machine uses Modern Standby. On battery it sleeps after 3 minutes idle, or on "Austerity Battery Drain Budget Exceeded"; on AC it never idle-sleeps (Kernel-Power event 506 gives each reason).
+  - **What it cost:** week 8's MNF snapshot (2026-11-02). Then on 2026-11-03 a DNS outage around a wake failed week 9's `preclose_predict` three times, and the Tuesday venue and props snapshots once each.
+  - **Recovered:** the step was rerun at 20:30Z before kickoff, and the snapshots were retaken (notes in the store's `dispatch.log`).
+  - **Now:** the dispatcher retries a failed step hourly until its deadline (`2991757`, at most 12 tries).
+  - **Still needed:** snapshot windows are 55 minutes, so keep the PC on AC power with the lid open, or register the scheduled task with WakeToRun.
+- **Run `date -u` before any time-based step:** hours can pass between tool calls.
 - **Never run `run_week.R` by hand in `props-v1-run`** while the loop can fire (Tuesday 18:00Z, Friday 21:00Z).
-- **Injury loads can fail silently.** `safe_load_injuries()` (NFLsimulation.R) suppresses nflreadr's warnings, so an empty return, such as a download timeout under load, runs the model with zero injury impact. The badge shows only "Injuries: UNAVAILABLE".
-  - It happened once on 2026-11-02 and produced a false golden-master lead.
-  - **Check each weekly run's `source_status.json` for its injury status.**
-  - The fix (retry, log the warning) is an engine edit for the owner.
+- **Injury loads** now retry an empty season and flag one that stays empty as "partial", with nflreadr's warning as the cause (`6006ac8`). Still check each weekly run's `source_status.json`.
 - **Before blaming code for a golden-master difference,** read its INPUT DRIFT lines.
+- **The checkouts `hyp-loop` and `preclose-run` have no `.Rprofile`,** so they run on the user library (dplyr 1.2.0). The pre-close code's packages are identical in both libraries, and it does not use dplyr.
 
 **Next targets:**
+- **the model gauntlet** (owner, 2026-11-03: "various different models … concepts … testing … gauntlet looping"). It follows the owner's `fantasy_football_dashboard/scripts/model-gauntlet.ts` standard: many families on Tune only, paired out-of-fold loss, Holm, and positive controls, or the run is void. It includes a drive-level simulator (my reading of "RoboBot sim", to confirm) and the strength-free home field;
 - after week 18: `props_v1_score.R --weeks=9:18` and `run_2026.R prospective`;
 - the Holdout, which the owner opens (checkpoint 8).
 

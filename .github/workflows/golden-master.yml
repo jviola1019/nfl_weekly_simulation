@@ -81,7 +81,17 @@ jobs:
           sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev gfortran
       - uses: r-lib/actions/setup-renv@v2
       - name: Record
-        run: Rscript "$RUNNER_TEMP/golden_master.R" record "$GM_WEEK" "$GM_SEASON" "gm_out/${{ matrix.dir }}"
+        # nflverse files come from GitHub, which can answer 503 when every matrix job asks at once (2026-11-04:
+        # games.rds, in 2 of 52 jobs). A failed attempt is annotated and tried again after 2, then 5 minutes. A
+        # record writes its output only after the model run completes, so a retry never sees a partial one.
+        run: |
+          n=0
+          for pause in 0 120 300; do
+            sleep "$pause"; n=$((n + 1))
+            if Rscript "$RUNNER_TEMP/golden_master.R" record "$GM_WEEK" "$GM_SEASON" "gm_out/${{ matrix.dir }}"; then exit 0; fi
+            echo "::warning::golden-master record attempt $n of 3 failed for ${{ matrix.commit }}"
+          done
+          exit 1
       - uses: actions/upload-artifact@v4
         with:
           name: gm-${{ matrix.dir }}
