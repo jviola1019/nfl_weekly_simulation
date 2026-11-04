@@ -87,15 +87,36 @@ compute_rest_table <- function(slate, team_games, season, week,
 #' altitude bonus. The calibration backtest joins this for every team of every past week, so it
 #' must not be limited to the teams on the slate being simulated (a bye team got no value, and
 #' every one of its calibration games became a 21.5-21.5 coin flip).
-#' @param home_margins one row per non-neutral REG home game: team_home, margin (NA if unplayed)
+#' The estimator (config.R HFA_TEAM_ESTIMATOR):
+#' - "league": every team gets the league value. The model gauntlet (2026-11-04) scored it best.
+#' - "strength_free": half the gap between a team's mean home margin and its mean margin away (team
+#'   strength cancels), shrunk n / (n + shrink_n) toward the league value. It needs `team_away`.
+#' - "team_margin": the team's mean home margin, shrunk the same way. It mostly measures how good
+#'   the team is, which the base term already carries (the gauntlet scored it worst).
+#' @param home_margins one row per non-neutral REG home game: team_home, margin (NA if unplayed),
+#'   and team_away for "strength_free"
 #' @param teams the teams that need a value
 #' @return tibble(team, hfa), one row per element of `teams`
-team_hfa_table <- function(home_margins, teams, league_hfa, den_bonus = 0, shrink_n = 60) {
-  by_team <- home_margins |>
-    dplyr::group_by(team_home) |>
-    dplyr::summarise(hfa_raw = mean(margin, na.rm = TRUE), n = dplyr::n(), .groups = "drop") |>
-    dplyr::mutate(w = n / (n + shrink_n), hfa = w * hfa_raw + (1 - w) * league_hfa) |>
-    dplyr::transmute(team = team_home, hfa)
+team_hfa_table <- function(home_margins, teams, league_hfa, den_bonus = 0, shrink_n = 60,
+                           estimator = c("team_margin", "league", "strength_free")) {
+  estimator <- match.arg(estimator)
+  if (estimator == "league") {
+    by_team <- tibble::tibble(team = character(), hfa = numeric())
+  } else if (estimator == "strength_free") {
+    if (!"team_away" %in% names(home_margins)) stop("team_hfa_table: the strength_free estimator needs team_away", call. = FALSE)
+    played <- home_margins[is.finite(home_margins$margin), ]
+    home <- played |> dplyr::group_by(team = team_home) |> dplyr::summarise(h = mean(margin), n = dplyr::n(), .groups = "drop")
+    away <- played |> dplyr::group_by(team = team_away) |> dplyr::summarise(a = mean(-margin), .groups = "drop")
+    by_team <- dplyr::inner_join(home, away, by = "team") |>
+      dplyr::mutate(w = n / (n + shrink_n), hfa = w * (h - a) / 2 + (1 - w) * league_hfa) |>
+      dplyr::select(team, hfa)
+  } else {
+    by_team <- home_margins |>
+      dplyr::group_by(team_home) |>
+      dplyr::summarise(hfa_raw = mean(margin, na.rm = TRUE), n = dplyr::n(), .groups = "drop") |>
+      dplyr::mutate(w = n / (n + shrink_n), hfa = w * hfa_raw + (1 - w) * league_hfa) |>
+      dplyr::transmute(team = team_home, hfa)
+  }
   tibble::tibble(team = teams) |>
     dplyr::left_join(by_team, by = "team") |>
     dplyr::mutate(

@@ -19,7 +19,8 @@ describe("the props page", () => {
     expect(html).toContain(registered.protocol_id);
     expect(html).toContain(`weeks ${registered.weeks[0]}–${registered.weeks.at(-1)}`);
     expect(html).toContain(registered.module.code_commit.slice(0, 7));
-    // fixed by the props fixes (audit P1–P5, P13) or decided (checkpoint A5, 2026-09-30), so never described as open
+    // the stale claims: column-wide labels (P1), stake disagreeing with the recommendation (P2, P3), anytime-TD
+    // prices missing (P5), and checkpoint A5 as undecided (decided 2026-09-30)
     expect(html).not.toMatch(/column-wide|stake disagree|never reach the output|still an owner decision/);
     expect(html.match(/<h1/g)).toHaveLength(1);
     expect(html).not.toMatch(/\bnull\b|undefined|NaN/);

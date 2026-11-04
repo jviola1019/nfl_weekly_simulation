@@ -2,7 +2,7 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec. To verify everything and finish the remaining work in a full local environment (VS Code), use `docs/handoff/2026-09-29-vscode-prompt.md`.
 
-## State on 2026-11-03: everything from #215–#230 in one integration PR, two protocols signed, a weekly program running
+## State on 2026-11-04: everything from #215–#230 in one integration PR, two protocols signed, a weekly program running
 
 **Objective.** The owner asked on 2026-11-02 to complete every listed decision:
 - sign `nfl_props_v1` and `nfl_preclose_v1`;
@@ -25,6 +25,14 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
   - **Rerun:** 23/23 checks pass; every page serves with no console error; Playwright 135/135 on the real run.
   - **Gates on `4a2f925`:** `run_tests.R` 874 tests, 4,002 passed, 0 failed, 0 skipped; integrity 63/63. CI (R, web, golden master) green, and the golden master shows "no differences" for each fix.
   - **New finding, recorded and not patched:** home field measures team strength (`team_hfa_table()`). Washington −1.27, New England +3.67. It is for the term-admission backtest.
+- **Code review of the final test's fixes** (2026-11-04, the code-review skill on `a639552..ef3d49b`): eight findings, fixed with tests in `5dbb410`–`746f0d6` (CHANGELOG).
+  - Also added: a home-field estimator switch, `HFA_TEAM_ESTIMATOR` (`1704416`), with its default unchanged.
+  - CI on `a340a32`: R, lint, web, parity and the golden master pass.
+  - Local gates with this note (2026-11-04 19:20Z, fresh HOME): `run_tests.R` 885 tests, 4,031 passed, 0 failed, 0 errors, 0 skipped; integrity 63/63.
+- **The engine's home-field comparison is void** (`reports/2026-11-04/hfa-engine/README.md`).
+  - **No home field:** the calibration path gives the margin `(home_hfa − away_hfa)/2`, which averages −0.02 points against +1.29 in the results. Production gives the full home field.
+  - **Look-ahead:** its table spans 2015–2024 for every calibration week (M5). team_margin "won" through that leak.
+  - **The fix is G1's:** G1 retires the path. The default stays team_margin.
 - **#231 (this integration):** #215–#230 merged in dependency order, conflicts resolved; #223 squashed as `903b11b`.
   - Local gates at the time: `run_tests.R` 864 tests, 3,967 passed, 0 failed, 0 skipped; integrity 63/63.
   - CI: R, lint, web and parity pass.
@@ -50,6 +58,7 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 - **Store:** `../nfl-worktrees/.prospective/store` (private).
 - **Checkouts:** `../nfl-worktrees/hyp-loop`, `props-v1-run` and `preclose-run`.
 - **It stops with the session.**
+- **Latest (2026-11-04 19:10Z):** week 9's `preclose_predict` reran at 2026-11-03 20:30Z (exit 0), and week 8's `fetch_wed` ran at 2026-11-04 17:26Z. Next are `snap_thu` (2026-11-05 18:00Z) and the TNF snapshot (2026-11-06 00:15–01:10Z).
 
 **Open risks:**
 - **The PC sleeps, and the session pauses with it.** The machine uses Modern Standby. On battery it sleeps after 3 minutes idle, or on "Austerity Battery Drain Budget Exceeded"; on AC it never idle-sleeps (Kernel-Power event 506 gives each reason).
@@ -63,7 +72,7 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 - **Before blaming code for a golden-master difference,** read its INPUT DRIFT lines.
 - **The checkouts `hyp-loop` and `preclose-run` have no `.Rprofile`,** so they run on the user library (dplyr 1.2.0). The pre-close code's packages are identical in both libraries, and it does not use dplyr.
 
-- **The model gauntlet is done** (`research/model-gauntlet`, `reports/2026-11-03/model-gauntlet/RESULT.md`): valid, reproducible, and none of 20 candidates beats or adds to the close on 2018–2022. The engine's home-field estimator measurably costs accuracy.
+- **The model gauntlet is done** (`research/model-gauntlet`, `reports/2026-11-03/model-gauntlet/RESULT.md`): valid, reproducible, and none of 20 candidates beats or adds to the close on 2018–2022. In a ratings model, the engine's home-field estimator measurably costs accuracy.
   - "RoboBot sim" was read as a drive-level simulator, F9, and the reading still needs the owner's confirmation.
 - **Verification on `ef3d49b`:** `run_matrix` 11/11, `run_tests.R` 878/4,008/0, integrity 63/63, Playwright 135/135 on the real run, CI green.
   - Two runs cut off when the PC slept were restarted on AC power and passed.

@@ -262,6 +262,16 @@ BYE_BONUS <- +1.0
 #' @validation p = 0.183 (not significant) - REMOVED
 DEN_ALTITUDE_BONUS <- 0.0
 
+#' @description How each team's home field is set (team_hfa_table()): "league" (every team the
+#'   league value), "strength_free" (half the home-minus-away margin gap, shrunk) or "team_margin"
+#'   (the team's mean home margin, shrunk; it mostly measures team strength). The model gauntlet
+#'   (2026-11-04) scored league best and team_margin worst in a ratings model. The engine's own
+#'   comparison is void until G1 (reports/2026-11-04/hfa-engine/): its calibration simulations have
+#'   no home field and a look-ahead table. G2's term-admission backtest decides the default.
+#'   options(nfl_sim.hfa_estimator = ...) overrides it for a run.
+#' @default "team_margin" (unchanged until G2 admits a change)
+HFA_TEAM_ESTIMATOR <- getOption("nfl_sim.hfa_estimator", default = "team_margin")
+
 #' @description Division game adjustment (reduced from -0.4)
 #' @default -0.2
 #' @validation p = 0.078 (marginally significant) - REDUCED
@@ -354,6 +364,13 @@ INJURY_CACHE_DIR <- file.path(path.expand("~"), ".cache", "nfl_sim_injuries")
 #' @note When TRUE, WR1 (60% snaps) has higher impact than WR5 (5% snaps)
 #' @note Uses nflreadr::load_participation() for snap data
 USE_SNAP_WEIGHTED_INJURIES <- FALSE
+
+#' @description Downloads again for an injury season with completed games that did not load
+#'   (nflreadr's empty table or an error), and the seconds between them; a season that still
+#'   does not load is flagged missing with its cause (safe_load_injuries(), 2026-11-03)
+#' @default 2 retries, 3 seconds apart
+INJURY_LOAD_RETRIES <- 2L
+INJURY_LOAD_RETRY_WAIT <- 3
 
 #' @description Reference snap percentage for weighting (50% = neutral impact)
 #' @default 50

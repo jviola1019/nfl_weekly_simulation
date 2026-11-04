@@ -44,7 +44,10 @@ Each run used a clean detached checkout, a fresh HOME and the renv package set (
 
 **Recorded, not fixed:**
 - **A package mismatch.** `renv.lock` pins TMB 1.9.17 with glmmTMB 1.1.13, whose Windows binary was built with TMB 1.9.19 and warns at load. The GLMM feeds only the unadmitted `glmm` term. A lock change is an owner decision, and the `nfl_props_v1` package set is frozen.
-- **A harmless warning.** `build_res_blend()` warns that the calibration backtest's per-game table has no `game_type` key. The collapse uses `game_id`, which is unique, and the warning predates the integration.
+- **A harmless warning.** `build_res_blend()` warns that the calibration backtest's per-game table has no `game_type` key.
+  - **What it skips:** the duplicate-key collapse. That removes nothing here, because `game_id` is unique in that table.
+  - **The join is unaffected:** it uses the keys both tables carry.
+  - **History:** the warning predates the integration.
 
 ## 3. Rerun on the fixed head: `63807cb`, 2026-11-03 20:31–20:52Z
 

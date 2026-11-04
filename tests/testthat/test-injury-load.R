@@ -36,6 +36,7 @@ fake_nflreadr <- function(script) {
     i <- (state$downloads[[key]] %||% 0L) + 1L
     state$downloads[[key]] <- i
     outcome <- script[[key]][[min(i, length(script[[key]]))]]
+    if (identical(outcome, "error")) stop("HTTP error 503 from release-assets.githubusercontent.com", call. = FALSE)
     if (is.null(outcome)) {
       warning(sprintf("Failed to readRDS from <https://github.com/nflverse/nflverse-data/releases/download/injuries/injuries_%s.rds>", key),
               call. = FALSE)
@@ -69,7 +70,7 @@ test_that("an injury season that comes back empty is downloaded again, past nflr
   expect_equal(sort(unique(res$out$season)), c(2023, 2024))
   expect_equal(fake$state$downloads[["2024"]], 2L)
   expect_equal(env$quality$status, "full")
-  expect_true(any(grepl("2024.*empty.*Failed to readRDS", res$messages)), info = paste(res$messages, collapse = "\n"))
+  expect_true(any(grepl("2024.*did not load.*Failed to readRDS", res$messages)), info = paste(res$messages, collapse = "\n"))
 })
 
 test_that("a season that stays empty is missing, with nflreadr's warning as the cause", {
@@ -81,7 +82,7 @@ test_that("a season that stays empty is missing, with nflreadr's warning as the 
   expect_equal(fake$state$downloads[["2024"]], 3L)
   expect_equal(env$quality$status, "partial")
   expect_equal(env$quality$missing_seasons, "2024")
-  expect_true(any(grepl("2024.*3 attempts.*Failed to readRDS", res$messages)), info = paste(res$messages, collapse = "\n"))
+  expect_true(any(grepl("2024.*3 attempt.*Failed to readRDS", res$messages)), info = paste(res$messages, collapse = "\n"))
 })
 
 test_that("every season empty is unavailable, and the cause is printed", {
@@ -92,6 +93,27 @@ test_that("every season empty is unavailable, and the cause is printed", {
   expect_equal(nrow(res$out), 0)
   expect_equal(env$quality$status, "unavailable")
   expect_true(any(grepl("Failed to readRDS", res$messages)), info = paste(res$messages, collapse = "\n"))
+})
+
+test_that("a download that errors is retried, and a season that keeps failing is missing with the error as its cause", {
+  env <- load_safe_load_injuries()
+  fake <- fake_nflreadr(list(`2023` = list(injury_rows(2023)), `2024` = list("error")))
+  local_mocked_bindings(load_injuries = fake$load_injuries, clear_cache = fake$clear_cache, .package = "nflreadr")
+  res <- run_quietly(env$safe_load_injuries(c(2023, 2024), prefer_fast = FALSE, retries = 2L, retry_wait = 0))
+  expect_equal(fake$state$downloads[["2024"]], 3L)
+  expect_equal(env$quality$status, "partial")
+  expect_equal(env$quality$missing_seasons, "2024")
+  expect_true(any(grepl("2024.*HTTP error 503", res$messages)), info = paste(res$messages, collapse = "\n"))
+})
+
+test_that("a season with no completed games is not retried, and is still flagged missing", {
+  env <- load_safe_load_injuries()
+  fake <- fake_nflreadr(list(`2023` = list(injury_rows(2023)), `2024` = list(NULL)))
+  local_mocked_bindings(load_injuries = fake$load_injuries, clear_cache = fake$clear_cache, .package = "nflreadr")
+  res <- run_quietly(env$safe_load_injuries(c(2023, 2024), prefer_fast = FALSE, retry_wait = 0, retry_seasons = 2023))
+  expect_equal(fake$state$downloads[["2024"]], 1L)   # a release not yet published costs one download, no cache clear
+  expect_equal(env$quality$status, "partial")
+  expect_equal(env$quality$missing_seasons, "2024")
 })
 
 test_that("a season that loads the first time is downloaded once", {
