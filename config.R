@@ -265,9 +265,11 @@ DEN_ALTITUDE_BONUS <- 0.0
 #' @description How each team's home field is set (team_hfa_table()): "league" (every team the
 #'   league value), "strength_free" (half the home-minus-away margin gap, shrunk) or "team_margin"
 #'   (the team's mean home margin, shrunk; it mostly measures team strength). The model gauntlet
-#'   (2026-11-04) scored league best and team_margin worst in a ratings model; the engine's own
-#'   comparison decides the default. options(nfl_sim.hfa_estimator = ...) overrides it for a run.
-#' @default "team_margin" (unchanged until the engine comparison)
+#'   (2026-11-04) scored league best and team_margin worst in a ratings model. The engine's own
+#'   comparison is void until G1 (reports/2026-11-04/hfa-engine/): its calibration simulations have
+#'   no home field and a look-ahead table. G2's term-admission backtest decides the default.
+#'   options(nfl_sim.hfa_estimator = ...) overrides it for a run.
+#' @default "team_margin" (unchanged until G2 admits a change)
 HFA_TEAM_ESTIMATOR <- getOption("nfl_sim.hfa_estimator", default = "team_margin")
 
 #' @description Division game adjustment (reduced from -0.4)

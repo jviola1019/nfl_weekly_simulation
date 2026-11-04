@@ -1,0 +1,21 @@
+== league
+Home field: league estimator (league 1.72 points)
+Calibration data: 1322 regular season games, 0 playoff games
+  model_Brier2 mkt_Brier2 blend_Brier2 model_LogL2 mkt_LogL2 blend_LogL2 n_games
+         <dbl>      <dbl>        <dbl>       <dbl>     <dbl>       <dbl>   <int>
+1        0.244      0.212        0.216       0.681     0.612       0.624    1322
+  QA: passed
+== strength_free
+Home field: strength_free estimator (league 1.72 points)
+Calibration data: 1322 regular season games, 0 playoff games
+  model_Brier2 mkt_Brier2 blend_Brier2 model_LogL2 mkt_LogL2 blend_LogL2 n_games
+         <dbl>      <dbl>        <dbl>       <dbl>     <dbl>       <dbl>   <int>
+1        0.243      0.212        0.215       0.680     0.612       0.619    1322
+  QA: passed
+== team_margin
+Home field: team_margin estimator (league 1.72 points)
+Calibration data: 1322 regular season games, 0 playoff games
+  model_Brier2 mkt_Brier2 blend_Brier2 model_LogL2 mkt_LogL2 blend_LogL2 n_games
+         <dbl>      <dbl>        <dbl>       <dbl>     <dbl>       <dbl>   <int>
+1        0.242      0.212        0.216       0.678     0.612       0.622    1322
+  QA: passed

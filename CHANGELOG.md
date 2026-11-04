@@ -4,6 +4,17 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### The engine's home-field comparison is void; the default stays team_margin (2026-11-04)
+
+- **The comparison:** three `run_week.R 15 2024` runs, one per `HFA_TEAM_ESTIMATOR`, scored the calibration simulations of 2019–2023 (1,322 games). As scored, team_margin beat league by 0.0039 Brier, the reverse of the model gauntlet.
+- **Why it is void** (`reports/2026-11-04/hfa-engine/README.md`):
+  - **No home field.** `week_inputs_and_sim_2w()` gives the margin `(home_hfa − away_hfa)/2`, where production gives the home team its full `HFA_pts`. The calibration simulations average a −0.02-point home margin against +1.29 in the results, and a 0.499 home win probability against a 0.530 home win rate.
+  - **Rest.** The calibration path also adds rest points, which production has not admitted.
+  - **Look-ahead.** Its home-field table spans 2015–2024 for every calibration week (audit M5). Under team_margin the difference is mostly team strength, which carries later seasons into each game.
+- **Effect on published numbers:** small. The blend behind C3 scores 0.216, 0.215 and 0.216 under the three estimators, against the market's 0.212.
+- **Not patched:** G1 (Plan 1b-2) retires this path for one point-in-time `predict_week()` shared with production (M5, M6, M8), with a production = backtest parity gate. Patching it first would move the golden master twice.
+- **config.R:** the estimator's comment now says so. Its value is unchanged.
+
 ### Code review of the final test's fixes: eight findings (2026-11-04)
 
 The code-review skill reviewed `a639552..ef3d49b`. These engine edits rest on the owner's instructions of 2026-11-03 ("Fix the props page issue … and all other issues") and 2026-11-04 ("Make sure you are fixing any issues you find").
@@ -14,7 +25,7 @@ The code-review skill reviewed `a639552..ef3d49b`. These engine edits rest on th
 - **`111131d`: a game without a market line has no probability edge or model-market disagreement** (`market_gap()`). They were 0, which made it read as the most certain game.
 - **`fb3c0a7`: the Rams are LA** in the props module's dome list and `TEAM_ABBR_TO_NAME`. A Rams home game had never been a dome to the props context.
 - **`1704416`: a home-field estimator switch**, `HFA_TEAM_ESTIMATOR`: "league", "strength_free" or "team_margin".
-  - The default is unchanged ("team_margin") until the engine's own comparison decides it.
+  - The default is unchanged ("team_margin"). The engine's own comparison proved void (the entry above), so G2's term-admission backtest decides it.
   - The calibration cache key (v6) and the score cache key (v3) carry the estimator, so a calibration simulated under one is never served to another.
 - **`746f0d6`:** a clear error when the e2e bundle has no games, and the props test names the claims it pins.
 - **Recorded, the owner's call:** the TMB/glmmTMB pair. CRAN now ships TMB 1.9.25 with glmmTMB 1.1.15.2. Upgrading both in `renv.lock` ends the Windows ABI warning, but it is a dependency change. Rebuilding locally would touch the renv cache that the frozen `nfl_props_v1` package set links to. The GLMM feeds only the unadmitted `glmm` term.
