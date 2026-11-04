@@ -2,7 +2,21 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec. To verify everything and finish the remaining work in a full local environment (VS Code), use `docs/handoff/2026-09-29-vscode-prompt.md`.
 
-## State on 2026-11-04: everything from #215–#230 in one integration PR, two protocols signed, a weekly program running
+## State on 2026-11-04 (evening): #215–#233 merged, the weekly program on a scheduled task, home field being fixed
+
+**Since the owner's "Do this" (2026-11-04):**
+- **Merged with that approval:**
+  - #231, the integration (`2d842da`);
+  - #233, the model gauntlet (`4621fdc`);
+  - #232, the pre-close protocol (`135bc5f`).
+- **Closed by those merges:** GitHub marked #215–#222, #224–#230 merged, including the research stack #226, #227 and #229, retargeted to main first. #223 was closed by hand: it was squashed in as `903b11b`.
+- **#234, TMB 1.9.25 and glmmTMB 1.1.15.2 (adds RTMB 2.0):**
+  - CI is green and the golden master shows no differences.
+  - Auto mode refused my merge, because the approval named #231–#233. **The owner merges it.**
+- **The scheduled task replaced the in-session loop** (see Running).
+- **"RoboBot sim" was RotoBot** (rotobot.ai), an online prop tool. The owner wants its real props tested against our model and the market, with no synthetic data.
+- **Props:** the owner wants every market prop type modelled and priced. Both pieces wait on a written design the owner approves.
+- **Home field:** `fix/home-field-asof` fixes both defects below. Its v2 comparison is pre-registered (`reports/2026-11-04/hfa-engine-v2/PLAN.md`).
 
 **Objective.** The owner asked on 2026-11-02 to complete every listed decision:
 - sign `nfl_props_v1` and `nfl_preclose_v1`;
@@ -32,7 +46,7 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 - **The engine's home-field comparison is void** (`reports/2026-11-04/hfa-engine/README.md`).
   - **No home field:** the calibration path gives the margin `(home_hfa − away_hfa)/2`, which averages −0.02 points against +1.29 in the results. Production gives the full home field.
   - **Look-ahead:** its table spans 2015–2024 for every calibration week (M5). team_margin "won" through that leak.
-  - **The fix is G1's:** G1 retires the path. The default stays team_margin.
+  - **Fixed in `fix/home-field-asof`** (the owner, 2026-11-04: "Complete and fix the home field issues"), rather than left to G1. The calibration sums production's admitted terms, and home field is built as of each slate.
 - **#231 (this integration):** #215–#230 merged in dependency order, conflicts resolved; #223 squashed as `903b11b`.
   - Local gates at the time: `run_tests.R` 864 tests, 3,967 passed, 0 failed, 0 skipped; integrity 63/63.
   - CI: R, lint, web and parity pass.
@@ -48,37 +62,48 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
   - T2 on SBR (look-ahead lines);
   - the opener-timing diagnostic (ESPN BET's openers price week w−1, which settles T1's caveat);
   - the maker-test kit, for the owner to run by hand.
-- **Refused by auto mode, so the owner acts:**
-  - the merges (hence this PR);
-  - a Windows scheduled task (`register_prospective_task.ps1` is ready for the owner to run).
 - **AusSportsBetting** sits behind a Cloudflare challenge and is dropped.
 
-**Running:** `prospective_dispatch.R` is started every quarter hour by `prospective_loop.sh` in a Claude session, for weeks 8–18.
+**Running:** a Windows scheduled task starts `prospective_dispatch.R` every 15 minutes, for weeks 9–18.
+- **The task:** `\nfl\prospective-dispatch`, registered 2026-11-04 with `register_prospective_task.ps1`.
+- **Its settings:**
+  - it can wake the PC and runs on battery;
+  - it never starts a second copy, and the dispatcher's lock enforces that too;
+  - it runs only while the owner is signed in.
+- **Its runs:** the first, at 21:00Z, and those after it exited 0. The in-session loop is stopped.
 - **What it runs:** the frozen props module, snapshots, Kalshi fetches and scores, and nfl_preclose_v1.1's Tuesday predictions.
 - **Store:** `../nfl-worktrees/.prospective/store` (private).
 - **Checkouts:** `../nfl-worktrees/hyp-loop`, `props-v1-run` and `preclose-run`.
-- **It stops with the session.**
-- **Latest (2026-11-04 19:10Z):** week 9's `preclose_predict` reran at 2026-11-03 20:30Z (exit 0), and week 8's `fetch_wed` ran at 2026-11-04 17:26Z. Next are `snap_thu` (2026-11-05 18:00Z) and the TNF snapshot (2026-11-06 00:15–01:10Z).
+- **Remove it with** `Unregister-ScheduledTask -TaskPath '\nfl\' -TaskName 'prospective-dispatch' -Confirm:$false`.
+- **Latest (2026-11-04 22:05Z):** week 9's `preclose_predict` reran at 2026-11-03 20:30Z (exit 0), and week 8 is complete.
+  - **Week 9's next steps:** `snap_thu` (2026-11-05 18:00Z; it may run until the week's last kickoff) and the TNF snapshot (2026-11-06 00:15–01:10Z).
+  - **Then:** `run_fri` (21:00Z), four Sunday windows, SNF and MNF.
 
 **Open risks:**
 - **The PC sleeps, and the session pauses with it.** The machine uses Modern Standby. On battery it sleeps after 3 minutes idle, or on "Austerity Battery Drain Budget Exceeded"; on AC it never idle-sleeps (Kernel-Power event 506 gives each reason).
   - **What it cost:** week 8's MNF snapshot (2026-11-02). Then on 2026-11-03 a DNS outage around a wake failed week 9's `preclose_predict` three times, and the Tuesday venue and props snapshots once each.
   - **Recovered:** the step was rerun at 20:30Z before kickoff, and the snapshots were retaken (notes in the store's `dispatch.log`).
   - **Now:** the dispatcher retries a failed step hourly until its deadline (`2991757`, at most 12 tries).
-  - **Still needed:** snapshot windows are 55 minutes, so keep the PC on AC power with the lid open, or register the scheduled task with WakeToRun.
+  - **Now:** the scheduled task wakes the PC for each start. A shut-down PC, or the owner being signed out, still stops it. Snapshot windows are 55 minutes.
 - **Run `date -u` before any time-based step:** hours can pass between tool calls.
-- **Never run `run_week.R` by hand in `props-v1-run`** while the loop can fire (Tuesday 18:00Z, Friday 21:00Z).
+- **Never run `run_week.R` by hand in `props-v1-run`** while the task can fire (Tuesday 18:00Z, Friday 21:00Z).
 - **Injury loads** now retry an empty season and flag one that stays empty as "partial", with nflreadr's warning as the cause (`6006ac8`). Still check each weekly run's `source_status.json`.
 - **Before blaming code for a golden-master difference,** read its INPUT DRIFT lines.
 - **The checkouts `hyp-loop` and `preclose-run` have no `.Rprofile`,** so they run on the user library (dplyr 1.2.0). The pre-close code's packages are identical in both libraries, and it does not use dplyr.
 
 - **The model gauntlet is done** (`research/model-gauntlet`, `reports/2026-11-03/model-gauntlet/RESULT.md`): valid, reproducible, and none of 20 candidates beats or adds to the close on 2018–2022. In a ratings model, the engine's home-field estimator measurably costs accuracy.
-  - "RoboBot sim" was read as a drive-level simulator, F9, and the reading still needs the owner's confirmation.
+  - "RoboBot sim" was read as a drive-level simulator, F9. The owner then said it was RotoBot, an online prop tool, so F9 stands as its own family and RotoBot is reviewed with the props work.
 - **Verification on `ef3d49b`:** `run_matrix` 11/11, `run_tests.R` 878/4,008/0, integrity 63/63, Playwright 135/135 on the real run, CI green.
   - Two runs cut off when the PC slept were restarted on AC power and passed.
 
 **Next targets:**
-- **the home-field term** for the engine's term-admission backtest (M22): a league home field in place of `team_hfa_table()`'s mean home margin. It needs G1's point-in-time `predict_week()` first, because the engine's calibration path cannot compare estimators (`reports/2026-11-04/hfa-engine/README.md`);
+- **home field** (`fix/home-field-asof`):
+  - the v2 runs, scored under `reports/2026-11-04/hfa-engine-v2/PLAN.md`, which decides the default;
+  - then a PR with the golden master attributed and the reference re-recorded from CI;
+- **props and RotoBot:**
+  - a written design for modelling and pricing every market prop type;
+  - testing RotoBot's public props against our model and the market, on real data only.
+  - The owner approves the design before anything is built (the brainstorming skill's gate);
 - after week 18: `props_v1_score.R --weeks=9:18` and `run_2026.R prospective`;
 - the Holdout, which the owner opens (checkpoint 8).
 
