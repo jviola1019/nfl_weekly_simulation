@@ -4,6 +4,64 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### A schedule that fails to download is retried, then stops with its cause (2026-11-05)
+
+- **The defect:** at 22:35Z on 2026-11-04 a dropped connection made `nflreadr::load_schedules()` return an empty table with only a warning. The engine then stopped with "object 'home_score' not found" inside a `mutate()`, which names neither the download nor its cause. Its own column check came after that `mutate()`.
+- **The fix:** `load_schedules_checked()` (`R/schedule_context.R`), used by both of the engine's schedule loads.
+  - **Retries:** it downloads again after clearing nflreadr's remembered failure.
+  - **The stop:** if the table still lacks the columns the engine reads, it stops with nflreadr's warning, or the missing columns, as the cause.
+- **New config.R settings** (no existing default changes): `SCHEDULE_LOAD_RETRIES` (2) and `SCHEDULE_LOAD_RETRY_WAIT` (3 s).
+- **Test:** `test-schedule-load.R`. The loader is a parameter, so it needs no network, and the good table is the committed nflverse results. It failed before the function existed.
+
+### Home field fixed: as of each slate, and the calibration simulates production's model (owner, 2026-11-04)
+
+The owner asked on 2026-11-04 to "Complete and fix the home field issues" that `reports/2026-11-04/hfa-engine/README.md` found. Both defects are fixed here, rather than left to G1.
+- **The calibration's means are production's** (`calibration_mu_components()` in `R/mu_terms.R`, then `compose_mu()`).
+  - **The old formula:** `week_inputs_and_sim_2w()` gave the margin `(home_hfa − away_hfa)/2`, which averages zero, and added rest points. The blend behind C3 trained on simulations with no home field (−0.02 points against +1.29 in the results).
+  - **Now:** it sums `MU_TERMS_ADMITTED`, as production does. The home team gets its full home-field points (`home_field_points()`, 0 at a neutral site), and rest enters only if admitted.
+  - **The guard:** the run stops if config admits a term the calibration cannot simulate.
+- **Home field as of each slate (audit M5, its home-field part)** (`hfa_games_asof()`, `hfa_table_asof()` in `R/schedule_context.R`).
+  - **The old table:** it was built from every game of `SEASON − 9 … SEASON` and joined into every calibration week, so each calibration game's team values included that game and later seasons. A past week's run saw its own results.
+  - **Now:** production builds its table at `SEASON`/`WEEK_TO_SIM`, and the calibration at every cut. Each uses regular-season results, without neutral sites, from the ten seasons ending at the cut and played before its week.
+  - **Schedules:** they are loaded from 1999, so the earliest cut has its ten seasons. nflverse ships all seasons in one file.
+  - **No fallback:** a window with no result stops; there is no 1.6-point default any more.
+  - **Live weeks** are unaffected, because unplayed games have no score.
+- **Caches:** the calibration cache is now v7 and the score cache v4.
+- **Tests:** `test-home-field-asof.R` runs on the committed nflverse results, 1999–2024. It includes a leak canary: an absurd result in the slate's own week leaves home field unchanged.
+- **`scripts/diagnose_mu_na.R`** lists the calibration's new columns.
+- **The golden master moves.** The calibration-trained blend changes, and so does production's home field for a past week such as 2024 week 15. CI attributes the change.
+- **The v2 comparison, pre-registered before any run, is void** (`reports/2026-11-04/hfa-engine-v2/RESULT.md`).
+  - **The fix works:** every run's simulations carry +1.90 to +1.94 points of home field (v1: −0.02).
+  - **Why it is void:** gate V2 failed for `league` (intercept −1.024). The gate confounds the level of home field with the spread of the margins.
+  - **Exploratory:** `league` now scores best (−0.0018 Brier against `team_margin`, interval −0.0046 to +0.0010). That is the gauntlet's order and the reverse of v1, but it is not significant.
+  - **The default stays `team_margin`.** Switching is the owner's call.
+  - **Also found:** the ten-season window overstates home field by about 0.6 points.
+
+### CLAUDE.md: the agent prompts rewritten, and stale facts fixed (owner, 2026-11-04)
+
+The owner asked to "Rewrite prompts" and chose both the request prompts and CLAUDE.md's. The claude-md-improver skill audited the file (72/100), and the owner approved every proposed change.
+- **Section 3, the four standard prompts:**
+  - **Audit:** fresh-HOME gates; data before code (the badge, `source_status.json`, INPUT DRIFT); joins on franchise codes; silent fallbacks; look-ahead.
+  - **Fix:** the test first, on real data where possible; cache-key bumps; the golden-master commit named; never edit an R script while it runs.
+  - **Validation:** the R gates, web gates and CI, each reported with its summary line; the AC-power rule.
+  - **Docs:** now covers HANDOFF.md.
+- **Section 4's STOP list** adds three items:
+  - frozen protocols and `eval_windows`;
+  - the sealed 2025 holdout;
+  - merges, which the owner approves.
+- **Section 2** adds the keyless-data rule.
+- **Stale facts fixed:**
+  - `SEASON`/`WEEK_TO_SIM` auto-resolve; they are no longer edited by hand;
+  - the injury playbook names `safe_load_injuries()` and its retry, not old line numbers;
+  - the invalid-week playbook covers the resolver;
+  - the engine's line counts;
+  - the footer.
+- **Added:**
+  - two playbook entries: a golden-master difference, and a long gate that fails after the PC slept;
+  - inventory lines: `R/run_config.R`, `scripts/golden_master.R`, `backtest/eval_windows/`, `backtest/preclose/`, the database checks, the ERD and HANDOFF.md;
+  - the web gate commands.
+- **Removed:** the duplicated correlation table.
+
 ### TMB 1.9.25 and glmmTMB 1.1.15.2, which ends the Windows ABI warning (owner, 2026-11-04)
 
 - **Why:** `renv.lock` pinned TMB 1.9.17 with glmmTMB 1.1.13. glmmTMB's Windows binary was built against TMB 1.9.19, so every run warned "package version mismatch … Please re-install glmmTMB from source".
@@ -95,6 +153,35 @@ The code-review skill reviewed `a639552..ef3d49b`. These engine edits rest on th
   - **Home field measures team strength.** `team_hfa_table()` sets a team's home field to its mean home margin (shrunk toward the league value), which is mostly team strength, already in the `base` term. This week Washington's admitted home field is −1.27 points and New England's +3.67. The simulator's median margins are more extreme than the market's in 13 of 15 games, by 1.75 points on average. The estimator dates from the original model. A strength-free estimator (half the home-minus-away margin difference) changes every output, so it goes to the term-admission backtest (M22).
   - `renv.lock` pins TMB 1.9.17 with glmmTMB 1.1.13, whose Windows binary was built with TMB 1.9.19 and warns at load. The GLMM feeds only the unadmitted `glmm` term. A lock change is an owner decision, and the `nfl_props_v1` package set is frozen.
   - `build_res_blend()` warns that the calibration backtest's per-game table has no `game_type` key. The collapse uses `game_id`, which is unique, so no row is lost; the warning predates the integration.
+
+### `nfl_preclose_v1` signed, scored on Tune and Confirm, and amended to v1.1 before week 9 (2026-11-02)
+
+- **Signed before PC-C2 was computed on any season** (`reports/2026-11-02/preclose-v1/PROTOCOL.md`, `backtest/eval_windows/nfl_preclose_v1.json`).
+  - It fixes the approved design of 2026-10-20: IS-A, PC-C2, OA[E1] and LM[E1] with BH, the windows, the Tuesday track, gates P1–P7 and the disclosures.
+  - **2025 enters only as history.**
+- **The code** (`backtest/preclose/`): PC-C2 on v1's estimator with the cutoff and QB as parameters, Elo on both information sets, the anchored fits, the gates and controls, the scorers, and private fetchers for the 2025–2026 history, ESPN's 2026 openers and Kalshi's Tuesday prices.
+  - **Registered** by sha256 in amendment 1: 24 files.
+  - **Known answers:** the builder on IS-B reproduces v1's C2 to 5×10⁻¹¹ on 1,942 games. Elo, the timing diagnostic and T1 all match.
+  - **Tests:** `tests/testthat/test-preclose.R`.
+- **Tune 2023 and Confirm 2024** (`RESULT.md`): every P6 control passes.
+  - **No candidate passes P1 or P2.** PC-C2's Brier skill against the opener is −6.6% (−10.8 to −3.0) in 2024.
+  - **CLV:** PC-C2 gains +45 bps in 2024 and +54 in 2023, about half of IS-B's. OA[E1]'s 2024 CLV is +135 bps (+47 to +231).
+  - **The Holdout decides.**
+- **Version 1.1** (`AMENDMENT_1_1.md`, amendment 3, before week 9):
+  - **The 2026 opener track is withdrawn.** ESPN's 2026 DraftKings "open" is the preseason line: Elo at the season's start gains +315 bps against it (`dk_opener_timing.R`).
+  - **The Tuesday track becomes 2026's prospective test:** C2 and E1 against Kalshi's Tuesday mid, weeks 9–18.
+  - **Its pilot, weeks 1–8:** C2 gains +49 bps (+1 to +92), one-sided p 0.022.
+- **Amendment 2** fixed a missing column in the 2026 runner before it produced any number.
+- **Amendment 4, the review's fixes** (`REVIEW_1.md`, 2026-11-03, before any prospective number). One fresh review found these:
+  - **The prospective stage would have scored weeks 10–18 on predictions saved a week early.** Each game now uses its own week's saved prediction (`prospective.R`, tested and mutation-checked).
+  - **2025 prices** were loaded into the private history. They are no longer written or computed.
+  - **P7** now voids a run.
+  - **Ties** pay half on the Tuesday track.
+  - **Elo** asserts week order and one game a week per team.
+  - **The 18:00Z state price** is reported.
+  - **Unchanged:** Tune/Confirm reproduce result_sha256 `a2bc9d0e`. The pilot moves by one tie (C2 +49 bps on 82 picks, p 0.022).
+  - **Rulings:** IS-A's previous-game starter stays as the signed text defines it. E1's pre-game Elo needs no change.
+- **Weekly predictions** are saved by `prospective_dispatch.R`'s Tuesday 18:30Z step (research/hypotheses `bbea0bb`).
 
 ### D1: the keyless odds layer and the decision-time archive (roadmap D1; audit S2, S4)
 

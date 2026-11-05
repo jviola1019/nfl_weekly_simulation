@@ -1,0 +1,10 @@
+field,value
+stage,score
+run_utc,2026-11-03T03:28:44Z
+code_commit,e8cc66a68be1d5f17e04d186265c30ea8e58daea
+protocol_sha256,cc282d7911a4f1e1d3c5fa09abc64f77f27d166c3bda61eab33b1a5e0a620e76
+oa_lambda,1
+result_sha256,a2bc9d0e55386be381daef9ff1e48350b0e5d07883d21da518bf23c7f41c77c9
+p6_status,complete
+p7_tripped,FALSE
+status,complete

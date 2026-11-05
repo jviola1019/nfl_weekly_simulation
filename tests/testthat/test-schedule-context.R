@@ -27,9 +27,11 @@ test_that("the engine flags neutral sites and uses the flag for home field (audi
   code <- code[!grepl("^\\s*#", code)]
   expect_true(any(grepl('source(file.path(base_path, "schedule_context.R"))', code, fixed = TRUE)))
   expect_true(any(grepl("sched$neutral_site <- neutral_site_flag(sched)", code, fixed = TRUE)))
-  expect_true(any(grepl("season %in% seasons_hfa, !neutral_site)", code, fixed = TRUE)))
+  # the home-field games carry the flag, and hfa_games_asof() drops neutral sites (test-home-field-asof.R)
+  expect_true(any(grepl("hfa_games$neutral_site <- neutral_site_flag(hfa_games)", code, fixed = TRUE)))
   expect_true(any(grepl("home_field_points(home_hfa, league_hfa, .playoff_hfa_mult, neutral_site)", code, fixed = TRUE)))
-  expect_true(any(grepl("margin_shift = dplyr::if_else(neutral_site, 0,", code, fixed = TRUE)))
+  # the calibration gives the home team production's home-field points, 0 at a neutral site
+  expect_true(any(grepl("HFA_pts = home_field_points(home_hfa, hfa_cut$league_hfa, 1, neutral_site)", code, fixed = TRUE)))
   expect_false(any(grepl('intersect(c("neutral_site","neutral","is_neutral")', code, fixed = TRUE)))
 })
 
@@ -85,16 +87,16 @@ test_that("both rest tables in NFLsimulation.R use compute_rest_table (audit M23
   expect_false(any(grepl("fake_slate_date", code, fixed = TRUE)))
 })
 
-test_that("calibration and score cache keys carry versions that invalidate older caches (M23/M24, F11, F11b, home-field estimator)", {
+test_that("calibration and score cache keys carry versions that invalidate older caches (M23/M24, F11, F11b, home-field estimator, as-of home field)", {
   code <- readLines(file.path(PROJECT_ROOT, "NFLsimulation.R"), warn = FALSE)
   code <- code[!grepl("^\\s*#", code)]
-  expect_true(any(grepl("version = 6L", code, fixed = TRUE)))     # calibration: the home-field estimator
+  expect_true(any(grepl("version = 7L", code, fixed = TRUE)))     # calibration: home field as of each cut, production's terms
   env <- load_script_functions(file.path(PROJECT_ROOT, "NFLsimulation.R"),
                                c("score_cache_key", "calib_cache_key"))
   env$N_RECENT <- 1; env$USE_SOS <- TRUE; env$SOS_STRENGTH <- 1; env$RECENCY_HALFLIFE <- 1
   env$HFA_TEAM_ESTIMATOR <- "league"
   expect_equal(env$calib_cache_key(2024, 3, 2, TRUE, 1, 100, 0.1, 1, hfa_estimator = "league"),
-               digest::digest(list(tag = "calib_sim_df_nb", version = 6L, hfa_estimator = "league", season = 2024,
+               digest::digest(list(tag = "calib_sim_df_nb", version = 7L, hfa_estimator = "league", season = 2024,
                                    n_years = 3, halflife = 2, use_sos = TRUE, sos_pow = 1, trials = 100,
                                    rho = 0.1, seed = 1)))
   # a calibration simulated under one home-field estimator is never served to a run of another
@@ -102,7 +104,7 @@ test_that("calibration and score cache keys carry versions that invalidate older
                          env$calib_cache_key(2024, 3, 2, TRUE, 1, 100, 0.1, 1, hfa_estimator = "team_margin")))
   # score_weeks starts at SEASON - 8, so it reaches the pre-move seasons: F11b changes it too, and so does the estimator
   expect_equal(env$score_cache_key(2024, 2024, 15, 100, 1, 0.1),
-               digest::digest(list(tag = "score_weeks", version = 3L, 2024, 2024, weeks = "15",
+               digest::digest(list(tag = "score_weeks", version = 4L, 2024, 2024, weeks = "15",
                                    100, 1, 0.1, 1, TRUE, 1, 1, "league")))
 })
 
