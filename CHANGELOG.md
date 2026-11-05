@@ -4,6 +4,39 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### A schedule that fails to download is retried, then stops with its cause (2026-11-05)
+
+- **The defect:** at 22:35Z on 2026-11-04 a dropped connection made `nflreadr::load_schedules()` return an empty table with only a warning. The engine then stopped with "object 'home_score' not found" inside a `mutate()`, which names neither the download nor its cause. Its own column check came after that `mutate()`.
+- **The fix:** `load_schedules_checked()` (`R/schedule_context.R`), used by both of the engine's schedule loads.
+  - **Retries:** it downloads again after clearing nflreadr's remembered failure.
+  - **The stop:** if the table still lacks the columns the engine reads, it stops with nflreadr's warning, or the missing columns, as the cause.
+- **New config.R settings** (no existing default changes): `SCHEDULE_LOAD_RETRIES` (2) and `SCHEDULE_LOAD_RETRY_WAIT` (3 s).
+- **Test:** `test-schedule-load.R`. The loader is a parameter, so it needs no network, and the good table is the committed nflverse results. It failed before the function existed.
+
+### Home field fixed: as of each slate, and the calibration simulates production's model (owner, 2026-11-04)
+
+The owner asked on 2026-11-04 to "Complete and fix the home field issues" that `reports/2026-11-04/hfa-engine/README.md` found. Both defects are fixed here, rather than left to G1.
+- **The calibration's means are production's** (`calibration_mu_components()` in `R/mu_terms.R`, then `compose_mu()`).
+  - **The old formula:** `week_inputs_and_sim_2w()` gave the margin `(home_hfa − away_hfa)/2`, which averages zero, and added rest points. The blend behind C3 trained on simulations with no home field (−0.02 points against +1.29 in the results).
+  - **Now:** it sums `MU_TERMS_ADMITTED`, as production does. The home team gets its full home-field points (`home_field_points()`, 0 at a neutral site), and rest enters only if admitted.
+  - **The guard:** the run stops if config admits a term the calibration cannot simulate.
+- **Home field as of each slate (audit M5, its home-field part)** (`hfa_games_asof()`, `hfa_table_asof()` in `R/schedule_context.R`).
+  - **The old table:** it was built from every game of `SEASON − 9 … SEASON` and joined into every calibration week, so each calibration game's team values included that game and later seasons. A past week's run saw its own results.
+  - **Now:** production builds its table at `SEASON`/`WEEK_TO_SIM`, and the calibration at every cut. Each uses regular-season results, without neutral sites, from the ten seasons ending at the cut and played before its week.
+  - **Schedules:** they are loaded from 1999, so the earliest cut has its ten seasons. nflverse ships all seasons in one file.
+  - **No fallback:** a window with no result stops; there is no 1.6-point default any more.
+  - **Live weeks** are unaffected, because unplayed games have no score.
+- **Caches:** the calibration cache is now v7 and the score cache v4.
+- **Tests:** `test-home-field-asof.R` runs on the committed nflverse results, 1999–2024. It includes a leak canary: an absurd result in the slate's own week leaves home field unchanged.
+- **`scripts/diagnose_mu_na.R`** lists the calibration's new columns.
+- **The golden master moves.** The calibration-trained blend changes, and so does production's home field for a past week such as 2024 week 15. CI attributes the change.
+- **The v2 comparison, pre-registered before any run, is void** (`reports/2026-11-04/hfa-engine-v2/RESULT.md`).
+  - **The fix works:** every run's simulations carry +1.90 to +1.94 points of home field (v1: −0.02).
+  - **Why it is void:** gate V2 failed for `league` (intercept −1.024). The gate confounds the level of home field with the spread of the margins.
+  - **Exploratory:** `league` now scores best (−0.0018 Brier against `team_margin`, interval −0.0046 to +0.0010). That is the gauntlet's order and the reverse of v1, but it is not significant.
+  - **The default stays `team_margin`.** Switching is the owner's call.
+  - **Also found:** the ten-season window overstates home field by about 0.6 points.
+
 ### CLAUDE.md: the agent prompts rewritten, and stale facts fixed (owner, 2026-11-04)
 
 The owner asked to "Rewrite prompts" and chose both the request prompts and CLAUDE.md's. The claude-md-improver skill audited the file (72/100), and the owner approved every proposed change.

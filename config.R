@@ -372,6 +372,13 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE
 INJURY_LOAD_RETRIES <- 2L
 INJURY_LOAD_RETRY_WAIT <- 3
 
+#' @description Downloads again for the nflverse schedule when it does not load (nflreadr's empty
+#'   table or an error), and the seconds between them; a schedule that still does not load stops the
+#'   run with nflreadr's warning as the cause (load_schedules_checked(), 2026-11-05)
+#' @default 2 retries, 3 seconds apart
+SCHEDULE_LOAD_RETRIES <- 2L
+SCHEDULE_LOAD_RETRY_WAIT <- 3
+
 #' @description Reference snap percentage for weighting (50% = neutral impact)
 #' @default 50
 #' @range 30 to 70

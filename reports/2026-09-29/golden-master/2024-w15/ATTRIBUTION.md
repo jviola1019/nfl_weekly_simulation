@@ -109,3 +109,24 @@ The record was made by `.github/workflows/golden-master.yml` on #231: workflow r
 **Head vs baseline (`faf2316` vs `b5d1ac4`):** the 1b-1 and M19 changes recorded above, plus #223's.
 
 **Current golden master.** `final_numeric.csv`, `meta.json` and `inputs.csv` here were re-recorded from the CI artifact `gm-faf2316…` of workflow run 41568091649, `csv_sha256 dd03499045703a7189fd9b6a8d1c2b449e67960064a7312ec4cbd214d8325b0d` (checked against the file with sha256).
+
+## Home field as of each slate, and the calibration's home field (#236)
+
+The record was made by `.github/workflows/golden-master.yml` on #236: workflow run 41968619096, `attribute` job 127055184954. Each first-parent commit, from the baseline through the head `c13474a`, is judged against the previous one, on the same live data.
+
+**Determinism:** `b5d1ac4` recorded twice shows no differences.
+
+**The prediction, written in the PR before CI ran:**
+- `mu_home` moves slightly in all 16 games, because production's home field no longer sees 2024 weeks 15–18 (league value 1.72 → 1.69);
+- `mu_away` is unchanged;
+- the blend moves, because it now trains on calibration simulations with a home field.
+
+| Commit | Change | Columns changed vs the previous commit | Games | Max abs diff | Verdict vs prediction |
+|---|---|---|---|---|---|
+| `bf93008` | the fix: the calibration composes production's admitted terms; home field as of each slate | `mu_home`, plus the SDs and NB sizes derived from the means. Every model probability, the blend, the uncertainty and score summaries, and `betting_signal_home` in 1 game. **`mu_away` is not among them.** | 16 | `mu_home` 0.388; `home_p_2w_model` 0.0098; `home_p_2w_blend` 0.0339; `margin_blend` 1.43 | **As predicted.** |
+| `5a0df15` | merge of main (#232, the pre-close protocol) | none | 0 | none | As predicted: not on the game model's path. |
+| `cbce705`, `a6632d4`, `c13474a` | docs: the v2 pre-registration, HANDOFF, the v2 result | none | 0 | none | As predicted. |
+
+**Input drift:** only #219's known weather change, at every commit.
+
+**Current golden master.** `final_numeric.csv`, `meta.json` and `inputs.csv` here were re-recorded from the CI artifact `gm-c13474a…` of workflow run 41968619096, `csv_sha256 304cf4e3d0f7c6afd11ca3536dfa615d48f85f0073c96cacdec354d9693c6edb` (checked against the file with sha256). `inputs.csv` is byte-identical to the previous reference.

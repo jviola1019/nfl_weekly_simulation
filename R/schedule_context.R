@@ -125,6 +125,86 @@ team_hfa_table <- function(home_margins, teams, league_hfa, den_bonus = 0, shrin
     )
 }
 
+#' The nflverse schedule, or a stop that names the cause (2026-11-05)
+#'
+#' A failed release download makes nflreadr::load_schedules() return an empty table with only a
+#' warning, and nflreadr remembers the failure for the session: on 2026-11-04 a dropped connection
+#' stopped the engine with "object 'home_score' not found" inside a mutate(). This downloads again
+#' after clearing nflreadr's cache, and stops with nflreadr's warning (or the missing columns) as
+#' the cause when the table still lacks what the engine reads.
+#' @param loader,clear nflreadr::load_schedules and nflreadr::clear_cache (parameters for tests)
+#' @return the schedule, with every column the engine reads
+load_schedules_checked <- function(seasons, retries = 2L, wait = 3, loader = nflreadr::load_schedules,
+                                   clear = nflreadr::clear_cache) {
+  need <- c("game_id", "season", "game_type", "week", "home_team", "away_team", "home_score", "away_score",
+            "location")
+  cause <- "no rows"
+  for (attempt in seq_len(retries + 1L)) {
+    warned <- character()
+    s <- withCallingHandlers(
+      tryCatch(loader(seasons = seasons), error = function(e) {
+        warned <<- c(warned, conditionMessage(e))
+        NULL
+      }),
+      warning = function(w) {
+        warned <<- c(warned, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      })
+    missing <- setdiff(need, names(s))
+    if (!is.null(s) && nrow(s) > 0 && !length(missing)) return(s)
+    cause <- if (length(warned)) {
+      paste(unique(warned), collapse = "; ")
+    } else if (!is.null(s) && ncol(s) && length(missing)) {
+      paste("missing", paste(missing, collapse = ", "))
+    } else {
+      "no rows"
+    }
+    if (attempt <= retries) {
+      clear()
+      Sys.sleep(wait)
+    }
+  }
+  stop(sprintf("load_schedules_checked: the nflverse schedule did not load after %d attempt(s) (%s)",
+               retries + 1L, cause), call. = FALSE)
+}
+
+#' Regular-season home results as of a slate (audit M5)
+#'
+#' Home field came from every game of the ten seasons up to and including the target season, so a
+#' past week's run, and every calibration week, used results from after its own kickoff. This keeps
+#' the regular-season results, without neutral sites (audit M24), of the `n_seasons` seasons ending
+#' with `season`, played before `week` of it.
+#' @param games schedule rows: season, week, game_type, home_team, away_team, home_score, away_score,
+#'   neutral_site
+#' @return data.frame(team_home, team_away, margin), one row per game
+hfa_games_asof <- function(games, season, week, n_seasons = 10L) {
+  keep <- games$game_type == "REG" & !games$neutral_site &
+    is.finite(games$home_score) & is.finite(games$away_score) &
+    games$season > season - n_seasons &
+    (games$season < season | (games$season == season & games$week < week))
+  keep[is.na(keep)] <- FALSE
+  g <- games[keep, , drop = FALSE]
+  data.frame(team_home = g$home_team, team_away = g$away_team, margin = g$home_score - g$away_score,
+             stringsAsFactors = FALSE)
+}
+
+#' Home-field table and league value as of a slate (audit M5)
+#'
+#' The league value is the mean home margin of hfa_games_asof(), and the team values come from
+#' team_hfa_table() on the same games. Production calls it for its own slate and the calibration
+#' backtest at each of its cuts, so both see only results from before the games they simulate.
+#' @return list(table = tibble(team, hfa), league_hfa = numeric(1))
+hfa_table_asof <- function(games, season, week, teams, den_bonus, estimator, n_seasons = 10L) {
+  margins <- hfa_games_asof(games, season, week, n_seasons)
+  if (!nrow(margins)) {
+    stop(sprintf("hfa_table_asof: no regular-season result before %d week %d", season, week), call. = FALSE)
+  }
+  league_hfa <- mean(margins$margin)
+  list(table = team_hfa_table(margins, teams = teams, league_hfa = league_hfa, den_bonus = den_bonus,
+                              estimator = estimator),
+       league_hfa = league_hfa)
+}
+
 #' Stop when a week's simulated means are not finite (output audit F11)
 #'
 #' simulate_game_nb would otherwise replace them with 21.5 each, a coin flip, without a word.

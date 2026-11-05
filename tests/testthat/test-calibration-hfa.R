@@ -41,10 +41,13 @@ test_that("the engine builds home field for every schedule team and refuses a mi
   code <- readLines(file.path(PROJECT_ROOT, "NFLsimulation.R"), warn = FALSE)
   code <- code[!grepl("^\\s*#", code)]
   expect_false(any(grepl("hfa_tbl <- tibble(team = teams_on_slate)", code, fixed = TRUE)))
-  expect_true(any(grepl("hfa_tbl <- team_hfa_table(", code, fixed = TRUE)))
+  # production's table covers every schedule team; the calibration's covers every team of every season
+  expect_true(any(grepl("teams = sort(unique(c(sched[[home_team_col]], sched[[away_team_col]]))),", code, fixed = TRUE)))
+  expect_true(any(grepl("hfa_tbl <- hfa_asof$table", code, fixed = TRUE)))
+  expect_true(any(grepl("hfa_teams <- sort(unique(c(hfa_games$home_team, hfa_games$away_team)))", code, fixed = TRUE)))
   expect_true(any(grepl("assert_finite_means(g, sprintf(\"calibration %d week %d\", cut_season, cut_week))", code, fixed = TRUE)))
-  # a cached calibration built before the home-field estimator entered its key must not be reused
-  expect_true(any(grepl("version = 6L", code, fixed = TRUE)))
+  # a cached calibration built before home field was as of each cut must not be reused
+  expect_true(any(grepl("version = 7L", code, fixed = TRUE)))
   expect_true(any(grepl("hfa_estimator = hfa_estimator", code, fixed = TRUE)))
   expect_true(any(grepl("estimator = HFA_TEAM_ESTIMATOR", code, fixed = TRUE)))
 })
