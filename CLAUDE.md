@@ -22,8 +22,8 @@ An NFL game prediction model using Monte Carlo simulation with:
 
 | File | Purpose | Run Command |
 |------|---------|-------------|
-| `run_week.R` | Weekly predictions | `source("run_week.R")` |
-| `config.R` | Configuration | Edit `SEASON`, `WEEK_TO_SIM` |
+| `run_week.R` | Weekly predictions | `Rscript run_week.R` (the upcoming week) or `Rscript run_week.R <week> <season>` |
+| `config.R` | Configuration | `SEASON` and `WEEK_TO_SIM` auto-resolve from the calendar; pass a week and season to `run_week.R` instead of editing them |
 | `scripts/run_tests.R` | Test suite + skip policy | `Rscript scripts/run_tests.R` |
 | `scripts/verify_repo_integrity.R` | Integrity check | `Rscript scripts/verify_repo_integrity.R` |
 | `scripts/run_matrix.R` | Run all artifacts | `Rscript scripts/run_matrix.R` |
@@ -81,19 +81,6 @@ apply_defense_adjustments(players, home_team, away_team, season)
 apply_game_context(players, game)
 ```
 
-### Hyperparameter Empirical Sources
-
-**Correlation Coefficients** (current config values, unvalidated, see docs/EVIDENCE_LEDGER.md):
-
-| Parameter | Value | Validation Method |
-|-----------|-------|-------------------|
-| QB passing ↔ game total | 0.40 | config.R (unvalidated) |
-| RB rushing ↔ game total | 0.09 | config.R (unvalidated) |
-| WR receiving ↔ team passing | 0.30 | config.R (unvalidated) |
-| TD probability ↔ game total | 0.17 | config.R (unvalidated) |
-| Same-team cannibalization | -0.15 | Within-team target share analysis |
-| Model vig percentage | 0.10 | Industry standard sportsbook juice |
-
 **Model Accuracy Benchmarks**: Withdrawn 2026-09-28; see docs/EVIDENCE_LEDGER.md.
 
 ### Expected Outputs
@@ -133,6 +120,13 @@ When `run_week.R` completes successfully:
 4. **Delete files** without verifying they're unused via run_matrix
 5. **Commit untested changes**
 6. **Use hardcoded values** - Put in config.R instead
+7. **Use a keyed, login or challenge-protected data source** - Odds and props data are keyless only:
+   - no API keys we register for, no logins and no challenge cookies;
+   - a 403, captcha or geo-fence drops the venue, and is never evaded;
+   - at most 1 request per second per domain, with a truthful user agent;
+   - raw sportsbook payloads are never published (the repo is public).
+
+   Endpoints are in `docs/odds-sources.md`.
 
 ### Data Quality API Reference
 
@@ -161,48 +155,61 @@ compute_overall_quality()  # Returns "HIGH", "MEDIUM", "LOW", "CRITICAL"
 ### Audit Agent (Use First)
 
 ```
-Read the entire repo. Do not edit any files.
-Identify:
-1. Runtime failures (run run_week.R with traceback)
-2. Schema mismatches (check data_validation.R API calls)
-3. Join risks (search for *_join without standardize_join_keys)
-4. Data quality issues (silent fallbacks, missing error handling)
-
-Output a diagnosis report before any fixes.
+Read only: edit nothing. Run every R gate with a fresh HOME (HOME=$(mktemp -d)): the calibration and
+score caches live in ~/.cache and every checkout shares them.
+1. Reproduce: Rscript run_week.R <week> <season> with
+   options(error = function() { traceback(2); quit(status = 1) }), and keep the log.
+2. Data first: read the data-quality badge, the bundle's source_status.json and any golden-master
+   INPUT DRIFT line before blaming code. An empty nflreadr download can look like a code change.
+3. Schemas: every update_*_quality() call matches R/data_validation.R (section 2).
+4. Joins: game keys go through standardize_join_keys(); team joins use franchise codes (franchise_code()).
+5. Silent fallbacks: a default that replaces missing data without a flag, a tryCatch that drops an
+   error, suppressWarnings() around a download.
+6. Look-ahead: any input that a past week's run computes from games at or after its kickoff.
+Output a diagnosis, with file:line evidence for each finding, before any fix.
 ```
 
 ### Fix Agent (After Audit)
 
 ```
-Implement the minimal fix for the identified root cause.
-Rules:
-1. Change only the lines needed to fix the issue
-2. Add regression test if applicable
-3. No refactors, no feature additions
-4. Run `Rscript scripts/run_tests.R` and `Rscript scripts/verify_repo_integrity.R` after fix (both exit 0)
-5. Document the change in CHANGELOG.md
+Fix the diagnosed root cause with the smallest change, test first.
+1. Write the failing test (on real recorded data where possible), run it, and see it fail for the
+   expected reason.
+2. Change only the lines the fix needs: no refactors, no features. Stop first for anything in section 4.
+3. Calibration-history code changed: bump the version in calib_cache_key() and score_cache_key().
+4. Engine output changes: expect a golden-master difference, and name the commit that causes it.
+5. Never edit an R script while an Rscript run is reading it; run long jobs from a frozen worktree.
+6. Rscript scripts/run_tests.R and Rscript scripts/verify_repo_integrity.R, fresh HOME: both exit 0.
+7. CHANGELOG.md: a dated entry with what changed, why, the test and the evidence.
 ```
 
 ### Validation Agent (After Fixes)
 
 ```
-Re-run all verification:
-1. Rscript scripts/run_tests.R (must exit 0: no failures, no errors, only allowlisted skips)
-2. Rscript scripts/verify_repo_integrity.R (must exit 0)
-3. Rscript scripts/run_matrix.R (must show 11/11 pass, or 10 pass + golden-master LIVE skip offline)
-4. If run_week.R or R/sim_bundle.R changed: run_week.R prints "Web bundle: <dir>" and "QA: passed", and `cd web && npm run local` serves that run
-
-Report: PASS/FAIL with evidence.
+Re-run every gate on the commit under review, with a fresh HOME and the PC on AC power. A sleep turns
+wall-clock timeouts into false failures: check Kernel-Power events 506/507 before calling a timeout
+a defect.
+1. Rscript scripts/run_tests.R: exit 0, no failures or errors, only skips on tests/skip_allowlist.txt.
+2. Rscript scripts/verify_repo_integrity.R: exit 0.
+3. Rscript scripts/run_matrix.R: 11/11 (the golden master may SKIP as LIVE offline). A golden-master
+   difference needs its INPUT DRIFT lines read and a commit that explains it.
+4. run_week.R or R/sim_bundle.R changed: the run prints "Web bundle: <dir>" and "QA: passed", and
+   `cd web && npm run local` serves that run.
+5. web/ changed: npm run typecheck, npm run lint, npm test and npm run e2e, the last also with
+   E2E_SIM_BUNDLE=<a real bundle>.
+6. After the push: CI green on the head (R, web, and the golden master's commit-by-commit attribution).
+Report PASS or FAIL for each gate, quoting its summary line.
 ```
 
 ### Docs Agent (When Requested)
 
 ```
-Update documentation:
-1. README.md - Verify file inventory is complete
-2. CHANGELOG.md - Add dated entry for changes made
-3. CLAUDE.md - Update if agent rules need clarification
-4. Verify all run commands work as documented
+1. README.md and section 6 of this file: the file inventory matches the repo.
+2. CHANGELOG.md: a dated entry for each change.
+3. HANDOFF.md: the state, what is running, the open risks and the next targets, so a new session can
+   resume from it.
+4. CLAUDE.md: the rules and prompts match current practice.
+5. Run every documented command and check every path; fix or remove what fails.
 ```
 
 ---
@@ -217,6 +224,9 @@ Update documentation:
 4. **Adding new dependencies** (affects renv.lock)
 5. **Changing API signatures** in R/data_validation.R
 6. **Exit code 1 persists** after first fix attempt
+7. **Editing `backtest/eval_windows/*.json` or a frozen `PROTOCOL.md`** (register a new version instead)
+8. **Anything that reads, builds or scores the sealed 2025 holdout.** 2025 may be model history, but it is never scored, and 2025 prices are never computed.
+9. **Merging a PR**: the owner approves each merge
 
 ### Continue Automatically When:
 
@@ -244,15 +254,15 @@ source("run_week.R")
 **Common Causes**:
 1. Wrong API call: `update_injury_quality("complete")` should be `"full"`
 2. Wrong parameter: `seasons_missing` should be `missing_seasons`
-3. 2025 injury data 404 (expected, should be handled gracefully)
+3. A release download that fails. nflreadr returns an empty table with only a warning, and remembers the failure for the session. `safe_load_injuries()` retries the seasons that have completed games and flags one that stays empty as "partial", with nflreadr's warning as the cause.
 
-**Fix**: Check NFLsimulation.R lines 3144-3150 for correct API calls.
+**Fix**: Check the `update_injury_quality()` calls in `safe_load_injuries()` (NFLsimulation.R). Then check the run's `source_status.json`.
 
 ### Invalid Week Error
 
-**Symptom**: "No games found for Week X"
+**Symptom**: "No games found for Week X", or an offseason stop
 
-**Diagnosis**: Check config.R `WEEK_TO_SIM` value against valid weeks.
+**Diagnosis**: `run_week.R` with no arguments resolves the upcoming week from the nflverse schedule (`R/date_resolver.R`, `R/run_config.R`), and stops in the offseason. Pass the week and season instead: `Rscript run_week.R <week> <season>`.
 
 **Valid Weeks**:
 - Regular season: 1-18
@@ -316,6 +326,24 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - Snap weighting had no empirical evidence of improving Brier/log-loss
 - The feature was disabled in v2.6.7 as the default
 
+### Golden-Master Difference
+
+**Symptom**: `run_matrix.R`'s golden-master artifact, or CI's attribution, shows output columns that changed
+
+**Diagnosis**:
+1. Read the INPUT DRIFT lines first. A data change can mimic a code change: one run with injuries UNAVAILABLE looked like a defect in #223.
+2. Rerun with a fresh HOME. A stale shared calibration cache once looked like a platform difference.
+
+**Fix**: For an intended change, name the commit that causes it in the PR. Then re-record the reference from CI's artifact, with a section in `reports/2026-09-29/golden-master/2024-w15/ATTRIBUTION.md`.
+
+### A Long Gate Fails After the PC Slept
+
+**Symptom**: `run_matrix.R` reports a timeout for testthat or the golden master. Tool timestamps jump by hours.
+
+**Diagnosis**: The PC uses Modern Standby: on battery it sleeps after about 3 minutes idle. The gates' limits are wall-clock time, so a sleep looks like a failure. Check Kernel-Power events 506/507 (`Get-WinEvent`) for the run's window.
+
+**Fix**: Rerun on AC power with the lid open. Downloads cut off by a sleep leave truncated files, so write to `.part` and rename only once the file reads.
+
 ### knitr/xfun GitHub Actions Crash
 
 **Symptom**: GitHub Actions fail with knitr or xfun namespace errors
@@ -332,8 +360,8 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 ### Core Pipeline (DO NOT DELETE)
 - `run_week.R` - Entry point
 - `config.R` - Configuration
-- `NFLsimulation.R` - Simulation engine (8300+ lines)
-- `NFLmarket.R` - Market analysis (3900+ lines)
+- `NFLsimulation.R` - Simulation engine (7,400+ lines)
+- `NFLmarket.R` - Market analysis (2,600+ lines)
 - `NFLbrier_logloss.R` - Metrics
 
 ### R/ Library (Canonical Source)
@@ -349,6 +377,7 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `R/sim_bundle.R` - the simulator's weekly bundle, written by `run_week.R` (replaced the HTML report at A8)
 - `R/mu_terms.R` - explicit mean composition: the term table and `compose_mu()` (M22)
 - `R/schedule_context.R` - neutral sites, home-field points and rest days (M24, M23)
+- `R/run_config.R` - `run_week.R`'s arguments and the auto-resolved week (with `R/date_resolver.R`)
 - `R/odds/` - the keyless odds layer (D1): `http.R` is the only HTTP code for ESPN and Kalshi (nflverse loads through nflreadr; 1 request/second per domain, no workaround for a 403/429 or a challenge page); providers for nflverse, ESPN core and Kalshi; the `odds_snapshots` shape; the closing rule; the archive builder. Tests inject a fetch function and read `tests/testthat/fixtures/odds/`; live checks are in `tests/live/` only. Endpoints and the terms matrix: `docs/odds-sources.md`
 
 ### Props Data Sources
@@ -360,6 +389,7 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `scripts/verify_repo_integrity.R` - repository integrity checks; exits 0 when all pass
 - `scripts/verify_requirements.R` - 20-issue audit verification
 - `scripts/run_matrix.R` - Execute all artifacts
+- `scripts/golden_master.R` - records the game model's numeric output for 2024 week 15, compares it with the committed reference, and attributes CI's per-commit records (`.github/workflows/golden-master.yml`)
 - `scripts/write_sim_fixture.R` - writes the web test fixture `contracts/fixtures/bundles/weekly-sim-2024-w15` (synthetic draws, not model output)
 
 ### Game Backtest
@@ -374,6 +404,12 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `docs/VARIABLE_LEDGER.md` - every variable, its known-at class, defects, results, admission, the input ERD and disclosures; generated, never edited by hand
 - `scripts/write_variable_ledger.R` - writes `docs/VARIABLE_LEDGER.md` from the registry and the committed results
 - `scripts/diagnose_mu_na.R` - F11: which calibration mean term is NA, found from the call frames
+- `backtest/eval_windows/` - the signed protocols' windows and hashes (`nfl_games_v1`, `nfl_props_v1`, `nfl_preclose_v1`); never edited, see section 4
+- `backtest/preclose/` - `nfl_preclose_v1` (signed 2026-11-02, v1.1 before week 9): the history build and the weekly predictions (`reports/2026-11-02/preclose-v1/`)
+
+### Database and Web Checks
+- `web/scripts/db-check.ts` - the SQL data checks (`src/lib/dbcheck/checks.ts`). `npm run db-check` exits 1 when an error-level check is violated, and prints warnings. Run it after every ingest.
+- `docs/ERD.md` - the database diagram, generated from the Drizzle schema. `npm run erd` rewrites it, and `npm run erd -- --check` exits 1 when it is stale.
 
 ### Tests
 - `tests/testthat/setup.R` - Test infrastructure
@@ -384,6 +420,7 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 - `GETTING_STARTED.md` - Setup guide
 - `DOCUMENTATION.md` - Technical reference
 - `CLAUDE.md` - This file (agent guide)
+- `HANDOFF.md` - the resume point: current state, what is running, open risks and next targets
 - `reports/history/AUDIT.md` - superseded audit (current: `reports/2026-09-28/AUDIT.md`)
 - `CHANGELOG.md` - Change log
 
@@ -392,6 +429,9 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 ## 7. VERIFICATION COMMANDS (Run These)
 
 ```bash
+# R gates use a fresh HOME: the calibration and score caches live in ~/.cache and every checkout shares them
+export HOME=$(mktemp -d)
+
 # 1. Unit tests + skip policy (must exit 0; only KNOWN-DEFECT and LIVE skips are allowed)
 Rscript scripts/run_tests.R
 
@@ -407,6 +447,11 @@ Rscript run_week.R 16 2024    # a named week and season
 
 # 5. View the run offline (after `npm ci` in web/ once)
 cd web && npm run local
+
+# 6. Web gates, when web/ changed
+cd web && npm run typecheck && npm run lint && npm test
+cd web && npm run e2e                                   # the committed fixtures
+cd web && E2E_SIM_BUNDLE=<bundle dir> npm run e2e       # a real run_week.R bundle
 ```
 
 ---
@@ -421,5 +466,5 @@ cd web && npm run local
 
 ---
 
-*Last updated: 2026-02-05*
-*Version: 2.9.0*
+*Last updated: 2026-11-04*
+*Version: 2.9.4, plus the unreleased changes in CHANGELOG.md*
