@@ -125,6 +125,49 @@ team_hfa_table <- function(home_margins, teams, league_hfa, den_bonus = 0, shrin
     )
 }
 
+#' The nflverse schedule, or a stop that names the cause (2026-11-05)
+#'
+#' A failed release download makes nflreadr::load_schedules() return an empty table with only a
+#' warning, and nflreadr remembers the failure for the session: on 2026-11-04 a dropped connection
+#' stopped the engine with "object 'home_score' not found" inside a mutate(). This downloads again
+#' after clearing nflreadr's cache, and stops with nflreadr's warning (or the missing columns) as
+#' the cause when the table still lacks what the engine reads.
+#' @param loader,clear nflreadr::load_schedules and nflreadr::clear_cache (parameters for tests)
+#' @return the schedule, with every column the engine reads
+load_schedules_checked <- function(seasons, retries = 2L, wait = 3, loader = nflreadr::load_schedules,
+                                   clear = nflreadr::clear_cache) {
+  need <- c("game_id", "season", "game_type", "week", "home_team", "away_team", "home_score", "away_score",
+            "location")
+  cause <- "no rows"
+  for (attempt in seq_len(retries + 1L)) {
+    warned <- character()
+    s <- withCallingHandlers(
+      tryCatch(loader(seasons = seasons), error = function(e) {
+        warned <<- c(warned, conditionMessage(e))
+        NULL
+      }),
+      warning = function(w) {
+        warned <<- c(warned, conditionMessage(w))
+        invokeRestart("muffleWarning")
+      })
+    missing <- setdiff(need, names(s))
+    if (!is.null(s) && nrow(s) > 0 && !length(missing)) return(s)
+    cause <- if (length(warned)) {
+      paste(unique(warned), collapse = "; ")
+    } else if (!is.null(s) && ncol(s) && length(missing)) {
+      paste("missing", paste(missing, collapse = ", "))
+    } else {
+      "no rows"
+    }
+    if (attempt <= retries) {
+      clear()
+      Sys.sleep(wait)
+    }
+  }
+  stop(sprintf("load_schedules_checked: the nflverse schedule did not load after %d attempt(s) (%s)",
+               retries + 1L, cause), call. = FALSE)
+}
+
 #' Regular-season home results as of a slate (audit M5)
 #'
 #' Home field came from every game of the ten seasons up to and including the target season, so a

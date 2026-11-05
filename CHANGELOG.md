@@ -4,6 +4,15 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### A schedule that fails to download is retried, then stops with its cause (2026-11-05)
+
+- **The defect:** at 22:35Z on 2026-11-04 a dropped connection made `nflreadr::load_schedules()` return an empty table with only a warning. The engine then stopped with "object 'home_score' not found" inside a `mutate()`, which names neither the download nor its cause. Its own column check came after that `mutate()`.
+- **The fix:** `load_schedules_checked()` (`R/schedule_context.R`), used by both of the engine's schedule loads.
+  - **Retries:** it downloads again after clearing nflreadr's remembered failure.
+  - **The stop:** if the table still lacks the columns the engine reads, it stops with nflreadr's warning, or the missing columns, as the cause.
+- **New config.R settings** (no existing default changes): `SCHEDULE_LOAD_RETRIES` (2) and `SCHEDULE_LOAD_RETRY_WAIT` (3 s).
+- **Test:** `test-schedule-load.R`. The loader is a parameter, so it needs no network, and the good table is the committed nflverse results. It failed before the function existed.
+
 ### Home field fixed: as of each slate, and the calibration simulates production's model (owner, 2026-11-04)
 
 The owner asked on 2026-11-04 to "Complete and fix the home field issues" that `reports/2026-11-04/hfa-engine/README.md` found. Both defects are fixed here, rather than left to G1.
