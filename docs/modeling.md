@@ -149,20 +149,18 @@ final_stake = kelly * KELLY_FRACTION * edge_penalty
 
 ## 5. Calibration
 
-Calibration maps raw simulation probabilities to better-calibrated probabilities using historical data.
+Each run fits two calibration maps, a spline (GAM, `CALIBRATION_METHOD`) and an isotonic map. They are fitted on the calibration backtest's simulations (`week_inputs_and_sim_2w()`). The run prints them as **diagnostic only**: the saved ensemble calibrator was trained on outcome-leaked probabilities (audit M4).
 
-**Primary method:** Spline calibration via a GAM (Generalized Additive Model) with a smoothing penalty.
+**What reaches the published C3 probability:**
+1. The raw simulator probability (`home_p_2w_raw`).
+2. A ridge blend with the no-vig market, then an isotonic map of the blend. Both are trained on the calibration backtest.
+3. 70% shrinkage toward the no-vig market (`SHRINKAGE`, in `sb_predictions()` in `R/sim_bundle.R`).
 
-**Fallback method:** Isotonic regression via `isoreg()`, used when the spline model is unavailable or fails to fit.
+Probabilities are clamped by `clamp_probability()` with `PROB_EPSILON`.
 
-**Performance:** Spline calibration achieves a **-6.9% improvement** in Brier score compared to uncalibrated probabilities.
+**Performance:** no improvement is validated. The earlier spline-improvement figure is withdrawn (`docs/EVIDENCE_LEDGER.md`, claim C-SPLINE).
 
-**Application rules:**
-- Calibration is applied **exactly once** to raw simulation probabilities.
-- Output probabilities are bounded to **[0.01, 0.99]** to prevent degenerate log-loss values.
-- When calibration is unavailable, the model compensates by adjusting shrinkage upward.
-
-**Source:** `NFLsimulation.R:5596-5670`
+**Since 2026-11-04,** the calibration backtest simulates production's admitted mean terms, home field included, from home-field tables built as of each cut. Before that, it simulated no home field.
 
 ---
 
@@ -172,15 +170,15 @@ Calibration maps raw simulation probabilities to better-calibrated probabilities
 
 Player prop simulations are correlated with game-level simulation outcomes using a Gaussian copula. This ensures that, for example, a QB's passing yards are higher in simulations where the game total is high.
 
-**Correlation targets** (empirically validated against recent nflreadr data; see `scripts/correlation_audit.R`):
+**Correlation settings** (current `config.R` values, **unvalidated**). No saved analysis supports interval estimates, so the earlier interval claims are withdrawn (`docs/EVIDENCE_LEDGER.md`, claim C-CORR). `scripts/correlation_audit.R` can measure them:
 
-| Relationship | Correlation (r) | 95% CI |
-|-------------|-----------------|--------|
-| QB passing <-> game total | 0.40 | [0.35, 0.45] |
-| RB rushing <-> game total | 0.09 | [0.05, 0.12] |
-| WR/TE receiving <-> team passing | 0.30 | [0.26, 0.34] |
-| TD probability <-> game total | 0.17 | [0.14, 0.20] |
-| Same-team cannibalization | -0.15 | [-0.20, -0.10] |
+| Relationship | Correlation (r) |
+|-------------|-----------------|
+| QB passing <-> game total | 0.40 |
+| RB rushing <-> game total | 0.09 |
+| WR/TE receiving <-> team passing | 0.30 |
+| TD probability <-> game total | 0.17 |
+| Same-team cannibalization | -0.15 |
 
 **Mechanism:** For each simulation trial, a reference z-score from the game simulation is used to generate a correlated z-score for the player prop via:
 

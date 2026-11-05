@@ -4,6 +4,26 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Architecture and documentation verified against the code; withdrawn claims removed (owner, 2026-11-05)
+
+The owner asked: "Architectures, ERDs, documentation should be verified". Every top-level and `docs/` markdown file was checked:
+- each backticked repo path exists;
+- each named function is defined;
+- no withdrawn claim from `docs/EVIDENCE_LEDGER.md` appears.
+
+**Findings and fixes:**
+- **`docs/ARCHITECTURE.md` (January 2026)** said 60% shrinkage (`SHRINKAGE` is 0.70). It carried withdrawn figures (Brier 0.211, the spline's improvement, a "Validation Status" table claiming no leakage) and described SoS, injury, weather and rest as simulated (only base and home field are). It also omitted the web app, the contract, the backtests, the odds layer and CI.
+  - **Rewritten from the code:** a source-to-page lineage diagram (Mermaid), the game model step by step, props, the contract and the app, validation, operations, and a directory map.
+- **`DOCUMENTATION.md` (v2.6.4)** described seven validation scripts removed on 2026-09-29 and the retired HTML report. It gave wrong signatures (`simulate_game_nb()`'s argument order, `rho_from_game()`) and carried withdrawn figures.
+  - **Rewritten as a verified reference:** settings with their values, 21 function signatures checked against the code, naming conventions, formulas, R 4.5.1 notes, and a validation table that points to the evidence.
+- **`docs/modeling.md`** claimed the spline's withdrawn improvement and "empirically validated" prop correlations.
+  - **Corrected:** the calibration section now says what reaches the published C3 probability, and the correlations are labelled config values, unvalidated.
+- **`docs/ERD.md`** backticked `docs/data-contract.md`, a file that never existed; the sentence meant ERD.md is that promised list.
+  - **Reworded** in the generator (`web/src/lib/erd.ts`) and the output alike.
+- **The guard:** `test-docs-truth.R` now checks every current doc, not three. It failed on these findings before the fixes.
+
+**Recorded, not changed:** `probability_to_american()` is defined twice, in `R/utils.R` and `NFLmarket.R`.
+
 ### Home-field default: league, after research (owner, 2026-11-05)
 
 - **The ask:** "choose whatever is recommended with extensive research". `HFA_TEAM_ESTIMATOR` now defaults to `league`: every team gets the league value as of the slate.
