@@ -30,6 +30,12 @@ The owner asked on 2026-11-04 to "Complete and fix the home field issues" that `
 - **Tests:** `test-home-field-asof.R` runs on the committed nflverse results, 1999–2024. It includes a leak canary: an absurd result in the slate's own week leaves home field unchanged.
 - **`scripts/diagnose_mu_na.R`** lists the calibration's new columns.
 - **The golden master moves.** The calibration-trained blend changes, and so does production's home field for a past week such as 2024 week 15. CI attributes the change.
+- **The v2 comparison, pre-registered before any run, is void** (`reports/2026-11-04/hfa-engine-v2/RESULT.md`).
+  - **The fix works:** every run's simulations carry +1.90 to +1.94 points of home field (v1: −0.02).
+  - **Why it is void:** gate V2 failed for `league` (intercept −1.024). The gate confounds the level of home field with the spread of the margins.
+  - **Exploratory:** `league` now scores best (−0.0018 Brier against `team_margin`, interval −0.0046 to +0.0010). That is the gauntlet's order and the reverse of v1, but it is not significant.
+  - **The default stays `team_margin`.** Switching is the owner's call.
+  - **Also found:** the ten-season window overstates home field by about 0.6 points.
 
 ### Golden master CI: a record attempt that fails is tried again (2026-11-04)
 
