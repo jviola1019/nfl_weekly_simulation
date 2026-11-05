@@ -24,6 +24,21 @@ The owner asked: "Architectures, ERDs, documentation should be verified". Every 
 
 **Recorded, not changed:** `probability_to_american()` is defined twice, in `R/utils.R` and `NFLmarket.R`.
 
+### Home-field default: league, after research (owner, 2026-11-05)
+
+- **The ask:** "choose whatever is recommended with extensive research". `HFA_TEAM_ESTIMATOR` now defaults to `league`: every team gets the league value as of the slate.
+- **The research** (`reports/2026-11-05/hfa-default/RESEARCH.md`):
+  - **League value:** FiveThirtyEight's NFL Elo uses one league value from a rolling 10-year average, and nfelo uses a rolling league average plus situational adjustments.
+  - **Team values are not persistent:** nfelo finds "few, if any, teams possess predictably better HFA"; Open Source Football calls it "very unpredictable and almost random on a year over year basis"; a per-season hierarchical model finds team values converging since about 2015.
+  - **Our evidence:**
+    - the model gauntlet found the team estimator worse (+0.0048 Brier, interval +0.0025 to +0.0072);
+    - engine v2 (void by its gate) also favoured league (−0.0018 against `team_margin`).
+- **Unchanged:**
+  - `team_margin` and `strength_free` stay as options;
+  - the ten-season window. It overstates today's home field by about 0.6 points, and is for the term-admission backtest.
+- **Test:** `test-calibration-hfa.R` pins the default. It failed before the change.
+- **Golden master:** it moves, because every home team now gets the league value. CI attributes the change.
+
 ### A schedule that fails to download is retried, then stops with its cause (2026-11-05)
 
 - **The defect:** at 22:35Z on 2026-11-04 a dropped connection made `nflreadr::load_schedules()` return an empty table with only a warning. The engine then stopped with "object 'home_score' not found" inside a `mutate()`, which names neither the download nor its cause. Its own column check came after that `mutate()`.
@@ -81,6 +96,18 @@ The owner asked to "Rewrite prompts" and chose both the request prompts and CLAU
   - inventory lines: `R/run_config.R`, `scripts/golden_master.R`, `backtest/eval_windows/`, `backtest/preclose/`, the database checks, the ERD and HANDOFF.md;
   - the web gate commands.
 - **Removed:** the duplicated correlation table.
+
+### TMB 1.9.25 and glmmTMB 1.1.15.2, which ends the Windows ABI warning (owner, 2026-11-04)
+
+- **Why:** `renv.lock` pinned TMB 1.9.17 with glmmTMB 1.1.13. glmmTMB's Windows binary was built against TMB 1.9.19, so every run warned "package version mismatch … Please re-install glmmTMB from source".
+- **The change:** the owner approved the upgrade on 2026-11-04 ("Do this"). `renv.lock` changes three records, which renv 1.1.7 wrote from the installed packages:
+  - TMB 1.9.17 → 1.9.25;
+  - glmmTMB 1.1.13 → 1.1.15.2;
+  - **RTMB 2.0, a new package.** glmmTMB 1.1.15.2 imports it. Its own dependencies (Rcpp, Matrix, TMB, MASS, RcppEigen, lattice) were already locked.
+  - CRAN's glmmTMB now needs TMB ≥ 1.9.23, so the two must move together.
+- **Checked on Windows:** the three packages load from a separate library with no version-mismatch warning, and a glmmTMB fit converges. The library the frozen `nfl_props_v1` run uses is untouched.
+- **Outputs:** the GLMM feeds only the unadmitted `glmm` term. CI's golden master is the check that no simulated mean moves.
+- **The golden master now runs on `renv.lock` changes.** Its path filter missed the lockfile, so a package upgrade never got an output check.
 
 ### Golden master CI: a record attempt that fails is tried again (2026-11-04)
 
