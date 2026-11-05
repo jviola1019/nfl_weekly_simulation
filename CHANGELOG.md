@@ -4,6 +4,21 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Home-field default: league, after research (owner, 2026-11-05)
+
+- **The ask:** "choose whatever is recommended with extensive research". `HFA_TEAM_ESTIMATOR` now defaults to `league`: every team gets the league value as of the slate.
+- **The research** (`reports/2026-11-05/hfa-default/RESEARCH.md`):
+  - **League value:** FiveThirtyEight's NFL Elo uses one league value from a rolling 10-year average, and nfelo uses a rolling league average plus situational adjustments.
+  - **Team values are not persistent:** nfelo finds "few, if any, teams possess predictably better HFA"; Open Source Football calls it "very unpredictable and almost random on a year over year basis"; a per-season hierarchical model finds team values converging since about 2015.
+  - **Our evidence:**
+    - the model gauntlet found the team estimator worse (+0.0048 Brier, interval +0.0025 to +0.0072);
+    - engine v2 (void by its gate) also favoured league (−0.0018 against `team_margin`).
+- **Unchanged:**
+  - `team_margin` and `strength_free` stay as options;
+  - the ten-season window. It overstates today's home field by about 0.6 points, and is for the term-admission backtest.
+- **Test:** `test-calibration-hfa.R` pins the default. It failed before the change.
+- **Golden master:** it moves, because every home team now gets the league value. CI attributes the change.
+
 ### A schedule that fails to download is retried, then stops with its cause (2026-11-05)
 
 - **The defect:** at 22:35Z on 2026-11-04 a dropped connection made `nflreadr::load_schedules()` return an empty table with only a warning. The engine then stopped with "object 'home_score' not found" inside a `mutate()`, which names neither the download nor its cause. Its own column check came after that `mutate()`.
