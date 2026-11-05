@@ -102,7 +102,7 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 
 **Next targets:**
 - **the owner's merges:** #234 (deps), #235 (CLAUDE.md), #236 (home field), then #237 (schedule load);
-- **the home-field default:** the owner's choice between keeping `team_margin`, switching to `league`, or a v3 with a corrected gate scored on new games. The ten-season window also overstates home field by about 0.6 points; that is for the term-admission backtest;
+- **the home-field default: `league`** (owner, 2026-11-05: "choose whatever is recommended"; `feat/hfa-default-league`, `reports/2026-11-05/hfa-default/RESEARCH.md`). The ten-season window overstates home field by about 0.6 points; that is for the term-admission backtest;
 - **props and RotoBot:**
   - a written design for modelling and pricing every market prop type;
   - testing RotoBot's public props against our model and the market, on real data only.

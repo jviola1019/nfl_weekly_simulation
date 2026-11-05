@@ -264,13 +264,14 @@ DEN_ALTITUDE_BONUS <- 0.0
 
 #' @description How each team's home field is set (team_hfa_table()): "league" (every team the
 #'   league value), "strength_free" (half the home-minus-away margin gap, shrunk) or "team_margin"
-#'   (the team's mean home margin, shrunk; it mostly measures team strength). The model gauntlet
-#'   (2026-11-04) scored league best and team_margin worst in a ratings model. The engine's own
-#'   comparison is void until G1 (reports/2026-11-04/hfa-engine/): its calibration simulations have
-#'   no home field and a look-ahead table. G2's term-admission backtest decides the default.
-#'   options(nfl_sim.hfa_estimator = ...) overrides it for a run.
-#' @default "team_margin" (unchanged until G2 admits a change)
-HFA_TEAM_ESTIMATOR <- getOption("nfl_sim.hfa_estimator", default = "team_margin")
+#'   (the team's mean home margin, shrunk; it mostly measures team strength). Every value is as of
+#'   the slate (hfa_table_asof()). options(nfl_sim.hfa_estimator = ...) overrides it for a run.
+#' @default "league" (owner, 2026-11-05: "choose whatever is recommended with extensive research").
+#'   FiveThirtyEight and nfelo model one league value; team values are not persistent year to year
+#'   (Open Source Football, nfelo); the model gauntlet found team_margin worse (+0.0048 Brier,
+#'   interval +0.0025 to +0.0072); engine v2 (void by its gate) also favoured league
+#'   (reports/2026-11-05/hfa-default/RESEARCH.md). The ten-season window is unchanged.
+HFA_TEAM_ESTIMATOR <- getOption("nfl_sim.hfa_estimator", default = "league")
 
 #' @description Division game adjustment (reduced from -0.4)
 #' @default -0.2

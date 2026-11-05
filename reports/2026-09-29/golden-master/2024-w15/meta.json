@@ -2,12 +2,12 @@
   "week": "15",
   "season": "2024",
   "n_games": 16,
-  "git_sha": "c13474ab33cfc90d119e9bc016192ff9e8aba7ce",
+  "git_sha": "4c53dd9da7c341db11a78587815b7c8e4b7a1b14",
   "n_trials": 100000,
   "seed": 471,
   "r_version": "R version 4.5.1 (2025-06-13)",
   "nflreadr": "1.5.0",
-  "run_seconds": 181,
+  "run_seconds": 294,
   "inputs": {
     "injury": "full",
     "weather": "full",
@@ -16,5 +16,5 @@
     "weather_fallback_games": [],
     "market_missing_games": []
   },
-  "csv_sha256": "304cf4e3d0f7c6afd11ca3536dfa615d48f85f0073c96cacdec354d9693c6edb"
+  "csv_sha256": "ff9ec6a046c9179ef5ffc5a3693d990bfd649d71140434afea5d65b7094a208a"
 }

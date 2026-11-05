@@ -87,3 +87,11 @@ test_that("the engine puts schedules and injuries on franchise codes, as the pla
   expect_true(any(grepl("home_team = franchise_code(home_team), away_team = franchise_code(away_team)", code, fixed = TRUE)))
   expect_true(any(grepl("team     = franchise_code(toupper(as.character(.data[[col_team]])))", code, fixed = TRUE)))
 })
+
+test_that("production's home-field default is the league value (research, 2026-11-05)", {
+  # FiveThirtyEight, nfelo and Open Source Football model one league value; team values are not
+  # persistent; the gauntlet found team_margin worse (reports/2026-11-05/hfa-default/RESEARCH.md)
+  code <- readLines(file.path(PROJECT_ROOT, "config.R"), warn = FALSE)
+  expect_true(any(grepl('HFA_TEAM_ESTIMATOR <- getOption("nfl_sim.hfa_estimator", default = "league")', code, fixed = TRUE)))
+  if (is.null(getOption("nfl_sim.hfa_estimator"))) expect_identical(HFA_TEAM_ESTIMATOR, "league")
+})
