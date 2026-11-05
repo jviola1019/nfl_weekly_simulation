@@ -1874,7 +1874,7 @@ is_playoff_week_sim <- function(week) {
 seasons_hfa <- (SEASON - 9):(SEASON - 0)
 # Franchise codes (F11b): the play-by-play files the 2019 Raiders as LV, the schedule as OAK, so
 # every table joined on team uses the current code; game_id keeps the code of its season
-sched <- load_schedules(seasons = seasons_hfa) |>
+sched <- load_schedules_checked(seasons_hfa, retries = SCHEDULE_LOAD_RETRIES, wait = SCHEDULE_LOAD_RETRY_WAIT) |>
   mutate(game_completed = !is.na(home_score) & !is.na(away_score),
          home_team = franchise_code(home_team), away_team = franchise_code(away_team))
 
@@ -2761,7 +2761,7 @@ away_pts_col  <- first_col(sched, c("away_score","away_points","score_away","awa
 # Regular-season results, without neutral sites (audit M24), of the ten seasons ending with SEASON and
 # played before WEEK_TO_SIM: a past week's run no longer sees the results after it. The calibration
 # backtest builds the same table at each of its cuts, so every season is loaded (one nflverse file).
-hfa_games <- load_schedules(seasons = 1999:SEASON) |>
+hfa_games <- load_schedules_checked(1999:SEASON, retries = SCHEDULE_LOAD_RETRIES, wait = SCHEDULE_LOAD_RETRY_WAIT) |>
   mutate(home_team = franchise_code(home_team), away_team = franchise_code(away_team))
 hfa_games$neutral_site <- neutral_site_flag(hfa_games)
 hfa_teams <- sort(unique(c(hfa_games$home_team, hfa_games$away_team)))
