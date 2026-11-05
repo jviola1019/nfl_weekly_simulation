@@ -125,6 +125,43 @@ team_hfa_table <- function(home_margins, teams, league_hfa, den_bonus = 0, shrin
     )
 }
 
+#' Regular-season home results as of a slate (audit M5)
+#'
+#' Home field came from every game of the ten seasons up to and including the target season, so a
+#' past week's run, and every calibration week, used results from after its own kickoff. This keeps
+#' the regular-season results, without neutral sites (audit M24), of the `n_seasons` seasons ending
+#' with `season`, played before `week` of it.
+#' @param games schedule rows: season, week, game_type, home_team, away_team, home_score, away_score,
+#'   neutral_site
+#' @return data.frame(team_home, team_away, margin), one row per game
+hfa_games_asof <- function(games, season, week, n_seasons = 10L) {
+  keep <- games$game_type == "REG" & !games$neutral_site &
+    is.finite(games$home_score) & is.finite(games$away_score) &
+    games$season > season - n_seasons &
+    (games$season < season | (games$season == season & games$week < week))
+  keep[is.na(keep)] <- FALSE
+  g <- games[keep, , drop = FALSE]
+  data.frame(team_home = g$home_team, team_away = g$away_team, margin = g$home_score - g$away_score,
+             stringsAsFactors = FALSE)
+}
+
+#' Home-field table and league value as of a slate (audit M5)
+#'
+#' The league value is the mean home margin of hfa_games_asof(), and the team values come from
+#' team_hfa_table() on the same games. Production calls it for its own slate and the calibration
+#' backtest at each of its cuts, so both see only results from before the games they simulate.
+#' @return list(table = tibble(team, hfa), league_hfa = numeric(1))
+hfa_table_asof <- function(games, season, week, teams, den_bonus, estimator, n_seasons = 10L) {
+  margins <- hfa_games_asof(games, season, week, n_seasons)
+  if (!nrow(margins)) {
+    stop(sprintf("hfa_table_asof: no regular-season result before %d week %d", season, week), call. = FALSE)
+  }
+  league_hfa <- mean(margins$margin)
+  list(table = team_hfa_table(margins, teams = teams, league_hfa = league_hfa, den_bonus = den_bonus,
+                              estimator = estimator),
+       league_hfa = league_hfa)
+}
+
 #' Stop when a week's simulated means are not finite (output audit F11)
 #'
 #' simulate_game_nb would otherwise replace them with 21.5 each, a coin flip, without a word.

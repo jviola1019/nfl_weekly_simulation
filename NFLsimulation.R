@@ -1558,7 +1558,7 @@ if (!dir.exists(.score_cache_dir)) dir.create(.score_cache_dir, recursive = TRUE
 score_cache_key <- function(start_season, end_season, weeks, trials, seed, rho) {
   digest::digest(list(
     tag="score_weeks",
-    version = 3L,  # bump when the calibration-history code changes; v3: the home-field estimator; v2: franchise codes (F11b)
+    version = 4L,  # bump when the calibration-history code changes; v4: home field as of each cut, production's terms; v3: the home-field estimator; v2: franchise codes (F11b)
     start_season, end_season, weeks = paste0(weeks, collapse=","),
     trials, seed, rho,
     N_RECENT, USE_SOS, SOS_STRENGTH, RECENCY_HALFLIFE, HFA_TEAM_ESTIMATOR
@@ -1569,7 +1569,7 @@ score_cache_key <- function(start_season, end_season, weeks, trials, seed, rho) 
 calib_cache_key <- function(season, n_years, halflife, use_sos, sos_pow, trials, rho, seed, hfa_estimator){
   digest::digest(list(
     tag = "calib_sim_df_nb",
-    version = 6L,  # v6: the home-field estimator; v5: franchise codes (F11b); v4: home field for every team (F11); v3: M24, M23
+    version = 7L,  # v7: home field as of each cut, production's terms; v6: the home-field estimator; v5: franchise codes (F11b); v4: home field for every team (F11); v3: M24, M23
     hfa_estimator = hfa_estimator,
     season = season,
     n_years = n_years,
@@ -2757,32 +2757,25 @@ away_team_col <- first_col(sched, c("away_team","away_team_abbr","team_away","aw
 home_pts_col  <- first_col(sched, c("home_score","home_points","score_home","home_pts"), "home score")
 away_pts_col  <- first_col(sched, c("away_score","away_points","score_away","away_pts"), "away score")
 
-# --- League home-field advantage (points), data-driven over recent seasons ---
-# REG games in the target seasons, without neutral sites (audit M24)
-sched_hfa <- sched |>
-  dplyr::filter(game_type == "REG", season %in% seasons_hfa, !neutral_site)
+# --- Home-field advantage (points), as of the slate (audit M5) ---
+# Regular-season results, without neutral sites (audit M24), of the ten seasons ending with SEASON and
+# played before WEEK_TO_SIM: a past week's run no longer sees the results after it. The calibration
+# backtest builds the same table at each of its cuts, so every season is loaded (one nflverse file).
+hfa_games <- load_schedules(seasons = 1999:SEASON) |>
+  mutate(home_team = franchise_code(home_team), away_team = franchise_code(away_team))
+hfa_games$neutral_site <- neutral_site_flag(hfa_games)
+hfa_teams <- sort(unique(c(hfa_games$home_team, hfa_games$away_team)))
 
-# build margins and compute league HFA
-hfa_sample <- sched_hfa |>
-  dplyr::filter(is.finite(.data[[home_pts_col]]), is.finite(.data[[away_pts_col]])) |>
-  dplyr::transmute(margin = .data[[home_pts_col]] - .data[[away_pts_col]])
-
-league_hfa <- mean(hfa_sample$margin, na.rm = TRUE)
-if (!is.finite(league_hfa)) league_hfa <- 1.6  # safe fallback
-
-# Team-specific HFA with shrinkage toward the league mean, for EVERY team in the schedule: the
-# calibration backtest joins it for every team of every past week, so a table of this slate's
-# teams left each bye team without home field and its calibration games at 21.5-21.5 (audit F11)
-hfa_tbl <- team_hfa_table(
-  sched_hfa |>
-    dplyr::transmute(team_home = .data[[home_team_col]], team_away = .data[[away_team_col]],
-                     margin = .data[[home_pts_col]] - .data[[away_pts_col]]),
-  teams = sort(unique(c(sched[[home_team_col]], sched[[away_team_col]]))),
-  league_hfa = league_hfa,
-  den_bonus = DEN_ALTITUDE_BONUS,
-  estimator = HFA_TEAM_ESTIMATOR
-)
-message(sprintf("Home field: %s estimator (league %.2f points)", HFA_TEAM_ESTIMATOR, league_hfa))
+# Team values with shrinkage toward the league mean, for EVERY team: the calibration backtest joins
+# them for every team of every past week, so a table of this slate's teams left each bye team
+# without home field and its calibration games at 21.5-21.5 (audit F11)
+hfa_asof <- hfa_table_asof(hfa_games, SEASON, WEEK_TO_SIM,
+                           teams = sort(unique(c(sched[[home_team_col]], sched[[away_team_col]]))),
+                           den_bonus = DEN_ALTITUDE_BONUS, estimator = HFA_TEAM_ESTIMATOR)
+league_hfa <- hfa_asof$league_hfa
+hfa_tbl <- hfa_asof$table
+message(sprintf("Home field: %s estimator (league %.2f points, results before %d week %d)",
+                HFA_TEAM_ESTIMATOR, league_hfa, SEASON, WEEK_TO_SIM))
 
 # Create a standardized view
 sched_std <- sched |>
@@ -4295,8 +4288,9 @@ CALIB_SOS_POW   <- SOS_STRENGTH
 CALIB_TRIALS    <- 20000        # light sim per game-week for calibration
 CALIB_SEED_BASE <- SEED + 12345 # stable seed offset for backtest sims
 
-# Build "recent form" at a (cut_season, cut_week) same as earlier but local
-recent_form_at_sim <- function(cut_season, cut_week, teams,
+# Build "recent form" at a (cut_season, cut_week) same as earlier but local; `hfa_table` is the
+# home-field table as of the cut (hfa_table_asof(), audit M5)
+recent_form_at_sim <- function(cut_season, cut_week, teams, hfa_table,
                                use_sos = TRUE, sos_pow = 0.6, halflife = 3) {
   rec_wts <- function(n, hl = halflife) { if (!USE_RECENCY_DECAY || n <= 1) rep(1, n) else (1/2)^((0:(n-1))/hl) }
   get_recent_cut <- function(team_abbr) {
@@ -4363,7 +4357,7 @@ recent_form_at_sim <- function(cut_season, cut_week, teams,
       off_sd_raw   = pmax(off_sd_raw, 5.5),
       def_sd_raw   = pmax(def_sd_raw, 5.5)
     ) |>
-    dplyr::left_join(hfa_tbl, by = "team")
+    dplyr::left_join(hfa_table, by = "team")
 
   # rest effects at the cutpoint: each team's own game (audit M23)
   cut_slate <- sched |>
@@ -4485,9 +4479,13 @@ week_inputs_and_sim_2w <- function(cut_season, cut_week, n_trials = CALIB_TRIALS
   fake_date <- min(as.Date(slate$game_date), na.rm = TRUE)
   teams <- sort(unique(c(slate$home_team, slate$away_team)))
 
+  # home field as of the cut, built the way production builds its own (audit M5)
+  hfa_cut <- hfa_table_asof(hfa_games, cut_season, cut_week, teams = hfa_teams,
+                            den_bonus = DEN_ALTITUDE_BONUS, estimator = HFA_TEAM_ESTIMATOR)
+
   # recent form (SoS + decay + rest) at the cut
   rf <- recent_form_at_sim(
-    cut_season, cut_week, teams,
+    cut_season, cut_week, teams, hfa_table = hfa_cut$table,
     use_sos = CALIB_USE_SOS, sos_pow = CALIB_SOS_POW, halflife = CALIB_HALFLIFE
   )
 
@@ -4595,23 +4593,8 @@ week_inputs_and_sim_2w <- function(cut_season, cut_week, n_trials = CALIB_TRIALS
       exp_ppd_home = ppd_blend(home_off_ppd, away_def_ppd, w_off = 0.65),
       exp_ppd_away = ppd_blend(away_off_ppd, home_def_ppd, w_off = 0.65),
 
-      mu_home_base = exp_drives_home * exp_ppd_home,
-      mu_away_base = exp_drives_away * exp_ppd_away,
-
-      margin_shift = dplyr::if_else(neutral_site, 0, (home_hfa - away_hfa)/2),   # audit M24
-
-      mu_home = pmax(mu_home_base + home_rest_points + margin_shift/2, 0),
-      mu_away = pmax(mu_away_base + away_rest_points - margin_shift/2, 0),
-
-      sd_home = pmax(home_off_sd_raw, 5.5),
-      sd_away = pmax(away_off_sd_raw, 5.5),
-
-      total_mu = mu_home + mu_away,
-      sd_goal  = sd_total_curve(total_mu),
-      sd_home  = 0.7 * sd_home + 0.3 * (sd_goal / sqrt(2)),
-      sd_away  = 0.7 * sd_away + 0.3 * (sd_goal / sqrt(2)),
-      sd_home  = pmax(sd_home, 4.8),
-      sd_away  = pmax(sd_away, 4.8),
+      # production's home field: the home team's own, 0 at a neutral site (audit M24); regular season only
+      HFA_pts = home_field_points(home_hfa, hfa_cut$league_hfa, 1, neutral_site),
 
       y_home = dplyr::case_when(
         is.finite(home_score) & is.finite(away_score) & home_score > away_score ~ 1L,
@@ -4622,8 +4605,31 @@ week_inputs_and_sim_2w <- function(cut_season, cut_week, n_trials = CALIB_TRIALS
     dplyr::filter(!is.na(y_home))
 
   if (!nrow(g)) return(tibble::tibble())
-  # never let simulate_game_nb turn a missing mean into a 21.5 coin flip (audit F11)
+  # The means production simulates: the sum of the admitted terms (audit M22). The backtest gave the
+  # margin (home_hfa - away_hfa) / 2 and added rest, so the blend trained on a model with no home field.
+  comp <- calibration_mu_components(g, MU_TERMS_ADMITTED)
+  admitted <- MU_TERM_NAMES[MU_TERM_NAMES %in% MU_TERMS_ADMITTED]
+  g$mu_home <- Reduce(`+`, comp$home[admitted])
+  g$mu_away <- Reduce(`+`, comp$away[admitted])
+  # never let simulate_game_nb turn a missing mean into a 21.5 coin flip (audit F11); this names the
+  # missing inputs, then compose_mu() gives the same sum and stops on a mean that is not positive
   assert_finite_means(g, sprintf("calibration %d week %d", cut_season, cut_week))
+  mu <- compose_mu(comp, MU_TERMS_ADMITTED)
+  g <- g |>
+    dplyr::mutate(
+      mu_home = mu$mu_home,
+      mu_away = mu$mu_away,
+
+      sd_home = pmax(home_off_sd_raw, 5.5),
+      sd_away = pmax(away_off_sd_raw, 5.5),
+
+      total_mu = mu_home + mu_away,
+      sd_goal  = sd_total_curve(total_mu),
+      sd_home  = 0.7 * sd_home + 0.3 * (sd_goal / sqrt(2)),
+      sd_away  = 0.7 * sd_away + 0.3 * (sd_goal / sqrt(2)),
+      sd_home  = pmax(sd_home, 4.8),
+      sd_away  = pmax(sd_away, 4.8)
+    )
 
   set.seed(CALIB_SEED_BASE + cut_season * 100 + cut_week)
 

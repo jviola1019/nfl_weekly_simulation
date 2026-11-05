@@ -1,0 +1,8 @@
+1322 games (2019-2023) with a result and a no-vig close
+league         Brier 0.24101  log loss 0.67476
+strength_free  Brier 0.24373  log loss 0.68033
+team_margin    Brier 0.24280  log loss 0.67878
+p_c0           Brier 0.21236  log loss 0.61249
+league - team_margin         Brier difference -0.00179  (-0.00462 to +0.00103)
+strength_free - team_margin  Brier difference +0.00093  (-0.00335 to +0.00513)
+league - strength_free       Brier difference -0.00272  (-0.00589 to +0.00046)

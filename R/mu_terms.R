@@ -82,6 +82,34 @@ mu_components <- function(games, pressure_pts) {
   list(home = home, away = away)
 }
 
+#' The mean terms the calibration backtest simulates (week_inputs_and_sim_2w in NFLsimulation.R)
+CALIBRATION_MU_TERMS <- c("base", "hfa", "rest")
+
+#' The calibration backtest's mean terms, in mu_components() form (2026-11-04)
+#'
+#' The backtest that trains the deployed blend must simulate the model production serves. It gave
+#' the margin (home_hfa - away_hfa) / 2, which averages zero, and added rest, where production gives
+#' the home team its full home field and admits no rest (reports/2026-11-04/hfa-engine/README.md). It
+#' now sums the admitted terms with compose_mu(), as production does. It computes only drives x points
+#' per drive, home field and rest, so it stops when config admits any other term.
+#' @param g one row per game: game_id, exp_drives_home, exp_ppd_home, exp_drives_away, exp_ppd_away,
+#'   HFA_pts, home_rest_points, away_rest_points
+#' @param admitted config.R MU_TERMS_ADMITTED
+#' @return list(home = , away = ) for compose_mu()
+calibration_mu_components <- function(g, admitted) {
+  unsimulated <- setdiff(admitted, CALIBRATION_MU_TERMS)
+  if (length(unsimulated)) {
+    stop(sprintf(paste("calibration_mu_components: the calibration backtest cannot simulate admitted term(s) %s,",
+                       "so the blend would train on a model production does not serve"),
+                 paste(unsimulated, collapse = ", ")), call. = FALSE)
+  }
+  side <- function(base, hfa, rest) {
+    data.frame(game_id = g$game_id, base = base, hfa = hfa, rest = rest, stringsAsFactors = FALSE)
+  }
+  list(home = side(g$exp_drives_home * g$exp_ppd_home, g$HFA_pts, g$home_rest_points),
+       away = side(g$exp_drives_away * g$exp_ppd_away, 0, g$away_rest_points))
+}
+
 #' Simulated means: the sum of the admitted terms (audit M22)
 #'
 #' Terms are summed in MU_TERM_NAMES order, so the result does not depend on how config

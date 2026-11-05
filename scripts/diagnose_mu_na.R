@@ -24,7 +24,7 @@
 DMN_TERMS <- c("game_id", "home_team", "away_team", "neutral_site", "home_hfa", "away_hfa", "home_rest_points",
                "away_rest_points", "home_off_drives_pg", "home_def_drives_pg", "away_off_drives_pg", "away_def_drives_pg",
                "home_off_ppd", "home_def_ppd", "away_off_ppd", "away_def_ppd", "exp_drives_home", "exp_drives_away",
-               "exp_ppd_home", "exp_ppd_away", "mu_home_base", "mu_away_base", "margin_shift", "mu_home", "mu_away")
+               "exp_ppd_home", "exp_ppd_away", "HFA_pts", "mu_home", "mu_away")
 DMN_PATTERN <- "^simulate_game_nb: invalid mu_(home|away)="
 
 #' The calibration game being simulated, from the call frames: the innermost
