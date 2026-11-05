@@ -37,6 +37,31 @@ The owner asked on 2026-11-04 to "Complete and fix the home field issues" that `
   - **The default stays `team_margin`.** Switching is the owner's call.
   - **Also found:** the ten-season window overstates home field by about 0.6 points.
 
+### CLAUDE.md: the agent prompts rewritten, and stale facts fixed (owner, 2026-11-04)
+
+The owner asked to "Rewrite prompts" and chose both the request prompts and CLAUDE.md's. The claude-md-improver skill audited the file (72/100), and the owner approved every proposed change.
+- **Section 3, the four standard prompts:**
+  - **Audit:** fresh-HOME gates; data before code (the badge, `source_status.json`, INPUT DRIFT); joins on franchise codes; silent fallbacks; look-ahead.
+  - **Fix:** the test first, on real data where possible; cache-key bumps; the golden-master commit named; never edit an R script while it runs.
+  - **Validation:** the R gates, web gates and CI, each reported with its summary line; the AC-power rule.
+  - **Docs:** now covers HANDOFF.md.
+- **Section 4's STOP list** adds three items:
+  - frozen protocols and `eval_windows`;
+  - the sealed 2025 holdout;
+  - merges, which the owner approves.
+- **Section 2** adds the keyless-data rule.
+- **Stale facts fixed:**
+  - `SEASON`/`WEEK_TO_SIM` auto-resolve; they are no longer edited by hand;
+  - the injury playbook names `safe_load_injuries()` and its retry, not old line numbers;
+  - the invalid-week playbook covers the resolver;
+  - the engine's line counts;
+  - the footer.
+- **Added:**
+  - two playbook entries: a golden-master difference, and a long gate that fails after the PC slept;
+  - inventory lines: `R/run_config.R`, `scripts/golden_master.R`, `backtest/eval_windows/`, `backtest/preclose/`, the database checks, the ERD and HANDOFF.md;
+  - the web gate commands.
+- **Removed:** the duplicated correlation table.
+
 ### Golden master CI: a record attempt that fails is tried again (2026-11-04)
 
 - **The failure:** CI on `c933862` failed 2 of its 52 record jobs (`08149e7`, `7b218ca`). The cause was the same in both: `raw.githubusercontent.com` answered 503 for nflverse's `games.rds` while every matrix job was downloading at once. Neither job ran code that had changed, and both had recorded cleanly on `a340a32`.
