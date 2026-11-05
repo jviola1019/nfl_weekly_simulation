@@ -50,21 +50,29 @@ The owner's words are quoted. Each prompt states the goal, the scope, the data, 
 - One featured prop (Brandin Cooks: total touchdowns 0.5, "PassProj 0.06") has no recommendation, median or evidence score.
 - Against that, Josh Allen's median read 1.3 on 2026-11-04 and 1.4 on 2026-11-05. So something updates, but what, and when, is unknown.
 
-**The baseline capture** (2026-11-05 05:24Z: all 600 pages, HTTP 200, at 1 request a second; private store `.prospective/rotobot/`; parser `parse_profiles.R`):
+**The captures** (every page robots.txt allows, at 1 request a second; private store `.prospective/rotobot/`; parser `parse_profiles.R`, which reads a card in either form the site serves it, a JSON payload or rendered HTML):
 
-| Featured props | Count |
-|---|---|
-| Pages with a featured-prop card | 401 |
-| Featured market: Total Touchdowns | 228 |
-| Featured market: Receiving Yards | 50 |
-| Featured market: Receptions | 42 |
-| Featured market: Rushing Yards | 18 |
-| Featured market: Passing Yards | 14 |
-| Featured market: other or unparsed | 49 |
-| Showing a median against a line | **113** |
-| Carrying a directional recommendation | **30** |
+| Featured props | 2026-11-05 05:24Z | 2026-11-05 20:35Z |
+|---|---|---|
+| Pages fetched (HTTP 200) | 600 of 600 | 596 of 600 (4 timeouts) |
+| Pages with a featured-prop card | 401 | 400 |
+| Cards served as rendered HTML | 41 | 185 |
+| Featured market: Total Touchdowns | 242 | 236 |
+| Featured market: Receiving Yards | 54 | 59 |
+| Featured market: Receptions | 46 | 45 |
+| Featured market: Rushing Yards | 26 | 24 |
+| Featured market: Passing Yards | 18 | 18 |
+| Featured market: Passing Touchdowns | 9 | 10 |
+| Featured market: Rushing and Receiving Yards | 6 | 8 |
+| Showing a median against a line | **140** | **151** |
+| Carrying a directional recommendation | **43** | **46** |
 
-**What that means for power:** about 30 leans per capture, if they are current, gives about 270 over weeks 10–18. A 3-point edge needs about 2,300. Unless A0 shows the public pages carry far more current leans than this baseline, `nfl_rotobot_v1` is expected to end **inconclusive, so RotoBot is not adopted**. The protocol must state that before it is signed.
+- **Correction (2026-11-05):** the first parser read only the JSON form. It reported 113 medians and 30 recommendations for the 05:24Z capture. Both captures were re-parsed with the fixed parser.
+
+**What that means for power:**
+- **The supply:** about 45 leans per capture, if they are current, gives about 400 over weeks 10–18. Counting every median shown against a line, the total is about 1,350.
+- **The need:** the simplest test of a 3-point edge needs about 1,720 independent props: a 53% hit rate against 50%, one-sided 5%, 80% power. The paired comparison with the market's direction needs more.
+- **So:** unless A0 shows the public pages carry far more current leans than these captures, `nfl_rotobot_v1` is expected to end **inconclusive, so RotoBot is not adopted**. The protocol must state that before it is signed.
 
 **The qualification test** runs on real captures only, before any scoring design:
 
@@ -80,7 +88,7 @@ The owner's words are quoted. Each prompt states the goal, the scope, the data, 
   - **"Equal":** the featured line equals a venue's main line exactly, or a Kalshi strike in its ladder.
   - **Too few:** under 50 covered props makes Q2 *inconclusive*, and capture continues.
 - **Q3:** tests the line and median fields only. "Cleared x/y" moves after games by design.
-- **Cadence:** a capture every day, plus one before each kickoff window (Thursday 18:00Z, Sunday 12:00Z, Monday 18:00Z). One capture takes about an hour, because the site answers in about 5 seconds a page.
+- **Cadence:** a capture every day, plus one before each kickoff window (Thursday 18:00Z, Sunday 12:00Z, Monday 18:00Z). One capture takes 35 to 60 minutes, because the site answers in about 2.5 to 5 seconds a page.
 
 - **If any question fails,** the public data cannot be scored as a predictive source. RotoBot is **rejected as unverifiable** without Pro, which the keyless rule excludes.
 - **What it costs:** the capture is about 600 requests per snapshot at 1 per second.
@@ -105,7 +113,10 @@ The owner's words are quoted. Each prompt states the goal, the scope, the data, 
   - **Our models** (the frozen v1 and the new v2) are compared on the same props and reported. **Beating them is not enough to qualify,** because they do not beat the market themselves.
   - **The count** is market-matched featured props, not all featured props.
   - **Too little power:** if the season ends with a minimum detectable effect above 3 points, the result is *inconclusive*, and RotoBot is **not adopted**. Adoption needs positive evidence.
-- **Power:** computed from A0's counts before signing. About 300 featured props a week for 9 weeks gives about 2,700. A 3-point edge in hit rate needs about 2,300 independent props (one-sided 5%, 80% power), before clustering. The protocol states its minimum detectable effect.
+- **Power:** computed from A0's counts before signing.
+  - **The supply:** the captures show at most about 150 featured props a capture with a median against a line, or about 1,350 over 9 weeks.
+  - **The need:** a 3-point edge in hit rate needs about 1,720 independent props in a one-sample test (one-sided 5%, 80% power), before clustering. The paired comparison with the market needs more.
+  - **The protocol** states its minimum detectable effect.
 - **Adoption:** only if it passes. Candidates are its evidence score (sample sufficiency) and its situational splits, each a term that then goes through our own walk-forward admission.
 
 ## 4. Props: model and price every market prop type
