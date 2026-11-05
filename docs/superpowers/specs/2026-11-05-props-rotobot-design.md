@@ -50,6 +50,22 @@ The owner's words are quoted. Each prompt states the goal, the scope, the data, 
 - One featured prop (Brandin Cooks: total touchdowns 0.5, "PassProj 0.06") has no recommendation, median or evidence score.
 - Against that, Josh Allen's median read 1.3 on 2026-11-04 and 1.4 on 2026-11-05. So something updates, but what, and when, is unknown.
 
+**The baseline capture** (2026-11-05 05:24Z: all 600 pages, HTTP 200, at 1 request a second; private store `.prospective/rotobot/`; parser `parse_profiles.R`):
+
+| Featured props | Count |
+|---|---|
+| Pages with a featured-prop card | 401 |
+| Featured market: Total Touchdowns | 228 |
+| Featured market: Receiving Yards | 50 |
+| Featured market: Receptions | 42 |
+| Featured market: Rushing Yards | 18 |
+| Featured market: Passing Yards | 14 |
+| Featured market: other or unparsed | 49 |
+| Showing a median against a line | **113** |
+| Carrying a directional recommendation | **30** |
+
+**What that means for power:** about 30 leans per capture, if they are current, gives about 270 over weeks 10–18. A 3-point edge needs about 2,300. Unless A0 shows the public pages carry far more current leans than this baseline, `nfl_rotobot_v1` is expected to end **inconclusive, so RotoBot is not adopted**. The protocol must state that before it is signed.
+
 **The qualification test** runs on real captures only, before any scoring design:
 
 | Question | Test | Pass |
