@@ -18,6 +18,7 @@ on:
       - "R/**"
       - "scripts/golden_master.R"
       - ".github/workflows/golden-master.yml"
+      - "renv.lock"   # a package version can move the outputs too
   workflow_dispatch:
 
 permissions:
