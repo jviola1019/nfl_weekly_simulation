@@ -130,3 +130,23 @@ The record was made by `.github/workflows/golden-master.yml` on #236: workflow r
 **Input drift:** only #219's known weather change, at every commit.
 
 **Current golden master.** `final_numeric.csv`, `meta.json` and `inputs.csv` here were re-recorded from the CI artifact `gm-c13474a…` of workflow run 41968619096, `csv_sha256 304cf4e3d0f7c6afd11ca3536dfa615d48f85f0073c96cacdec354d9693c6edb` (checked against the file with sha256). `inputs.csv` is byte-identical to the previous reference.
+
+## Home-field default: league (#239)
+
+The record was made by `.github/workflows/golden-master.yml` on #239: workflow run 41976051728, `attribute` job 127079304406.
+
+**Determinism:** `b5d1ac4` recorded twice shows no differences.
+
+**The prediction, written in the PR before CI ran:**
+- `mu_home` changes in all 16 games, because every home team's value becomes the league value (1.69);
+- `mu_away` is unchanged;
+- the blend moves, because the calibration simulations use league values too.
+
+| Commit | Change | Columns changed vs the previous commit | Games | Max abs diff | Verdict vs prediction |
+|---|---|---|---|---|---|
+| `885c47d` | `HFA_TEAM_ESTIMATOR` default `team_margin` → `league` | `mu_home` and everything derived from it: SDs, NB sizes, every model probability, the blend, and betting signals (1 home, 5 away). **`mu_away` is not among them.** | 16 | `mu_home` 3.70; `home_p_2w_model` 0.098; `home_p_2w_blend` 0.057; `margin_blend` 4.73 | **As predicted.** The 3.70-point maximum is a team whose mean-home-margin value sat far above the league value: the strength confound the change removes. |
+| `4c53dd9` | merge of main (#235, docs) | none | 0 | none | As predicted. |
+
+**Input drift:** only #219's known weather change.
+
+**Current golden master.** `final_numeric.csv`, `meta.json` and `inputs.csv` here were re-recorded from the CI artifact `gm-4c53dd9…` of workflow run 41976051728, `csv_sha256 ff9ec6a046c9179ef5ffc5a3693d990bfd649d71140434afea5d65b7094a208a` (checked against the file with sha256). `inputs.csv` is byte-identical to the previous reference.
