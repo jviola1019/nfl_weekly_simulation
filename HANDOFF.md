@@ -16,7 +16,11 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
 - **The scheduled task replaced the in-session loop** (see Running).
 - **"RoboBot sim" was RotoBot** (rotobot.ai), an online prop tool. The owner wants its real props tested against our model and the market, with no synthetic data.
 - **Props:** the owner wants every market prop type modelled and priced. Both pieces wait on a written design the owner approves.
-- **Home field:** `fix/home-field-asof` fixes both defects below. Its v2 comparison is pre-registered (`reports/2026-11-04/hfa-engine-v2/PLAN.md`).
+- **Home field: #236** (`fix/home-field-asof`) fixes both defects below.
+  - **CI:** 28/28 pass. The golden master moved as predicted: `mu_home` in 16 games (at most 0.388), `mu_away` unchanged, the blend up to 0.034. The reference is re-recorded from CI's `c13474a` artifact, and a local Windows run matches it with no differences.
+  - **The v2 comparison is void:** gate V2 failed for `league` (`reports/2026-11-04/hfa-engine-v2/RESULT.md`). The default stays `team_margin`; switching to `league` is the owner's call.
+  - **#237,** stacked on #236, makes a failed schedule download retry and then stop with its cause.
+- **#235:** CLAUDE.md's agent prompts rewritten (owner-approved audit).
 
 **Objective.** The owner asked on 2026-11-02 to complete every listed decision:
 - sign `nfl_props_v1` and `nfl_preclose_v1`;
@@ -97,9 +101,8 @@ Resume point for the NFL overhaul. Read this first, then the spec. To verify eve
   - Two runs cut off when the PC slept were restarted on AC power and passed.
 
 **Next targets:**
-- **home field** (`fix/home-field-asof`):
-  - the v2 runs, scored under `reports/2026-11-04/hfa-engine-v2/PLAN.md`, which decides the default;
-  - then a PR with the golden master attributed and the reference re-recorded from CI;
+- **the owner's merges:** #234 (deps), #235 (CLAUDE.md), #236 (home field), then #237 (schedule load);
+- **the home-field default:** the owner's choice between keeping `team_margin`, switching to `league`, or a v3 with a corrected gate scored on new games. The ten-season window also overstates home field by about 0.6 points; that is for the term-admission backtest;
 - **props and RotoBot:**
   - a written design for modelling and pricing every market prop type;
   - testing RotoBot's public props against our model and the market, on real data only.
