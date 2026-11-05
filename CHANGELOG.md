@@ -4,6 +4,27 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### The verification sweep on #240's head: every gate passes (owner, 2026-11-05)
+
+- **The ask:** "full app verifications (Playwright,etc.) and do not skip anything. Architectures, ERDs, documentation should be verified."
+- **The report:** `reports/2026-11-05/verification/VERIFICATION.md`, on `4ece613` (main with #240 merged in).
+- **The results:**
+  - integrity 63/63;
+  - R tests: 920 tests, 4,149 passed, 0 failed, 0 skipped;
+  - `run_matrix.R`: 11/11, the golden master "no differences" against the `league` reference;
+  - `run_week.R` picked 2026 week 9 itself and passed QA;
+  - Playwright 135/135 on the real run; CI's web and parity jobs green;
+  - `db-check`: 18 checks, 0 errors; the ERD matches the schema;
+  - Lighthouse: accessibility and best practices 100 on every page.
+- **Recorded, not changed:**
+  - a game page's two disagreeing simulator numbers;
+  - a published value outside both the raw simulation and the market (LV at SF);
+  - high simulated totals where the market's are low;
+  - no market-priced props in the weekly run;
+  - LCP above 2.5 s on five of six pages;
+  - two stale checks in `verify_requirements.R`.
+- **HANDOFF.md:** the state on 2026-11-05.
+
 ### Architecture and documentation verified against the code; withdrawn claims removed (owner, 2026-11-05)
 
 The owner asked: "Architectures, ERDs, documentation should be verified". Every top-level and `docs/` markdown file was checked:

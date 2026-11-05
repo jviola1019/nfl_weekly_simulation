@@ -2,6 +2,54 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec. To verify everything and finish the remaining work in a full local environment (VS Code), use `docs/handoff/2026-09-29-vscode-prompt.md`.
 
+## State on 2026-11-05 (evening): home field done; the docs and the verification sweep wait for the owner's merge
+
+**Merged on 2026-11-05** (the owner: "Continue with merging"):
+- #236, the home-field fix (`7cad962`);
+- #237, a failed schedule download retried, then stopped with its cause (`73fd3d6`);
+- #235, CLAUDE.md's agent prompts (`03dff67`);
+- #234, TMB 1.9.25, glmmTMB 1.1.15.2 and RTMB 2.0 (`667e0e0`);
+- #239, the home-field default `league`, chosen from research (`85fd35a`; `reports/2026-11-05/hfa-default/RESEARCH.md`).
+  - The golden master moved as predicted: `mu_home` by up to 3.70 points, `mu_away` unchanged.
+  - The reference is re-recorded, and a local Windows run shows "no differences".
+
+**Waiting for the owner:**
+- **#240,** the docs verified against the code:
+  - CI is green;
+  - the R gates on `4ece613`: 920 tests, 4,149 passed, 0 failed, 0 errors, 0 skipped; integrity 63/63.
+  - Auto mode refused my merge.
+- **The verification report** (`docs/verification-2026-11-05`), stacked on #240. Retarget it to main after #240.
+- **#238,** the design (draft):
+  - what it covers: props for every market type, and RotoBot verified as a source before anything is adopted;
+  - the owner approved its STOP scope ("as designed"), not yet the whole design;
+  - the plans (writing-plans) start on that approval.
+
+**The verification sweep:** every gate passes; six findings are recorded (`reports/2026-11-05/verification/VERIFICATION.md`).
+
+**RotoBot** (private captures in `nfl-worktrees/.prospective/rotobot/`):
+- **Two captures before Thursday's game:** 05:24Z (600 pages) and 20:35Z (596 pages; 4 timeouts). robots.txt allows `/nfl/players/`.
+- **The parser** now reads both forms a card is served in. The counts are in #238.
+- **A0's analysis** waits for the design's approval, so its thresholds are fixed before any result is seen.
+- **Its next captures** are Sunday before 17:00Z and after Monday's game. Nothing schedules them yet.
+
+**Running:**
+- **The scheduled task:** `\nfl\prospective-dispatch` runs every 15 minutes, from the frozen checkouts `hyp-loop` and `preclose-run`. Thursday's 18:00Z snapshot ran at 18:20Z.
+- **Wake timers are disabled** on AC and DC (`powercfg`), so the task's wake setting cannot wake the PC. The snapshot windows need it awake: on AC power with the lid open.
+
+**Recorded for later:**
+- **Caching:**
+  - the golden-master job downloads the nflverse data once per recorded commit, and one shared download would cut CI time;
+  - local runs could use nflreadr's filesystem cache.
+- **The user agent:** `R/prop_odds_api.R`'s ScoresAndOdds scraper sends a browser user agent. It is off by default; #238 fixes or removes it.
+- **A duplicate:** `probability_to_american()` is defined twice, in `R/utils.R` and `NFLmarket.R`.
+
+**Owner decisions:**
+1. Merge #240, then the verification report.
+2. Approve #238's design, or change it.
+3. Schedule the RotoBot captures: a second scheduled task, about 600 requests at 1 a second each time.
+4. Wake timers: enable them, or keep the PC awake for the snapshot windows.
+5. Optional: try Ponytail, a minimal-code skill. Installing it changes Claude Code's configuration.
+
 ## State on 2026-11-04 (evening): #215–#233 merged, the weekly program on a scheduled task, home field being fixed
 
 **Since the owner's "Do this" (2026-11-04):**
