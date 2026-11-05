@@ -1,327 +1,113 @@
-# NFL Prediction Model - Architecture
+# Architecture
 
-**Version**: 2.7.0
-**Last Updated**: 2026-02-02
+How the system fits together, from data sources to the pages the app serves. The database tables and their keys are in `docs/ERD.md`. What each model number rests on is in `docs/EVIDENCE_LEDGER.md` and the dated `reports/`. Model claims are made only there.
 
----
+**Verified against the code on 2026-11-05** (main after #235–#237). This replaces the January 2026 version, which described removed scripts and withdrawn validation figures.
 
-## Overview
+## The lineage: sources to pages
 
-This document describes the architecture of the NFL prediction model, designed as a blueprint for multi-sport prediction systems.
-
----
-
-## System Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              USER INTERFACE                                 │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  run_week.R (Entry Point)  │  config.R (Parameters)  │  Web bundle         │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            SIMULATION ENGINE                                │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  NFLsimulation.R                                                            │
-│  ├── simulate_game_nb()      Monte Carlo + Gaussian copula                  │
-│  ├── calc_injury_impacts()   Position-weighted adjustments                  │
-│  ├── safe_hourly()           Weather integration                            │
-│  └── score_weeks()           Multi-week scoring with caching                │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            MARKET ANALYSIS                                  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  NFLmarket.R                                                                │
-│  ├── build_moneyline_comparison_table()   Market vs model comparison        │
-│  ├── shrink_probability_toward_market()   60% market shrinkage              │
-│  └── conservative_kelly_stake()           1/8 Kelly with edge caps          │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            VALIDATION & METRICS                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  NFLbrier_logloss.R                                                         │
-│  ├── brier_score()           Brier scoring                                  │
-│  ├── log_loss()              Cross-entropy loss                             │
-│  └── compare_to_market()     Model vs Vegas comparison                      │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            CORE UTILITIES                                   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│  R/utils.R              Core functions (SINGLE SOURCE)                      │
-│  R/data_validation.R    Quality tracking                                    │
-│  R/logging.R            Structured logging                                  │
-│  R/playoffs.R           Playoff logic                                       │
-│  R/date_resolver.R      Date handling                                       │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+  subgraph Sources [keyless sources]
+    NV[nflverse<br/>schedules, play-by-play,<br/>stats, rosters, injuries]
+    ESPN[ESPN core API<br/>game odds]
+    K[Kalshi, Smarkets,<br/>Pinnacle guest API<br/>prices]
+    OM[Open-Meteo<br/>weather]
+  end
+  subgraph R [R engine]
+    RUN[run_week.R<br/>R/run_config.R auto week]
+    SIM[NFLsimulation.R<br/>mean terms R/mu_terms.R<br/>home field R/schedule_context.R]
+    MKT[NFLmarket.R<br/>comparison, shrinkage]
+    PROPS[R/correlated_props.R<br/>sports/nfl/props/]
+    BUN[R/sim_bundle.R<br/>R/bundle_writer.R]
+  end
+  subgraph Contract [contract]
+    SCH[contracts/schema/*.json]
+  end
+  subgraph Web [web app]
+    ING[web/scripts/ingest-bundle.ts<br/>npm run db-check]
+    DB[(PostgreSQL<br/>docs/ERD.md)]
+    PAGES[Next.js pages:<br/>home, games, evidence,<br/>methodology, data-health,<br/>props, desk]
+  end
+  NV --> SIM
+  ESPN --> SIM
+  OM --> SIM
+  K --> PROPS
+  RUN --> SIM --> MKT --> BUN
+  SIM --> PROPS
+  BUN -- validated against --> SCH
+  BUN --> ING --> DB --> PAGES
 ```
 
----
+**Audit tables beside the bundle:** `artifacts/baseline_games.csv` and `artifacts/baseline_props.csv`, and the run logs `run_logs/config_*.rds`, `run_logs/final_*.rds` and `run_logs/mu_terms_*.rds`.
 
-## Data Flow
+## The game model
 
-The database tables and their keys: [docs/ERD.md](ERD.md) (generated from web/src/db/schema.ts).
+| Step | Where | What it does now |
+|---|---|---|
+| Week and season | `run_week.R`, `R/run_config.R`, `R/date_resolver.R` | Resolves the upcoming week from the nflverse schedule, or takes `<week> <season>` |
+| Schedules | `load_schedules_checked()` (`R/schedule_context.R`) | Downloads again after a failed download, then stops with nflreadr's warning |
+| Injuries | `safe_load_injuries()` | Retries seasons with games, and flags a missing season "partial" with its cause |
+| Home field | `hfa_table_asof()` (`R/schedule_context.R`) | Regular-season results before the slate's week, from the last ten seasons. `HFA_TEAM_ESTIMATOR` (`config.R`) chooses one league value or per-team values |
+| Mean scores | `compose_mu()` (`R/mu_terms.R`) | Sums the admitted terms, `MU_TERMS_ADMITTED` = drives × points per drive, plus home field. The other 13 terms are computed and logged (`run_logs/mu_terms_*.rds`), not simulated (audit M22) |
+| Scores | `simulate_game_nb()` | Negative binomial scores joined by a Gaussian copula, `N_TRIALS` draws per game |
+| Calibration backtest | `week_inputs_and_sim_2w()` | Simulates past weeks with the same admitted terms and home field as of each cut. It trains the blend below |
+| Published probability (C3) | NFLsimulation.R, then `sb_predictions()` in `R/sim_bundle.R` | The raw simulator probability goes through a ridge blend with the no-vig market and an isotonic map, then is shrunk 70% toward the market (`SHRINKAGE`). The spline and isotonic calibrators are printed as diagnostics only (audit M4) |
+| Market comparison and staking | `NFLmarket.R` | EV, edge quality, 1/8 Kelly (`KELLY_FRACTION`) with caps. A game with no line has no edge |
 
-```
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│   nflreadr   │    │  ESPN API    │    │ Sleeper API  │
-│  (schedules, │    │   (market    │    │  (injuries,  │
-│   outcomes)  │    │    odds)     │    │   real-time) │
-└──────┬───────┘    └──────┬───────┘    └──────┬───────┘
-       │                   │                   │
-       ▼                   ▼                   ▼
-┌─────────────────────────────────────────────────────┐
-│              DATA INTEGRATION LAYER                 │
-│  standardize_join_keys() → type coercion            │
-│  safe_load_injuries() → robust loading              │
-│  update_*_quality() → quality tracking              │
-└─────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────┐
-│              FEATURE ENGINEERING                    │
-│  • Strength of Schedule (SoS)                       │
-│  • Injury impacts (position-weighted)              │
-│  • Weather effects (wind, precipitation)            │
-│  • Rest/travel adjustments                          │
-│  • Coaching change penalties                        │
-└─────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────┐
-│              MONTE CARLO SIMULATION                 │
-│  • Negative binomial score distributions            │
-│  • Gaussian copula correlation (rho ≈ -0.15)        │
-│  • Sobol QMC sequences                              │
-│  • Antithetic variance reduction                    │
-│  • 100,000 trials per game                          │
-└─────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────┐
-│              CALIBRATION                            │
-│  • GAM spline with smoothing penalty                │
-│  • -6.9% Brier improvement vs raw                   │
-│  • Trained on 2019-2022, tested on 2023+            │
-└─────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────┐
-│              MARKET COMPARISON                      │
-│  • 60% shrinkage toward market consensus            │
-│  • Expected value calculation                       │
-│  • 1/8 Kelly staking with edge caps                 │
-│  • Edge quality flags (>15% = implausible)          │
-└─────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────┐
-│              OUTPUT                                 │
-│  • bundles/<cycle_id>/ (web bundle; npm run local)  │
-│  • run_logs/*.rds                                   │
-│  • Console: quality badge, progress                 │
-└─────────────────────────────────────────────────────┘
-```
+## Player props
 
----
+| Step | Where |
+|---|---|
+| Projections | `sports/nfl/props/data_sources.R` (point in time, week-filtered) |
+| Simulation, one module per stat | `sports/nfl/props/{passing_yards,rushing_yards,receiving_yards,receptions,touchdowns}.R`, correlated with the game draws (`R/correlated_props.R`) |
+| Market quotes | `R/prop_odds_api.R`: a point-in-time quote cache, `get_market_prop_quotes()` (stale after `PROP_QUOTE_MAX_AGE_MIN`) |
+| The signed test | `nfl_props_v1` runs a frozen copy of this module (`4c1c377`) on 2026 weeks 9–18 (`backtest/eval_windows/nfl_props_v1.json`) |
 
-## Statistical Methodology
+The database already has prop tables (`prop_projections`, `prop_line_probs`), but no bundle kind carries props yet. The props design (PR #238) covers that work.
 
-### Score Distribution: Negative Binomial
+## The contract and the app
 
-NFL scores exhibit overdispersion (variance > mean), making negative binomial superior to Poisson:
+- **The contract:** `contracts/schema/` defines each bundle file.
+  - `bundle_kinds.json` names two kinds. **weekly** requires teams, games, game_predictions and source_status. **backtest** carries eval windows, runs, metrics, calibration bins, promotion gates and the evidence ledger.
+  - `R/bundle_writer.R` validates on the R side, and the ingest validates again.
+- **Ingest:** `web/scripts/ingest-bundle.ts` loads a bundle into PostgreSQL. A bundle that fails QA is stored as `qa_failed`, and the app keeps the last good run.
+  - `npm run db-check` (`web/src/lib/dbcheck/checks.ts`) runs the SQL data checks after every ingest.
+  - The append-only and CHECK invariants are in `web/drizzle/0001_invariants.sql`.
+- **Pages:** `web/src/app/` serves home, `games/[id]`, evidence, methodology, data-health, props, desk (sign-in) and login.
+- **Offline:** `npm run local` (`web/scripts/local.ts`) starts a local PostgreSQL, ingests the newest local bundle and serves the app at http://127.0.0.1:3000.
+
+## Validation and backtests
+
+| Area | Where |
+|---|---|
+| Pre-registered game backtest | `backtest/walk_forward.R`; the signed windows are in `backtest/eval_windows/` |
+| Validation framework (S0–S5) | `backtest/vvf/` |
+| Pre-close protocol | `backtest/preclose/` (`nfl_preclose_v1`, signed) |
+| Point-in-time inputs | `backtest/build_inputs.R` and `backtest/data/` |
+| Odds layer (keyless) | `R/odds/`: `http.R` (1 request a second per domain, no workaround for a block), providers for nflverse, ESPN core and Kalshi, snapshots, the closing rule, the archive |
+
+## Operations
+
+| Job | Where | When |
+|---|---|---|
+| Weekly simulation | `.github/workflows/weekly-sim.yml` | Tuesday 18:00Z and Friday 21:00Z |
+| Odds captures and archive | `odds-capture.yml`, `capture-archive.yml` | Weekly schedules (crons in the files) |
+| CI | `ci.yml` (R syntax, smoke, audit), `ci-web.yml` (web), `golden-master.yml` (2024 week 15, every commit attributed) | Pull requests into main |
+| Prospective tests | A private dispatcher (`prospective_dispatch.R` on a Windows scheduled task) | Every 15 minutes, weeks 9–18 |
+
+## Directory map
 
 ```
-Score ~ NegBin(mu, size)
-where size = mu^2 / (var - mu)
+run_week.R  config.R  NFLsimulation.R  NFLmarket.R  NFLbrier_logloss.R  injury_scalp.R
+R/                 engine modules (utils, data_validation, logging, schedule_context, mu_terms,
+                   sim_bundle, bundle_writer, correlated_props, prop_odds_api, odds/ ...)
+sports/nfl/props/  prop data sources and one simulation module per stat
+backtest/          walk-forward, vvf/, preclose/, eval_windows/, data/
+contracts/         schema/ (the bundle contract) and fixtures/
+web/               Next.js app, Drizzle schema (src/db/schema.ts), migrations (drizzle/), scripts/
+scripts/           run_tests.R, verify_repo_integrity.R, run_matrix.R, golden_master.R, ...
+reports/           dated evidence: protocols, results, attributions, research
+docs/              this file, ERD.md, modeling.md, API.md, odds-sources.md, ledgers, specs, plans
+tests/testthat/    the R test suite (run with scripts/run_tests.R)
 ```
-
-### Score Correlation: Gaussian Copula
-
-Game dynamics create correlated scores (defensive battles, shootouts):
-
-```
-1. Generate correlated uniform (U_home, U_away) via Gaussian copula
-2. Transform: Score_home = qnbinom(U_home, size, mu)
-3. Transform: Score_away = qnbinom(U_away, size, mu)
-```
-
-Typical NFL rho ≈ -0.15 (slight negative correlation)
-
-### Calibration: GAM Spline
-
-```
-cal_prob = gam(outcome ~ s(raw_prob, k=10))
-```
-
-Smoothing penalty prevents overfitting. Validated improvement: -6.9% Brier.
-
-### Probability Shrinkage
-
-```
-shrunk = 0.4 * model_prob + 0.6 * market_prob
-```
-
-Rationale: NFL markets are extremely efficient. Divergence > 10% from market is likely model overconfidence.
-
-### Kelly Criterion
-
-```
-kelly = (p * b - q) / b
-where p = win prob, q = 1-p, b = decimal odds - 1
-
-conservative_stake = kelly * 0.125  # 1/8 Kelly
-capped_stake = min(conservative_stake, 0.02)  # 2% max
-```
-
----
-
-## Directory Structure
-
-```
-nfl/
-├── run_week.R              # Entry point
-├── config.R                # Configuration parameters
-├── NFLsimulation.R         # Core simulation engine (8,300+ lines)
-├── NFLmarket.R             # Market analysis (3,900+ lines)
-├── NFLbrier_logloss.R      # Scoring metrics (1,200+ lines)
-├── injury_scalp.R          # Injury data processing
-│
-├── R/                      # Core utility modules
-│   ├── utils.R             # Shared utilities (CANONICAL)
-│   ├── data_validation.R   # Quality tracking
-│   ├── logging.R           # Structured logging
-│   ├── playoffs.R          # Playoff logic
-│   ├── date_resolver.R     # Date handling
-│   ├── sleeper_api.R       # Sleeper fantasy integration
-│   └── red_zone_data.R
-│
-├── docs/                   # Documentation
-│   ├── API.md              # Function reference
-│   ├── ARCHITECTURE.md     # This file
-│   └── CONTRIBUTING.md     # Contributor guide
-│
-├── tests/testthat/         # Unit tests (~575 tests)
-│   ├── test-utils.R
-│   ├── test-data-validation.R
-│   ├── test-playoffs.R
-│   ├── test-injury-model.R
-│   ├── test-weather.R
-│   └── test-calibration.R
-│
-├── validation/             # Validation scripts
-│   ├── injury_model_validation.R
-│   ├── weather_validation.R
-│   └── calibration_validation.R
-│
-├── scripts/                # Utility scripts
-│   ├── verify_repo_integrity.R  # 35-check verification
-│   └── run_matrix.R        # Run all artifacts
-│
-├── archive/                # Deprecated files
-│
-└── run_logs/               # Generated artifacts
-```
-
----
-
-## Future: Multi-Sport Blueprint
-
-### Target Structure
-
-```
-sports-prediction/
-├── core/                   # Sport-agnostic core
-│   ├── simulation_engine.R
-│   ├── calibration.R
-│   ├── market_analysis.R
-│   ├── metrics.R
-│   └── utils.R
-│
-├── sports/                 # Sport-specific implementations
-│   ├── nfl/
-│   │   ├── config.R
-│   │   ├── simulation.R    # NFL-specific adjustments
-│   │   ├── injuries.R
-│   │   └── props/          # Player props
-│   │       ├── passing_yards.R
-│   │       ├── rushing_yards.R
-│   │       └── receiving_yards.R
-│   │
-│   ├── nba/                # (Future)
-│   └── mlb/                # (Future)
-│
-└── run.R                   # Universal entry point
-```
-
-### Key Abstractions
-
-**Generic Simulation Interface**:
-```r
-simulate_game <- function(
-  home_expected,
-  away_expected,
-  home_variance,
-  away_variance,
-  score_correlation,
-  distribution = "negbin"  # or "poisson", "normal"
-)
-```
-
-**Sport-Specific Config**:
-```r
-# NFL
-SCORE_DISTRIBUTION <- "negbin"
-HOME_ADVANTAGE <- 2.5
-SCORE_CORRELATION <- -0.15
-
-# NBA (future)
-SCORE_DISTRIBUTION <- "normal"
-HOME_ADVANTAGE <- 3.0
-SCORE_CORRELATION <- -0.10
-```
-
----
-
-## Validation Status
-
-| Component | Status | Method |
-|-----------|--------|--------|
-| Brier Score | 0.211 | Test set 2023-2024 |
-| 95% CI | (0.205, 0.217) | Bootstrap n=1000 |
-| K-fold CV | Valid | 10-fold, stratified by season |
-| Train/Test Splits | Valid | No leakage |
-| Calibration | Valid | Separate train/test |
-| Position Weights | p < 0.001 | A/B comparison |
-| Shrinkage | Optimized | Grid search on validation |
-
----
-
-## Design Decisions
-
-### Why Negative Binomial over Poisson?
-
-NFL scores show overdispersion (variance ≈ 100, mean ≈ 23). Negative binomial captures this naturally.
-
-### Why 60% Market Shrinkage?
-
-Empirical optimization on validation set. Lower shrinkage = overconfident. Higher = too conservative.
-
-### Why 1/8 Kelly?
-
-Full Kelly is too volatile. 1/8 Kelly balances growth with drawdown risk. Empirically optimal for sports betting.
-
-### Why Disable Snap Weighting?
-
-No validated improvement in Brier/log-loss. Position-level weights (validated p < 0.001) remain active.
-
----
-
-*Generated: 2026-02-02*

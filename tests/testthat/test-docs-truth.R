@@ -23,12 +23,17 @@ test_that("ledger parses and every row has a known status", {
   expect_true(all(ledger$status %in% c("validated", "reproducible", "unvalidated", "withdrawn")))
 })
 
-test_that("withdrawn claims do not appear in README, CLAUDE.md or GETTING_STARTED", {
+# The current docs, as the owner asked on 2026-11-05 ("Architectures, ERDs, documentation should be
+# verified"). Not here: docs/EVIDENCE_LEDGER.md (it defines the claims), docs/VARIABLE_LEDGER.md
+# (generated; its disclosure rows describe defects), CHANGELOG.md and HANDOFF.md (history).
+MAIN_DOCS <- c("README.md", "CLAUDE.md", "GETTING_STARTED.md", "DOCUMENTATION.md", "docs/ARCHITECTURE.md",
+               "docs/API.md", "docs/modeling.md", "docs/odds-sources.md", "docs/ERD.md")
+
+test_that("withdrawn claims do not appear in the current docs", {
   ledger <- read_ledger()
   withdrawn <- ledger[ledger$status == "withdrawn" & ledger$pattern != "–", ]
-  docs <- c("README.md", "CLAUDE.md", "GETTING_STARTED.md")
   hits <- character()
-  for (doc in docs) {
+  for (doc in MAIN_DOCS) {
     txt <- readLines(file.path(PROJECT_ROOT, doc), warn = FALSE, encoding = "UTF-8")
     for (i in seq_len(nrow(withdrawn))) {
       ln <- grep(withdrawn$pattern[i], txt, perl = TRUE)
@@ -52,7 +57,7 @@ test_that("every repo path the main docs cite exists", {
   expect_identical(doc_missing_paths(c("see `backtest/vvf/no_such_file.R` and `R/utils.R`", "`bundles/` `reports/<date>/x.md`")),
                    "backtest/vvf/no_such_file.R")
   missing <- character()
-  for (doc in c("CLAUDE.md", "README.md", "GETTING_STARTED.md")) {
+  for (doc in MAIN_DOCS) {
     gone <- doc_missing_paths(readLines(file.path(PROJECT_ROOT, doc), warn = FALSE, encoding = "UTF-8"))
     if (length(gone)) missing <- c(missing, paste0(doc, ": ", gone))
   }
