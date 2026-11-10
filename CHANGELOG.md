@@ -4,6 +4,20 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### The scheduled weekly simulation failed at "Resolve the week": fixed (2026-11-10)
+
+- **The failure:** the workflow's first scheduled run (2026-11-07 00:36Z, run 42319264760) stopped with "Invalid format '- The project is out-of-sync -- use `renv::status()` for details.'".
+- **The cause:** the step appended the whole stdout of `scripts/resolve_week.R` to `$GITHUB_OUTPUT`. renv prints that line to stdout when R starts in a project whose library, lockfile and code disagree, so it landed among the step's outputs.
+- **Why the tests missed it:** the script's test ran it with `--vanilla`, which skips the startup the workflow has.
+- **The fix:** the script appends its two lines (`week=`, `season=`) to the file `$GITHUB_OUTPUT` names, with LF endings, and the workflow no longer redirects stdout there.
+- **Tests** (each failed before the fix):
+  - the script, run with a startup profile that prints renv's line, leaves exactly `week=15` and `season=2024` in the output file;
+  - the workflow's step is pinned without the redirect;
+  - no workflow step may append an R process's stdout to `$GITHUB_OUTPUT`, `$GITHUB_ENV` or `$GITHUB_PATH`.
+- **Recorded, not changed:** why renv calls the project out of sync (`reports/2026-11-10/weekly-sim/README.md`).
+  - `renv.lock` records 29 packages that nothing in the project uses any more, among them `caret`, `gbm`, `performance`, `broom.mixed` and `doParallel` (`renv::status()`, renv 1.1.7).
+  - Removing them changes `renv.lock`, which is the owner's decision.
+
 ### Home-field default: league, after research (owner, 2026-11-05)
 
 - **The ask:** "choose whatever is recommended with extensive research". `HFA_TEAM_ESTIMATOR` now defaults to `league`: every team gets the league value as of the slate.

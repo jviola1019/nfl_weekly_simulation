@@ -21,6 +21,18 @@ test_that("every workflow parses as YAML and grants read-only contents permissio
   }
 })
 
+test_that("no workflow step appends an R process's stdout to a GitHub command file", {
+  # R's startup can print to stdout (renv: "- The project is out-of-sync ..."), and one stray line in
+  # $GITHUB_OUTPUT fails the step: the first scheduled weekly-sim run, 2026-11-07
+  for (f in list.files(wf_dir, pattern = "\\.ya?ml$")) {
+    for (job in wf_read(f)$jobs) {
+      lines <- unlist(strsplit(wf_runs(job), "\n", fixed = TRUE))
+      bad <- grepl("\\b(Rscript|R)\\b", lines) & grepl(">>\\s*\"?\\$\\{?GITHUB_(OUTPUT|ENV|PATH)", lines)
+      expect_false(any(bad), info = paste(f, paste(lines[bad], collapse = " | ")))
+    }
+  }
+})
+
 test_that("weekly-sim runs at the two decision points and on demand, and refuses the sealed 2025 (C1)", {
   w <- wf_read("weekly-sim.yml")
   on <- wf_on(w)
@@ -43,7 +55,8 @@ test_that("weekly-sim resolves the week before the 2025 check, and later steps u
   sealed <- which(grepl('"$SEASON" = "2025"', runs, fixed = TRUE))
   simulate <- which(grepl('Rscript run_week.R "$WEEK" "$SEASON"', runs, fixed = TRUE))
   expect_length(target, 1)
-  expect_match(runs[target], 'Rscript scripts/resolve_week.R "$WEEK" "$SEASON" >> "$GITHUB_OUTPUT"', fixed = TRUE)
+  # the script appends its two lines to $GITHUB_OUTPUT itself; its stdout is never redirected there
+  expect_identical(runs[target], 'Rscript scripts/resolve_week.R "$WEEK" "$SEASON"')
   expect_identical(sim$steps[[target]]$env$WEEK, "${{ inputs.week }}")
   expect_lt(target, sealed)
   expect_lt(sealed, simulate)
