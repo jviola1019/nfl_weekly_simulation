@@ -139,7 +139,23 @@ test_that("run_week.R resolves the week before config.R is sourced", {
 
 test_that("scripts/resolve_week.R prints the week and season for the workflow", {
   rscript <- file.path(R.home("bin"), "Rscript")
-  out <- withr::with_dir(PROJECT_ROOT, system2(rscript, c("--vanilla", "scripts/resolve_week.R", "15", "2024"),
-                                               stdout = TRUE, stderr = FALSE))
+  # GITHUB_OUTPUT is unset here: under CI the suite runs inside a step that has one of its own
+  out <- withr::with_envvar(c(GITHUB_OUTPUT = NA), withr::with_dir(PROJECT_ROOT,
+    system2(rscript, c("--vanilla", "scripts/resolve_week.R", "15", "2024"), stdout = TRUE, stderr = FALSE)))
   expect_equal(out, c("week=15", "season=2024"))
+})
+
+test_that("scripts/resolve_week.R appends only the week and season to GITHUB_OUTPUT, whatever R prints at startup", {
+  # The first scheduled weekly-sim run (2026-11-07) failed at this step: the workflow appended the script's stdout to
+  # $GITHUB_OUTPUT, and renv's startup line landed in it. The profile below prints that line the way renv does.
+  rscript <- file.path(R.home("bin"), "Rscript")
+  profile <- tempfile(fileext = ".R")
+  github_output <- tempfile()
+  on.exit(unlink(c(profile, github_output)), add = TRUE)
+  writeLines('cat("- The project is out-of-sync -- use `renv::status()` for details.\\n")', profile)
+  writeLines("kept=1", github_output)
+  printed <- withr::with_envvar(c(R_PROFILE_USER = profile, GITHUB_OUTPUT = github_output), withr::with_dir(PROJECT_ROOT,
+    system2(rscript, c("scripts/resolve_week.R", "15", "2024"), stdout = TRUE, stderr = FALSE)))
+  expect_true(any(grepl("out-of-sync", printed, fixed = TRUE)))
+  expect_identical(readLines(github_output), c("kept=1", "week=15", "season=2024"))
 })

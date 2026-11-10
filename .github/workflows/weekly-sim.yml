@@ -67,7 +67,8 @@ jobs:
         env:
           WEEK: ${{ inputs.week }}
           SEASON: ${{ inputs.season }}
-        run: Rscript scripts/resolve_week.R "$WEEK" "$SEASON" >> "$GITHUB_OUTPUT"
+        # the script appends week= and season= to $GITHUB_OUTPUT itself; its stdout also carries R's startup lines
+        run: Rscript scripts/resolve_week.R "$WEEK" "$SEASON"
 
       - name: Refuse the sealed 2025 season
         env:

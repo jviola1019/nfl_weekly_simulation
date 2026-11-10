@@ -1,0 +1,44 @@
+renv 1.1.7 from <library>/renv 
+
+The following package(s) are in an inconsistent state:
+
+ package      installed recorded used
+ bayestestR   y         y        n   
+ broom.mixed  y         y        n   
+ caret        y         y        n   
+ class        y         y        n   
+ clock        y         y        n   
+ coda         y         y        n   
+ datawizard   y         y        n   
+ diagram      y         y        n   
+ doParallel   y         y        n   
+ e1071        y         y        n   
+ future.apply y         y        n   
+ gbm          y         y        n   
+ gower        y         y        n   
+ hardhat      y         y        n   
+ insight      y         y        n   
+ ipred        y         y        n   
+ KernSmooth   y         y        n   
+ lava         y         y        n   
+ ModelMetrics y         y        n   
+ performance  y         y        n   
+ plyr         y         y        n   
+ pROC         y         y        n   
+ prodlim      y         y        n   
+ proxy        y         y        n   
+ recipes      y         y        n   
+ reshape2     y         y        n   
+ rpart        y         y        n   
+ sparsevctrs  y         y        n   
+ SQUAREM      y         y        n   
+
+The following package(s) are out of sync [lockfile != library]:
+
+# CRAN -----------------------------------------------------------------------
+- pkgload   [repo: * != CRAN; ver: 1.4.1 != 1.5.3]
+
+See `?renv::status` for advice on resolving these issues.
+
+synchronized: FALSE 
+recorded in the lockfile: 217 | in these libraries: 233 
