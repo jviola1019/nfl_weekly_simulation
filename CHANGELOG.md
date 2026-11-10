@@ -4,6 +4,12 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Week 9's losses recorded, and two measurements (2026-11-10)
+
+- **HANDOFF.md:** the state on 2026-11-10. The dispatcher did not run from 2026-11-06 21:00Z until 2026-11-09 20:15Z, and week 9 lost six kickoff snapshots. The signed tests are intact: they score the Tuesday run against Kalshi candles fetched afterwards.
+- **GitHub's cron delays, re-measured** (`reports/2026-11-10/capture-delays/`): the public capture's 8 slots since 2026-11-04 started 205 to 417 minutes late, median 309. Two of week 9's games had no game-day capture before kickoff. The crons are not changed.
+- **The simulator's published number, measured** (`reports/2026-11-10/published-vs-raw/`): it is 0.3 × blend + 0.7 × market, not a 30/70 mix of the raw simulation and the market as the public wording says. On week 9 it falls outside the range between the two in 5 or 6 of 15 games. The wording is not changed.
+
 ### The verification sweep on #240's head: every gate passes (owner, 2026-11-05)
 
 - **The ask:** "full app verifications (Playwright,etc.) and do not skip anything. Architectures, ERDs, documentation should be verified."

@@ -2,6 +2,68 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec. To verify everything and finish the remaining work in a full local environment (VS Code), use `docs/handoff/2026-09-29-vscode-prompt.md`.
 
+## State on 2026-11-10: the weekly workflow repaired (#242); week 9 complete, with six snapshots lost
+
+**The scheduled weekly simulation failed on its first scheduled run** (2026-11-07 00:36Z, run 42319264760, step "Resolve the week").
+- **The cause:** the step appended R's whole stdout to `$GITHUB_OUTPUT`, and renv's startup line "- The project is out-of-sync ..." landed in it. The week itself had resolved correctly.
+- **The fix is #242** (`fix/weekly-sim-outputs`, `14f7587`): the script writes its own two output lines. Three tests, each seen failing first.
+- **Verified:**
+  - gates: 922 tests, 4,164 passed, 0 failed, 0 skipped; integrity 63/63; CI green;
+  - the whole workflow on the branch (run 42764929485, empty inputs): week 10 resolved, "QA: passed", the bundle artifact uploaded.
+- **It waits for the owner's merge.** The scheduled runs are Tuesday 18:00Z and Friday 21:00Z, and GitHub starts them hours late.
+- **Recorded there:** `renv.lock` records 29 packages that nothing uses, which is why renv calls the project out of sync (`reports/2026-11-10/weekly-sim/README.md`, on #242).
+
+**Week 9 is complete.**
+- **The dispatcher did not run** between 2026-11-06 00:15Z and 14:41Z, nor from 2026-11-06 21:00Z until 2026-11-09 20:15Z. The PC was asleep or off.
+  - **Lost:** six kickoff snapshots: Thursday night, four Sunday windows and Sunday night.
+  - **Taken:** Thursday's 18:00Z snapshot, and Monday night's at 2026-11-10 00:15Z.
+  - **The Friday run ran on Monday** (20:15Z to 22:15Z), after 14 of the 15 games. It is the exploratory run, and a pre-game run for BUF at MIN only.
+- **The signed tests are intact.** `nfl_props_v1` and the pre-close Tuesday track score the Tuesday run and predictions, both made on 2026-11-03, against Kalshi candles fetched after the games.
+- **The note** is in the store's `logs/dispatch.log` (2026-11-10 05:44Z).
+- **The power settings, as read:**
+  - on mains the PC never sleeps by timer;
+  - closing the lid sleeps it, on mains and on battery;
+  - on battery it sleeps after 3 minutes;
+  - wake timers are off.
+
+**GitHub starts the public capture's crons later than #228 allowed for** (`reports/2026-11-10/capture-delays/README.md`).
+- **Measured** on the 8 slots since 2026-11-04: 205 to 417 minutes late, median 309. Before #228 it was 132 to 237, median 196.
+- **In week 9** two games had no game-day capture before kickoff: CIN at ATL and BUF at MIN.
+
+**The public pages misdescribe the simulator's number** (`reports/2026-11-10/published-vs-raw/README.md`; findings F1 and F2, now measured).
+- **The copy says** "the simulation's win probability after the production pipeline's 70% weight on the no-vig market".
+- **The number is** 0.3 × blend + 0.7 × market, and the blend is already close to the market.
+- **On week 9** (three runs of the same 15 games):
+  - the published value is outside the range between the raw simulation and the market in 5 or 6 games;
+  - it averages 0.008 to 0.013 from the market, where a plain 30/70 mix would average 0.023 to 0.028.
+
+**RotoBot:** a third capture, 2026-11-10 05:36Z, after week 9's games: 600 of 600 pages. Its counts are in #238. A0's analysis still waits for the design's approval.
+
+**Waiting for the owner:**
+1. Merge #242.
+2. Merge #240, then #241 (retarget it to main first).
+3. Approve design #238, or change it.
+4. Power: set the lid-close action on mains to "do nothing", so a plugged-in laptop captures with the lid closed.
+5. RotoBot captures on a schedule (a second scheduled task).
+6. Remove the 29 unused packages from `renv.lock`, and `gt` from `DESCRIPTION`.
+7. The wording of the simulator's number on the public pages.
+8. Earlier game-day crons for the public capture (about 8 hours ahead).
+9. The main checkout: fast-forward it to `origin/main` (it is 206 commits behind), then `renv::restore()`.
+10. Worktrees: 49 exist, and 30 are merged into main with no modified files. Remove them as one batch.
+
+**This week (UTC), all on the dispatcher unless noted:**
+
+| When | What |
+|---|---|
+| Tue 11-10 12:00 | Week 9's Kalshi settlements and candles, then `score_week.R` |
+| Tue 11-10 18:00 | Week 10's Tuesday run, then the predictions at 18:30. Both must finish before Fri 01:15 |
+| Tue 11-10 18:00 | GitHub: the `Weekly simulation` cron. It needs #242 merged |
+| Thu 11-12 18:00 | The Thursday snapshot |
+| Fri 11-13 00:15 | The snapshot before WAS at NYG |
+| Fri 11-13 21:00 | The Friday run. GitHub: the cron again |
+| Sun 11-15 13:30, 17:00, 20:05, 20:25; Mon 00:20 | A snapshot an hour before each kickoff time |
+| Tue 11-17 00:15 | The snapshot before LAC at BAL |
+
 ## State on 2026-11-05 (evening): home field done; the docs and the verification sweep wait for the owner's merge
 
 **Merged on 2026-11-05** (the owner: "Continue with merging"):
