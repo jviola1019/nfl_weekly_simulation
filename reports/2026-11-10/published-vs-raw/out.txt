@@ -1,0 +1,60 @@
+
+2026-w09-sim-20261103T184056Z (code 4c1c377, data as of 2026-11-03T18:40:56Z): 15 games with a market
+         game_id   raw market published mix_30_70 implied_blend outside
+ 2026_09_JAX_BAL 0.328  0.209     0.226     0.245         0.268        
+ 2026_09_ARI_SEA 0.703  0.822     0.840     0.787         0.882 OUTSIDE
+ 2026_09_CIN_ATL 0.312  0.407     0.392     0.378         0.358        
+  2026_09_CLE_NO 0.694  0.563     0.579     0.603         0.615        
+ 2026_09_DAL_IND 0.331  0.295     0.287     0.306         0.269 OUTSIDE
+ 2026_09_DEN_CAR 0.337  0.437     0.415     0.407         0.365        
+ 2026_09_DET_MIA 0.374  0.249     0.258     0.287         0.277        
+   2026_09_GB_NE 0.679  0.572     0.583     0.604         0.610        
+ 2026_09_HOU_LAC 0.257  0.355     0.352     0.326         0.343        
+  2026_09_LA_WAS 0.309  0.319     0.306     0.316         0.274 OUTSIDE
+   2026_09_LV_SF 0.764  0.812     0.830     0.797         0.874 OUTSIDE
+ 2026_09_NYG_PHI 0.420  0.396     0.392     0.403         0.382 OUTSIDE
+  2026_09_NYJ_KC 0.684  0.800     0.810     0.765         0.835 OUTSIDE
+  2026_09_TB_CHI 0.561  0.700     0.680     0.659         0.632        
+ 2026_09_BUF_MIN 0.479  0.384     0.384     0.412         0.385        
+published outside the raw-to-market range: 6 of 15
+mean |gap to market|: raw 0.091, a 30/70 mix 0.027, published 0.012
+
+2026-w09-sim-20261103T205214Z (code 63807cb, data as of 2026-11-03T20:52:14Z): 15 games with a market
+         game_id   raw market published mix_30_70 implied_blend outside
+ 2026_09_JAX_BAL 0.328  0.196     0.222     0.235         0.283        
+ 2026_09_ARI_SEA 0.703  0.822     0.840     0.787         0.881 OUTSIDE
+ 2026_09_CIN_ATL 0.312  0.407     0.389     0.378         0.349        
+  2026_09_CLE_NO 0.694  0.522     0.542     0.574         0.589        
+ 2026_09_DAL_IND 0.331  0.295     0.294     0.306         0.292 OUTSIDE
+ 2026_09_DEN_CAR 0.337  0.437     0.412     0.407         0.356        
+ 2026_09_DET_MIA 0.374  0.243     0.258     0.282         0.293        
+   2026_09_GB_NE 0.679  0.600     0.610     0.624         0.634        
+ 2026_09_HOU_LAC 0.257  0.343     0.340     0.317         0.335        
+  2026_09_LA_WAS 0.309  0.319     0.316     0.316         0.309        
+   2026_09_LV_SF 0.764  0.812     0.830     0.797         0.873 OUTSIDE
+ 2026_09_NYG_PHI 0.420  0.396     0.389     0.403         0.373 OUTSIDE
+  2026_09_NYJ_KC 0.684  0.800     0.802     0.765         0.807 OUTSIDE
+  2026_09_TB_CHI 0.561  0.710     0.687     0.665         0.633        
+ 2026_09_BUF_MIN 0.479  0.384     0.381     0.412         0.375 OUTSIDE
+published outside the raw-to-market range: 6 of 15
+mean |gap to market|: raw 0.093, a 30/70 mix 0.028, published 0.013
+
+2026-w09-sim-20261105T205729Z (code 85fd35a, data as of 2026-11-05T20:57:29Z): 15 games with a market
+         game_id   raw market published mix_30_70 implied_blend outside
+ 2026_09_JAX_BAL 0.249  0.200     0.213     0.215         0.245        
+ 2026_09_ARI_SEA 0.689  0.787     0.782     0.757         0.772        
+ 2026_09_CIN_ATL 0.312  0.400     0.389     0.374         0.364        
+  2026_09_CLE_NO 0.682  0.593     0.599     0.620         0.611        
+ 2026_09_DAL_IND 0.324  0.331     0.336     0.329         0.347 OUTSIDE
+ 2026_09_DEN_CAR 0.439  0.417     0.409     0.424         0.392 OUTSIDE
+ 2026_09_DET_MIA 0.373  0.252     0.256     0.289         0.266        
+   2026_09_GB_NE 0.613  0.600     0.599     0.604         0.598 OUTSIDE
+ 2026_09_HOU_LAC 0.267  0.343     0.339     0.320         0.331        
+  2026_09_LA_WAS 0.405  0.336     0.348     0.357         0.374        
+   2026_09_LV_SF 0.728  0.804     0.822     0.781         0.863 OUTSIDE
+ 2026_09_NYG_PHI 0.365  0.400     0.393     0.390         0.377        
+  2026_09_NYJ_KC 0.579  0.817     0.814     0.746         0.806        
+  2026_09_TB_CHI 0.553  0.718     0.695     0.668         0.641        
+ 2026_09_BUF_MIN 0.419  0.396     0.395     0.403         0.391 OUTSIDE
+published outside the raw-to-market range: 5 of 15
+mean |gap to market|: raw 0.078, a 30/70 mix 0.023, published 0.008

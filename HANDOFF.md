@@ -2,6 +2,125 @@
 
 Resume point for the NFL overhaul. Read this first, then the spec. To verify everything and finish the remaining work in a full local environment (VS Code), use `docs/handoff/2026-09-29-vscode-prompt.md`.
 
+## State on 2026-11-10: the weekly workflow repaired (#242); week 9 complete, with six snapshots lost
+
+**Week 9 is lost for `nfl_props_v1`'s P5 and P6** (`reports/2026-11-10/props-v1-week9/README.md`). This is the most important item here.
+- **The decision run is hollow.** During the 2026-11-03 network outage every player-stats download returned 0 rows, the frozen module substituted placeholder players, and `run_week.R` exited 0. All 450 props in the saved run are placeholders.
+- **No contract matches:** 5,610 Kalshi prop contracts for 328 players, 0 matched. `score_week.R` stopped on the empty set, and the runner still reported success.
+- **The protocol allows no replacement:** only the earliest run saved before the week's first kickoff counts. Week 9 is 15 of the 151 games; P1 to P4 are unaffected.
+- **A wider defect:** `weekly_prospective.sh` returns 0 whatever its steps return, so the dispatcher never retries a failed run, snapshot, fetch or score.
+- **Until the owner decides,** check every Tuesday run by hand: its saved `baseline_props.csv` must hold real players, and `steps.log` must show `run_week.R <week> exit=0`.
+- **The proposal** is a protocol version 1.1 that changes procedure only (the report lists it). It needs the owner's signature before the first Tuesday run it covers.
+
+**The scheduled weekly simulation failed on its first scheduled run** (2026-11-07 00:36Z, run 42319264760, step "Resolve the week").
+- **The cause:** the step appended R's whole stdout to `$GITHUB_OUTPUT`, and renv's startup line "- The project is out-of-sync ..." landed in it. The week itself had resolved correctly.
+- **The fix is #242** (`fix/weekly-sim-outputs`, `14f7587`): the script writes its own two output lines. Three tests, each seen failing first.
+- **Verified:**
+  - gates: 922 tests, 4,164 passed, 0 failed, 0 skipped; integrity 63/63; CI green;
+  - the whole workflow on the branch (run 42764929485, empty inputs): week 10 resolved, "QA: passed", the bundle artifact uploaded.
+- **It waits for the owner's merge.** The scheduled runs are Tuesday 18:00Z and Friday 21:00Z, and GitHub starts them hours late.
+- **Recorded there:** `renv.lock` records 29 packages that nothing uses, which is why renv calls the project out of sync (`reports/2026-11-10/weekly-sim/README.md`, on #242).
+
+**Week 9 is complete.**
+- **The dispatcher did not run** between 2026-11-06 00:15Z and 14:41Z, nor from 2026-11-06 21:00Z until 2026-11-09 20:15Z. The PC was asleep or off.
+  - **Lost:** six kickoff snapshots: Thursday night, four Sunday windows and Sunday night.
+  - **Taken:** Thursday's 18:00Z snapshot, and Monday night's at 2026-11-10 00:15Z.
+  - **The Friday run ran on Monday** (20:15Z to 22:15Z), after 14 of the 15 games. It is the exploratory run, and a pre-game run for BUF at MIN only.
+- **The lost snapshots cost the signed tests nothing.** `nfl_props_v1` and the pre-close Tuesday track score the Tuesday run and predictions against Kalshi candles fetched after the games. Week 9's loss for P5 and P6 has another cause, the hollow Tuesday run above.
+- **The note** is in the store's `logs/dispatch.log` (2026-11-10 05:44Z).
+- **The power settings, as read:**
+  - on mains the PC never sleeps by timer;
+  - closing the lid sleeps it, on mains and on battery;
+  - on battery it sleeps after 3 minutes;
+  - wake timers are off.
+
+**GitHub starts the public capture's crons later than #228 allowed for** (`reports/2026-11-10/capture-delays/README.md`).
+- **Measured** on the 8 slots since 2026-11-04: 205 to 417 minutes late, median 309. Before #228 it was 132 to 237, median 196.
+- **In week 9** two games had no game-day capture before kickoff: CIN at ATL and BUF at MIN.
+
+**The public pages misdescribe the simulator's number** (`reports/2026-11-10/published-vs-raw/README.md`; findings F1 and F2, now measured).
+- **The copy says** "the simulation's win probability after the production pipeline's 70% weight on the no-vig market".
+- **The number is** 0.3 × blend + 0.7 × market, and the blend is already close to the market.
+- **On week 9** (three runs of the same 15 games):
+  - the published value is outside the range between the raw simulation and the market in 5 or 6 games;
+  - it averages 0.008 to 0.013 from the market, where a plain 30/70 mix would average 0.023 to 0.028.
+
+**RotoBot:** a third capture, 2026-11-10 05:36Z, after week 9's games: 600 of 600 pages. Its counts are in #238. A0's analysis still waits for the design's approval.
+
+**Waiting for the owner:**
+1. `nfl_props_v1` version 1.1: sign it, or accept the risk that another hollow or failed Tuesday run loses its week.
+2. Merge #242.
+3. Merge #240, then #241 (retarget it to main first).
+4. Approve design #238, or change it.
+5. Power: set the lid-close action on mains to "do nothing", so a plugged-in laptop captures with the lid closed.
+6. RotoBot captures on a schedule (a second scheduled task).
+7. Remove the 29 unused packages from `renv.lock`, and `gt` from `DESCRIPTION`.
+8. The wording of the simulator's number on the public pages.
+9. Earlier game-day crons for the public capture (about 8 hours ahead).
+10. The main checkout: fast-forward it to `origin/main` (it is 206 commits behind), then `renv::restore()`.
+11. Worktrees: 49 exist, and 30 are merged into main with no modified files. Remove them as one batch.
+
+**This week (UTC), all on the dispatcher unless noted:**
+
+| When | What |
+|---|---|
+| Tue 11-10 12:00 | Week 9's Kalshi settlements and candles, then `score_week.R` |
+| Tue 11-10 18:00 | Week 10's Tuesday run, then the predictions at 18:30. Both must finish before Fri 01:15 |
+| Tue 11-10 18:00 | GitHub: the `Weekly simulation` cron. It needs #242 merged |
+| Thu 11-12 18:00 | The Thursday snapshot |
+| Fri 11-13 00:15 | The snapshot before WAS at NYG |
+| Fri 11-13 21:00 | The Friday run. GitHub: the cron again |
+| Sun 11-15 13:30, 17:00, 20:05, 20:25; Mon 00:20 | A snapshot an hour before each kickoff time |
+| Tue 11-17 00:15 | The snapshot before LAC at BAL |
+
+## State on 2026-11-05 (evening): home field done; the docs and the verification sweep wait for the owner's merge
+
+**Merged on 2026-11-05** (the owner: "Continue with merging"):
+- #236, the home-field fix (`7cad962`);
+- #237, a failed schedule download retried, then stopped with its cause (`73fd3d6`);
+- #235, CLAUDE.md's agent prompts (`03dff67`);
+- #234, TMB 1.9.25, glmmTMB 1.1.15.2 and RTMB 2.0 (`667e0e0`);
+- #239, the home-field default `league`, chosen from research (`85fd35a`; `reports/2026-11-05/hfa-default/RESEARCH.md`).
+  - The golden master moved as predicted: `mu_home` by up to 3.70 points, `mu_away` unchanged.
+  - The reference is re-recorded, and a local Windows run shows "no differences".
+
+**Waiting for the owner:**
+- **#240,** the docs verified against the code:
+  - CI is green;
+  - the R gates on `4ece613`: 920 tests, 4,149 passed, 0 failed, 0 errors, 0 skipped; integrity 63/63.
+  - Auto mode refused my merge.
+- **The verification report** (`docs/verification-2026-11-05`), stacked on #240. Retarget it to main after #240.
+- **#238,** the design (draft):
+  - what it covers: props for every market type, and RotoBot verified as a source before anything is adopted;
+  - the owner approved its STOP scope ("as designed"), not yet the whole design;
+  - the plans (writing-plans) start on that approval.
+
+**The verification sweep:** every gate passes; six findings are recorded (`reports/2026-11-05/verification/VERIFICATION.md`).
+
+**RotoBot** (private captures in `nfl-worktrees/.prospective/rotobot/`):
+- **Two captures before Thursday's game:** 05:24Z (600 pages) and 20:35Z (596 pages; 4 timeouts). robots.txt allows `/nfl/players/`.
+- **The parser** now reads both forms a card is served in. The counts are in #238.
+- **A0's analysis** waits for the design's approval, so its thresholds are fixed before any result is seen.
+- **Its next captures** are Sunday before 17:00Z and after Monday's game. Nothing schedules them yet.
+
+**Running:**
+- **The scheduled task:** `\nfl\prospective-dispatch` runs every 15 minutes, from the frozen checkouts `hyp-loop` and `preclose-run`. Thursday's 18:00Z snapshot ran at 18:20Z.
+- **Wake timers are disabled** on AC and DC (`powercfg`), so the task's wake setting cannot wake the PC. The snapshot windows need it awake: on AC power with the lid open.
+
+**Recorded for later:**
+- **Caching:**
+  - the golden-master job downloads the nflverse data once per recorded commit, and one shared download would cut CI time;
+  - local runs could use nflreadr's filesystem cache.
+- **The user agent:** `R/prop_odds_api.R`'s ScoresAndOdds scraper sends a browser user agent. It is off by default; #238 fixes or removes it.
+- **A duplicate:** `probability_to_american()` is defined twice, in `R/utils.R` and `NFLmarket.R`.
+
+**Owner decisions:**
+1. Merge #240, then the verification report.
+2. Approve #238's design, or change it.
+3. Schedule the RotoBot captures: a second scheduled task, about 600 requests at 1 a second each time.
+4. Wake timers: enable them, or keep the PC awake for the snapshot windows.
+5. Optional: try Ponytail, a minimal-code skill. Installing it changes Claude Code's configuration.
+
 ## State on 2026-11-04 (evening): #215–#233 merged, the weekly program on a scheduled task, home field being fixed
 
 **Since the owner's "Do this" (2026-11-04):**
