@@ -6,7 +6,8 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ### Week 9's losses recorded, and two measurements (2026-11-10)
 
-- **HANDOFF.md:** the state on 2026-11-10. The dispatcher did not run from 2026-11-06 21:00Z until 2026-11-09 20:15Z, and week 9 lost six kickoff snapshots. The signed tests are intact: they score the Tuesday run against Kalshi candles fetched afterwards.
+- **`nfl_props_v1` loses week 9 for P5 and P6** (`reports/2026-11-10/props-v1-week9/`). The decision run of 2026-11-03 holds 450 props, all placeholder players: the player-stats download returned 0 rows during a network outage, the frozen module fell back silently, and `run_week.R` exited 0. No Kalshi contract matches, `score_week.R` stopped on the empty set, and `weekly_prospective.sh` still returned 0. Nothing registered is changed; a protocol version 1.1 is proposed to the owner.
+- **HANDOFF.md:** the state on 2026-11-10. The dispatcher did not run from 2026-11-06 21:00Z until 2026-11-09 20:15Z, and week 9 lost six kickoff snapshots. Those cost the signed tests nothing: they score the Tuesday run against Kalshi candles fetched afterwards.
 - **GitHub's cron delays, re-measured** (`reports/2026-11-10/capture-delays/`): the public capture's 8 slots since 2026-11-04 started 205 to 417 minutes late, median 309. Two of week 9's games had no game-day capture before kickoff. The crons are not changed.
 - **The simulator's published number, measured** (`reports/2026-11-10/published-vs-raw/`): it is 0.3 × blend + 0.7 × market, not a 30/70 mix of the raw simulation and the market as the public wording says. On week 9 it falls outside the range between the two in 5 or 6 of 15 games. The wording is not changed.
 

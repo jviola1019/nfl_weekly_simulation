@@ -1,0 +1,52 @@
+settled files: feasibility, feasibility, w08, w09 
+run: run_20261103T180007Z 
+games in week 9: 15; with a result: 15 
+settlements: 117190; candles: 7360 
+events mapped to games: 7989; of week 9: 225 
+week's settled contracts: 7360 
+  with a candle row: 7360 
+  in a game with a result: 7360 
+  yes/no, two-sided, spread <= 0.10: 6715 
+            series     N
+            <char> <int>
+ 1:    KXNFLRECYDS  1885
+ 2:       KXNFLREC  1264
+ 3:    KXNFLRSHYDS   798
+ 4:        KXNFLTD   698
+ 5: KXNFLTEAMTOTAL   405
+ 6:    KXNFLSPREAD   385
+ 7:     KXNFLTOTAL   285
+ 8:   KXNFLPASSYDS   274
+ 9:    KXNFLRSHATT   162
+10:     KXNFLRRYDS   136
+11:   KXNFLPASSTDS   124
+12:  KXNFLPASSCOMP    90
+13:   KXNFLPASSINT    90
+14:   KXNFLPASSATT    89
+15:      KXNFLGAME    30
+prop contracts in LADDERS series: 5610; with a parsed threshold: 5610 
+  with a team from the ticker: 5610 
+  kept: 5610 (players 328) 
+module rows: 450; columns: player, position, team, matchup, prop_type, line, line_over, line_under, projection, p_over, p_under, p_push, over_odds, under_odds, book, dk_line, dk_line_over, dk_line_under, dk_over_odds, dk_under_odds, fd_line, fd_line_over, fd_line_under, fd_over_odds, fd_under_odds, line_source, odds_source, ev_over, ev_under, recommendation, correlation_with_game, game_id, Raw Kelly (%), Capped Stake (%), Final Stake (%), Pass Reason, edge_quality, edge_note 
+module stats: passing_yards=30, receiving_yards=120, rushing_yards=90, touchdowns=210 
+kalshi stats: attempts=89, carries=162, completions=90, passing_interceptions=90, passing_tds=124, passing_yards=274, receiving_yards=1885, receptions=1264, rush_rec_yards=136, rushing_yards=798, touchdowns=698 
+module keys (first 6):
+      akey   team          stat  player
+    <char> <char>        <char>  <char>
+1: bal qb1    BAL passing_yards BAL QB1
+2: jax qb1    JAX passing_yards JAX QB1
+3: bal qb1    BAL rushing_yards BAL QB1
+4: bal rb1    BAL rushing_yards BAL RB1
+5: bal rb2    BAL rushing_yards BAL RB2
+6: jax qb1    JAX rushing_yards JAX QB1
+kalshi keys (first 6):
+        akey  pteam                  stat               name
+      <char> <char>                <char>             <char>
+1: g minshew    ARI              attempts Gardner Minshew II
+2:    d lock    SEA              attempts          Drew Lock
+3: g minshew    ARI           completions Gardner Minshew II
+4:    d lock    SEA           completions          Drew Lock
+5: g minshew    ARI passing_interceptions Gardner Minshew II
+6:    d lock    SEA passing_interceptions          Drew Lock
+joined on akey + team + stat: 0 
+  on akey alone: 0; on akey + stat: 0; on akey + team: 0 
