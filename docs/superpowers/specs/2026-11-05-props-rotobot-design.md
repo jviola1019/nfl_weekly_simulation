@@ -52,22 +52,23 @@ The owner's words are quoted. Each prompt states the goal, the scope, the data, 
 
 **The captures** (every page robots.txt allows, at 1 request a second; private store `.prospective/rotobot/`; parser `parse_profiles.R`, which reads a card in either form the site serves it, a JSON payload or rendered HTML):
 
-| Featured props | 2026-11-05 05:24Z | 2026-11-05 20:35Z |
-|---|---|---|
-| Pages fetched (HTTP 200) | 600 of 600 | 596 of 600 (4 timeouts) |
-| Pages with a featured-prop card | 401 | 400 |
-| Cards served as rendered HTML | 41 | 185 |
-| Featured market: Total Touchdowns | 242 | 236 |
-| Featured market: Receiving Yards | 54 | 59 |
-| Featured market: Receptions | 46 | 45 |
-| Featured market: Rushing Yards | 26 | 24 |
-| Featured market: Passing Yards | 18 | 18 |
-| Featured market: Passing Touchdowns | 9 | 10 |
-| Featured market: Rushing and Receiving Yards | 6 | 8 |
-| Showing a median against a line | **140** | **151** |
-| Carrying a directional recommendation | **43** | **46** |
+| Featured props | 2026-11-05 05:24Z | 2026-11-05 20:35Z | 2026-11-10 05:36Z |
+|---|---|---|---|
+| Pages fetched (HTTP 200) | 600 of 600 | 596 of 600 (4 timeouts) | 600 of 600 |
+| Pages with a featured-prop card | 401 | 400 | 412 |
+| Cards served as rendered HTML | 41 | 185 | 145 |
+| Featured market: Total Touchdowns | 242 | 236 | 268 |
+| Featured market: Receiving Yards | 54 | 59 | 50 |
+| Featured market: Receptions | 46 | 45 | 37 |
+| Featured market: Rushing Yards | 26 | 24 | 21 |
+| Featured market: Passing Yards | 18 | 18 | 18 |
+| Featured market: Passing Touchdowns | 9 | 10 | 11 |
+| Featured market: Rushing and Receiving Yards | 6 | 8 | 7 |
+| Showing a median against a line | **140** | **151** | **132** |
+| Carrying a directional recommendation | **43** | **46** | **49** |
 
 - **Correction (2026-11-05):** the first parser read only the JSON form. It reported 113 medians and 30 recommendations for the 05:24Z capture. Both captures were re-parsed with the fixed parser.
+- **When they were taken:** the first two before any week 9 game; the third after all of week 9's games and before week 10's.
 
 **What that means for power:**
 - **The supply:** about 45 leans per capture, if they are current, gives about 400 over weeks 10–18. Counting every median shown against a line, the total is about 1,350.
