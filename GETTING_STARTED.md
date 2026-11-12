@@ -19,15 +19,14 @@ Download and install R from [CRAN](https://cran.r-project.org/):
 
 ### 2. Install Dependencies (Recommended: renv)
 
-```bash
-# Install renv and restore all packages
-R -e "install.packages('renv'); renv::restore()"
+Every command in this guide runs as written in Windows PowerShell 5.1, cmd and bash.
+
+```
+# Install renv and restore all packages (in PowerShell `R` is an alias for Invoke-History, so use Rscript)
+Rscript -e "install.packages('renv'); renv::restore()"
 ```
 
-Or install packages manually:
-```r
-install.packages(c("tidyverse", "nflreadr", "gt", "glmnet", "zoo", "lubridate", "randtoolbox", "mgcv"))
-```
+renv is required: the pipeline needs the package versions pinned in `renv.lock`.
 
 ### 3. Run Weekly Predictions
 
@@ -58,7 +57,7 @@ To see a run the online workflow made (`.github/workflows/weekly-sim.yml`) befor
 
 ```bash
 gh run download <run-id> -n sim-bundle -D bundles/<cycle_id>   # the cycle id is in the downloaded manifest.json
-cd web && npm run local
+npm --prefix web run local
 ```
 
 (or point `NFL_LOCAL_BUNDLES` at the directory's parent). Offline and online render identically; `web/README.md` describes the pixel-parity check.
@@ -221,8 +220,8 @@ If you see warnings about values outside domain, they are cosmetic and handled a
 
 ### Weekly Predictions
 ```bash
-# Every Tuesday after Monday Night Football
-Rscript run_week.R 16  # Increment week number
+# Every Tuesday after Monday Night Football: the upcoming week, picked from the schedule
+Rscript run_week.R
 ```
 
 ### Enable Debug Mode

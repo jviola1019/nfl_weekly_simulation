@@ -219,7 +219,7 @@ apply_bet_governance(
 
 **File**: [R/sim_bundle.R](../R/sim_bundle.R)
 
-Write the simulator's weekly bundle (it replaced the HTML report at checkpoint A8). `run_week.R` calls it after the simulation; the local app (`cd web && npm run local`) ingests and shows it.
+Write the simulator's weekly bundle (it replaced the HTML report at checkpoint A8). `run_week.R` calls it after the simulation; the local app (`npm --prefix web run local`) ingests and shows it.
 
 ```r
 write_sim_bundle(

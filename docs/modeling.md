@@ -6,7 +6,7 @@ This document is the comprehensive mathematical reference for the NFL prediction
 
 ## Where Results Go
 
-The HTML report was retired at checkpoint A8. `run_week.R` writes the run to a weekly web bundle (`R/sim_bundle.R`: the no-vig market as candidate C0, the simulator as C3, margin and total distributions, source status) and the comparison table to `artifacts/baseline_games.csv`. The local web app shows the bundle offline (`cd web && npm run local`).
+The HTML report was retired at checkpoint A8. `run_week.R` writes the run to a weekly web bundle (`R/sim_bundle.R`: the no-vig market as candidate C0, the simulator as C3, margin and total distributions, source status) and the comparison table to `artifacts/baseline_games.csv`. The local web app shows the bundle offline (`npm --prefix web run local`).
 
 ---
 

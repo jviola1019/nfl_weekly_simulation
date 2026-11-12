@@ -2,7 +2,7 @@
 # Simulator bundle: NFLsimulation.R's results as a weekly R -> web bundle (spec §3)
 # =============================================================================
 # Replaces the retired HTML report (checkpoint A8). run_week.R writes this bundle and
-# the local web app (cd web && npm run local) ingests and serves it with no network.
+# the local web app (npm --prefix web run local) ingests and serves it with no network.
 #   - game_predictions: per game a C0 row (the no-vig market) and a C3 row (the
 #     simulator: p_home_raw = simulator two-way, p_home_final = the blend shrunk toward the
 #     no-vig market by SHRINKAGE, as in artifacts/baseline_games.csv; unshrunk without a market).
@@ -249,7 +249,7 @@ report_sim_bundle <- function(manifest) {
       sprintf("  QA: FAILED (%d); the app stores this run as qa_failed and keeps showing the last good run:", length(failures)),
       paste0("    - ", failures)
     ),
-    "  View it offline: cd web && npm run local   (then open http://127.0.0.1:3000)"
+    "  View it offline: npm --prefix web run local   (then open http://127.0.0.1:3000)"
   )
   cat(paste0(lines, "\n"), sep = "")
   invisible(lines)
