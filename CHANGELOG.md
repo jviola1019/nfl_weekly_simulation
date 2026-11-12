@@ -4,6 +4,23 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Web: Next.js 16.4.6, zod 4.6.7 and vitest 4.1.12, for security advisories (owner, 2026-11-12)
+
+- **The ask:** "Make sure all packages, etc. are updated".
+- **Found by `npm audit --omit=dev`** on `main`: 3 advisories in the app's production dependencies, 1 critical and 2 high.
+  - **`next` 16.3.7** is inside the range of ten advisories. Two are critical and unauthenticated: remote code execution in the Image Optimization API when SVG files are used (GHSA-2464-fhr4-w9xw), and in `use cache` functions returning typed arrays (GHSA-673q-mjm6-r5xr). Others cover request forgery in image optimization, denial of service through Server Actions, and cache poisoning.
+  - **`zod` 4.6.5:** memory exhaustion while validating oversized collections (GHSA-mrhx-c7xc-m3w5).
+  - **`source-map-js`** (transitive): an event-loop denial of service.
+- **Exposure today:** none outside the owner's machine. The app is not deployed, and `npm run local` binds to 127.0.0.1. It must be patched before any deployment.
+- **Changed:** `next` and `eslint-config-next` 16.3.7 → 16.4.6, `zod` 4.6.5 → 4.6.7, `vitest` 4.1.11 → 4.1.12 (a dev-only advisory in its mocker), and the lockfile. No source file changes.
+- **After:** `npm audit --omit=dev` reports 0. 11 moderate advisories remain in dev-only tools (`drizzle-kit`'s bundled esbuild, typescript-eslint's `minimatch`); npm's only fix for the first is a downgrade to `drizzle-kit` 0.18.
+- **Verified:**
+  - typecheck and lint exit 0;
+  - unit and Postgres tests: 35 files, 230 tests passed, database suites required;
+  - `next build` compiles on 16.4.6;
+  - Playwright against a real run (`2026-w10-sim-20261111T053651Z`, served by `npm run local`): 134 passed, 0 failed;
+  - `db-check`: 18 checks, 0 errors.
+
 ### Home-field default: league, after research (owner, 2026-11-05)
 
 - **The ask:** "choose whatever is recommended with extensive research". `HFA_TEAM_ESTIMATOR` now defaults to `league`: every team gets the league value as of the slate.
