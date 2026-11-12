@@ -65,29 +65,33 @@ A statistical model for predicting NFL game outcomes using Monte Carlo simulatio
 
 ### Installation (2 minutes)
 
-```bash
-# Clone the repository
-git clone https://github.com/jviola1019/nfl.git
-cd nfl
+Every command in this file runs as written in Windows PowerShell 5.1, cmd and bash.
 
-# Install dependencies using renv (recommended)
-R -e "install.packages('renv'); renv::restore()"
+```
+# Clone the repository
+git clone https://github.com/jviola1019/nfl_weekly_simulation.git
+cd nfl_weekly_simulation
+
+# Install dependencies using renv (in PowerShell `R` is an alias for Invoke-History, so use Rscript)
+Rscript -e "install.packages('renv'); renv::restore()"
 ```
 
 ### Audit Verification (CI-friendly)
 
-```bash
-./scripts/audit_verify.sh
+```
+Rscript scripts/run_tests.R
+Rscript scripts/verify_repo_integrity.R
+Rscript scripts/audit_verify.R
 ```
 
-This fail-fast wrapper checks the governance pass reasons in `R/utils.R` and, when `Rscript` is available, runs full testthat + audit verification.
+`scripts/audit_verify.sh` runs the same three from bash, after checking the governance pass reasons in `R/utils.R` with `rg`.
 
 
 ### Run Weekly Analysis
 
 
 ```bash
-# Run for current week (uses config.R defaults)
+# The upcoming week, from the nflverse schedule
 Rscript run_week.R
 
 # Or specify week and season
@@ -227,21 +231,10 @@ See [DOCUMENTATION.md](DOCUMENTATION.md) for complete validation methodology.
 - `"could not find function 'year'"`: Run `install.packages("lubridate")`
 - `"could not find function '%>%'"`: Run `install.packages("dplyr")`
 - `"unused argument (seasons_missing)"`: Update to v2.5 - API fixed
-- No predictions: Check `WEEK_TO_SIM` and `SEASON` in config.R
+- The wrong week, or last season's Super Bowl (2025 week 22): the checkout is behind GitHub. Run `git pull`, then `Rscript run_week.R`. To name a week: `Rscript run_week.R 10 2026`
 - Tests fail with path errors: Ensure `tests/testthat/setup.R` exists
 
-**One-command audit verification (CI entrypoint)**:
-```bash
-./scripts/audit_verify.sh
-```
-
-This runs, in order:
-- Schema + invariant tests (`scripts/verify_repo_integrity.R`)
-- Analytical calibration tests (`tests/testthat/test-calibration.R`)
-- Report structural checks (`scripts/audit_verify.R`)
-
-The shell wrapper fails fast (`set -euo pipefail`) and prints a machine-readable summary line:
-`AUDIT_VERIFY_SUMMARY={"schema_invariant":"PASS|FAIL","analytical_calibration":"PASS|FAIL","report_structural":"PASS|FAIL","overall":"PASS|FAIL"}`
+**Audit verification**: the three commands under "Audit Verification" above. From bash, `scripts/audit_verify.sh` runs them in order, stops at the first failure (`set -euo pipefail`) and ends with `AUDIT_VERIFY_RESULT=PASS`.
 
 **Additional integrity checks**:
 ```bash

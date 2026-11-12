@@ -27,7 +27,7 @@ An NFL game prediction model using Monte Carlo simulation with:
 | `scripts/run_tests.R` | Test suite + skip policy | `Rscript scripts/run_tests.R` |
 | `scripts/verify_repo_integrity.R` | Integrity check | `Rscript scripts/verify_repo_integrity.R` |
 | `scripts/run_matrix.R` | Run all artifacts | `Rscript scripts/run_matrix.R` |
-| `web/scripts/local.ts` | Offline results viewer (the local app) | `cd web && npm run local` |
+| `web/scripts/local.ts` | Offline results viewer (the local app) | `npm --prefix web run local` |
 
 ### Player Props Module (v2.9.0)
 
@@ -86,7 +86,7 @@ apply_game_context(players, game)
 ### Expected Outputs
 
 When `run_week.R` completes successfully:
-1. **Web bundle**: `bundles/<season>-w<WW>-sim-<UTC stamp>/` with the market (C0) and simulator (C3) win probabilities, margin and total distributions, and source status (`R/sim_bundle.R`). View it offline with `cd web && npm run local` (http://127.0.0.1:3000). The HTML report was retired at checkpoint A8.
+1. **Web bundle**: `bundles/<season>-w<WW>-sim-<UTC stamp>/` with the market (C0) and simulator (C3) win probabilities, margin and total distributions, and source status (`R/sim_bundle.R`). View it offline with `npm --prefix web run local` (http://127.0.0.1:3000). The HTML report was retired at checkpoint A8.
 2. **Audit tables**: `artifacts/baseline_games.csv` and, when `RUN_PLAYER_PROPS`, `artifacts/baseline_props.csv`
 3. **Run Logs**: `run_logs/config_*.rds`, `run_logs/final_*.rds`
 4. **Console**: Data quality badge, simulation progress, calibration status, the bundle path and its QA result
@@ -194,7 +194,7 @@ a defect.
 3. Rscript scripts/run_matrix.R: 11/11 (the golden master may SKIP as LIVE offline). A golden-master
    difference needs its INPUT DRIFT lines read and a commit that explains it.
 4. run_week.R or R/sim_bundle.R changed: the run prints "Web bundle: <dir>" and "QA: passed", and
-   `cd web && npm run local` serves that run.
+   `npm --prefix web run local` serves that run.
 5. web/ changed: npm run typecheck, npm run lint, npm test and npm run e2e, the last also with
    E2E_SIM_BUNDLE=<a real bundle>.
 6. After the push: CI green on the head (R, web, and the golden master's commit-by-commit attribution).
@@ -257,6 +257,19 @@ source("run_week.R")
 3. A release download that fails. nflreadr returns an empty table with only a warning, and remembers the failure for the session. `safe_load_injuries()` retries the seasons that have completed games and flags one that stays empty as "partial", with nflreadr's warning as the cause.
 
 **Fix**: Check the `update_injury_quality()` calls in `safe_load_injuries()` (NFLsimulation.R). Then check the run's `source_status.json`.
+
+### run_week.R Picks Last Season's Super Bowl (2025 Week 22)
+
+**Symptom**: `Rscript run_week.R` with no arguments simulates 2025 week 22, not the upcoming week
+
+**Root Cause**: the checkout is old. `config.R` defaulted to `SEASON` 2025 and `WEEK_TO_SIM` 22 until #215; since then `run_week.R` takes the upcoming week from the nflverse schedule. On 2026-11-10 the owner's main folder was 206 commits behind `origin/main`, because all work had happened in worktrees.
+
+**Diagnosis**: `git rev-list --count HEAD..origin/main` (after `git fetch`). Anything above 0 means the folder is behind.
+
+**Fix**:
+1. `git stash push -- artifacts/baseline_games.csv artifacts/baseline_props.csv` (every run rewrites these tracked tables), then `git pull --ff-only`.
+2. `Rscript -e "renv::restore(prompt = FALSE)"`: the folder's package library is its own, and stays at the old versions until restored.
+3. `Rscript run_week.R` prints "Auto-resolved <season> week <w> (...)".
 
 ### Invalid Week Error
 
@@ -428,9 +441,12 @@ USE_SNAP_WEIGHTED_INJURIES <- FALSE  # Must be FALSE
 
 ## 7. VERIFICATION COMMANDS (Run These)
 
-```bash
+The owner's shell is Windows PowerShell 5.1. It rejects `&&` and `export`, cannot run a `.sh` file, and `R` is its alias for Invoke-History. Every command below runs there as written; `tests/testthat/test-owner-tooling.R` keeps bash-only forms out of the owner-facing documents.
+
+```powershell
 # R gates use a fresh HOME: the calibration and score caches live in ~/.cache and every checkout shares them
-export HOME=$(mktemp -d)
+# (bash: HOME=$(mktemp -d), exported)
+$env:HOME = (New-Item -ItemType Directory -Path (Join-Path $env:TEMP ("nfl-home-" + [guid]::NewGuid()))).FullName
 
 # 1. Unit tests + skip policy (must exit 0; only KNOWN-DEFECT and LIVE skips are allowed)
 Rscript scripts/run_tests.R
@@ -445,13 +461,15 @@ Rscript scripts/run_matrix.R
 Rscript run_week.R            # prints "Auto-resolved <season> week <w> (...)"
 Rscript run_week.R 16 2024    # a named week and season
 
-# 5. View the run offline (after `npm ci` in web/ once)
-cd web && npm run local
+# 5. View the run offline (after `npm --prefix web ci` once)
+npm --prefix web run local
 
 # 6. Web gates, when web/ changed
-cd web && npm run typecheck && npm run lint && npm test
-cd web && npm run e2e                                   # the committed fixtures
-cd web && E2E_SIM_BUNDLE=<bundle dir> npm run e2e       # a real run_week.R bundle
+npm --prefix web run typecheck
+npm --prefix web run lint
+npm --prefix web test
+npm --prefix web run e2e                                          # the committed fixtures
+$env:E2E_SIM_BUNDLE = "<bundle dir>"; npm --prefix web run e2e    # a real run_week.R bundle
 ```
 
 ---
@@ -466,5 +484,5 @@ cd web && E2E_SIM_BUNDLE=<bundle dir> npm run e2e       # a real run_week.R bund
 
 ---
 
-*Last updated: 2026-11-04*
+*Last updated: 2026-11-12*
 *Version: 2.9.4, plus the unreleased changes in CHANGELOG.md*

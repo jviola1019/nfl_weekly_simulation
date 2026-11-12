@@ -212,7 +212,7 @@ test_that("report_sim_bundle prints the bundle path, its QA and how to view it o
   ok <- list(dir = "bundles/2024-w15-sim-20261003T120000Z", qa = list(ok = TRUE, failures = list()))
   out <- capture.output(report_sim_bundle(ok))
   expect_identical(out, c("  Web bundle: bundles/2024-w15-sim-20261003T120000Z", "  QA: passed",
-                          "  View it offline: cd web && npm run local   (then open http://127.0.0.1:3000)"))
+                          "  View it offline: npm --prefix web run local   (then open http://127.0.0.1:3000)"))
   bad <- list(dir = "b", qa = list(ok = FALSE, failures = list("games: not in the schedule: X")))
   out <- capture.output(report_sim_bundle(bad))
   expect_match(out[2], "QA: FAILED (1)", fixed = TRUE)

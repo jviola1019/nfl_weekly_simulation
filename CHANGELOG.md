@@ -4,6 +4,32 @@ All notable changes to the NFL Prediction Model are documented in this file.
 
 ## [Unreleased]
 
+### Every documented command runs in PowerShell 5.1; the editor's lint config parses (owner, 2026-11-12)
+
+- **The ask:** "full verifications of correct powershell coding and documentation", and "when running the script run_week, it should config to this week, not the Super Bowl of last year".
+- **Checked in Windows PowerShell 5.1.26100** on the owner's machine. Four documented forms failed there:
+  - `cd web && npm run local`: "The token '&&' is not a valid statement separator in this version";
+  - `R -e "..."`: `R` is PowerShell's alias for `Invoke-History`;
+  - `export HOME=$(mktemp -d)`: `export` is not a command;
+  - `./scripts/audit_verify.sh`: neither `bash` nor `rg` is on the PowerShell path.
+- **The replacements,** each run there and exiting 0:
+  - `npm --prefix web run <script>` from the repo root (the same line works in cmd and bash);
+  - `Rscript -e "..."`;
+  - `$env:HOME = (New-Item -ItemType Directory ...).FullName` (R's `~` follows it);
+  - the three `Rscript scripts/...` commands that `audit_verify.sh` wraps.
+- **Changed:** `README.md`, `GETTING_STARTED.md`, `CLAUDE.md` (section 7 is now a PowerShell block), `docs/API.md`, `docs/modeling.md`, and the hint `run_week.R` prints at the end ("View it offline: npm --prefix web run local").
+- **Other stale text fixed on the way:**
+  - README's clone address was the repository's old name;
+  - README told the reader to edit `WEEK_TO_SIM` and described a summary line `audit_verify.sh` does not print;
+  - GETTING_STARTED offered a manual package list that cannot run the pipeline (it lacks `glmmTMB`, `httr2` and `digest`).
+- **The Super Bowl week:** `run_week.R` picking 2025 week 22 was a stale checkout, not a code defect. The owner's main folder was 206 commits behind `origin/main`, and its `config.R` predated #215. CLAUDE.md's playbook has the entry and the three-step fix.
+- **`.lintr`:** its closing parentheses sat in column 1, which is not valid DCF. lintr stopped with "Malformed config file", and VS Code showed that on every R file. They are indented now, and `cyclocomp_linter`, which lintr 3.3 no longer has among its defaults, is dropped.
+- **Tests** (`tests/testthat/test-owner-tooling.R`, each seen failing first):
+  - no owner-facing document or console hint holds a bash-only command (it flagged 19 lines);
+  - the patterns catch the rejected forms and leave PowerShell's alone;
+  - `.lintr` parses.
+- **Not changed here:** `DOCUMENTATION.md`, which #240 rewrites without the bash form.
+
 ### Home-field default: league, after research (owner, 2026-11-05)
 
 - **The ask:** "choose whatever is recommended with extensive research". `HFA_TEAM_ESTIMATOR` now defaults to `league`: every team gets the league value as of the slate.

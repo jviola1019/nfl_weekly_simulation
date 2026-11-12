@@ -12,7 +12,7 @@
 #   Rscript run_week.R 15 2024  # Week 15, 2024 season
 #
 # Output:
-#   Web bundle:   bundles/<season>-w<WW>-sim-<UTC stamp>/  (view offline: cd web && npm run local)
+#   Web bundle:   bundles/<season>-w<WW>-sim-<UTC stamp>/  (view offline: npm --prefix web run local)
 #   Audit tables: artifacts/baseline_games.csv, artifacts/baseline_props.csv
 #   Run logs:     run_logs/
 #
@@ -55,7 +55,7 @@ if (length(missing_pkgs) > 0) {
 
 # Run the full simulation; its results go to a web bundle for the local app
 message("Running NFLsimulation.R...")
-message("This runs the Monte Carlo simulation and writes a web bundle (view it with: cd web && npm run local).\n")
+message("This runs the Monte Carlo simulation and writes a web bundle (view it with: npm --prefix web run local).\n")
 
 tryCatch({
   # Bundle writer, and the code's git state before this run rewrites artifacts/
